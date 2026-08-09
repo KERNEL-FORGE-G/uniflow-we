@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Lock, Mail, Sparkles } from 'lucide-react'
+import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Lock, Mail, Sparkles, ShieldAlert } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -34,10 +34,12 @@ const features = [
 ]
 
 export default function LoginPage() {
+  const location = useLocation()
   const { login, loading, error, setError } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
+  const isIdleTimeout = location.state?.reason === 'idle_timeout'
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,6 +152,17 @@ export default function LoginPage() {
               <h2 className="text-3xl font-black text-[#111827]">Connexion</h2>
               <p className="mt-2 text-sm text-[#6b7280]">Accédez à votre espace de travail UniFlow</p>
             </div>
+
+            {/* Idle Timeout Alert Banner */}
+            {isIdleTimeout && (
+              <div className="mb-6 flex items-start gap-3 rounded-2xl bg-amber-50 p-4 border border-amber-200 text-amber-800 animate-slide-in-right">
+                <ShieldAlert className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div className="text-xs leading-relaxed">
+                  <p className="font-bold">Déconnexion pour inactivité</p>
+                  <p className="text-amber-700">Vous avez été déconnecté automatiquement après 30 minutes d'inactivité pour sécuriser votre compte.</p>
+                </div>
+              </div>
+            )}
 
             {/* Quick demo buttons */}
             <div className="mb-8 space-y-3">
