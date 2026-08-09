@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosError } from 'axios'
+import { playSuccessSound, playErrorSound } from '../utils/sound'
 
 /**
  * Client API UniFlow avec Axios, Moteur Réseau & Intercepteurs d'Authentification
@@ -140,6 +141,9 @@ export async function executeAxiosRequest<T = any>(config: {
     })
 
     const duration = Date.now() - startTime
+    if (method !== 'GET') {
+      playSuccessSound()
+    }
     if (isMonitored) {
       console.info(`[Axios Wrapper Success] ${method} ${config.url} (${duration}ms)`)
       console.groupEnd()
@@ -150,6 +154,8 @@ export async function executeAxiosRequest<T = any>(config: {
     const duration = Date.now() - startTime
     const status = err?.response?.status ?? 500
     const errorMessage = err?.response?.data?.message || err?.message || 'Erreur réseau/serveur'
+
+    playErrorSound()
 
     console.error(`[Axios Wrapper Error ${status}] ${method} ${config.url} (${duration}ms):`, errorMessage)
 
