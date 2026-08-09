@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react'
 import type { ToastType } from '../components/ui/Toast'
+import { playSuccessSound, playErrorSound } from './sound'
 
 interface Toast {
   id: string
@@ -23,6 +24,7 @@ export function useToast() {
 
   const success = useCallback(
     (title: string, message?: string, duration?: number) => {
+      playSuccessSound()
       addToast({ type: 'success', title, message, duration })
     },
     [addToast]
@@ -30,6 +32,7 @@ export function useToast() {
 
   const error = useCallback(
     (title: string, message?: string, duration?: number) => {
+      playErrorSound()
       addToast({ type: 'error', title, message, duration })
     },
     [addToast]
@@ -37,6 +40,7 @@ export function useToast() {
 
   const warning = useCallback(
     (title: string, message?: string, duration?: number) => {
+      playErrorSound()
       addToast({ type: 'warning', title, message, duration })
     },
     [addToast]

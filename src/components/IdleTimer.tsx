@@ -82,44 +82,6 @@ export function IdleTimer() {
 
   return (
     <>
-      {/* Warning Modal (28-30 min) */}
-      {showWarning && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-100 text-amber-600 shrink-0">
-                <ShieldAlert className="h-6 w-6" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900">Inactivité détectée</h3>
-                <p className="text-xs font-medium text-slate-500">Pour votre sécurité, votre session va expirer.</p>
-              </div>
-            </div>
-
-            <p className="text-sm text-slate-600 mb-6 font-medium">
-              Vous êtes inactif depuis 28 minutes. Vous serez déconnecté automatiquement dans{' '}
-              <span className="font-extrabold text-amber-600">{secondsRemaining}s</span>.
-            </p>
-
-            <div className="flex items-center justify-end gap-3">
-              <button
-                onClick={handleLogoutNow}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 transition-colors"
-              >
-                <LogOut className="h-4 w-4" />
-                Se déconnecter
-              </button>
-              <button
-                onClick={handleStayLoggedIn}
-                className="px-5 py-2 rounded-xl bg-[#1e3a8a] text-white text-xs font-extrabold hover:bg-[#1e40af] transition-colors shadow-xs"
-              >
-                Rester connecté
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Logout Notification Toast */}
       {showAutoLogoutToast && (
         <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3.5 text-white shadow-2xl border border-slate-700 animate-slide-in-right">

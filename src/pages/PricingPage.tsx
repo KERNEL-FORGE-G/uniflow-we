@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { 
   ArrowRight, Zap, Sparkles, HelpCircle, 
@@ -334,8 +334,8 @@ export default function PricingPage() {
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {comparisonCategories.map((cat) => (
-                  <>
-                    <tr key={cat.name} className="bg-slate-100/60">
+                  <Fragment key={cat.name}>
+                    <tr className="bg-slate-100/60">
                       <td colSpan={4} className="py-3 px-6 text-xs font-extrabold uppercase tracking-wider text-slate-600">
                         {cat.name}
                       </td>
@@ -354,7 +354,7 @@ export default function PricingPage() {
                         </td>
                       </tr>
                     ))}
-                  </>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

@@ -1,2 +1,5 @@
 User-agent: *
 Allow: /
+
+# Directives d'indexation pour Googlebot et moteurs de recherche
+Sitemap: https://uniflow.kernelforge.codes/sitemap.xml
