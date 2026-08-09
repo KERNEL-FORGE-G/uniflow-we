@@ -1,18 +1,18 @@
-import { Mail, Code2, Smartphone, Server, Database, Sparkles, Crown, Rocket, Laptop, Users } from 'lucide-react'
+import { useState } from 'react'
+import { Mail, Code2, Smartphone, Server, Database, Crown, Laptop, Users, Github, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
-import { ScrollFloat } from '../components/ui/ScrollFloat'
 
 interface TeamMember {
   id: string
   name: string
   github: string
   email: string
-  team: string
+  team: 'Leadership' | 'Frontend' | 'Backend'
+  subTeam: string
   role: string
   icon: any
-  gradient: string
   badge: string
-  borderColor: string
+  badgeColor: string
 }
 
 const teamMembers: TeamMember[] = [
@@ -22,153 +22,158 @@ const teamMembers: TeamMember[] = [
     github: 'Archlord12345',
     email: 'ravelnghomsi@gmail.com',
     team: 'Leadership',
+    subTeam: 'Architecture & Direction',
     role: 'Chef de projet & Architecte',
     icon: Crown,
-    gradient: 'from-[#1e3a8a] via-[#7c3aed] to-[#0d9488]',
-    badge: 'Lead',
-    borderColor: 'border-[#1e3a8a]',
+    badge: 'Lead Architect',
+    badgeColor: 'bg-blue-100 text-[#1e3a8a] border-blue-200',
   },
   {
     id: 'aliya',
     name: 'Aliyatou Rachid Oumou Tourab',
     github: 'aliya-nadi',
     email: 'oumou.aliyatou@facsciences-uy1.cm',
-    team: 'Frontend Desktop',
+    team: 'Frontend',
+    subTeam: 'Frontend Desktop & Web',
     role: 'Frontend Developer',
     icon: Code2,
-    gradient: 'from-[#7c3aed] to-[#db2777]',
-    badge: 'Web',
-    borderColor: 'border-purple-500',
+    badge: 'Web Desktop',
+    badgeColor: 'bg-purple-100 text-purple-800 border-purple-200',
   },
   {
     id: 'judith',
     name: 'Mandeng Judith Oceanne',
     github: 'oceannemj',
     email: 'judithoceanne12@gmail.com',
-    team: 'Frontend Mobile',
+    team: 'Frontend',
+    subTeam: 'Frontend Mobile App',
     role: 'Mobile Developer',
     icon: Smartphone,
-    gradient: 'from-[#0d9488] to-[#059669]',
-    badge: 'Mobile',
-    borderColor: 'border-[#0d9488]',
+    badge: 'Mobile App',
+    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   },
   {
     id: 'william',
     name: 'Meli William',
     github: 'WilliamMeli-27',
     email: 'meliwilliam27@gmail.com',
-    team: 'Backend + BD',
+    team: 'Backend',
+    subTeam: 'Backend APIs & BD',
     role: 'Backend Developer',
     icon: Server,
-    gradient: 'from-[#f59e0b] to-[#d97706]',
-    badge: 'Backend',
-    borderColor: 'border-amber-500',
+    badge: 'Backend & DB',
+    badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
   },
   {
     id: 'sandra',
     name: 'FEBNCHAK M. Borelle Sandra',
     github: 'FEBNCHAK',
     email: 'sandraborelle0@gmail.com',
-    team: 'Frontend Mobile',
+    team: 'Frontend',
+    subTeam: 'Frontend Mobile App',
     role: 'Mobile Developer',
     icon: Smartphone,
-    gradient: 'from-[#0d9488] to-[#059669]',
-    badge: 'Mobile',
-    borderColor: 'border-[#0d9488]',
+    badge: 'Mobile App',
+    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200',
   },
   {
     id: 'hassane',
     name: 'HASSANE YOUSSOUF OUMAR',
     github: 'h-hawadja1',
     email: 'h.hawadja1@gmail.com',
-    team: 'Backend NestJS',
+    team: 'Backend',
+    subTeam: 'Backend Microservices',
     role: 'Backend Developer',
     icon: Server,
-    gradient: 'from-[#ef4444] to-[#dc2626]',
-    badge: 'NestJS',
-    borderColor: 'border-red-500',
+    badge: 'NestJS Backend',
+    badgeColor: 'bg-rose-100 text-rose-800 border-rose-200',
   },
   {
     id: 'ange',
     name: 'Mokam Ange',
     github: 'Ange55-star',
     email: 'ange.mokam@facsciences-uy1.cm',
-    team: 'Backend + BD',
+    team: 'Backend',
+    subTeam: 'SGBD & Infrastructure',
     role: 'Backend Developer',
     icon: Database,
-    gradient: 'from-[#f59e0b] to-[#d97706]',
-    badge: 'Database',
-    borderColor: 'border-amber-500',
+    badge: 'Database Architect',
+    badgeColor: 'bg-amber-100 text-amber-800 border-amber-200',
   },
   {
     id: 'aristide',
     name: 'EMTCHEU ARISTIDE BIENVENU',
     github: 'paccotiktok37',
     email: 'paccotiktok37@gmail.com',
-    team: 'Frontend Full',
+    team: 'Frontend',
+    subTeam: 'Frontend Interactif',
     role: 'Full Frontend Developer',
     icon: Code2,
-    gradient: 'from-[#06b6d4] to-[#0891b2]',
     badge: 'Full Frontend',
-    borderColor: 'border-cyan-500',
+    badgeColor: 'bg-cyan-100 text-cyan-800 border-cyan-200',
   },
   {
     id: 'juvenal',
     name: 'SINENG KENGNI JUVENAL',
     github: 'skjuv',
     email: 'sinengjuvenal@gmail.com',
-    team: 'Frontend Desktop & Mobile',
+    team: 'Frontend',
+    subTeam: 'Multiplateforme',
     role: 'Frontend Developer',
     icon: Code2,
-    gradient: 'from-[#8b5cf6] to-[#6366f1]',
-    badge: 'Full Stack Frontend',
-    borderColor: 'border-indigo-500',
+    badge: 'Fullstack UI',
+    badgeColor: 'bg-indigo-100 text-indigo-800 border-indigo-200',
   },
 ]
 
+type FilterCategory = 'Tous' | 'Leadership' | 'Frontend' | 'Backend'
+
 export default function TeamsPage() {
+  const [activeFilter, setActiveFilter] = useState<FilterCategory>('Tous')
+
+  const filteredMembers = teamMembers.filter(m => {
+    if (activeFilter === 'Tous') return true
+    return m.team === activeFilter
+  })
+
   return (
-    <div className="min-h-screen bg-white font-sans">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-600 selection:text-white">
       <LandingNavbar />
 
-      {/* Hero */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-[#1e3a8a] to-[#0d9488] py-20">
-        <div className="pointer-events-none absolute inset-0">
-          <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-white/5 blur-3xl" />
-          <div className="absolute -bottom-20 -left-20 h-72 w-72 rounded-full bg-white/5 blur-3xl" />
-        </div>
-        <div className="relative mx-auto max-w-4xl px-6 text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-1 text-xs font-semibold text-white mb-6 animate-fade-in">
-            <Code2 className="h-3 w-3" /> KERNEL FORGE
-          </span>
-          <div className="mx-auto mb-6 flex justify-center animate-float">
-            <img src="/logos/mascotte.png" alt="KERNEL FORGE" className="h-28 w-28 object-contain drop-shadow-2xl" />
+      {/* Hero Banner */}
+      <section className="relative bg-gradient-to-br from-[#1e3a8a] via-[#1e40af] to-[#0d9488] pt-28 pb-16 text-white overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-[#ffffff08_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
+        <div className="relative mx-auto max-w-5xl px-6 text-center">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-white mb-6 border border-white/20">
+            <Code2 className="h-4 w-4 text-teal-300" /> KERNEL FORGE — Université de Yaoundé I
           </div>
-          <h1 className="text-5xl font-extrabold text-white mb-5 animate-fade-in">L'équipe KERNEL FORGE</h1>
-          <p className="text-xl text-blue-100 max-w-2xl mx-auto leading-relaxed animate-fade-in">
-            Une équipe passionnée d'étudiants en informatique de l'Université de Yaoundé I, unie pour révolutionner l'éducation en Afrique.
+          <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-4">
+            L'Équipe KERNEL FORGE
+          </h1>
+          <p className="text-base sm:text-lg text-blue-100 max-w-2xl mx-auto leading-relaxed font-medium">
+            Les développeurs et ingénieurs passionnés qui ont conçu UniFlow pour transformer la gestion académique universitaire en Afrique.
           </p>
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="border-b border-[#e5e7eb] bg-gradient-to-r from-[#f9fafb] to-white py-12">
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
+      {/* Stats Summary Bar */}
+      <section className="border-b border-slate-200 bg-white py-8 shadow-xs">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
             {[
-              { label: 'Membres', value: teamMembers.length.toString(), icon: Users },
-              { label: 'Frontend', value: '5', icon: Laptop },
-              { label: 'Backend', value: '3', icon: Server },
-              { label: 'Leadership', value: '1', icon: Rocket },
-            ].map((s, i) => {
+              { label: 'Membres au total', val: '9', icon: Users, color: 'text-[#1e3a8a] bg-blue-50' },
+              { label: 'Ingénieurs Frontend', val: '5', icon: Laptop, color: 'text-purple-700 bg-purple-50' },
+              { label: 'Ingénieurs Backend & BD', val: '3', icon: Server, color: 'text-[#0d9488] bg-teal-50' },
+              { label: 'Lead & Architecture', val: '1', icon: Crown, color: 'text-amber-700 bg-amber-50' },
+            ].map(s => {
               const Icon = s.icon
               return (
-                <div key={s.label} className="text-center animate-fade-in" style={{ animationDelay: `${i * 100}ms` }}>
-                  <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#eff3ff] text-[#1e3a8a]">
-                    <Icon className="h-6 w-6" />
+                <div key={s.label} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center">
+                  <div className={`mb-2 p-2 rounded-lg ${s.color}`}>
+                    <Icon className="h-5 w-5" />
                   </div>
-                  <p className="text-4xl font-extrabold text-[#1e3a8a]">{s.value}</p>
-                  <p className="text-sm text-[#6b7280] mt-2 font-medium">{s.label}</p>
+                  <span className="text-2xl font-black text-slate-900">{s.val}</span>
+                  <span className="text-xs font-medium text-slate-500 mt-0.5">{s.label}</span>
                 </div>
               )
             })}
@@ -176,132 +181,132 @@ export default function TeamsPage() {
         </div>
       </section>
 
-      {/* Team grid */}
-      <section className="bg-white py-20">
-        <div className="mx-auto max-w-[1920px] px-6">
-          <div className="text-center mb-16">
-            <ScrollFloat 
-              containerClassName="text-4xl font-extrabold text-[#111827] mb-4"
-              animationDuration={0.8}
-              stagger={0.02}
-            >
-              Notre équipe
-            </ScrollFloat>
-            <p className="text-lg text-[#6b7280] max-w-2xl mx-auto">Des étudiants passionnés qui construisent l'avenir de l'éducation numérique</p>
+      {/* Filter Tabs & Members Grid */}
+      <section className="py-16 mx-auto max-w-7xl px-6">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-4 border-b border-slate-200">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Nos Talents</h2>
+            <p className="text-xs text-slate-500 font-medium">Découvrez l'équipe et leurs domaines d'expertise</p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {teamMembers.map((member, index) => {
-              const Icon = member.icon
-              return (
-                <div 
-                  key={member.id} 
-                  className="group relative animate-fade-in hover-lift"
-                  style={{ animationDelay: `${index * 100}ms` }}
-                >
-                  {/* Card */}
-                  <div className="relative rounded-3xl border-2 bg-white overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300">
-                    {/* Gradient header with floating icon */}
-                    <div className={`relative h-32 bg-gradient-to-br ${member.gradient} overflow-hidden`}>
-                      <div className="absolute inset-0 opacity-20">
-                        <div className="absolute top-4 right-4 h-20 w-20 rounded-full bg-white/10 blur-2xl" />
-                        <div className="absolute bottom-2 left-4 h-16 w-16 rounded-full bg-white/10 blur-xl" />
-                      </div>
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Icon className="h-16 w-16 text-white/20" />
-                      </div>
-                      {/* Badge */}
-                      <div className="absolute top-3 right-3">
-                        <span className="rounded-full bg-white/20 backdrop-blur-sm border border-white/30 px-3 py-1 text-xs font-bold text-white">
-                          {member.badge}
-                        </span>
-                      </div>
+          {/* Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-xs">
+            {(['Tous', 'Leadership', 'Frontend', 'Backend'] as FilterCategory[]).map(cat => (
+              <button
+                key={cat}
+                onClick={() => setActiveFilter(cat)}
+                className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
+                  activeFilter === cat
+                    ? 'bg-[#1e3a8a] text-white shadow-xs'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Member Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredMembers.map(m => {
+            const Icon = m.icon
+            return (
+              <div
+                key={m.id}
+                className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-blue-400 transition-all p-6 flex flex-col justify-between"
+              >
+                <div>
+                  {/* Header Row */}
+                  <div className="flex items-start justify-between gap-3 mb-4">
+                    <div className="relative">
+                      <img
+                        src={`https://github.com/${m.github}.png`}
+                        alt={m.name}
+                        className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 bg-slate-100 shadow-xs"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=1e3a8a&color=fff&size=128&bold=true`
+                        }}
+                      />
                     </div>
-
-                    {/* Avatar - Grande photo FIXE au centre */}
-                    <div className="flex justify-center py-6">
-                      <div className={`h-40 w-40 rounded-full border-[6px] border-white bg-white shadow-2xl overflow-hidden ring-4 ${member.borderColor} ring-opacity-50 transition-all duration-300 group-hover:scale-110 group-hover:rotate-3`}>
-                        <img
-                          src={`https://github.com/${member.github}.png`}
-                          alt={member.name}
-                          className="h-full w-full object-cover"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement
-                            target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=1e3a8a&color=fff&size=256&bold=true`
-                          }}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Contenu texte EN BAS */}
-                    <div className="px-6 pb-6">
-                      <div className="text-center">
-                        <h3 className="font-bold text-[#111827] text-lg leading-tight mb-2">{member.name}</h3>
-                        <p className="text-sm font-semibold text-[#1e3a8a] mb-1">{member.role}</p>
-                        <p className="text-xs text-[#9ca3af] mb-5">{member.team}</p>
-
-                        {/* Links */}
-                        <div className="space-y-2.5 mb-4">
-                          <a
-                            href={`https://github.com/${member.github}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 rounded-xl border-2 border-[#e5e7eb] bg-[#f9fafb] px-4 py-2.5 text-xs font-medium text-[#374151] hover:bg-[#1e3a8a] hover:text-white hover:border-[#1e3a8a] transition-all group/btn"
-                          >
-                            <svg className="h-4 w-4 group-hover/btn:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-                            </svg>
-                            <span className="font-semibold">@{member.github}</span>
-                          </a>
-
-                          <a
-                            href={`mailto:${member.email}`}
-                            className="flex items-center justify-center gap-2 text-xs text-[#6b7280] hover:text-[#1e3a8a] transition-colors group/mail"
-                          >
-                            <Mail className="h-3.5 w-3.5 group-hover/mail:scale-110 transition-transform" />
-                            <span className="truncate">{member.email}</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
+                    <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border ${m.badgeColor}`}>
+                      <Icon className="h-3 w-3" />
+                      {m.badge}
+                    </span>
                   </div>
+
+                  {/* Title & Info */}
+                  <h3 className="text-base font-extrabold text-slate-900 leading-snug mb-1">{m.name}</h3>
+                  <p className="text-xs font-semibold text-[#1e3a8a] mb-0.5">{m.role}</p>
+                  <p className="text-[11px] font-medium text-slate-400 mb-6">{m.subTeam}</p>
                 </div>
-              )
-            })}
+
+                {/* Footer Buttons */}
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
+                  <a
+                    href={`https://github.com/${m.github}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-700 text-xs font-bold transition-all"
+                  >
+                    <Github className="h-3.5 w-3.5" />
+                    <span>@{m.github}</span>
+                  </a>
+
+                  <a
+                    href={`mailto:${m.email}`}
+                    title={m.email}
+                    className="p-2 rounded-lg border border-slate-200 hover:border-blue-600 hover:text-blue-600 text-slate-500 transition-colors"
+                  >
+                    <Mail className="h-4 w-4" />
+                  </a>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </section>
+
+      {/* Tech Stack Banner */}
+      <section className="bg-white border-y border-slate-200 py-12">
+        <div className="mx-auto max-w-5xl px-6 text-center">
+          <span className="text-xs font-black uppercase text-blue-700 tracking-wider bg-blue-50 px-3 py-1 rounded-full inline-block mb-3">
+            Stack Technique Projet
+          </span>
+          <h2 className="text-2xl font-black text-slate-900 mb-6">Conçu avec les meilleures technologies web</h2>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {[
+              'React 18', 'TypeScript', 'Tailwind CSS', 'PWA Offline-First', 'SQLite / IndexedDB',
+              'NestJS API', 'Express Backend', 'WebSockets', 'QR Code Engine'
+            ].map(tech => (
+              <span key={tech} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
+                <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
+                {tech}
+              </span>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="bg-gradient-to-br from-[#1e3a8a] to-[#0d9488] py-16 text-center">
+      {/* CTA Section */}
+      <section className="bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] py-14 text-white text-center">
         <div className="mx-auto max-w-2xl px-6">
-          <Sparkles className="mx-auto h-12 w-12 text-white/60 mb-4" />
-          <ScrollFloat 
-            containerClassName="text-3xl font-extrabold text-white mb-4"
-            textClassName="text-white"
-            animationDuration={0.8}
-            stagger={0.02}
-          >
-            Rejoignez l'aventure KERNEL FORGE
-          </ScrollFloat>
-          <p className="text-blue-200 mb-8 text-lg">Contributeurs open source bienvenus !</p>
-          <div className="flex flex-wrap justify-center gap-4">
+          <Sparkles className="mx-auto h-8 w-8 text-amber-300 mb-3" />
+          <h2 className="text-2xl sm:text-3xl font-black mb-3">Rejoignez l'organisation KERNEL FORGE</h2>
+          <p className="text-xs sm:text-sm text-blue-100 mb-6 font-medium">
+            Projet open source développé avec passion pour la communauté académique.
+          </p>
+          <div className="flex items-center justify-center gap-4">
             <a
               href="https://github.com/KERNEL-FORGE-G"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-8 py-4 text-sm font-bold text-[#1e3a8a] hover:bg-blue-50 transition-all shadow-xl hover:scale-105"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#1e3a8a] font-black text-xs hover:bg-blue-50 transition-all shadow-md"
             >
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
-              </svg>
-              GitHub Organization
-            </a>
-            <a
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 px-8 py-4 text-sm font-bold text-white hover:bg-white/10 transition-all hover:scale-105"
-            >
-              <Mail className="h-5 w-5" /> Nous contacter
+              <Github className="h-4 w-4" />
+              Organisation GitHub
+              <ExternalLink className="h-3.5 w-3.5" />
             </a>
           </div>
         </div>
