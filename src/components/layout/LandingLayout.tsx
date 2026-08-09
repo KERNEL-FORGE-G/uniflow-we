@@ -21,7 +21,17 @@ export function LandingNavbar() {
       <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between px-6 py-3.5">
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
-          <img src="/logos/logo-principal.png" alt="UniFlow" className="h-10 w-auto object-contain" />
+          <img
+            src="/logos/logo-principal.png"
+            alt="UniFlow"
+            loading="eager"
+            decoding="async"
+            className="h-10 w-auto object-contain"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              target.src = '/logo-principal.png'
+            }}
+          />
         </Link>
 
         {/* Desktop nav */}
@@ -102,7 +112,17 @@ export function LandingFooter() {
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-5">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <img src="/logos/logo-principal.png" alt="UniFlow" className="h-10 w-auto object-contain brightness-0 invert mb-4" />
+            <div className="flex items-center gap-3 mb-4">
+              <img 
+                src="/logos/logo-principal.png" 
+                alt="UniFlow" 
+                className="h-10 w-auto object-contain" 
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.src = '/logo-principal.png'
+                }} 
+              />
+            </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
               La plateforme universitaire intelligente conçue pour les universités africaines.
               Offline First, sécurisée, multi-rôles.

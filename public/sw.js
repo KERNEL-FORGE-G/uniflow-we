@@ -41,12 +41,12 @@ self.addEventListener('activate', (event) => {
 // 3. Fetch Strategy: Network First with Cache Fallback for offline resilience
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
-  if (event.request.url.includes('/api/')) return // Let API calls handle network/mock directly
+  if (event.request.url.includes('/api/') || event.request.url.includes('api-uniflow')) return // Let API calls handle network/mock directly
 
   event.respondWith(
     fetch(event.request)
       .then((networkResponse) => {
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+        if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
           const responseToCache = networkResponse.clone()
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache)
@@ -57,9 +57,14 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         return caches.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse
-          if (event.request.mode === 'navigate') {
-            return caches.match('/index.html')
+          const isHtmlRequest = event.request.mode === 'navigate' || (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'))
+          if (isHtmlRequest) {
+            return caches.match('/index.html').then((indexCached) => {
+              if (indexCached) return indexCached
+              return fetch('/index.html').catch(() => new Response('<!DOCTYPE html><html><body><h1>UniFlow App</h1></body></html>', { headers: { 'Content-Type': 'text/html' } }))
+            })
           }
+          return new Response('', { status: 408, statusText: 'Offline or Network Error' })
         })
       })
   )

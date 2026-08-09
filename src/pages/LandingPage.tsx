@@ -862,13 +862,11 @@ export default function LandingPage() {
             transition={{ delay: 0.2 }}
             className="flex flex-wrap items-center justify-center gap-4"
           >
-            <Link to="/app">
-              <Button
-                size="lg"
-                className="bg-white text-[#1e3a8a] hover:bg-slate-100 text-base font-black px-10 py-5 rounded-2xl shadow-2xl gap-3 border-b-4 border-slate-300 active:translate-y-0.5 transition-all"
-              >
-                Accéder à l'application gratuitement <ChevronRight className="h-5 w-5" />
-              </Button>
+            <Link
+              to="/app"
+              className="inline-flex items-center gap-2 rounded-2xl bg-white text-[#1e3a8a] hover:bg-slate-100 text-base font-black px-8 py-4 shadow-2xl border-b-4 border-slate-200 active:translate-y-0.5 transition-all cursor-pointer"
+            >
+              Accéder à l'application gratuitement <ChevronRight className="h-5 w-5" />
             </Link>
           </motion.div>
         </div>

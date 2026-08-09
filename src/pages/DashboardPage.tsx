@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, ClipboardList, Clock, TrendingUp, UserCheck, Calendar, Bell, GraduationCap, Megaphone, Video, MessageSquare, BarChart3, ChevronRight, Star, Zap, Users, CheckCircle, AlertTriangle } from 'lucide-react'
+import { BookOpen, ClipboardList, Clock, TrendingUp, UserCheck, Calendar, Bell, GraduationCap, Megaphone, Video, MessageSquare, BarChart3, ChevronRight, Star, Zap, Users, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useUserRole } from '../utils/userRole'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, AreaChart, Area } from 'recharts'
 import { useState } from 'react'
@@ -75,7 +75,7 @@ export default function DashboardPage() {
   ]
 
   const [activeCalDay, setActiveCalDay] = useState(today)
-  const { data: overview, loading: overviewLoading, error: overviewError } = useApi(() => statsApi.overview())
+  const { data: overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useApi(() => statsApi.overview())
 
   const studentStats = [
     { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '...',      delta: '+8%',    up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
@@ -92,8 +92,8 @@ export default function DashboardPage() {
     { label: 'Sessions validées', value: '18',   delta: '+1',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/emploi-du-temps' },
   ]
   const teacherStats = [
-    { label: 'Cours assignés',    value: '4',     delta: 'Stable', up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/mes-cours-enseignant' },
-    { label: 'Étudiants totaux',  value: '186',   delta: '+12',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/mes-cours-enseignant' },
+    { label: 'Cours assignés',    value: overview ? `${overview.courseCount}` : '4',     delta: 'Stable', up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/mes-cours-enseignant' },
+    { label: 'Étudiants totaux',  value: overview ? `${overview.studentCount}` : '...',   delta: '+12',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/mes-cours-enseignant' },
     { label: 'Devoirs à corriger',value: '23',    delta: '+5',     up: false, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/mes-cours-enseignant' },
     { label: 'Notes à saisir',    value: '2',     delta: '↓1',     up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/mes-cours-enseignant' },
     { label: 'Visioconfs / sem.', value: '3',     delta: '+1',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/visio' },
@@ -187,7 +187,16 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3 animate-slide-in-right">
+          <div className="flex items-center gap-2 sm:gap-3 animate-slide-in-right">
+            <button
+              onClick={() => refetchOverview()}
+              disabled={overviewLoading}
+              className="flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/20 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
+              title="Actualiser les données en direct"
+            >
+              <RefreshCw className={`h-4 w-4 ${overviewLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Actualiser</span>
+            </button>
             {currentRole === 'student' && (
               <Link
                 to="/app/accueil-compact"

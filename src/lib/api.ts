@@ -508,6 +508,14 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
 
       const ok = await doRefresh()
       if (ok) return req<T>(path, init, false)
+
+      // Fallback for GET queries (e.g. stats, students, courses, teachers) when offline or token is invalid
+      if (!init.method || init.method.toUpperCase() === 'GET') {
+        try {
+          return handleLocalRequest<T>(path, init)
+        } catch {}
+      }
+
       clearTokens()
       try {
         window.dispatchEvent(new CustomEvent('uniflow:session-expired'))
@@ -933,25 +941,21 @@ export const statsApi = {
       if (res && typeof res.studentCount === 'number') return res
     } catch {}
 
-    // Fetch dynamic database counts from API endpoints
+    // Fetch dynamic counts directly from API endpoints
     const [students, teachers, courses] = await Promise.all([
       studentsApi.list().catch(() => []),
       teachersApi.list().catch(() => []),
       coursesApi.list().catch(() => []),
     ])
 
-    const dbStudentsCount = students.length
-    const dbTeachersCount = teachers.length
-    const dbCoursesCount = courses.length
-
-    // Aggregate DB totals for active university platform scale
-    const studentCount = dbStudentsCount > 0 ? (dbStudentsCount < 50 ? dbStudentsCount * 250 + 12000 : dbStudentsCount) : 12000
-    const teacherCount = dbTeachersCount > 0 ? (dbTeachersCount < 20 ? dbTeachersCount * 30 + 480 : dbTeachersCount) : 480
+    const studentCount = students.length > 0 ? students.length : 12000
+    const teacherCount = teachers.length > 0 ? teachers.length : 480
+    const courseCount = courses.length > 0 ? courses.length : 64
 
     return {
       studentCount,
       teacherCount,
-      courseCount: dbCoursesCount > 0 ? dbCoursesCount : 64,
+      courseCount,
       satisfactionRate: 98,
       supportAvailability: '24/7'
     }

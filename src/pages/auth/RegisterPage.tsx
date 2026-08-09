@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, Loader2, CheckCircle, User, Mail, Lock, GraduationCap, BookOpen, Award, ArrowRight, ArrowLeft, Sparkles } from 'lucide-react'
+import { Eye, EyeOff, Loader2, CheckCircle, User, Mail, Lock, GraduationCap, BookOpen, Award, ArrowRight, ArrowLeft, Sparkles, ShieldCheck } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { authApi, type AcademicLevel, type SpecialtyOption } from '../../lib/api'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
@@ -37,7 +37,6 @@ type BackendRole = 'ETUDIANT' | 'DELEGUE' | 'ENSEIGNANT'
 
 const roleMap: Record<string, BackendRole> = {
   student: 'ETUDIANT',
-  delegate: 'DELEGUE',
   teacher: 'ENSEIGNANT',
 }
 
@@ -297,18 +296,34 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Role */}
+                  {/* Role selection cards */}
                   <div>
-                    <label className="block text-sm font-bold text-[#374151] mb-2">Vous êtes</label>
-                    <select 
-                      value={form.role} 
-                      onChange={e => set('role', e.target.value)}
-                      className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
-                    >
-                      <option value="student">Étudiant</option>
-                      <option value="delegate">Délégué de classe</option>
-                      <option value="teacher">Enseignant</option>
-                    </select>
+                    <label className="block text-sm font-bold text-[#374151] dark:text-slate-200 mb-2">Votre rôle sur la plateforme</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { id: 'student', label: 'Étudiant', icon: GraduationCap, desc: 'Cours, Devoirs & Notes' },
+                        { id: 'teacher', label: 'Enseignant', icon: BookOpen, desc: 'Espace Cours & Évaluations' },
+                      ].map(r => {
+                        const Icon = r.icon
+                        const isSelected = form.role === r.id
+                        return (
+                          <button
+                            key={r.id}
+                            type="button"
+                            onClick={() => set('role', r.id)}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all text-center ${
+                              isSelected
+                                ? 'border-[#0d9488] bg-[#0d9488]/10 text-[#0d9488] font-bold shadow-xs'
+                                : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:border-slate-300'
+                            }`}
+                          >
+                            <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-[#0d9488]' : 'text-slate-400'}`} />
+                            <span className="text-xs font-bold leading-tight">{r.label}</span>
+                            <span className="text-[10px] text-slate-400 mt-0.5 leading-tight">{r.desc}</span>
+                          </button>
+                        )
+                      })}
+                    </div>
                   </div>
 
                   {/* Submit */}

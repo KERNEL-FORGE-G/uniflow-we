@@ -36,6 +36,9 @@ export default function MessagingPage() {
   const [search, setSearch] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [showInfo, setShowInfo] = useState(true)
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [newEmailInput, setNewEmailInput] = useState('')
+  const [addError, setAddError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom
@@ -45,7 +48,7 @@ export default function MessagingPage() {
     }
   }, [active?.messages, isTyping])
 
-  // Load real users from the backend
+  // Load real users from the backend + custom saved contacts
   useEffect(() => {
     async function loadContacts() {
       try {
@@ -56,38 +59,50 @@ export default function MessagingPage() {
 
         const list: Conversation[] = []
 
-        // Add teachers first
+        // Load custom contacts added by email
+        try {
+          const customSaved = JSON.parse(localStorage.getItem('uniflow_custom_contacts') || '[]')
+          if (Array.isArray(customSaved)) {
+            list.push(...customSaved)
+          }
+        } catch {}
+
+        // Add teachers
         teachers.forEach((t: any) => {
           const email = t.user?.email || `${t.firstName.toLowerCase()}.${t.lastName.toLowerCase()}@uniflow.edu`
-          list.push({
-            id: `teacher-${t.id}`,
-            name: `${t.firstName} ${t.lastName}`,
-            role: 'Enseignant',
-            email,
-            online: Math.random() > 0.5,
-            time: '10:00',
-            preview: 'Cliquez pour ouvrir la discussion ou envoyer un mail',
-            unread: 0,
-            messages: [
-              { id: 'm1', from: 'them', text: `Bonjour ! N'hésitez pas à me contacter par email à l'adresse ${email} ou via cette messagerie locale.`, time: '10:00' }
-            ]
-          })
+          if (!list.some(c => c.email.toLowerCase() === email.toLowerCase())) {
+            list.push({
+              id: `teacher-${t.id}`,
+              name: `${t.firstName} ${t.lastName}`,
+              role: 'Enseignant',
+              email,
+              online: Math.random() > 0.5,
+              time: '10:00',
+              preview: 'Cliquez pour ouvrir la discussion',
+              unread: 0,
+              messages: [
+                { id: 'm1', from: 'them', text: `Bonjour ! Contactez-moi directement via cette messagerie ou à l'adresse ${email}.`, time: '10:00' }
+              ]
+            })
+          }
         })
 
         // Add students
         students.forEach((s: any) => {
           const email = s.user?.email || `${s.firstName.toLowerCase()}.${s.lastName.toLowerCase()}@uniflow.edu`
-          list.push({
-            id: `student-${s.id}`,
-            name: `${s.firstName} ${s.lastName}`,
-            role: s.status === 'delegate' || s.role === 'DELEGUE' ? 'Délégué' : 'Étudiant',
-            email,
-            online: Math.random() > 0.5,
-            time: '09:30',
-            preview: 'Cliquez pour ouvrir la discussion',
-            unread: 0,
-            messages: []
-          })
+          if (!list.some(c => c.email.toLowerCase() === email.toLowerCase())) {
+            list.push({
+              id: `student-${s.id}`,
+              name: `${s.firstName} ${s.lastName}`,
+              role: s.status === 'delegate' || s.role === 'DELEGUE' ? 'Délégué' : 'Étudiant',
+              email,
+              online: Math.random() > 0.5,
+              time: '09:30',
+              preview: 'Cliquez pour ouvrir la discussion',
+              unread: 0,
+              messages: []
+            })
+          }
         })
 
         setConvos(list)
@@ -102,6 +117,62 @@ export default function MessagingPage() {
     }
     loadContacts()
   }, [])
+
+  // Add a contact by user email
+  const handleAddContactByEmail = (e: React.FormEvent) => {
+    e.preventDefault()
+    const emailClean = newEmailInput.trim().toLowerCase()
+    if (!emailClean) return
+
+    if (!emailClean.includes('@') || !emailClean.includes('.')) {
+      setAddError('Veuillez saisir une adresse e-mail valide (ex: nom@uniflow.edu).')
+      return
+    }
+
+    // Check if contact already exists
+    const existing = convos.find(c => c.email.toLowerCase() === emailClean)
+    if (existing) {
+      setActive(existing)
+      setShowAddModal(false)
+      setNewEmailInput('')
+      setAddError(null)
+      return
+    }
+
+    // Create new contact from email reference
+    const namePart = emailClean.split('@')[0]
+    const formattedName = namePart
+      .split('.')
+      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
+      .join(' ')
+
+    const newConvo: Conversation = {
+      id: `custom-${Date.now()}`,
+      name: formattedName || emailClean,
+      role: 'Contact Réseau',
+      email: emailClean,
+      online: true,
+      time: 'À l\'instant',
+      preview: 'Nouveau contact ajouté',
+      unread: 0,
+      messages: [
+        { id: `m-${Date.now()}`, from: 'them', text: `Conversation démarrée avec ${emailClean}. Tapez votre message ci-dessous.`, time: 'À l\'instant' }
+      ]
+    }
+
+    const updated = [newConvo, ...convos]
+    setConvos(updated)
+    setActive(newConvo)
+
+    try {
+      const customSaved = JSON.parse(localStorage.getItem('uniflow_custom_contacts') || '[]')
+      localStorage.setItem('uniflow_custom_contacts', JSON.stringify([newConvo, ...customSaved]))
+    } catch {}
+
+    setShowAddModal(false)
+    setNewEmailInput('')
+    setAddError(null)
+  }
 
   // Clear unread on select
   const selectConvo = (c: Conversation) => {
@@ -144,47 +215,68 @@ export default function MessagingPage() {
     }, TYPING_DELAY)
   }
 
-  const filteredConvos = convos.filter(c => !search || c.name.toLowerCase().includes(search.toLowerCase()))
+  const filteredConvos = convos.filter(c => 
+    !search || 
+    c.name.toLowerCase().includes(search.toLowerCase()) || 
+    c.email.toLowerCase().includes(search.toLowerCase())
+  )
   const totalUnread = convos.reduce((s, c) => s + c.unread, 0)
 
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-5rem)] items-center justify-center bg-white rounded-xl border border-[#e5e7eb] shadow-sm">
+      <div className="flex h-[calc(100vh-5rem)] items-center justify-center bg-white dark:bg-slate-900 rounded-xl border border-[#e5e7eb] dark:border-slate-800 shadow-sm">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a] mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Chargement des contacts...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a] dark:text-teal-400 mx-auto mb-2" />
+          <p className="text-sm text-gray-500 dark:text-slate-400">Chargement des contacts...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="flex h-[calc(100vh-5rem)] rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden animate-fade-in">
+    <div className="relative flex h-[calc(100vh-5rem)] rounded-xl border border-[#e5e7eb] dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden animate-fade-in">
 
       {/* ── Contacts sidebar ── */}
-      <div className="flex w-72 shrink-0 flex-col border-r border-[#e5e7eb]">
-        <div className="flex items-center justify-between border-b border-[#e5e7eb] px-4 py-3.5">
+      <div className="flex w-72 shrink-0 flex-col border-r border-[#e5e7eb] dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div className="flex items-center justify-between border-b border-[#e5e7eb] dark:border-slate-800 px-4 py-3.5">
           <div className="flex items-center gap-2">
-            <h2 className="font-bold text-[#111827]">Messages</h2>
+            <h2 className="font-bold text-[#111827] dark:text-white">Messages</h2>
             {totalUnread > 0 && (
               <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1e3a8a] text-[10px] font-bold text-white">{totalUnread}</span>
             )}
           </div>
-          <button className="flex items-center gap-1 rounded-lg bg-[#1e3a8a] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-colors">
+          <button 
+            type="button"
+            onClick={() => { setShowAddModal(true); setAddError(null); }}
+            className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] dark:bg-teal-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] dark:hover:bg-teal-500 transition-colors shadow-xs"
+          >
             <Plus className="h-3.5 w-3.5" /> Nouveau
           </button>
         </div>
-        <div className="border-b border-[#e5e7eb] p-3">
+        <div className="border-b border-[#e5e7eb] dark:border-slate-800 p-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
-            <input value={search} onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher un contact..."
-              className="w-full rounded-lg border border-[#e5e7eb] bg-[#f9fafb] py-2 pl-9 pr-3 text-sm outline-none focus:border-[#1e3a8a] focus:bg-white" />
+            <input 
+              value={search} 
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher par nom ou e-mail..."
+              className="w-full rounded-lg border border-[#e5e7eb] dark:border-slate-700 bg-[#f9fafb] dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-[#1e3a8a] focus:bg-white dark:focus:bg-slate-900 transition-colors" 
+            />
           </div>
         </div>
         <div className="flex-1 overflow-y-auto">
           {filteredConvos.length === 0 ? (
-            <p className="text-xs text-gray-400 p-4 text-center">Aucun contact trouvé</p>
+            <div className="p-6 text-center">
+              <Mail className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-xs text-gray-400 dark:text-slate-500">Aucun contact trouvé pour cette recherche.</p>
+              <button 
+                type="button" 
+                onClick={() => { setShowAddModal(true); setAddError(null); }}
+                className="mt-3 text-xs text-[#1e3a8a] dark:text-teal-400 font-bold hover:underline"
+              >
+                + Ajouter par e-mail
+              </button>
+            </div>
           ) : (
             <AnimatedList
               items={filteredConvos}
@@ -195,20 +287,21 @@ export default function MessagingPage() {
               className="max-h-full"
               renderItem={(c: Conversation, _index, isSelected) => (
                 <button type="button"
-                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-[#f9fafb] transition-colors border-b border-[#f9fafb] ${isSelected ? 'bg-[#f0f4ff] border-l-2 border-[#1e3a8a]' : ''}`}>
+                  className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#f9fafb] dark:hover:bg-slate-800/60 transition-colors border-b border-[#f3f4f6] dark:border-slate-800/80 ${isSelected ? 'bg-[#f0f4ff] dark:bg-teal-950/30 border-l-2 border-[#1e3a8a] dark:border-teal-400' : ''}`}>
                   <div className="relative shrink-0">
                     <Avatar name={c.name} size="md" />
-                    {c.online && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#10b981] ring-2 ring-white" />}
+                    {c.online && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#10b981] ring-2 ring-white dark:ring-slate-900" />}
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center justify-between">
-                      <p className={`text-sm truncate ${c.unread > 0 ? 'font-bold text-[#111827]' : 'font-medium text-[#374151]'}`}>{c.name}</p>
+                      <p className={`text-sm truncate ${c.unread > 0 ? 'font-bold text-[#111827] dark:text-white' : 'font-medium text-[#374151] dark:text-slate-200'}`}>{c.name}</p>
                       <span className="text-[10px] text-[#9ca3af] ml-1 shrink-0">{c.time}</span>
                     </div>
-                    <p className={`text-xs truncate mt-0.5 ${c.unread > 0 ? 'text-[#374151] font-medium' : 'text-[#9ca3af]'}`}>{c.preview}</p>
+                    <p className="text-[10px] text-[#1e3a8a] dark:text-teal-400 font-semibold truncate">{c.email}</p>
+                    <p className={`text-xs truncate mt-0.5 ${c.unread > 0 ? 'text-[#374151] dark:text-slate-200 font-medium' : 'text-[#9ca3af]'}`}>{c.preview}</p>
                   </div>
                   {c.unread > 0 && (
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#1e3a8a] px-1.5 text-[10px] font-bold text-white shrink-0">{c.unread}</span>
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[#1e3a8a] dark:bg-teal-500 px-1.5 text-[10px] font-bold text-white shrink-0">{c.unread}</span>
                   )}
                 </button>
               )}
@@ -381,6 +474,77 @@ export default function MessagingPage() {
             <button className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-[#dc2626] hover:bg-red-50 transition-colors">
               <AlertTriangle className="h-4 w-4" /> Signaler
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal Ajouter un Contact par E-mail ── */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
+          <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e3a8a]/10 dark:bg-teal-500/10 text-[#1e3a8a] dark:text-teal-400">
+                  <Mail className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-lg">Ajouter un contact</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Via l'adresse e-mail de l'utilisateur</p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setShowAddModal(false)}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddContactByEmail} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
+                  Adresse e-mail de l'utilisateur
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="email"
+                    value={newEmailInput}
+                    onChange={e => setNewEmailInput(e.target.value)}
+                    placeholder="ex: dr.martin@uniflow.edu"
+                    autoFocus
+                    required
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-[#1e3a8a] dark:focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
+                  Le référent e-mail permet de connecter instantanément les étudiants, délégués et enseignants.
+                </p>
+              </div>
+
+              {addError && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-800 p-3 text-xs text-rose-600 dark:text-rose-300">
+                  {addError}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-2.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 rounded-xl bg-gradient-to-r from-[#1e3a8a] to-[#2d4fa8] dark:from-teal-600 dark:to-teal-500 py-2.5 text-xs font-bold text-white shadow-md hover:shadow-lg transition-all"
+                >
+                  Démarrer la discussion
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

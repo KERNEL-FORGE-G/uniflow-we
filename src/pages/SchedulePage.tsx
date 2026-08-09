@@ -111,8 +111,14 @@ export default function SchedulePage() {
               Aujourd'hui
             </button>
           )}
-          <button onClick={refetch} className="rounded-lg border border-[#e5e7eb] p-2 hover:bg-[#f9fafb] text-[#6b7280]">
-            <RefreshCw className="h-4 w-4" />
+          <button
+            onClick={refetch}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded-lg border border-[#e5e7eb] px-3 py-2 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb] hover:text-[#1e3a8a] transition-all disabled:opacity-50"
+            title="Actualiser l'emploi du temps"
+          >
+            <RefreshCw className={`h-4 w-4 text-[#1e3a8a] ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Actualiser</span>
           </button>
         </div>
       </div>

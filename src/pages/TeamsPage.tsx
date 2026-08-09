@@ -221,8 +221,12 @@ export default function TeamsPage() {
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="relative">
                       <img
-                        src={`https://github.com/${m.github}.png`}
+                        src={['hassane', 'aristide'].includes(m.id) 
+                          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=1e3a8a&color=fff&size=128&bold=true`
+                          : `https://github.com/${m.github}.png`}
                         alt={m.name}
+                        loading="lazy"
+                        decoding="async"
                         className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 bg-slate-100 shadow-xs"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement
