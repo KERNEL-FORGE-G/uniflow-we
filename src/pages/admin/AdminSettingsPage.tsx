@@ -500,7 +500,7 @@ export default function AdminSettingsPage() {
                 <div>
                   <label className="block text-xs font-bold text-[#374151] mb-3 uppercase tracking-wider">Logo de la plateforme</label>
                   <div className="flex items-center gap-4">
-                    <img src="/logos/logo-principal.png" alt="Logo" className="h-12 rounded-xl border border-[#e5e7eb] p-1" />
+                    <img src="/logos/logo-principal.png" alt="Logo" className="h-12 w-auto object-contain" />
                     <button className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all">
                       <Upload className="h-4 w-4" /> Changer le logo
                     </button>

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff } from 'lucide-react'
+import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff, Award, CheckCircle2, Plus, Sparkles } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
@@ -7,10 +8,49 @@ import PushNotificationControl from '../components/PushNotificationControl'
 import { applyTheme, getStoredTheme, ThemeMode } from '../utils/theme'
 import { settingsApi, authApi } from '../lib/api'
 
-const sections = ['Profil', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
+const sections = ['Profil', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
 
 const sectionIcons: Record<string, any> = {
-  Profil: Camera, Notifications: Bell, Apparence: Globe, Confidentialité: Shield, Avancé: Database,
+  Profil: Camera, 
+  'Inscriptions UEs': BookOpen,
+  Notifications: Bell, 
+  Apparence: Globe, 
+  Confidentialité: Shield, 
+  Avancé: Database,
+}
+
+const LEVEL_UES_CATALOG: Record<string, { code: string; name: string; credits: number; hours: number; teacher: string }[]> = {
+  'L1': [
+    { code: 'UE01', name: 'Algorithmique & Initiation à la Programmation', credits: 6, hours: 45, teacher: 'Pr. Martin' },
+    { code: 'UE02', name: 'Architecture des Ordinateurs & Systèmes', credits: 6, hours: 40, teacher: 'Dr. Dubois' },
+    { code: 'UE03', name: 'Mathématiques & Logique Informatique', credits: 6, hours: 45, teacher: 'Dr. Benkacem' },
+    { code: 'UE04', name: 'Anglais & Communication Web', credits: 4, hours: 30, teacher: 'Mme. Leroy' },
+    { code: 'UE05', name: 'Physique pour l\'Ingénieur', credits: 4, hours: 30, teacher: 'Pr. Lefèvre' },
+  ],
+  'L2': [
+    { code: 'UE01', name: 'Structures de Données & POO (C++/Java)', credits: 6, hours: 50, teacher: 'Pr. Martin' },
+    { code: 'UE02', name: 'Bases de Données Relationnelles & SQL', credits: 6, hours: 45, teacher: 'Dr. Benkacem' },
+    { code: 'UE03', name: 'Réseaux Informatiques & Protocoles TCP/IP', credits: 6, hours: 40, teacher: 'Dr. Dubois' },
+    { code: 'UE04', name: 'Probabilités & Statistiques pour l\'Ingénieur', credits: 4, hours: 30, teacher: 'Pr. Leroy' },
+    { code: 'UE05', name: 'Gestion de Projet & Droit Numérique', credits: 4, hours: 25, teacher: 'Mme. Bernard' },
+  ],
+  'L3': [
+    { code: 'UE01', name: 'Programmation Web Avancée & Frameworks', credits: 6, hours: 45, teacher: 'Pr. Martin' },
+    { code: 'UE02', name: 'Administration Systèmes & Réseaux Linux', credits: 6, hours: 40, teacher: 'Dr. Dubois' },
+    { code: 'UE03', name: 'Intelligence Artificielle & Machine Learning', credits: 8, hours: 50, teacher: 'Pr. Lefèvre' },
+    { code: 'UE04', name: 'Sécurité Informatique & Cryptographie', credits: 6, hours: 35, teacher: 'Dr. Benkacem' },
+    { code: 'UE05', name: 'Économie Numérique & Entrepreneuriat', credits: 4, hours: 25, teacher: 'Pr. Leroy' },
+  ],
+  'M1': [
+    { code: 'UE01', name: 'Génie Logiciel & Microservices Architecture', credits: 8, hours: 55, teacher: 'Pr. Martin' },
+    { code: 'UE02', name: 'Data Science & Big Data Analytics', credits: 8, hours: 50, teacher: 'Pr. Lefèvre' },
+    { code: 'UE03', name: 'Cloud Computing, DevOps & Conteneurs', credits: 6, hours: 40, teacher: 'Dr. Dubois' },
+  ],
+  'M2': [
+    { code: 'UE01', name: 'Management des Systèmes d\'Information', credits: 8, hours: 45, teacher: 'Pr. Leroy' },
+    { code: 'UE02', name: 'Cybersécurité Avancée & Audit SI', credits: 8, hours: 50, teacher: 'Dr. Benkacem' },
+    { code: 'UE03', name: 'Stage de Fin d\'Études / Mémoire Master', credits: 14, hours: 120, teacher: 'Jury Académique' },
+  ]
 }
 
 export default function SettingsPage() {
@@ -43,6 +83,37 @@ export default function SettingsPage() {
   const [address, setAddress] = useState(user.address || '')
   const [filiere, setFiliere] = useState(user.filiere || '')
   const [level, setLevel] = useState(user.level || '')
+
+  // Student UEs selection state
+  const [studentUELevel, setStudentUELevel] = useState(user.level || 'L3')
+  const [selectedUEsMap, setSelectedUEsMap] = useState<Record<string, boolean>>({
+    'UE01': true,
+    'UE02': true,
+    'UE03': true,
+    'UE04': true,
+    'UE05': true,
+  })
+
+  useEffect(() => {
+    try {
+      const savedMap = localStorage.getItem('uniflow_student_ues_map')
+      if (savedMap) {
+        setSelectedUEsMap(JSON.parse(savedMap))
+      }
+    } catch {}
+  }, [])
+
+  const handleToggleUE = (code: string) => {
+    const updatedMap = { ...selectedUEsMap, [code]: !selectedUEsMap[code] }
+    setSelectedUEsMap(updatedMap)
+    
+    try {
+      localStorage.setItem('uniflow_student_ues_map', JSON.stringify(updatedMap))
+      const currentLevelCatalog = LEVEL_UES_CATALOG[studentUELevel] || LEVEL_UES_CATALOG['L3']
+      const activeUEs = currentLevelCatalog.filter(u => updatedMap[u.code] !== false)
+      localStorage.setItem('uniflow_student_ues', JSON.stringify(activeUEs))
+    } catch {}
+  }
 
   const [currentPwd, setCurrentPwd] = useState('')
   const [newPwd, setNewPwd] = useState('')
@@ -287,6 +358,131 @@ export default function SettingsPage() {
               <button onClick={handleSave} className="w-full rounded-xl bg-[#1e3a8a] py-3 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
                 {saved ? 'Enregistré !' : 'Enregistrer le profil'}
               </button>
+            </div>
+          )}
+
+          {/* ── Inscriptions UEs ── */}
+          {section === 'Inscriptions UEs' && (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900 dark:text-white">Choix des Unités d'Enseignement (UE)</h2>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Sélectionnez les UEs auxquelles vous êtes inscrit(e) pour votre niveau académique.
+                  </p>
+                </div>
+
+                {/* Level selector */}
+                <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
+                  <span className="text-xs font-bold text-slate-500 pl-2">Niveau :</span>
+                  {['L1', 'L2', 'L3', 'M1', 'M2'].map(lvl => (
+                    <button
+                      key={lvl}
+                      type="button"
+                      onClick={() => setStudentUELevel(lvl)}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                        studentUELevel === lvl
+                          ? 'bg-[#1e3a8a] text-white shadow-xs'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      {lvl}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Summary Stats */}
+              {(() => {
+                const catalog = LEVEL_UES_CATALOG[studentUELevel] || LEVEL_UES_CATALOG['L3']
+                const selectedCount = catalog.filter(u => selectedUEsMap[u.code] !== false).length
+                const totalCredits = catalog
+                  .filter(u => selectedUEsMap[u.code] !== false)
+                  .reduce((sum, u) => sum + u.credits, 0)
+
+                return (
+                  <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl bg-blue-50 dark:bg-teal-950/30 border border-blue-200 dark:border-teal-800 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e3a8a] text-white font-bold text-sm">
+                        {selectedCount}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-[#1e3a8a] dark:text-teal-300">
+                          {selectedCount} UE(s) Sélectionnée(s) pour le niveau {studentUELevel}
+                        </p>
+                        <p className="text-xs text-slate-600 dark:text-slate-400">
+                          Total des crédits académiques : <strong>{totalCredits} ECTS</strong>
+                        </p>
+                      </div>
+                    </div>
+
+                    <Link
+                      to="/app/promotion"
+                      className="inline-flex items-center gap-1.5 rounded-xl bg-[#1e3a8a] dark:bg-teal-600 px-4 py-2 text-xs font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-xs"
+                    >
+                      <Award className="h-4 w-4" /> Postuler Délégué d'UE
+                    </Link>
+                  </div>
+                )
+              })()}
+
+              {/* UEs Grid */}
+              <div className="space-y-3">
+                {(LEVEL_UES_CATALOG[studentUELevel] || LEVEL_UES_CATALOG['L3']).map(ue => {
+                  const isChecked = selectedUEsMap[ue.code] !== false
+
+                  return (
+                    <div
+                      key={ue.code}
+                      onClick={() => handleToggleUE(ue.code)}
+                      className={`flex flex-wrap items-center justify-between gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                        isChecked
+                          ? 'border-[#1e3a8a] dark:border-teal-400 bg-white dark:bg-slate-800 shadow-xs'
+                          : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 opacity-70 hover:opacity-100'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all ${
+                          isChecked ? 'bg-[#1e3a8a] dark:bg-teal-500 border-[#1e3a8a] dark:border-teal-500 text-white' : 'border-slate-300 bg-white'
+                        }`}>
+                          {isChecked && <Check className="h-3.5 w-3.5 stroke-[3]" />}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-extrabold text-[#1e3a8a] dark:text-teal-400 text-xs px-2 py-0.5 rounded bg-blue-50 dark:bg-teal-950">
+                              {ue.code}
+                            </span>
+                            <span className="font-bold text-slate-900 dark:text-white text-sm">{ue.name}</span>
+                          </div>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                            Enseignant : {ue.teacher} · Volume horaire : {ue.hours}h
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 shrink-0">
+                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 px-3 py-1 rounded-lg">
+                          {ue.credits} ECTS
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <p className="text-xs text-slate-500">
+                  Les modifications sont enregistrées automatiquement.
+                </p>
+                <button
+                  onClick={handleSave}
+                  type="button"
+                  className="rounded-xl bg-[#1e3a8a] px-5 py-2 text-xs font-bold text-white hover:bg-[#2d4fa8]"
+                >
+                  Valider mes inscriptions
+                </button>
+              </div>
             </div>
           )}
 

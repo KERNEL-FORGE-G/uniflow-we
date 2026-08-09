@@ -3,6 +3,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import { AppLayout } from './components/layout/AppLayout'
 import { AdminLayout } from './components/layout/AdminLayout'
 import { RoleProvider } from './utils/userRole'
+import { IdleTimer } from './components/IdleTimer'
 import { Skeleton } from './components/ui/Skeleton'
 import { pushNotificationService } from './services/pushNotificationService'
 import { initTheme } from './utils/theme'
@@ -40,6 +41,7 @@ const ContactPage = lazy(() => import('./pages/ContactPage'))
 const SentinellePage = lazy(() => import('./pages/SentinellePage'))
 const ForumPage = lazy(() => import('./pages/ForumPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
+const PromotionPage = lazy(() => import('./pages/PromotionPage'))
 
 // Admin pages lazy loaded
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
@@ -84,6 +86,7 @@ export default function App() {
 
   return (
     <RoleProvider>
+      <IdleTimer />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />
@@ -111,6 +114,8 @@ export default function App() {
           <Route path="/app/presences" element={<StudentApp><AttendancePage /></StudentApp>} />
           <Route path="/app/visio" element={<StudentApp><VideoLobbyPage /></StudentApp>} />
           <Route path="/app/visioconference" element={<VideoConfPage />} />
+          <Route path="/app/visioconference/:id" element={<VideoConfPage />} />
+          <Route path="/app/visio/room/:id" element={<VideoConfPage />} />
           <Route path="/app/notifications" element={<StudentApp><NotificationsPage /></StudentApp>} />
 
           {/* Partie 4 — Devoirs, Notes, Messagerie */}
@@ -118,8 +123,9 @@ export default function App() {
           <Route path="/app/notes" element={<StudentApp><GradesPage /></StudentApp>} />
           <Route path="/app/messages" element={<StudentApp><MessagingPage /></StudentApp>} />
 
-          {/* Partie 5 — Délégué Spécifique */}
+          {/* Partie 5 — Délégué & Promotion */}
           <Route path="/app/gestion-presences" element={<StudentApp><AttendanceManagePage /></StudentApp>} />
+          <Route path="/app/promotion" element={<StudentApp><PromotionPage /></StudentApp>} />
 
           {/* Partie 8 — Enseignant Spécifique */}
           <Route path="/app/mes-cours-enseignant" element={<StudentApp><TeacherCoursesPage /></StudentApp>} />

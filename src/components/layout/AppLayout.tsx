@@ -35,17 +35,19 @@ export function Sidebar() {
     <aside className="flex min-h-screen w-[240px] shrink-0 flex-col border-r border-[#e5e7eb] bg-white sticky top-0 self-start shadow-sm sidebar-gradient">
       {/* Logo Header */}
       <div className="relative overflow-hidden border-b border-[#e5e7eb] px-4 py-4">
-        <div className="flex items-center gap-3">
-          <img src="/logos/logo-principal.png" alt="UniFlow" className="h-9 w-auto object-contain" />
-          <div>
-            <span className="text-[18px] font-black tracking-tight text-[#111827]">
-              Uni<span className="text-[#0d9488]">Flow</span>
-            </span>
-            <p className="text-[10px] font-semibold text-[#9ca3af] uppercase tracking-widest -mt-0.5">Platform</p>
-          </div>
-          <div className="ml-auto">
-            <Sparkles className="h-4 w-4 text-[#0d9488] animate-pulse-dot" />
-          </div>
+        <div className="flex items-center justify-between gap-3">
+          <img
+            src="/logos/logo-principal.png"
+            alt="UniFlow"
+            loading="eager"
+            decoding="async"
+            className="h-9 w-auto object-contain"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              target.src = '/logo-principal.png'
+            }}
+          />
+          <Sparkles className="h-4 w-4 text-[#0d9488] animate-pulse-dot" />
         </div>
       </div>
 
@@ -306,7 +308,6 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
       <div className="flex items-center justify-between border-b border-[#e5e7eb] px-5 py-4">
         <div className="flex items-center gap-3">
           <img src="/logos/logo-principal.png" alt="UniFlow" className="h-8 w-auto object-contain" />
-          <span className="text-[17px] font-black text-[#111827]">Uni<span className="text-[#0d9488]">Flow</span></span>
         </div>
         <button onClick={onClose} className="rounded-xl p-2 hover:bg-[#f3f4f6] transition-colors">
           <X className="h-5 w-5 text-[#6b7280]" />
