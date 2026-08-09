@@ -1,10 +1,11 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
 import PushNotificationControl from '../components/PushNotificationControl'
 import { applyTheme, getStoredTheme, ThemeMode } from '../utils/theme'
+import { settingsApi, authApi } from '../lib/api'
 
 const sections = ['Profil', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
 
@@ -47,14 +48,32 @@ export default function SettingsPage() {
   const [newPwd, setNewPwd] = useState('')
   const [pwdFeedback, setPwdFeedback] = useState('')
 
-  const handleSave = () => {
-    // Persist settings to localStorage
-    localStorage.setItem('uniflow_user_settings', JSON.stringify({
+  useEffect(() => {
+    settingsApi.get().then(s => {
+      if (s.notifications) setNotifications(prev => ({ ...prev, ...s.notifications }))
+      if (s.privacy) setPrivacy(prev => ({ ...prev, ...s.privacy }))
+      if (s.advanced) setAdvanced(prev => ({ ...prev, ...s.advanced }))
+    }).catch(() => null)
+  }, [])
+
+  const handleSave = async () => {
+    // Persist settings to backend API & localStorage
+    await settingsApi.update({
       notifications,
       privacy,
       advanced,
       language,
-    }))
+    }).catch(() => null)
+
+    const nameParts = fullName.trim().split(' ')
+    await authApi.updateProfile({
+      firstName: nameParts[0] || fullName,
+      lastName: nameParts.slice(1).join(' ') || '',
+      email,
+      phone,
+      address
+    }).catch(() => null)
+
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
   }

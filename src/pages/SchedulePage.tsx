@@ -28,7 +28,39 @@ function timeDuration(start: string, end: string): number {
 export default function SchedulePage() {
   const { currentRole } = useUserRole()
   const [selected, setSelected] = useState<Schedule | null>(null)
+  const [weekOffset, setWeekOffset] = useState(0)
   const { data: schedules, loading, error, refetch } = useApi(() => schedulesApi.mine())
+
+  // Dynamic week dates calculation
+  const getMonday = (d: Date) => {
+    const day = d.getDay()
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+    return new Date(d.setDate(diff))
+  }
+
+  const baseDate = new Date()
+  baseDate.setDate(baseDate.getDate() + weekOffset * 7)
+  const monday = getMonday(new Date(baseDate))
+
+  const weekDays = DAY_KEYS.map((key, index) => {
+    const dateObj = new Date(monday)
+    dateObj.setDate(monday.getDate() + index)
+    const isToday = dateObj.toDateString() === new Date().toDateString()
+    const dayNum = dateObj.getDate().toString().padStart(2, '0')
+    const monthNum = (dateObj.getMonth() + 1).toString().padStart(2, '0')
+    return {
+      key,
+      label: DAY_LABELS[index],
+      formattedDate: `${dayNum}/${monthNum}`,
+      isToday,
+      dateObj
+    }
+  })
+
+  const saturday = weekDays[5].dateObj
+  const startStr = monday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+  const endStr = saturday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  const weekRangeLabel = weekOffset === 0 ? `Cette semaine (${startStr} – ${endStr})` : `Semaine du ${startStr} au ${endStr}`
 
   const grouped = (schedules ?? []).reduce<Record<string, Schedule[]>>((acc, s) => {
     const d = s.dayOfWeek?.toUpperCase() ?? ''
@@ -64,9 +96,21 @@ export default function SchedulePage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="rounded-lg border border-[#e5e7eb] p-2 hover:bg-[#f9fafb]"><ChevronLeft className="h-4 w-4" /></button>
-          <span className="text-sm font-semibold text-[#111827] px-2">Cette semaine</span>
-          <button className="rounded-lg border border-[#e5e7eb] p-2 hover:bg-[#f9fafb]"><ChevronRight className="h-4 w-4" /></button>
+          <button onClick={() => setWeekOffset(w => w - 1)} className="rounded-lg border border-[#e5e7eb] p-2 hover:bg-[#f9fafb]">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-semibold text-[#111827] px-2">{weekRangeLabel}</span>
+          <button onClick={() => setWeekOffset(w => w + 1)} className="rounded-lg border border-[#e5e7eb] p-2 hover:bg-[#f9fafb]">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          {weekOffset !== 0 && (
+            <button
+              onClick={() => setWeekOffset(0)}
+              className="rounded-lg border border-[#1e3a8a] bg-[#eff3ff] px-2.5 py-1 text-xs font-bold text-[#1e3a8a] hover:bg-[#1e3a8a] hover:text-white transition-all"
+            >
+              Aujourd'hui
+            </button>
+          )}
           <button onClick={refetch} className="rounded-lg border border-[#e5e7eb] p-2 hover:bg-[#f9fafb] text-[#6b7280]">
             <RefreshCw className="h-4 w-4" />
           </button>
@@ -88,8 +132,23 @@ export default function SchedulePage() {
           {/* Header jours */}
           <div className="grid border-b border-[#e5e7eb]" style={{ gridTemplateColumns: '60px repeat(6,1fr)' }}>
             <div className="border-r border-[#e5e7eb]" />
-            {DAY_LABELS.map(d => (
-              <div key={d} className="border-r border-[#e5e7eb] px-2 py-2.5 text-center text-xs font-bold text-[#374151]">{d}</div>
+            {weekDays.map(d => (
+              <div
+                key={d.key}
+                className={`border-r border-[#e5e7eb] px-2 py-2 text-center transition-colors ${
+                  d.isToday ? 'bg-[#eff3ff] text-[#1e3a8a]' : 'text-[#374151]'
+                }`}
+              >
+                <div className="text-xs font-bold">{d.label}</div>
+                <div className={`text-[11px] font-semibold mt-0.5 ${d.isToday ? 'text-[#1e3a8a]' : 'text-[#6b7280]'}`}>
+                  {d.formattedDate}
+                </div>
+                {d.isToday && (
+                  <span className="inline-block mt-0.5 px-1.5 py-0.5 rounded-full bg-[#1e3a8a] text-[9px] font-extrabold text-white uppercase">
+                    Aujourd'hui
+                  </span>
+                )}
+              </div>
             ))}
           </div>
 
@@ -105,10 +164,13 @@ export default function SchedulePage() {
             </div>
 
             {/* Colonnes jours */}
-            {DAY_KEYS.map(dayKey => (
-              <div key={dayKey} className="relative border-r border-[#e5e7eb]">
+            {weekDays.map(d => (
+              <div
+                key={d.key}
+                className={`relative border-r border-[#e5e7eb] ${d.isToday ? 'bg-[#eff3ff]/20' : ''}`}
+              >
                 {HOURS.map(h => <div key={h} className="border-b border-[#f3f4f6]" style={{ height: CELL_H }} />)}
-                {(grouped[dayKey] ?? []).map(s => {
+                {(grouped[d.key] ?? []).map(s => {
                   const top = timeToRow(s.startTime ?? '08:00')
                   const height = timeDuration(s.startTime ?? '08:00', s.endTime ?? '09:30')
                   const type = s.course?.type ?? 'CM'

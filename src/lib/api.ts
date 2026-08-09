@@ -979,3 +979,65 @@ export const filesApi = {
     }
   },
 }
+
+// =============================================================================
+// SETTINGS & HELP/SUPPORT
+// =============================================================================
+
+export interface UserSettings {
+  notifications?: Record<string, boolean>
+  privacy?: Record<string, boolean>
+  advanced?: Record<string, boolean>
+  language?: string
+}
+
+export const settingsApi = {
+  get: async () => {
+    try {
+      return u(await api.get<{ data: UserSettings }>('/settings'))
+    } catch {
+      const stored = localStorage.getItem('uniflow_user_settings')
+      return stored ? JSON.parse(stored) : {}
+    }
+  },
+  update: async (settings: UserSettings) => {
+    localStorage.setItem('uniflow_user_settings', JSON.stringify(settings))
+    try {
+      return u(await api.post<{ data: UserSettings }>('/settings', settings))
+    } catch {
+      return settings
+    }
+  }
+}
+
+export interface SupportTicket {
+  id?: string
+  message: string
+  category?: string
+  status?: string
+}
+
+export const supportApi = {
+  faqs: async () => {
+    try {
+      return u(await api.get<{ data: { q: string; a: string; cat: string }[] }>('/faq'))
+    } catch {
+      return [
+        { q: 'Comment réinitialiser mon mot de passe ?', a: 'Cliquez sur "Mot de passe oublié" sur la page de connexion, puis suivez les instructions envoyées par email.', cat: 'Compte' },
+        { q: 'Comment télécharger un bulletin de notes en PDF ?', a: 'Allez dans Mes Notes > Bulletin du semestre > Télécharger PDF.', cat: 'Notes' },
+        { q: 'Comment activer les notifications push ?', a: 'Paramètres > Notifications > Activer "Notifications push".', cat: 'Paramètres' },
+        { q: 'Puis-je utiliser UniFlow hors ligne ?', a: 'Oui, UniFlow est Offline-First. Les données sont stockées localement et synchronisées au retour de connexion.', cat: 'Technique' },
+        { q: 'Comment rejoindre une visioconférence ?', a: 'Cliquez sur le lien de visioconférence envoyé par votre enseignant, ou allez dans Visioconférence > Rejoindre.', cat: 'Visioconférence' },
+        { q: 'Comment marquer les présences en tant que délégué ?', a: 'Espace Délégué > Gestion des présences > Sélectionner le cours > Marquer les présences.', cat: 'Présences' },
+      ]
+    }
+  },
+  sendTicket: async (ticket: SupportTicket) => {
+    try {
+      return u(await api.post<{ data: SupportTicket }>('/support/tickets', ticket))
+    } catch {
+      return { id: `ticket-${Date.now()}`, ...ticket, status: 'OUVERT' }
+    }
+  }
+}
+

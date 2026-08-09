@@ -28,6 +28,21 @@ const quickStats = [
 export default function DashboardCompactPage() {
   const { data: overview } = useApi(() => statsApi.overview())
 
+  const now = new Date()
+  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+  const todayFormatted = capitalize(now.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
+
+  const yesterdayFormatted = new Date(now.getTime() - 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+  const twoDaysAgoFormatted = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+
+  const examDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)
+  const examFormatted = capitalize(examDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
+
+  const lateHomework = [
+    { title: 'Économie — TD 3', due: yesterdayFormatted },
+    { title: 'Maths — Devoir 2', due: twoDaysAgoFormatted },
+  ]
+
   const quickStats = [
     { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '...', change: '↑8%', icon: BookOpen, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
     { label: 'Devoirs à rendre', value: '5', change: '↑1', icon: ClipboardList, color: 'text-[#d97706]', bg: 'bg-[#fef3c7]' },
@@ -41,7 +56,7 @@ export default function DashboardCompactPage() {
       {/* Header */}
       <div className="flex items-center justify-between rounded-xl bg-white border border-[#e5e7eb] px-5 py-4 shadow-sm">
         <div>
-          <h1 className="text-lg font-bold text-[#111827]">Cours du jour — Lundi 13 mai 2024</h1>
+          <h1 className="text-lg font-bold text-[#111827]">Cours du jour — {todayFormatted}</h1>
           <p className="text-xs text-[#6b7280] mt-0.5">Emma Martin · Étudiante · L2 Info</p>
         </div>
         <Link to="/app" className="text-sm font-medium text-[#1e3a8a] hover:underline">← Vue principale</Link>
@@ -123,7 +138,7 @@ export default function DashboardCompactPage() {
             <h2 className="text-xs font-bold text-[#9ca3af] uppercase tracking-wider mb-2">Prochain partiel dans</h2>
             <p className="text-5xl font-extrabold text-[#1e3a8a]">5</p>
             <p className="text-sm font-semibold text-[#374151] mt-1">jours</p>
-            <p className="text-xs text-[#6b7280] mt-2">Samedi 18 mai 2024 · Mathématiques · 09h00</p>
+            <p className="text-xs text-[#6b7280] mt-2">{examFormatted} · Mathématiques · 09h00</p>
           </div>
         </div>
       </div>

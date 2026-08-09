@@ -8,6 +8,7 @@ import { useUserRole } from '../../utils/userRole'
 import { navItems } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
 import { Footer } from './Footer'
+import { GlobalSearch } from './GlobalSearch'
 import { cn } from '../../utils/cn'
 import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
@@ -194,7 +195,6 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const unreadCount = data ?? 0
   const role = roleConfig[currentRole]
   const RoleIcon = role.icon
-  const [searchFocus, setSearchFocus] = useState(false)
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm px-4 sm:px-6 shadow-sm">
@@ -206,23 +206,8 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
         <Menu className="h-5 w-5 text-[#6b7280]" />
       </button>
 
-      {/* Search */}
-      <div className={cn(
-        'relative flex-1 max-w-md transition-all duration-200',
-        searchFocus ? 'max-w-xl' : ''
-      )}>
-        <Search className={cn(
-          'absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transition-colors',
-          searchFocus ? 'text-[#1e3a8a]' : 'text-[#9ca3af]'
-        )} />
-        <input
-          type="search"
-          placeholder={language === 'FR' ? 'Rechercher cours, devoirs, messages...' : 'Search courses, assignments, messages...'}
-          onFocus={() => setSearchFocus(true)}
-          onBlur={() => setSearchFocus(false)}
-          className="w-full rounded-xl border border-[#e5e7eb] bg-[#f9fafb] py-2 pl-9 pr-4 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 focus:bg-white transition-all"
-        />
-      </div>
+      {/* Global Search Component */}
+      <GlobalSearch />
 
       <div className="flex items-center gap-2 ml-auto">
         {/* Role Badge */}
