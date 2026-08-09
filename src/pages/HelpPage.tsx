@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search, HelpCircle, BookOpen, Video, MessageCircle, Mail, ChevronRight, X, Send, CheckCircle2 } from 'lucide-react'
+import { supportApi, type SupportTicket } from '../lib/api'
+import { useApi } from '../hooks/useApi'
 
-const faqs = [
+const defaultFaqs = [
   { q: 'Comment réinitialiser mon mot de passe ?', a: 'Cliquez sur "Mot de passe oublié" sur la page de connexion, puis suivez les instructions envoyées par email.', cat: 'Compte' },
   { q: 'Comment télécharger un bulletin de notes en PDF ?', a: 'Allez dans Mes Notes > Bulletin du semestre > Télécharger PDF.', cat: 'Notes' },
   { q: 'Comment activer les notifications push ?', a: 'Paramètres > Notifications > Activer "Notifications push".', cat: 'Paramètres' },
@@ -27,6 +29,9 @@ export default function HelpPage() {
   const [supportSubmitted, setSupportSubmitted] = useState(false)
   const [selectedGuide, setSelectedGuide] = useState<typeof guides[number] | null>(null)
 
+  const { data: apiFaqs } = useApi(() => supportApi.faqs())
+  const faqs = (apiFaqs && apiFaqs.length > 0) ? apiFaqs : defaultFaqs
+
   const filtered = faqs.filter(f => {
     const matchSearch = !search || f.q.toLowerCase().includes(search.toLowerCase()) || f.a.toLowerCase().includes(search.toLowerCase())
     const matchCat = category === 'Tous' || f.cat === category
@@ -35,9 +40,10 @@ export default function HelpPage() {
 
   const cats = ['Tous', ...Array.from(new Set(faqs.map(f => f.cat)))]
 
-  const handleSendSupport = (e: React.FormEvent) => {
+  const handleSendSupport = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!supportMessage.trim()) return
+    await supportApi.sendTicket({ message: supportMessage, category: category !== 'Tous' ? category : 'Général' }).catch(() => null)
     setSupportSubmitted(true)
     setTimeout(() => {
       setSupportSubmitted(false)
