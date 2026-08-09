@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Mail, Code2, Smartphone, Server, Database, Crown, Laptop, Users, Github, ExternalLink, Sparkles, CheckCircle2 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { getAvatarUrl, handleAvatarError } from '../utils/avatarUtils'
 
 interface TeamMember {
   id: string
@@ -79,7 +80,7 @@ const teamMembers: TeamMember[] = [
   {
     id: 'hassane',
     name: 'HASSANE YOUSSOUF OUMAR',
-    github: 'h-hawadja1',
+    github: 'hawadja1',
     email: 'h.hawadja1@gmail.com',
     team: 'Backend',
     subTeam: 'Backend Microservices',
@@ -221,17 +222,12 @@ export default function TeamsPage() {
                   <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="relative">
                       <img
-                        src={['hassane', 'aristide'].includes(m.id) 
-                          ? `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=1e3a8a&color=fff&size=128&bold=true`
-                          : `https://github.com/${m.github}.png`}
+                        src={getAvatarUrl(m.name, m.github)}
                         alt={m.name}
                         loading="lazy"
                         decoding="async"
                         className="w-16 h-16 rounded-2xl object-cover border-2 border-slate-100 bg-slate-100 shadow-xs"
-                        onError={(e) => {
-                          const target = e.target as HTMLImageElement
-                          target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name)}&background=1e3a8a&color=fff&size=128&bold=true`
-                        }}
+                        onError={(e) => handleAvatarError(e, m.name)}
                       />
                     </div>
                     <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border ${m.badgeColor}`}>

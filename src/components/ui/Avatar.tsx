@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { cn } from '../../utils/cn'
+import { getUiAvatarUrl } from '../../utils/avatarUtils'
 
 const colorPalette = [
   'bg-[#1e3a8a] text-white',
@@ -39,6 +41,8 @@ export function Avatar({
   size?: keyof typeof sizes
   className?: string
 }) {
+  const [imgError, setImgError] = useState(false)
+
   const initials = name
     .split(' ')
     .map((n) => n[0])
@@ -46,26 +50,17 @@ export function Avatar({
     .slice(0, 2)
     .toUpperCase()
 
-  if (src) {
-    return (
-      <img
-        src={src}
-        alt={name}
-        className={cn('rounded-full object-cover shrink-0', sizes[size], className)}
-      />
-    )
-  }
+  const avatarSrc = imgError ? getUiAvatarUrl(name) : (src || getUiAvatarUrl(name))
 
   return (
-    <div
-      className={cn(
-        'flex items-center justify-center rounded-full font-semibold shrink-0 select-none',
-        sizes[size],
-        getColor(name),
-        className,
-      )}
-    >
-      {initials}
-    </div>
+    <img
+      src={avatarSrc}
+      alt={name}
+      onError={() => {
+        if (!imgError) setImgError(true)
+      }}
+      className={cn('rounded-full object-cover shrink-0', sizes[size], className)}
+    />
   )
 }
+
