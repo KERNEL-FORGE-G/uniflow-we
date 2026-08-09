@@ -142,10 +142,32 @@ export default function LandingPage() {
 
   const stats = overview
     ? [
-        { icon: Users, value: `${overview.studentCount}`, label: 'Étudiants actifs', color: 'text-[#1e3a8a] bg-[#eff3ff]' },
-        { icon: Award, value: `${overview.teacherCount}`, label: 'Enseignants', color: 'text-[#0d9488] bg-[#f0fdfa]' },
-        { icon: TrendingUp, value: `${overview.satisfactionRate}%`, label: 'Satisfaction', color: 'text-purple-700 bg-purple-50' },
-        { icon: Clock, value: overview.supportAvailability, label: 'Disponibilité', color: 'text-amber-700 bg-amber-50' },
+        { 
+          icon: Users, 
+          value: overview.studentCount >= 1000 
+            ? `${overview.studentCount.toLocaleString('fr-FR').replace(/\s/g, ' ')} +` 
+            : `${overview.studentCount}+`, 
+          label: 'Étudiants actifs', 
+          color: 'text-[#1e3a8a] bg-[#eff3ff]' 
+        },
+        { 
+          icon: Award, 
+          value: `${overview.teacherCount.toLocaleString('fr-FR')}+`, 
+          label: 'Enseignants', 
+          color: 'text-[#0d9488] bg-[#f0fdfa]' 
+        },
+        { 
+          icon: TrendingUp, 
+          value: `${overview.satisfactionRate}%`, 
+          label: 'Satisfaction', 
+          color: 'text-purple-700 bg-purple-50' 
+        },
+        { 
+          icon: Clock, 
+          value: overview.supportAvailability || '24/7', 
+          label: 'Mode offline (24/7)', 
+          color: 'text-amber-700 bg-amber-50' 
+        },
       ]
     : defaultStats
 
