@@ -114,6 +114,8 @@ export default function App() {
           <Route path="/app/presences" element={<StudentApp><AttendancePage /></StudentApp>} />
           <Route path="/app/visio" element={<StudentApp><VideoLobbyPage /></StudentApp>} />
           <Route path="/app/visioconference" element={<VideoConfPage />} />
+          <Route path="/app/visioconference/:id" element={<VideoConfPage />} />
+          <Route path="/app/visio/room/:id" element={<VideoConfPage />} />
           <Route path="/app/notifications" element={<StudentApp><NotificationsPage /></StudentApp>} />
 
           {/* Partie 4 — Devoirs, Notes, Messagerie */}
