@@ -1,6 +1,6 @@
 /**
  * UniFlow Theme Management Utility
- * Supports System-based dark mode preferences and manual user overrides.
+ * Supports explicit light mode by default, dark mode, and system preferences.
  */
 
 export type ThemeMode = 'light' | 'dark' | 'system'
@@ -8,12 +8,12 @@ export type ThemeMode = 'light' | 'dark' | 'system'
 const STORAGE_KEY = 'uniflow_theme_preference'
 
 export function getStoredTheme(): ThemeMode {
-  if (typeof window === 'undefined') return 'system'
+  if (typeof window === 'undefined') return 'light'
   const saved = localStorage.getItem(STORAGE_KEY) as ThemeMode
   if (saved === 'light' || saved === 'dark' || saved === 'system') {
     return saved
   }
-  return 'system'
+  return 'light' // Always default to light mode
 }
 
 export function applyTheme(mode: ThemeMode) {
@@ -25,10 +25,16 @@ export function applyTheme(mode: ThemeMode) {
 
   if (mode === 'dark') {
     root.classList.add('dark')
-  } else if (mode === 'light') {
-    root.classList.add('light')
+  } else if (mode === 'system') {
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    if (prefersDark) {
+      root.classList.add('dark')
+    } else {
+      root.classList.add('light')
+    }
   } else {
-    // 'system': rely on CSS @media (prefers-color-scheme: dark)
+    // Mode 'light' or default: always force light theme
+    root.classList.add('light')
   }
 }
 

@@ -31,15 +31,49 @@ const delegateAttendance = [
 
 // Calendar helper
 const calDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
-const calOffset = 3 // Wed = 3
-const calTotal = 31
-const today = 13
-const eventDays = [2, 8, 13, 18, 22, 27]
 
 export default function DashboardPage() {
   const { currentRole, currentUser, language } = useUserRole()
   const navigate = useNavigate()
   const firstName = currentUser.name.split(' ')[0]
+
+  // Dynamic current date calculations
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth()
+  const todayNumber = now.getDate()
+
+  const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
+
+  const formattedToday = capitalize(
+    now.toLocaleDateString(language === 'FR' ? 'fr-FR' : 'en-US', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })
+  )
+
+  const formattedMonthYear = capitalize(
+    now.toLocaleDateString(language === 'FR' ? 'fr-FR' : 'en-US', {
+      month: 'long',
+      year: 'numeric',
+    })
+  )
+
+  const firstDayOfMonth = new Date(currentYear, currentMonth, 1)
+  const calOffset = (firstDayOfMonth.getDay() + 6) % 7
+  const calTotal = new Date(currentYear, currentMonth + 1, 0).getDate()
+  const today = todayNumber
+
+  const eventDays = [
+    Math.max(1, today - 4),
+    Math.max(1, today - 1),
+    today,
+    Math.min(calTotal, today + 3),
+    Math.min(calTotal, today + 6),
+  ]
+
   const [activeCalDay, setActiveCalDay] = useState(today)
   const { data: overview, loading: overviewLoading, error: overviewError } = useApi(() => statsApi.overview())
 
@@ -134,7 +168,7 @@ export default function DashboardPage() {
         <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="animate-slide-in-left">
             <p className="text-white/70 text-sm font-medium mb-1">
-              {language === 'FR' ? 'Lundi 13 mai 2024' : 'Monday, May 13, 2024'}
+              {formattedToday}
             </p>
             <h1 className="text-2xl sm:text-3xl font-black text-white">
               Bonjour, {firstName} 👋
@@ -307,7 +341,7 @@ export default function DashboardPage() {
           {/* Mini calendar */}
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-bold text-[#111827]">Mai 2024</h2>
+              <h2 className="text-sm font-bold text-[#111827]">{formattedMonthYear}</h2>
               <button onClick={() => navigate('/app/emploi-du-temps')} className="text-xs font-semibold text-[#1e3a8a] hover:underline">
                 Calendrier →
               </button>
