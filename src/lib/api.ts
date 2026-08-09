@@ -1,4 +1,5 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosError } from 'axios'
+import { playSuccessSound, playErrorSound } from '../utils/sound'
 
 /**
  * Client API UniFlow avec Axios, Moteur Réseau & Intercepteurs d'Authentification
@@ -32,42 +33,141 @@ export const apiClient: AxiosInstance = axios.create({
 
 export const axiosInstance = apiClient
 
-// Intercepteur de requête : Ajout automatique du jeton d'authentification s'il existe
+const MONITORED_ENDPOINTS = ['/stats/overview', '/students', '/courses', '/teachers']
+
+function isMonitoredPath(url?: string): boolean {
+  if (!url) return false
+  return MONITORED_ENDPOINTS.some((ep) => url.includes(ep))
+}
+
+// Intercepteur de requête : Ajout automatique du jeton d'authentification s'il existe + Journalisation
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const token = getToken()
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
+
+    const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`
+    const hasToken = Boolean(token)
+
+    if (isMonitoredPath(config.url)) {
+      console.info(`[Axios Diagnostic Request] ${config.method?.toUpperCase()} ${fullUrl} | Token Attached: ${hasToken}`)
+    } else {
+      console.debug(`[Axios Request] ${config.method?.toUpperCase()} ${fullUrl}`)
+    }
+
     return config
   },
-  (error) => Promise.reject(error)
-)
-
-// Intercepteur de réponse : Rafraîchissement automatique du jeton si expirée (401)
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-    if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
-      originalRequest._retry = true
-      const refreshed = await doRefresh()
-      if (refreshed) {
-        const token = getToken()
-        if (token && originalRequest.headers) {
-          originalRequest.headers.Authorization = `Bearer ${token}`
-        }
-        return apiClient(originalRequest)
-      } else {
-        clearTokens()
-        try {
-          window.dispatchEvent(new CustomEvent('uniflow:session-expired'))
-        } catch {}
-      }
-    }
+  (error) => {
+    console.error('[Axios Request Error]', error)
     return Promise.reject(error)
   }
 )
+
+// Intercepteur de réponse : Rafraîchissement automatique du jeton si expirée (401) + Diagnostic 401
+apiClient.interceptors.response.use(
+  (response) => {
+    if (isMonitoredPath(response.config.url)) {
+      console.info(`[Axios Diagnostic Response ${response.status}] ${response.config.url}`)
+    }
+    return response
+  },
+  async (error: AxiosError) => {
+    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
+    const url = originalRequest?.url || ''
+    const status = error.response?.status
+    const token = getToken()
+
+    if (status === 401) {
+      console.warn(`[Axios 401 Unauthorized] Endpoint: ${url} | Token Present: ${Boolean(token)} | Message: ${error.message}`)
+
+      if (originalRequest && !originalRequest._retry) {
+        originalRequest._retry = true
+        console.info(`[Axios 401 Retry] Attempting token refresh for ${url}...`)
+        const refreshed = await doRefresh()
+        if (refreshed) {
+          const newToken = getToken()
+          if (newToken && originalRequest.headers) {
+            originalRequest.headers.Authorization = `Bearer ${newToken}`
+          }
+          console.info(`[Axios 401 Retry Success] Retrying ${url} with new token.`)
+          return apiClient(originalRequest)
+        } else {
+          console.error(`[Axios 401 Retry Failed] Token refresh failed for ${url}. Clearing tokens.`)
+          clearTokens()
+          try {
+            window.dispatchEvent(new CustomEvent('uniflow:session-expired'))
+          } catch {}
+        }
+      }
+    } else if (error.response) {
+      console.error(`[Axios Error ${status}] ${url}:`, error.response.data)
+    } else {
+      console.error(`[Axios Network Error] ${url}:`, error.message)
+    }
+
+    return Promise.reject(error)
+  }
+)
+
+/**
+ * Wrapper centralisé de requête Axios avec gestion du temps d'exécution, journalisation détaillée
+ * et fallback gracieux pour le diagnostic des erreurs 401.
+ */
+export async function executeAxiosRequest<T = any>(config: {
+  url: string
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
+  data?: any
+  params?: any
+  headers?: Record<string, string>
+}): Promise<T> {
+  const startTime = Date.now()
+  const method = config.method ?? 'GET'
+  const isMonitored = isMonitoredPath(config.url)
+
+  if (isMonitored) {
+    console.group(`[Axios Wrapper] Executing ${method} ${config.url}`)
+    console.info('Config:', config)
+  }
+
+  try {
+    const response = await apiClient.request<T>({
+      url: config.url,
+      method,
+      data: config.data,
+      params: config.params,
+      headers: config.headers,
+    })
+
+    const duration = Date.now() - startTime
+    if (method !== 'GET') {
+      playSuccessSound()
+    }
+    if (isMonitored) {
+      console.info(`[Axios Wrapper Success] ${method} ${config.url} (${duration}ms)`)
+      console.groupEnd()
+    }
+
+    return response.data
+  } catch (err: any) {
+    const duration = Date.now() - startTime
+    const status = err?.response?.status ?? 500
+    const errorMessage = err?.response?.data?.message || err?.message || 'Erreur réseau/serveur'
+
+    playErrorSound()
+
+    console.error(`[Axios Wrapper Error ${status}] ${method} ${config.url} (${duration}ms):`, errorMessage)
+
+    if (isMonitored) {
+      console.groupEnd()
+    }
+
+    throw new ApiError(status, errorMessage, err?.response?.data)
+  }
+}
+
+export const axiosRequestWrapper = executeAxiosRequest
 
 // ─── ApiError ────────────────────────────────────────────────────────────────
 
@@ -516,10 +616,12 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
         } catch {}
       }
 
-      clearTokens()
-      try {
-        window.dispatchEvent(new CustomEvent('uniflow:session-expired'))
-      } catch {}
+      if (token) {
+        clearTokens()
+        try {
+          window.dispatchEvent(new CustomEvent('uniflow:session-expired'))
+        } catch {}
+      }
       throw new ApiError(401, 'Session expirée')
     }
 
@@ -936,6 +1038,9 @@ export interface OverviewStats {
 
 export const statsApi = {
   overview: async (): Promise<OverviewStats> => {
+    if (!getToken()) {
+      return handleLocalRequest<OverviewStats>('/stats/overview')
+    }
     try {
       const res = u(await api.get<{ data: OverviewStats }>('/stats/overview'))
       if (res && typeof res.studentCount === 'number') return res

@@ -39,8 +39,8 @@
     --color-bg: #0b0f19;
     --color-surface: #151e32;
     --color-border: #243049;
-    --color-text: #f1f5f9;
-    --color-muted: #94a3b8;
+    --color-text: #f8fafc;
+    --color-muted: #cbd5e1;
 
     --color-primary: #3b82f6;
     --color-primary-light: #60a5fa;
@@ -58,8 +58,8 @@
   --color-bg: #0b0f19;
   --color-surface: #151e32;
   --color-border: #243049;
-  --color-text: #f1f5f9;
-  --color-muted: #94a3b8;
+  --color-text: #f8fafc;
+  --color-muted: #cbd5e1;
 
   --color-primary: #3b82f6;
   --color-primary-light: #60a5fa;
@@ -171,12 +171,12 @@ body {
   :root:not(.light) .text-\[\#6b7280\],
   :root:not(.light) .text-gray-500,
   :root:not(.light) .text-slate-500 {
-    color: var(--color-muted) !important;
+    color: #cbd5e1 !important;
   }
   :root:not(.light) .text-\[\#9ca3af\],
   :root:not(.light) .text-gray-400,
   :root:not(.light) .text-slate-400 {
-    color: #cbd5e1 !important;
+    color: #94a3b8 !important;
   }
   :root:not(.light) .text-\[\#1e3a8a\] {
     color: #60a5fa !important;
@@ -245,12 +245,12 @@ body {
 .dark .text-\[\#6b7280\],
 .dark .text-gray-500,
 .dark .text-slate-500 {
-  color: var(--color-muted) !important;
+  color: #cbd5e1 !important;
 }
 .dark .text-\[\#9ca3af\],
 .dark .text-gray-400,
 .dark .text-slate-400 {
-  color: #cbd5e1 !important;
+  color: #94a3b8 !important;
 }
 .dark .text-\[\#1e3a8a\] {
   color: #60a5fa !important;

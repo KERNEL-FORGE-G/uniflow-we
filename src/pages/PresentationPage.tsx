@@ -43,28 +43,6 @@ const VIDEOS: VideoItem[] = [
     category: 'Démonstration Produit',
     duration: '5:20',
     badgeColor: 'bg-teal-100 text-teal-800 border-teal-200'
-  },
-  {
-    id: 'uniflow-sentinelle-iot',
-    title: 'UniFlow Sentinelle — Module IoT & Pré-diagnostic Santé',
-    description: 'Aperçu du système embarqué intelligent avec Kiosque Santé autonome et surveillance de campus Edge AI.',
-    type: 'youtube',
-    embedUrl: 'https://www.youtube-nocookie.com/embed/cIXm0cJJH18?autoplay=0&rel=0',
-    linkUrl: 'https://youtu.be/cIXm0cJJH18',
-    category: 'Innovation & IoT',
-    duration: '2:15',
-    badgeColor: 'bg-purple-100 text-purple-800 border-purple-200'
-  },
-  {
-    id: 'uniflow-arch-pwa',
-    title: 'Architecture Technique & Synchronisation PWA Offline-First',
-    description: 'Présentation de la couche de données IndexedDB, du cache applicatif hors-ligne et du moteur de synchronisation résilient UniFlow.',
-    type: 'youtube',
-    embedUrl: 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?autoplay=0&rel=0',
-    linkUrl: 'https://youtu.be/dQw4w9WgXcQ',
-    category: 'Architecture Technique',
-    duration: '4:15',
-    badgeColor: 'bg-amber-100 text-amber-800 border-amber-200'
   }
 ]
 
@@ -260,7 +238,7 @@ export default function PresentationPage() {
           </div>
 
           {/* Carousel Thumbnails Strip */}
-          <div className="grid sm:grid-cols-3 gap-4">
+          <div className="grid sm:grid-cols-2 gap-4">
             {VIDEOS.map((video, idx) => {
               const isActive = activeVideoIndex === idx
               return (

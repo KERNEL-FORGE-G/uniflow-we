@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { lazy, Suspense, useEffect } from 'react'
+import SEOHead from './components/SEOHead'
 import { AppLayout } from './components/layout/AppLayout'
 import { AdminLayout } from './components/layout/AdminLayout'
 import { RoleProvider } from './utils/userRole'
@@ -86,6 +87,7 @@ export default function App() {
 
   return (
     <RoleProvider>
+      <SEOHead />
       <IdleTimer />
       <Suspense fallback={<PageLoader />}>
         <Routes>

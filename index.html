@@ -1,93 +1,140 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" dir="ltr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="manifest" href="/manifest.json" />
-    <meta name="theme-color" content="#1e3a8a" />
-    
-    <!-- Preload critical images & logos -->
-    <link rel="preload" as="image" href="/logo-principal.png" type="image/png" />
-    <link rel="preload" as="image" href="/logos/logo-principal.png" type="image/png" />
-    <link rel="preload" as="image" href="/mascotte.png" type="image/png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     
     <!-- Primary Meta Tags -->
-    <title>UniFlow — Plateforme Universitaire Intelligente | Gestion Académique Complète</title>
-    <meta name="title" content="UniFlow — Plateforme Universitaire Intelligente | Gestion Académique Complète" />
-    <meta name="description" content="UniFlow est la plateforme éducative tout-en-un pour étudiants, enseignants et délégués. Gestion des cours, emploi du temps, présences, notes, visioconférence intégrée. Disponible sur Mobile, Web et Desktop avec mode hors ligne." />
-    <meta name="keywords" content="plateforme éducative, gestion universitaire, cours en ligne, emploi du temps, présences, notes, visioconférence, e-learning, éducation numérique, Cameroun, université" />
-    <meta name="author" content="UniFlow" />
-    <meta name="robots" content="index, follow" />
-    <link rel="canonical" href="https://uniflow.kernelforge.codes" />
+    <title>UniFlow — Plateforme Universitaire Intelligente | KERNEL FORGE</title>
+    <meta name="title" content="UniFlow — Plateforme Universitaire Intelligente | KERNEL FORGE" />
+    <meta name="description" content="UniFlow est la plateforme universitaire tout-en-un développée par KERNEL FORGE. Gestion des cours, emploi du temps, présences QR code, notes, visioconférence HD interactive et mode offline-first." />
+    <meta name="keywords" content="UniFlow, KernelForge, plateforme universitaire, gestion académique, e-learning Cameroun, Université de Yaoundé 1, visioconférence cours, emploi du temps étudiant, émargement QR Code, PWA offline first, Sentinelle IoT" />
+    <meta name="author" content="KERNEL FORGE" />
+    <meta name="publisher" content="KERNEL FORGE" />
+    <meta name="copyright" content="© 2026 KERNEL FORGE — UniFlow" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <link rel="canonical" href="https://uniflow.kernelforge.codes/" />
     
-    <!-- Open Graph / Facebook -->
+    <!-- Geolocation Meta Tags for Google -->
+    <meta name="geo.region" content="CM" />
+    <meta name="geo.placename" content="Yaoundé, Cameroun" />
+    <meta name="geo.position" content="3.8480;11.5021" />
+    <meta name="ICBM" content="3.8480, 11.5021" />
+
+    <!-- Resource Hints & Preconnect for API and External Assets -->
+    <link rel="dns-prefetch" href="https://api.uniflow.kernelforge.codes" />
+    <link rel="preconnect" href="https://api.uniflow.kernelforge.codes" crossorigin />
+
+    <!-- Preload Critical Logo & Mascot Assets -->
+    <link rel="preload" as="image" href="/logos/logo-principal.png" type="image/png" fetchpriority="high" />
+    <link rel="preload" as="image" href="/mascotte.png" type="image/png" fetchpriority="low" />
+    
+    <!-- Open Graph / Facebook / WhatsApp / LinkedIn -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://uniflow.kernelforge.codes" />
-    <meta property="og:title" content="UniFlow — Plateforme Universitaire Intelligente" />
-    <meta property="og:description" content="Gestion académique complète : cours, emploi du temps, présences, notes, visioconférence. Disponible sur Mobile, Web et Desktop avec synchronisation hors ligne." />
-    <meta property="og:image" content="https://uniflow.kernelforge.codes/logos/og-image.png" />
+    <meta property="og:url" content="https://uniflow.kernelforge.codes/" />
+    <meta property="og:title" content="UniFlow — Plateforme Universitaire Intelligente | KERNEL FORGE" />
+    <meta property="og:description" content="Gestion académique complète : cours, emploi du temps, présences QR Code, notes, visioconférence HD. Conçue pour les universités avec synchronisation offline-first." />
+    <meta property="og:image" content="https://uniflow.kernelforge.codes/logos/logo-principal.png" />
+    <meta property="og:image:secure_url" content="https://uniflow.kernelforge.codes/logos/logo-principal.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="UniFlow - Logo Officiel KERNEL FORGE" />
     <meta property="og:locale" content="fr_FR" />
     <meta property="og:site_name" content="UniFlow" />
     
-    <!-- Twitter Card -->
+    <!-- Twitter / X Card -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://uniflow.kernelforge.codes" />
+    <meta name="twitter:url" content="https://uniflow.kernelforge.codes/" />
     <meta name="twitter:title" content="UniFlow — Plateforme Universitaire Intelligente" />
-    <meta name="twitter:description" content="Gestion académique complète avec cours, emploi du temps, présences, notes et visioconférence intégrée." />
-    <meta name="twitter:image" content="https://uniflow.kernelforge.codes/logos/og-image.png" />
+    <meta name="twitter:description" content="Plateforme de gestion académique universitaire complète avec visioconférence HD, suivi des présences et mode hors-ligne." />
+    <meta name="twitter:image" content="https://uniflow.kernelforge.codes/logos/logo-principal.png" />
+    <meta name="twitter:creator" content="@KernelForge" />
+    <meta name="twitter:site" content="@KernelForge" />
     
-    <!-- PWA Meta Tags -->
+    <!-- PWA & Mobile Optimization Meta Tags -->
     <meta name="theme-color" content="#1e3a8a" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="UniFlow" />
-    <link rel="apple-touch-icon" href="/logos/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" href="/logos/logo-principal.png" />
     <link rel="manifest" href="/manifest.json" />
     
     <!-- Favicon -->
     <link rel="icon" href="/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/logos/icon-192.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/logos/icon-192.png" />
-    <link rel="shortcut icon" href="/logos/logo.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/logos/logo-principal.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/logos/logo-principal.png" />
+    <link rel="shortcut icon" href="/logos/logo-principal.png" />
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     
-    <!-- Schema.org for Google -->
+    <!-- Schema.org Rich Snippets JSON-LD for Google -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "UniFlow",
-      "description": "Plateforme universitaire intelligente pour la gestion académique complète",
-      "url": "https://uniflow.kernelforge.codes",
-      "applicationCategory": "EducationalApplication",
-      "operatingSystem": "Web, iOS, Android, Windows, macOS, Linux",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "XAF"
-      },
-      "featureList": [
-        "Gestion des cours et emploi du temps",
-        "Suivi des présences et notes",
-        "Visioconférence intégrée",
-        "Messagerie instantanée",
-        "Bibliothèque numérique",
-        "Mode hors ligne avec synchronisation",
-        "Multiplateforme (Mobile, Web, Desktop)"
-      ],
-      "screenshot": "https://uniflow.kernelforge.codes/logos/og-image.png",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.8",
-        "ratingCount": "1250"
-      }
+      "@graph": [
+        {
+          "@type": "WebApplication",
+          "@id": "https://uniflow.kernelforge.codes/#webapp",
+          "url": "https://uniflow.kernelforge.codes/",
+          "name": "UniFlow",
+          "alternateName": "UniFlow Academic Platform",
+          "description": "Plateforme universitaire intelligente pour la gestion académique complète avec mode hors-ligne et visioconférence HD.",
+          "applicationCategory": "EducationalApplication",
+          "operatingSystem": "Web, iOS, Android, Windows, macOS, Linux",
+          "browserRequirements": "Requires JavaScript. Requires HTML5.",
+          "softwareVersion": "1.0.0",
+          "inLanguage": "fr-FR",
+          "publisher": {
+            "@id": "https://uniflow.kernelforge.codes/#organization"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "XAF"
+          },
+          "featureList": [
+            "Gestion des cours et emploi du temps",
+            "Émargement automatique et présences QR Code",
+            "Visioconférence HD interactive avec tableau blanc",
+            "Suivi des notes et bulletins académiques",
+            "Messagerie instantanée et forum communautaire",
+            "Surveillance de salles Sentinelle IoT",
+            "Mode hors ligne PWA (Offline-First)"
+          ]
+        },
+        {
+          "@type": "Organization",
+          "@id": "https://uniflow.kernelforge.codes/#organization",
+          "name": "KERNEL FORGE",
+          "url": "https://uniflow.kernelforge.codes/",
+          "logo": "https://uniflow.kernelforge.codes/logos/logo-principal.png",
+          "sameAs": [
+            "https://uniflow.kernelforge.codes"
+          ],
+          "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Yaoundé",
+            "addressCountry": "CM"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://uniflow.kernelforge.codes/#website",
+          "url": "https://uniflow.kernelforge.codes/",
+          "name": "UniFlow",
+          "publisher": {
+            "@id": "https://uniflow.kernelforge.codes/#organization"
+          },
+          "inLanguage": "fr-FR"
+        }
+      ]
     }
     </script>
   </head>

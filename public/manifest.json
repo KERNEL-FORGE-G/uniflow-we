@@ -1,18 +1,31 @@
 {
-  "name": "UniFlow — Plateforme Universitaire",
+  "name": "UniFlow — Plateforme Universitaire Intelligente",
   "short_name": "UniFlow",
-  "description": "Plateforme universitaire intelligente offline-first pour les universités africaines",
-  "start_url": "/",
+  "description": "Plateforme universitaire tout-en-un offline-first : cours, emploi du temps, présences QR code, visioconférence HD et suivi académique.",
+  "id": "/",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "display_override": ["standalone", "minimal-ui", "browser"],
+  "background_color": "#0a1628",
   "theme_color": "#1e3a8a",
   "orientation": "portrait-primary",
+  "categories": ["education", "productivity", "utilities"],
+  "lang": "fr-FR",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/logos/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
+    },
+    {
+      "src": "/logos/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "/logos/icon-512.png",
@@ -25,9 +38,82 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    },
+    {
+      "src": "/logos/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
     }
   ],
-  "categories": ["education", "productivity"],
-  "lang": "fr",
-  "dir": "ltr"
+  "shortcuts": [
+    {
+      "name": "Emploi du temps",
+      "short_name": "Agenda",
+      "description": "Consulter mon emploi du temps académique",
+      "url": "/app/agenda",
+      "icons": [
+        {
+          "src": "/logos/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Visioconférence HD",
+      "short_name": "Visio",
+      "description": "Rejoindre un cours en visioconférence",
+      "url": "/app/visio",
+      "icons": [
+        {
+          "src": "/logos/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Présences & QR Code",
+      "short_name": "Présences",
+      "description": "Scanner mon QR Code d'émargement",
+      "url": "/app/presences",
+      "icons": [
+        {
+          "src": "/logos/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Forum & Entraide",
+      "short_name": "Forum",
+      "description": "Discuter avec mes camarades et professeurs",
+      "url": "/forum",
+      "icons": [
+        {
+          "src": "/logos/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/logos/og-image.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Interface UniFlow Desktop"
+    },
+    {
+      "src": "/logos/logo-principal.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Application Mobile UniFlow"
+    }
+  ]
 }
