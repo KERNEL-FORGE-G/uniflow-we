@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "UniFlow"
+description = "UniFlow is an all-in-one educational platform for students, teachers, and administrators. It provides course management, scheduling, attendance tracking, grading, messaging, video conferencing, and a library — all in one modern, mobile-friendly web interface."
+version = "1.0.0"
+id = "artifacts/uniflow-web"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 25719
+
+[services.development]
+run = "pnpm --filter @workspace/uniflow-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/uniflow-web", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/uniflow-web/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25719"
+BASE_PATH = "/"

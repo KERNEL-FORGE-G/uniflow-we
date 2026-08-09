@@ -1,0 +1,278 @@
+import { useState } from 'react'
+import { QrCode, CheckCircle, XCircle, Clock, Calendar, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react'
+import { Badge } from '../components/ui/Badge'
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
+import { useApi } from '../hooks/useApi'
+import { attendanceApi, coursesApi, type AttendanceSession, type Course } from '../lib/api'
+
+function statusIcon(s: string) {
+  if (s === 'PRESENT')  return <CheckCircle className="h-4 w-4 text-emerald-500" />
+  if (s === 'ABSENT')   return <XCircle     className="h-4 w-4 text-red-500" />
+  return <Clock className="h-4 w-4 text-amber-500" />
+}
+function statusBadge(s: string) {
+  if (s === 'PRESENT')  return <Badge variant="success">Présent</Badge>
+  if (s === 'ABSENT')   return <Badge variant="danger">Absent</Badge>
+  if (s === 'RETARD')   return <Badge variant="warning">Retard</Badge>
+  return <Badge variant="primary">Justifié</Badge>
+}
+
+const courseGradients = [
+  'from-blue-600 to-indigo-700', 'from-teal-600 to-emerald-700',
+  'from-purple-600 to-pink-700', 'from-amber-600 to-orange-700',
+]
+
+export default function AttendancePage() {
+  const [showQR, setShowQR] = useState(false)
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
+
+  // On charge les cours puis les sessions pour chacun
+  const { data: courses, loading: lCourses, error: eCourses, refetch } = useApi(() => coursesApi.mine())
+
+  // Sessions pour le cours sélectionné
+  const { data: sessions, loading: lSessions } = useApi(
+    () => selectedCourse ? attendanceApi.byCourse(selectedCourse) : Promise.resolve(null),
+    [selectedCourse]
+  )
+
+  // Stats globales calculées depuis toutes les sessions
+  const { data: allSessions } = useApi(() =>
+    courses
+      ? Promise.all((courses as Course[]).map(c => attendanceApi.byCourse(c.id).catch(() => [] as AttendanceSession[])))
+        .then(res => res.flat())
+      : Promise.resolve([] as AttendanceSession[]),
+    [courses?.length]
+  )
+
+  const myRecords = (allSessions ?? []).flatMap((s: AttendanceSession) => s.records ?? [])
+  const totalPresent = myRecords.filter(r => r.status === 'PRESENT').length
+  const totalAbsent  = myRecords.filter(r => r.status === 'ABSENT').length
+  const totalLate    = myRecords.filter(r => r.status === 'RETARD').length
+  const total = myRecords.length || 1
+  const globalRate = Math.round((totalPresent / total) * 100)
+
+  const pieData = [
+    { name: 'Présent',  value: totalPresent,  color: '#059669' },
+    { name: 'Absent',   value: totalAbsent,   color: '#dc2626' },
+    { name: 'Retard',   value: totalLate,     color: '#d97706' },
+  ].filter(d => d.value > 0)
+
+  // Stats par cours pour le graphique
+  const courseStats = (courses ?? []).map((c: Course) => {
+    const courseSessions = (allSessions ?? []).filter((s: AttendanceSession) => s.courseId === c.id)
+    const records = courseSessions.flatMap((s: AttendanceSession) => s.records ?? [])
+    const present = records.filter(r => r.status === 'PRESENT').length
+    const tot = records.length || 1
+    return { name: c.code, rate: Math.round((present / tot) * 100) }
+  })
+
+  if (lCourses) return (
+    <div className="space-y-4 animate-fade-in">
+      {[1,2,3,4].map(i => <div key={i} className="h-48 rounded-xl bg-[#f3f4f6] animate-pulse" />)}
+    </div>
+  )
+  if (eCourses) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <AlertCircle className="h-12 w-12 text-red-400" />
+      <p className="text-sm text-[#6b7280]">{eCourses}</p>
+      <button onClick={refetch} className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white">
+        <RefreshCw className="h-4 w-4" /> Réessayer
+      </button>
+    </div>
+  )
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+        <div>
+          <h1 className="text-xl font-bold text-[#111827]">Mes présences</h1>
+          <p className="text-sm text-[#6b7280] mt-0.5">Suivi personnel par matière</p>
+        </div>
+        <button onClick={() => setShowQR(true)}
+          className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">
+          <QrCode className="h-4 w-4" /> Scanner QR
+        </button>
+      </div>
+
+      {/* KPI */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm flex items-center gap-4">
+          <div className="relative h-14 w-14 shrink-0">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={[{value:globalRate},{value:100-globalRate}]}
+                  cx="50%" cy="50%" innerRadius={20} outerRadius={26} dataKey="value" startAngle={90} endAngle={-270}>
+                  <Cell fill="#059669" /><Cell fill="#f3f4f6" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-emerald-600">{globalRate}%</span>
+          </div>
+          <div>
+            <p className="text-2xl font-extrabold text-[#111827]">{globalRate}%</p>
+            <p className="text-xs text-[#6b7280]">Taux global</p>
+          </div>
+        </div>
+        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+          <p className="text-2xl font-extrabold text-emerald-600">{totalPresent}</p>
+          <p className="text-xs text-[#6b7280] mt-0.5">Présences totales</p>
+        </div>
+        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+          <p className="text-2xl font-extrabold text-red-600">{totalAbsent}</p>
+          <p className="text-xs text-[#6b7280] mt-0.5">Absences totales</p>
+        </div>
+        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+          <p className="text-2xl font-extrabold text-amber-600">{totalLate}</p>
+          <p className="text-xs text-[#6b7280] mt-0.5">Retards</p>
+        </div>
+      </div>
+
+      {/* Présences par cours */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {(courses ?? []).map((course: Course, idx: number) => {
+          const courseSessions = (allSessions ?? []).filter((s: AttendanceSession) => s.courseId === course.id)
+          const records = courseSessions.flatMap((s: AttendanceSession) => s.records ?? [])
+          const present = records.filter(r => r.status === 'PRESENT').length
+          const absent  = records.filter(r => r.status === 'ABSENT').length
+          const late    = records.filter(r => r.status === 'RETARD').length
+          const tot = records.length || 1
+          const rate = Math.round((present / tot) * 100)
+          const gradient = courseGradients[idx % courseGradients.length]
+          const teacherName = course.teacher
+            ? `${course.teacher.firstName} ${course.teacher.lastName}`
+            : ''
+
+          return (
+            <div key={course.id} className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+              <div className={`bg-gradient-to-r ${gradient} p-4 text-white`}>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <span className="inline-block rounded-md bg-white/20 px-2 py-0.5 text-xs font-bold mb-1">{course.code}</span>
+                    <h3 className="text-base font-bold">{course.name}</h3>
+                    <p className="text-xs opacity-80">{teacherName}</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-2xl font-extrabold">{rate}%</div>
+                    <p className="text-xs opacity-70">Assiduité</p>
+                  </div>
+                </div>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2">
+                    <CheckCircle className="h-4 w-4 text-emerald-600 mx-auto mb-0.5" />
+                    <p className="text-lg font-bold text-emerald-900">{present}</p>
+                    <p className="text-[10px] text-emerald-600">Présent</p>
+                  </div>
+                  <div className="rounded-lg bg-red-50 border border-red-200 p-2">
+                    <XCircle className="h-4 w-4 text-red-600 mx-auto mb-0.5" />
+                    <p className="text-lg font-bold text-red-900">{absent}</p>
+                    <p className="text-[10px] text-red-600">Absent</p>
+                  </div>
+                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-2">
+                    <Clock className="h-4 w-4 text-amber-600 mx-auto mb-0.5" />
+                    <p className="text-lg font-bold text-amber-900">{late}</p>
+                    <p className="text-[10px] text-amber-600">Retard</p>
+                  </div>
+                </div>
+
+                {/* Dernières sessions */}
+                {courseSessions.slice(-3).map((s: AttendanceSession) => (
+                  <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-[#f9fafb] text-xs">
+                    <span className="flex items-center gap-1.5 text-[#6b7280]">
+                      <Calendar className="h-3.5 w-3.5" />
+                      {new Date(s.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' })}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      {(() => {
+                        const myRecord = (s.records ?? []).find(r => r.status)
+                        return myRecord ? (
+                          <>{statusIcon(myRecord.status)} {statusBadge(myRecord.status)}</>
+                        ) : <span className="text-[#9ca3af]">—</span>
+                      })()}
+                    </div>
+                  </div>
+                ))}
+
+                <button onClick={() => setSelectedCourse(selectedCourse === course.id ? null : course.id)}
+                  className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-xs font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">
+                  {selectedCourse === course.id ? 'Masquer' : 'Voir tout l\'historique'}
+                </button>
+
+                {selectedCourse === course.id && (
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                    {lSessions ? (
+                      <div className="h-8 rounded bg-[#f3f4f6] animate-pulse" />
+                    ) : (sessions ?? []).map((s: AttendanceSession) => (
+                      <div key={s.id} className="flex items-center justify-between p-2 rounded bg-[#f9fafb] text-xs">
+                        <span className="text-[#6b7280]">
+                          {new Date(s.date).toLocaleDateString('fr-FR')}
+                        </span>
+                        {(() => {
+                          const r = (s.records ?? [])[0]
+                          return r ? statusBadge(r.status) : <span>—</span>
+                        })()}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Charts */}
+      <div className="grid gap-5 lg:grid-cols-2">
+        <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+          <h2 className="text-sm font-bold text-[#111827] mb-4 flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-[#1e3a8a]" /> Taux par matière
+          </h2>
+          <ResponsiveContainer width="100%" height={180}>
+            <BarChart data={courseStats}>
+              <XAxis dataKey="name" tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} axisLine={false} tickLine={false} />
+              <Tooltip formatter={(v: number) => [`${v}%`]} />
+              <Bar dataKey="rate" fill="#1e3a8a" radius={[4,4,0,0]} maxBarSize={40} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm flex flex-col items-center justify-center">
+          <h2 className="text-sm font-bold text-[#111827] mb-4 self-start">Répartition globale</h2>
+          {pieData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={180}>
+              <PieChart>
+                <Pie data={pieData} cx="50%" cy="50%" outerRadius={70} dataKey="value" label={({name,percent}) => `${name} ${(percent*100).toFixed(0)}%`}>
+                  {pieData.map((d, i) => <Cell key={i} fill={d.color} />)}
+                </Pie>
+                <Tooltip formatter={(v: number) => [v, 'séances']} />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-sm text-[#9ca3af]">Aucune donnée</p>
+          )}
+        </div>
+      </div>
+
+      {/* QR Scanner Modal */}
+      {showQR && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowQR(false)}>
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center" onClick={e => e.stopPropagation()}>
+            <h3 className="text-sm font-bold text-[#111827] mb-2">Scanner QR Code</h3>
+            <p className="text-xs text-[#6b7280] mb-4">Scannez le QR affiché par votre enseignant</p>
+            <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-xl border-2 border-dashed border-[#1e3a8a] bg-[#eff3ff] animate-pulse">
+              <QrCode className="h-32 w-32 text-[#1e3a8a]" />
+            </div>
+            <button onClick={() => setShowQR(false)}
+              className="mt-4 w-full rounded-lg border border-[#e5e7eb] py-2 text-sm font-medium text-[#374151]">
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}

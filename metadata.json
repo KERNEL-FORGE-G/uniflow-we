@@ -1,0 +1,8 @@
+{
+  "name": "UniFlow",
+  "description": "Plateforme Universitaire Intelligente - Gestion Académique Complète",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

@@ -1,0 +1,164 @@
+/* ============================================================================
+ * UniFlow PWA Service Worker
+ * Handles Offline Caching, Push Notifications, and Background Sync
+ * ============================================================================ */
+
+const CACHE_NAME = 'uniflow-pwa-cache-v1'
+const ASSETS_TO_CACHE = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/favicon.ico',
+  '/favicon.svg',
+  '/logos/icon-192.png',
+  '/logos/icon-512.png'
+]
+
+// 1. Installation: Cache app shell
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE).catch(() => {
+        // Continue if some non-critical static assets fail
+      })
+    }).then(() => self.skipWaiting())
+  )
+})
+
+// 2. Activation: Clean up old caches
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches.keys().then((cacheNames) => {
+      return Promise.all(
+        cacheNames
+          .filter((name) => name !== CACHE_NAME)
+          .map((name) => caches.delete(name))
+      )
+    }).then(() => self.clients.claim())
+  )
+})
+
+// 3. Fetch Strategy: Network First with Cache Fallback for offline resilience
+self.addEventListener('fetch', (event) => {
+  if (event.request.method !== 'GET') return
+  if (event.request.url.includes('/api/')) return // Let API calls handle network/mock directly
+
+  event.respondWith(
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+          const responseToCache = networkResponse.clone()
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(event.request, responseToCache)
+          })
+        }
+        return networkResponse
+      })
+      .catch(() => {
+        return caches.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse
+          if (event.request.mode === 'navigate') {
+            return caches.match('/index.html')
+          }
+        })
+      })
+  )
+})
+
+// 4. Push Notification Event Listener
+self.addEventListener('push', (event) => {
+  let data = {
+    title: 'UniFlow — Notification',
+    body: 'Un nouvel événement universitaire est disponible.',
+    url: '/notifications',
+    type: 'general',
+    icon: '/logos/icon-192.png',
+    badge: '/logos/icon-192.png'
+  }
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json()
+      data = { ...data, ...parsed }
+    } catch (e) {
+      data.body = event.data.text() || data.body
+    }
+  }
+
+  const options = {
+    body: data.body,
+    icon: data.icon || '/logos/icon-192.png',
+    badge: data.badge || '/logos/icon-192.png',
+    vibrate: [100, 50, 100],
+    data: {
+      url: data.url || '/notifications',
+      type: data.type || 'general',
+      timestamp: Date.now()
+    },
+    actions: [
+      {
+        action: 'explore',
+        title: 'Consulter'
+      },
+      {
+        action: 'close',
+        title: 'Ignorer'
+      }
+    ],
+    tag: data.type === 'devoir' ? 'assignment-notification' : 'announcement-notification',
+    renotify: true
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  )
+})
+
+// 5. Notification Click Handler
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close()
+
+  if (event.action === 'close') return
+
+  const targetUrl = event.notification.data?.url || '/notifications'
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes(targetUrl) && 'focus' in client) {
+          return client.focus()
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl)
+      }
+    })
+  )
+})
+
+// 6. Client PostMessage Handler (for local simulated pushes via SW)
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SHOW_NOTIFICATION') {
+    const { title, body, url, notificationType, tag } = event.data.payload || {}
+
+    const options = {
+      body: body || 'Nouveau message UniFlow',
+      icon: '/logos/icon-192.png',
+      badge: '/logos/icon-192.png',
+      vibrate: [100, 50, 100],
+      data: {
+        url: url || '/notifications',
+        type: notificationType || 'devoir',
+        timestamp: Date.now()
+      },
+      actions: [
+        { action: 'explore', title: 'Voir le devoir' },
+        { action: 'close', title: 'Ignorer' }
+      ],
+      tag: tag || 'uniflow-push',
+      renotify: true
+    }
+
+    self.registration.showNotification(title || 'UniFlow Push', options)
+  }
+})
