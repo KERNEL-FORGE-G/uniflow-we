@@ -31,6 +31,12 @@ export function EmptyState({
               src="/logos/mascotte.png" 
               alt="UniFlow Mascotte" 
               className="h-full w-full object-contain opacity-60" 
+              onError={(e) => {
+                const target = e.currentTarget
+                if (target.src.includes('/logos/mascotte.png')) {
+                  target.src = '/mascotte.png'
+                }
+              }}
             />
           </div>
         ) : Icon ? (
