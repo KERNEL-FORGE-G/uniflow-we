@@ -366,13 +366,23 @@ export default function MessagingPage() {
             <div className="relative flex-1 overflow-y-auto px-5 py-4 space-y-3">
               {active.messages.length === 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
-                  <img src="/logos/mascotte.png" alt="" className="h-28 w-28 object-contain opacity-10 animate-pulse" />
+                  <img 
+                    src="/logos/mascotte.png" 
+                    alt="" 
+                    className="h-28 w-28 object-contain opacity-10 animate-pulse" 
+                    onError={(e) => { e.currentTarget.src = '/mascotte.png' }}
+                  />
                   <p className="text-xs text-[#9ca3af] mt-2 opacity-50">Commencez la conversation locale avec {active.name}…</p>
                 </div>
               )}
               {/* Mascot watermark — toujours présente en fond, très discrète */}
               <div className="pointer-events-none select-none absolute bottom-4 right-4 opacity-[0.04]">
-                <img src="/logos/mascotte.png" alt="" className="h-40 w-40 object-contain" />
+                <img 
+                  src="/logos/mascotte.png" 
+                  alt="" 
+                  className="h-40 w-40 object-contain" 
+                  onError={(e) => { e.currentTarget.src = '/mascotte.png' }}
+                />
               </div>
               {active.messages.map(m => (
                 <div key={m.id} className={`flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}>

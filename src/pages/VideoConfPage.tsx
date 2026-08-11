@@ -390,7 +390,18 @@ export default function VideoConfPage() {
                 </div>
                 <div className="relative shrink-0 w-36 lg:w-full h-24 rounded-2xl bg-slate-900 border border-slate-800 overflow-hidden flex items-center justify-center shadow-lg">
                   {!isVideoOff && stream ? (
-                    <video ref={myVideoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
+                    <video
+                      ref={(node) => {
+                        myVideoRef.current = node
+                        if (node && stream && node.srcObject !== stream) {
+                          node.srcObject = stream
+                        }
+                      }}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover transform -scale-x-100"
+                    />
                   ) : (
                     <Avatar name={userName} size="md" />
                   )}
@@ -436,7 +447,18 @@ export default function VideoConfPage() {
               {/* Self Video Card */}
               <div className="rounded-3xl bg-slate-900/80 border border-slate-800 shadow-xl relative overflow-hidden flex items-center justify-center">
                 {!isVideoOff && stream ? (
-                  <video ref={myVideoRef} autoPlay playsInline muted className="w-full h-full object-cover transform -scale-x-100" />
+                  <video
+                    ref={(node) => {
+                      myVideoRef.current = node
+                      if (node && stream && node.srcObject !== stream) {
+                        node.srcObject = stream
+                      }
+                    }}
+                    autoPlay
+                    playsInline
+                    muted
+                    className="w-full h-full object-cover transform -scale-x-100"
+                  />
                 ) : (
                   <div className="flex flex-col items-center gap-2">
                     <Avatar name={userName} size="xl" className="shadow-lg" />

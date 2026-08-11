@@ -158,7 +158,17 @@ export default function AboutPage() {
             transition={{ duration: 0.8, ease: [0.4, 0, 0.2, 1] }}
             className="mx-auto mb-8 flex h-24 w-24 items-center justify-center"
           >
-            <img src="/logos/mascotte.png" alt="UniFlow" className="h-24 w-24 object-contain drop-shadow-2xl" />
+            <img 
+              src="/logos/mascotte.png" 
+              alt="UniFlow" 
+              className="h-24 w-24 object-contain drop-shadow-2xl" 
+              onError={(e) => {
+                const target = e.currentTarget
+                if (target.src.includes('/logos/mascotte.png')) {
+                  target.src = '/mascotte.png'
+                }
+              }}
+            />
           </motion.div>
           
           <motion.h1 

@@ -152,7 +152,12 @@ export default function VideoLobbyPage() {
               }`}>
                 {cameraOn && stream ? (
                   <video
-                    ref={videoRef}
+                    ref={(node) => {
+                      videoRef.current = node
+                      if (node && stream && node.srcObject !== stream) {
+                        node.srcObject = stream
+                      }
+                    }}
                     autoPlay
                     playsInline
                     muted

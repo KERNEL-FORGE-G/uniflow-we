@@ -41,26 +41,43 @@ export function Avatar({
   size?: keyof typeof sizes
   className?: string
 }) {
-  const [imgError, setImgError] = useState(false)
+  const [errorCount, setErrorCount] = useState(0)
 
-  const initials = name
+  const initials = (name || 'User')
+    .trim()
     .split(' ')
     .map((n) => n[0])
+    .filter(Boolean)
     .join('')
     .slice(0, 2)
-    .toUpperCase()
+    .toUpperCase() || 'U'
 
-  const avatarSrc = imgError ? getUiAvatarUrl(name) : (src || getUiAvatarUrl(name))
+  const avatarSrc = errorCount > 0 ? getUiAvatarUrl(name) : (src || getUiAvatarUrl(name))
+
+  if (errorCount >= 2) {
+    return (
+      <div
+        className={cn(
+          'flex items-center justify-center rounded-full font-bold select-none shrink-0 shadow-2xs',
+          getColor(name),
+          sizes[size],
+          className
+        )}
+        title={name}
+      >
+        {initials}
+      </div>
+    )
+  }
 
   return (
     <img
       src={avatarSrc}
       alt={name}
-      onError={() => {
-        if (!imgError) setImgError(true)
-      }}
+      onError={() => setErrorCount((c) => c + 1)}
       className={cn('rounded-full object-cover shrink-0', sizes[size], className)}
     />
   )
 }
+
 

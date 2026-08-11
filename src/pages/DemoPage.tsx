@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Video, ArrowLeft, Info } from 'lucide-react'
+import { Video, ArrowLeft, Info, Play } from 'lucide-react'
 
 export default function DemoPage() {
+  const [videoError, setVideoError] = useState(false)
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="rounded-3xl border border-[#e5e7eb] bg-white p-8 shadow-sm">
@@ -21,14 +24,38 @@ export default function DemoPage() {
         </div>
 
         <div className="mt-8 space-y-4">
-          <div className="rounded-3xl overflow-hidden border border-[#e5e7eb] bg-[#111827]">
-            <video
-              controls
-              className="w-full max-h-[560px] bg-black"
-              src="/video/demo.mp4"
-            >
-              Votre navigateur ne supporte pas la lecture vidéo.
-            </video>
+          <div className="rounded-3xl overflow-hidden border border-[#e5e7eb] bg-[#111827] aspect-video relative flex items-center justify-center">
+            {!videoError ? (
+              <video
+                controls
+                preload="metadata"
+                playsInline
+                onError={() => setVideoError(true)}
+                className="w-full h-full object-contain bg-black"
+                src="/video/demo.mp4"
+                poster="/logos/logo-principal.png"
+              >
+                Votre navigateur ne supporte pas la lecture vidéo.
+              </video>
+            ) : (
+              <div className="flex flex-col items-center justify-center p-8 text-center text-white space-y-3">
+                <div className="h-16 w-16 rounded-2xl bg-white/10 flex items-center justify-center border border-white/20">
+                  <Play className="h-8 w-8 text-blue-400" />
+                </div>
+                <h3 className="text-lg font-bold">Vidéo de Démo UniFlow</h3>
+                <p className="text-xs text-gray-400 max-w-md">
+                  Présentation des fonctionnalités clés : gestion pédagogique, visioconférence HD, QR/NFC et mode offline.
+                </p>
+                <a
+                  href="/video/demo.mp4"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-xs font-bold text-white hover:bg-blue-700 transition-all"
+                >
+                  Télécharger ou lire directement
+                </a>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -52,3 +79,4 @@ export default function DemoPage() {
     </div>
   )
 }
+

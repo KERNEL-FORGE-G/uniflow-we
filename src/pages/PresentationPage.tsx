@@ -182,7 +182,20 @@ export default function PresentationPage() {
                   controlsList="nodownload"
                   className="w-full h-full object-contain"
                   preload="metadata"
+                  playsInline
                   key={currentVideo.id}
+                  poster="/logos/logo-principal.png"
+                  onError={(e) => {
+                    const videoEl = e.currentTarget
+                    videoEl.style.display = 'none'
+                    const parent = videoEl.parentElement
+                    if (parent && !parent.querySelector('.video-fallback-msg')) {
+                      const div = document.createElement('div')
+                      div.className = 'video-fallback-msg absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white bg-slate-900'
+                      div.innerHTML = `<div class="h-12 w-12 rounded-xl bg-blue-600/30 flex items-center justify-center mb-3"><svg class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><p class="font-bold text-sm">Vidéo Démo UniFlow</p><p class="text-xs text-slate-400 mt-1 max-w-sm">Consultez la vidéo de démonstration du produit UniFlow.</p>`
+                      parent.appendChild(div)
+                    }
+                  }}
                 >
                   <source src={currentVideo.videoSrc} type="video/mp4" />
                   Votre navigateur ne supporte pas la lecture vidéo.
