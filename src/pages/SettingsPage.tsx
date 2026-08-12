@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff, Award, CheckCircle2, Plus, Sparkles } from 'lucide-react'
+import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff, Award, CheckCircle2, Plus, Sparkles, CreditCard } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
@@ -7,11 +7,13 @@ import { cn } from '../utils/cn'
 import PushNotificationControl from '../components/PushNotificationControl'
 import { applyTheme, getStoredTheme, ThemeMode } from '../utils/theme'
 import { settingsApi, authApi } from '../lib/api'
+import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 
-const sections = ['Profil', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
+const sections = ['Profil', 'Abonnement', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
 
 const sectionIcons: Record<string, any> = {
   Profil: Camera, 
+  Abonnement: CreditCard,
   'Inscriptions UEs': BookOpen,
   Notifications: Bell, 
   Apparence: Globe, 
@@ -358,6 +360,19 @@ export default function SettingsPage() {
               <button onClick={handleSave} className="w-full rounded-xl bg-[#1e3a8a] py-3 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
                 {saved ? 'Enregistré !' : 'Enregistrer le profil'}
               </button>
+            </div>
+          )}
+
+          {/* ── Abonnement & Facturation ── */}
+          {section === 'Abonnement' && (
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-2">
+                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Gestion de l'Abonnement Mensuel</h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Consultez votre temps restant d'abonnement, votre formule tarifaire (100 FCFA/mois au Cameroun ou 1,00 €/mois à l'international) et effectuez vos renouvellements.
+                </p>
+              </div>
+              <SubscriptionWidget />
             </div>
           )}
 
