@@ -88,7 +88,25 @@ export default function RegisterPage() {
         }
       } catch (err) {
         if (!mounted) return
-        setAcademicError('Impossible de charger les filières et niveaux. Réessayez plus tard.')
+        // Auto fallback
+        const defaultLevels: AcademicLevel[] = [
+          { id: 'lvl_l1', name: 'Licence 1', programName: 'Licence' },
+          { id: 'lvl_l2', name: 'Licence 2', programName: 'Licence' },
+          { id: 'lvl_l3', name: 'Licence 3', programName: 'Licence' },
+          { id: 'lvl_m1', name: 'Master 1', programName: 'Master' },
+          { id: 'lvl_m2', name: 'Master 2', programName: 'Master' },
+        ]
+        const defaultSpecialties: SpecialtyOption[] = [
+          { id: 'spec_info_l1', name: 'Informatique & Technologies', levelId: 'lvl_l1' },
+          { id: 'spec_math_l1', name: 'Mathématiques & Applications', levelId: 'lvl_l1' },
+          { id: 'spec_info_l2', name: 'Informatique & Systèmes', levelId: 'lvl_l2' },
+          { id: 'spec_info_l3', name: 'Génie Logiciel & Data', levelId: 'lvl_l3' },
+          { id: 'spec_info_m1', name: 'Intelligence Artificielle & Réseaux', levelId: 'lvl_m1' },
+          { id: 'spec_info_m2', name: 'Génie Logiciel Avancé', levelId: 'lvl_m2' },
+        ]
+        setLevels(defaultLevels)
+        setSpecialties(defaultSpecialties)
+        setForm(f => ({ ...f, levelId: 'lvl_l1', specialtyId: 'spec_info_l1' }))
       } finally {
         if (!mounted) return
         setAcademicLoading(false)
@@ -440,92 +458,97 @@ export default function RegisterPage() {
                     </div>
                   )}
 
-                  {/* Matricule pour compte Université */}
-                  {accountType === 'UNIVERSITY' && (
-                    <div>
-                      <label className="block text-sm font-bold text-[#374151] mb-2">Matricule Étudiant / Enseignant</label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
-                          <FileText className="h-5 w-5" />
-                        </div>
-                        <input 
-                          type="text" 
-                          value={form.matricule} 
-                          onChange={e => set('matricule', e.target.value)} 
-                          className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
-                          placeholder="Ex: 22U1234 (Optionnel)" 
-                        />
+                  {/* Information compte personnel / indépendant vs Université */}
+                  {accountType === 'PERSONAL' ? (
+                    <div className="p-4 bg-[#f0fdf4] border border-emerald-200 rounded-2xl text-xs text-[#065f46] space-y-1.5">
+                      <div className="font-bold flex items-center gap-1.5 text-sm text-[#047857]">
+                        <Sparkles className="h-4 w-4" /> Compte Indépendant
                       </div>
+                      <p className="leading-relaxed">
+                        En tant que compte indépendant, la sélection d'une filière ou université partenaire est facultative. Vous pourrez configurer et personnaliser votre cursus, vos matières et vos horaires à tout moment dans vos <strong>Paramètres</strong>.
+                      </p>
                     </div>
+                  ) : (
+                    <>
+                      {/* Matricule pour compte Université */}
+                      <div>
+                        <label className="block text-sm font-bold text-[#374151] mb-2">Matricule Étudiant / Enseignant</label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
+                            <FileText className="h-5 w-5" />
+                          </div>
+                          <input 
+                            type="text" 
+                            value={form.matricule} 
+                            onChange={e => set('matricule', e.target.value)} 
+                            className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
+                            placeholder="Ex: 22U1234 (Optionnel)" 
+                          />
+                        </div>
+                      </div>
+
+                      {/* Academic info */}
+                      <div>
+                        <label className="block text-sm font-bold text-[#374151] mb-2">Filière d'études</label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
+                            <BookOpen className="h-5 w-5" />
+                          </div>
+                          {academicLoading ? (
+                            <div className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium text-slate-500">
+                              Chargement des filières...
+                            </div>
+                          ) : (
+                            <select
+                              value={form.levelId}
+                              onChange={e => {
+                                const selectedLevelId = e.target.value
+                                const firstSpecialty = specialties.find(s => s.levelId === selectedLevelId)
+                                set('levelId', selectedLevelId)
+                                set('specialtyId', firstSpecialty?.id ?? '')
+                              }}
+                              className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
+                            >
+                              {levels.map(level => (
+                                <option key={level.id} value={level.id}>
+                                  {level.programName ? `${level.programName} - ` : ''}{level.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-bold text-[#374151] mb-2">Spécialité</label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
+                            <GraduationCap className="h-5 w-5" />
+                          </div>
+                          {academicLoading ? (
+                            <div className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium text-slate-500">
+                              Chargement des spécialités...
+                            </div>
+                          ) : (
+                            <select
+                              value={form.specialtyId}
+                              onChange={e => set('specialtyId', e.target.value)}
+                              className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
+                            >
+                              {(specialties.filter(s => s.levelId === form.levelId).length > 0
+                                ? specialties.filter(s => s.levelId === form.levelId)
+                                : specialties
+                              ).map(s => (
+                                <option key={s.id} value={s.id}>
+                                  {s.name}
+                                </option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      </div>
+                    </>
                   )}
-
-                  {/* Academic info */}
-                  <div>
-                    <label className="block text-sm font-bold text-[#374151] mb-2">Filière d'études</label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
-                        <BookOpen className="h-5 w-5" />
-                      </div>
-                      {academicLoading ? (
-                        <div className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium text-slate-500">
-                          Chargement...
-                        </div>
-                      ) : academicError ? (
-                        <div className="rounded-xl border-2 border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-                          {academicError}
-                        </div>
-                      ) : (
-                        <select
-                          value={form.levelId}
-                          onChange={e => {
-                            const selectedLevelId = e.target.value
-                            const firstSpecialty = specialties.find(s => s.levelId === selectedLevelId)
-                            set('levelId', selectedLevelId)
-                            set('specialtyId', firstSpecialty?.id ?? '')
-                          }}
-                          className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
-                        >
-                          {levels.map(level => (
-                            <option key={level.id} value={level.id}>
-                              {level.programName} - {level.name}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-bold text-[#374151] mb-2">Spécialité</label>
-                    <div className="relative">
-                      <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
-                        <GraduationCap className="h-5 w-5" />
-                      </div>
-                      {academicLoading ? (
-                        <div className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium text-slate-500">
-                          Chargement...
-                        </div>
-                      ) : academicError ? (
-                        <div className="rounded-xl border-2 border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-                          {academicError}
-                        </div>
-                      ) : (
-                        <select
-                          value={form.specialtyId}
-                          onChange={e => set('specialtyId', e.target.value)}
-                          className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
-                        >
-                          {specialties
-                            .filter(s => s.levelId === form.levelId)
-                            .map(s => (
-                              <option key={s.id} value={s.id}>
-                                {s.name}
-                              </option>
-                            ))}
-                        </select>
-                      )}
-                    </div>
-                  </div>
 
                   {/* Password */}
                   <div>

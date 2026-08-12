@@ -886,7 +886,41 @@ export const authApi = {
     }
   },
   me:       async ()                 => u(await api.get<{ data: BackendUser }>('/auth/me')),
-  academicOptions: async ()          => u(await api.get<{ data: { levels: AcademicLevel[]; specialties: SpecialtyOption[] } }>('/auth/academic-options')),
+  academicOptions: async () => {
+    try {
+      const res = u(await api.get<{ data: { levels: AcademicLevel[]; specialties: SpecialtyOption[] } }>('/auth/academic-options'))
+      if (res && res.levels && res.levels.length > 0) {
+        return res
+      }
+    } catch (e) {
+      console.warn('[API Auth] Option académique distante non disponible, utilisation des options par défaut.')
+    }
+
+    const defaultLevels: AcademicLevel[] = [
+      { id: 'lvl_l1', name: 'Licence 1', programName: 'Licence' },
+      { id: 'lvl_l2', name: 'Licence 2', programName: 'Licence' },
+      { id: 'lvl_l3', name: 'Licence 3', programName: 'Licence' },
+      { id: 'lvl_m1', name: 'Master 1', programName: 'Master' },
+      { id: 'lvl_m2', name: 'Master 2', programName: 'Master' },
+      { id: 'lvl_doc', name: 'Doctorat', programName: 'Doctorat' },
+    ]
+
+    const defaultSpecialties: SpecialtyOption[] = [
+      { id: 'spec_info_l1', name: 'Informatique & Technologies', levelId: 'lvl_l1' },
+      { id: 'spec_math_l1', name: 'Mathématiques & Applications', levelId: 'lvl_l1' },
+      { id: 'spec_phy_l1', name: 'Physique & Sciences de la Matière', levelId: 'lvl_l1' },
+      { id: 'spec_droit_l1', name: 'Droit & Sciences Politiques', levelId: 'lvl_l1' },
+      { id: 'spec_eco_l1', name: 'Économie & Gestion', levelId: 'lvl_l1' },
+      { id: 'spec_info_l2', name: 'Informatique & Systèmes', levelId: 'lvl_l2' },
+      { id: 'spec_math_l2', name: 'Mathématiques Pures et Appliquées', levelId: 'lvl_l2' },
+      { id: 'spec_info_l3', name: 'Génie Logiciel & Data', levelId: 'lvl_l3' },
+      { id: 'spec_info_m1', name: 'Intelligence Artificielle & Réseaux', levelId: 'lvl_m1' },
+      { id: 'spec_info_m2', name: 'Génie Logiciel Avancé', levelId: 'lvl_m2' },
+      { id: 'spec_gen_doc', name: 'Recherche & Innovation', levelId: 'lvl_doc' },
+    ]
+
+    return { levels: defaultLevels, specialties: defaultSpecialties }
+  },
   specialties: async (levelId?: string) => u(await api.get<{ data: SpecialtyOption[] }>(`/auth/specialties${levelId ? `?levelId=${encodeURIComponent(levelId)}` : ''}`)),
   logout:   ()                       => clearTokens(),
   updateProfile: async (dto: Partial<StudentProfile & TeacherProfile & { email: string; phone?: string; address?: string }>) => {
