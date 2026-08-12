@@ -1,31 +1,27 @@
 import React, { useState } from 'react'
 import {
-  Search,
-  FileText,
-  Video,
-  Download,
-  Eye,
-  BookOpen,
-  Headphones,
-  Play,
-  Pause,
-  Star,
-  X,
-  Clock,
-  Grid,
-  List,
-  MoreVertical,
-  Share2,
-  Volume2,
-  Layers,
-  ArrowUpDown,
-  Sparkles,
-  TrendingUp,
-  SlidersHorizontal,
-  FileType,
-  CheckCircle2,
-  Music
-} from 'lucide-react'
+  HiBookOpen,
+  HiDocumentText,
+  HiFilm,
+  HiMusicalNote,
+  HiSquares2X2,
+  HiMagnifyingGlass,
+  HiArrowDownTray,
+  HiEye,
+  HiStar,
+  HiPlay,
+  HiPause,
+  HiXMark,
+  HiShare,
+  HiSpeakerWave,
+  HiListBullet,
+  HiAdjustmentsHorizontal,
+  HiClock,
+  HiFire,
+  HiEllipsisVertical,
+  HiCheckCircle,
+  HiTag
+} from 'react-icons/hi2'
 import { cn } from '../utils/cn'
 import { libraryApi, type LibraryResource } from '../lib/api'
 import { useApi } from '../hooks/useApi'
@@ -321,7 +317,7 @@ export default function LibraryPage() {
             {/* KPI 1: Total */}
             <div className="flex items-center gap-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 transition-transform hover:scale-[1.02]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                <Layers className="h-5 w-5 text-blue-200" />
+                <HiSquares2X2 className="h-5 w-5 text-blue-200" />
               </div>
               <div>
                 <div className="text-2xl font-black text-white leading-none">{totalCount}</div>
@@ -332,7 +328,7 @@ export default function LibraryPage() {
             {/* KPI 2: Documents */}
             <div className="flex items-center gap-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 transition-transform hover:scale-[1.02]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                <BookOpen className="h-5 w-5 text-blue-300" />
+                <HiBookOpen className="h-5 w-5 text-blue-300" />
               </div>
               <div>
                 <div className="text-2xl font-black text-white leading-none">{docCount}</div>
@@ -343,7 +339,7 @@ export default function LibraryPage() {
             {/* KPI 3: Vidéos */}
             <div className="flex items-center gap-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 transition-transform hover:scale-[1.02]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                <Video className="h-5 w-5 text-indigo-200" />
+                <HiFilm className="h-5 w-5 text-indigo-200" />
               </div>
               <div>
                 <div className="text-2xl font-black text-white leading-none">{videoCount}</div>
@@ -354,7 +350,7 @@ export default function LibraryPage() {
             {/* KPI 4: Audios */}
             <div className="flex items-center gap-3.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 transition-transform hover:scale-[1.02]">
               <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 text-white">
-                <Headphones className="h-5 w-5 text-teal-300" />
+                <HiMusicalNote className="h-5 w-5 text-teal-300" />
               </div>
               <div>
                 <div className="text-2xl font-black text-white leading-none">{audioCount}</div>
@@ -369,7 +365,7 @@ export default function LibraryPage() {
       <div className="flex flex-col sm:flex-row items-center gap-3">
         {/* Search Bar Input */}
         <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+          <HiMagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
           <input
             type="text"
             value={search}
@@ -382,7 +378,7 @@ export default function LibraryPage() {
               onClick={() => setSearch('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-slate-400 hover:bg-slate-200 hover:text-slate-700"
             >
-              <X className="h-4 w-4" />
+              <HiXMark className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -391,7 +387,7 @@ export default function LibraryPage() {
         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
           {/* Sort Dropdown Selector */}
           <div className="relative flex items-center bg-slate-100/90 rounded-2xl border border-slate-200/90 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-200/80 transition-all cursor-pointer">
-            <SlidersHorizontal className="h-3.5 w-3.5 mr-2 text-slate-500" />
+            <HiAdjustmentsHorizontal className="h-3.5 w-3.5 mr-2 text-slate-500" />
             <select
               value={sortBy}
               onChange={e => setSortBy(e.target.value as SortOption)}
@@ -415,7 +411,7 @@ export default function LibraryPage() {
               )}
               title="Vue en grille"
             >
-              <Grid className="h-4 w-4" />
+              <HiSquares2X2 className="h-4 w-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
@@ -427,7 +423,7 @@ export default function LibraryPage() {
               )}
               title="Vue en liste"
             >
-              <List className="h-4 w-4" />
+              <HiListBullet className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -445,7 +441,7 @@ export default function LibraryPage() {
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           )}
         >
-          <Layers className="h-3.5 w-3.5" />
+          <HiSquares2X2 className="h-3.5 w-3.5" />
           <span>Tout</span>
           <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', activeTab === 'Tout' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600')}>
             {totalCount}
@@ -462,7 +458,7 @@ export default function LibraryPage() {
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           )}
         >
-          <BookOpen className="h-3.5 w-3.5" />
+          <HiBookOpen className="h-3.5 w-3.5" />
           <span>Documents</span>
           <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', activeTab === 'Documents' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600')}>
             {docCount}
@@ -479,7 +475,7 @@ export default function LibraryPage() {
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           )}
         >
-          <Video className="h-3.5 w-3.5" />
+          <HiFilm className="h-3.5 w-3.5" />
           <span>Vidéos</span>
           <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', activeTab === 'Vidéos' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600')}>
             {videoCount}
@@ -496,7 +492,7 @@ export default function LibraryPage() {
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           )}
         >
-          <Headphones className="h-3.5 w-3.5" />
+          <HiMusicalNote className="h-3.5 w-3.5" />
           <span>Audios</span>
           <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', activeTab === 'Audios' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600')}>
             {audioCount}
@@ -530,7 +526,7 @@ export default function LibraryPage() {
                       </span>
                       {item.views && (
                         <span className="rounded-lg bg-black/70 backdrop-blur-md px-2 py-0.5 text-[10px] font-bold text-slate-200 flex items-center gap-1">
-                          <TrendingUp className="h-3 w-3 text-emerald-400" />
+                          <HiFire className="h-3 w-3 text-emerald-400" />
                           {item.views}
                         </span>
                       )}
@@ -545,12 +541,12 @@ export default function LibraryPage() {
                       className="absolute bottom-2.5 right-2.5 rounded-lg bg-black/50 backdrop-blur-md p-1.5 text-white/80 hover:text-white hover:bg-black/70 transition-all z-10"
                       title="Partager"
                     >
-                      <Share2 className="h-3.5 w-3.5" />
+                      <HiShare className="h-3.5 w-3.5" />
                     </button>
 
                     {/* Center Big White Play Circle */}
                     <div className="h-12 w-12 rounded-full bg-white text-[#1e3a8a] flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                      <Play className="h-6 w-6 fill-current ml-0.5 text-[#1e3a8a]" />
+                      <HiPlay className="h-6 w-6 ml-0.5 text-[#1e3a8a]" />
                     </div>
                   </div>
 
@@ -591,7 +587,7 @@ export default function LibraryPage() {
                     {/* Top Row: Audio Icon Box & Meta */}
                     <div className="flex items-start justify-between">
                       <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-md shadow-emerald-500/20">
-                        <Headphones className="h-6 w-6" />
+                        <HiMusicalNote className="h-6 w-6" />
                       </div>
 
                       <button
@@ -601,7 +597,7 @@ export default function LibraryPage() {
                           isFav ? 'text-amber-500 hover:bg-amber-50' : 'text-slate-300 hover:text-slate-500'
                         )}
                       >
-                        <Star className={cn('h-4 w-4', isFav && 'fill-amber-500')} />
+                        <HiStar className={cn('h-4 w-4', isFav && 'text-amber-500')} />
                       </button>
                     </div>
 
@@ -649,7 +645,7 @@ export default function LibraryPage() {
                       }}
                       className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white py-2.5 px-4 text-xs font-bold shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
                     >
-                      <Play className="h-3.5 w-3.5 fill-current" />
+                      <HiPlay className="h-3.5 w-3.5" />
                       <span>Écouter</span>
                     </button>
 
@@ -658,14 +654,14 @@ export default function LibraryPage() {
                       className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all"
                       title="Télécharger"
                     >
-                      <Download className="h-4 w-4" />
+                      <HiArrowDownTray className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => alert(`Son activé pour ${item.title}`)}
                       className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all"
                       title="Aperçu audio"
                     >
-                      <Volume2 className="h-4 w-4" />
+                      <HiSpeakerWave className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -692,7 +688,7 @@ export default function LibraryPage() {
                         isDocx && 'bg-blue-100 text-blue-700 border border-blue-200',
                         !isPdf && !isDocx && 'bg-amber-100 text-amber-700 border border-amber-200'
                       )}>
-                        <FileText className="h-3.5 w-3.5" />
+                        <HiDocumentText className="h-3.5 w-3.5" />
                         <span>{item.type.toLowerCase()}</span>
                       </div>
                     </div>
@@ -704,7 +700,7 @@ export default function LibraryPage() {
                       }}
                       className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                     >
-                      <MoreVertical className="h-4 w-4" />
+                      <HiEllipsisVertical className="h-4 w-4" />
                     </button>
                   </div>
 
@@ -730,7 +726,7 @@ export default function LibraryPage() {
                     <span>{item.size}</span>
                     <span>•</span>
                     <span className="flex items-center gap-1">
-                      <Download className="h-3 w-3" /> {item.downloads || 240}
+                      <HiArrowDownTray className="h-3 w-3" /> {item.downloads || 240}
                     </span>
                     <span className="ml-auto text-[10px] text-slate-400">{item.date}</span>
                   </div>
@@ -742,7 +738,7 @@ export default function LibraryPage() {
                     onClick={(e) => handleDownload(item, e)}
                     className="flex-1 flex items-center justify-center gap-1.5 rounded-2xl bg-[#1e3a8a] hover:bg-blue-900 text-white py-2.5 px-4 text-xs font-bold shadow-md shadow-blue-900/20 active:scale-95 transition-all"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <HiArrowDownTray className="h-3.5 w-3.5" />
                     <span>Télécharger</span>
                   </button>
 
@@ -751,7 +747,7 @@ export default function LibraryPage() {
                     className="p-2.5 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-800 transition-all"
                     title="Aperçu"
                   >
-                    <Eye className="h-4 w-4" />
+                    <HiEye className="h-4 w-4" />
                   </button>
 
                   <button
@@ -764,7 +760,7 @@ export default function LibraryPage() {
                     )}
                     title="Favori"
                   >
-                    <Star className={cn('h-4 w-4', isFav && 'fill-amber-500')} />
+                    <HiStar className={cn('h-4 w-4', isFav && 'text-amber-500')} />
                   </button>
                 </div>
               </div>
@@ -788,9 +784,9 @@ export default function LibraryPage() {
                     item.category === 'Vidéos' && 'bg-indigo-600',
                     item.category === 'Audios' && 'bg-emerald-600'
                   )}>
-                    {item.category === 'Documents' && <FileText className="h-5 w-5" />}
-                    {item.category === 'Vidéos' && <Video className="h-5 w-5" />}
-                    {item.category === 'Audios' && <Headphones className="h-5 w-5" />}
+                    {item.category === 'Documents' && <HiDocumentText className="h-5 w-5" />}
+                    {item.category === 'Vidéos' && <HiFilm className="h-5 w-5" />}
+                    {item.category === 'Audios' && <HiMusicalNote className="h-5 w-5" />}
                   </div>
 
                   <div className="min-w-0">
@@ -815,7 +811,7 @@ export default function LibraryPage() {
                     onClick={() => setActiveMediaModal(item)}
                     className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all flex items-center gap-1.5"
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <HiEye className="h-3.5 w-3.5" />
                     <span>Aperçu</span>
                   </button>
 
@@ -823,7 +819,7 @@ export default function LibraryPage() {
                     onClick={(e) => handleDownload(item, e)}
                     className="rounded-xl bg-[#1e3a8a] px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-900 transition-all flex items-center gap-1.5"
                   >
-                    <Download className="h-3.5 w-3.5" />
+                    <HiArrowDownTray className="h-3.5 w-3.5" />
                     <span>Télécharger</span>
                   </button>
 
@@ -831,7 +827,7 @@ export default function LibraryPage() {
                     onClick={(e) => toggleFavorite(item.id, e)}
                     className={cn('p-2 rounded-xl border transition-all', isFav ? 'bg-amber-50 border-amber-200 text-amber-500' : 'border-slate-200 text-slate-400')}
                   >
-                    <Star className={cn('h-4 w-4', isFav && 'fill-amber-500')} />
+                    <HiStar className={cn('h-4 w-4', isFav && 'text-amber-500')} />
                   </button>
                 </div>
               </div>
@@ -844,7 +840,7 @@ export default function LibraryPage() {
       {sortedResources.length === 0 && (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-12 text-center shadow-xs">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 mb-3">
-            <BookOpen className="h-7 w-7" />
+            <HiBookOpen className="h-7 w-7" />
           </div>
           <h3 className="text-base font-bold text-slate-900">Aucune ressource trouvée</h3>
           <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
@@ -879,7 +875,7 @@ export default function LibraryPage() {
                 }}
                 className="rounded-xl bg-slate-800 p-2 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
               >
-                <X className="h-5 w-5" />
+                <HiXMark className="h-5 w-5" />
               </button>
             </div>
 
@@ -900,7 +896,7 @@ export default function LibraryPage() {
             ) : activeMediaModal.category === 'Audios' ? (
               <div className="rounded-2xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 p-6 border border-emerald-800/40 text-center space-y-4">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
-                  <Headphones className="h-8 w-8" />
+                  <HiMusicalNote className="h-8 w-8" />
                 </div>
                 <div>
                   <h4 className="font-bold text-emerald-300">{activeMediaModal.title}</h4>
@@ -921,7 +917,7 @@ export default function LibraryPage() {
               /* Document Viewer Mock */
               <div className="rounded-2xl bg-slate-950 p-8 border border-slate-800 text-center space-y-4">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg">
-                  <FileText className="h-8 w-8" />
+                  <HiDocumentText className="h-8 w-8" />
                 </div>
                 <div>
                   <h4 className="font-bold text-white">{activeMediaModal.title}</h4>
@@ -941,7 +937,7 @@ export default function LibraryPage() {
                   onClick={(e) => handleDownload(activeMediaModal, e)}
                   className="flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 text-xs font-bold shadow-md transition-all"
                 >
-                  <Download className="h-4 w-4" />
+                  <HiArrowDownTray className="h-4 w-4" />
                   <span>Télécharger le fichier</span>
                 </button>
                 <button
@@ -961,7 +957,7 @@ export default function LibraryPage() {
         <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 rounded-2xl border border-emerald-500/40 bg-slate-900/95 backdrop-blur-md p-3 text-white shadow-2xl flex items-center justify-between gap-3 animate-bounce-short">
           <div className="flex items-center gap-3 min-w-0">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white font-bold">
-              <Music className="h-5 w-5 animate-pulse" />
+              <HiMusicalNote className="h-5 w-5 animate-pulse" />
             </div>
             <div className="min-w-0">
               <h5 className="text-xs font-extrabold text-white truncate">{activeAudioItem.title}</h5>
@@ -974,7 +970,7 @@ export default function LibraryPage() {
               onClick={() => setIsAudioPlaying(!isAudioPlaying)}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-all"
             >
-              {isAudioPlaying ? <Pause className="h-4 w-4 fill-current" /> : <Play className="h-4 w-4 fill-current ml-0.5" />}
+              {isAudioPlaying ? <HiPause className="h-4 w-4" /> : <HiPlay className="h-4 w-4 ml-0.5" />}
             </button>
             <button
               onClick={() => {
@@ -983,7 +979,7 @@ export default function LibraryPage() {
               }}
               className="p-1 text-slate-400 hover:text-white"
             >
-              <X className="h-4 w-4" />
+              <HiXMark className="h-4 w-4" />
             </button>
           </div>
         </div>
