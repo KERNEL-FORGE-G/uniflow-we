@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { QrCode, CheckCircle, XCircle, Clock, Calendar, TrendingUp, RefreshCw, AlertCircle } from 'lucide-react'
+import { QrCode, CheckCircle, XCircle, Clock, Calendar, TrendingUp, RefreshCw, AlertCircle, X } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 import { useApi } from '../hooks/useApi'
@@ -258,17 +258,33 @@ export default function AttendancePage() {
 
       {/* QR Scanner Modal */}
       {showQR && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          onClick={() => setShowQR(false)}>
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center" onClick={e => e.stopPropagation()}>
-            <h3 className="text-sm font-bold text-[#111827] mb-2">Scanner QR Code</h3>
-            <p className="text-xs text-[#6b7280] mb-4">Scannez le QR affiché par votre enseignant</p>
-            <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-xl border-2 border-dashed border-[#1e3a8a] bg-[#eff3ff] animate-pulse">
-              <QrCode className="h-32 w-32 text-[#1e3a8a]" />
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4"
+          onClick={() => setShowQR(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowQR(false)}
+              className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:bg-slate-100"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <h3 className="text-base font-bold text-[#111827] mb-1">Scanner le QR Code</h3>
+            <p className="text-xs text-[#6b7280] mb-4">Pointez votre caméra vers le QR Code de cours</p>
+            <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-xl border-2 border-dashed border-[#1e3a8a] bg-[#eff3ff]">
+              <QrCode className="h-28 w-28 text-[#1e3a8a] animate-pulse" />
             </div>
-            <button onClick={() => setShowQR(false)}
-              className="mt-4 w-full rounded-lg border border-[#e5e7eb] py-2 text-sm font-medium text-[#374151]">
-              Annuler
+            <button
+              onClick={() => {
+                setShowQR(false)
+                refetch()
+              }}
+              className="mt-5 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-xs font-bold text-white hover:bg-blue-900 shadow-sm"
+            >
+              Valider mon émargement
             </button>
           </div>
         </div>

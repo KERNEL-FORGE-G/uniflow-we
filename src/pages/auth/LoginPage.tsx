@@ -1,14 +1,15 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Lock, Mail, Sparkles, ShieldAlert } from 'lucide-react'
+import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Lock, Mail, Sparkles, ShieldAlert, Building2, User } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { useAuth } from '../../hooks/useAuth'
+import { UNIVERSITIES } from '../../data/universities'
 
 const demoAccounts = [
-  { role: 'student' as const,  label: 'Étudiant',   email: 'emma.martin@uniflow.edu',  gradient: 'from-[#1e3a8a] to-[#2d4fa8]', icon: GraduationCap },
-  { role: 'delegate' as const, label: 'Délégué',    email: 'lucas.dubois@uniflow.edu', gradient: 'from-[#0d9488] to-[#14b8a8]', icon: ShieldCheck },
-  { role: 'teacher' as const,  label: 'Enseignant', email: 'dr.martin@uniflow.edu',    gradient: 'from-[#7c3aed] to-[#a855f7]', icon: Wifi },
+  { role: 'student' as const,  label: 'Étudiant (UY1)',   email: 'emma.martin@uniflow.edu',  gradient: 'from-[#1e3a8a] to-[#2d4fa8]', icon: GraduationCap },
+  { role: 'delegate' as const, label: 'Délégué (UDLA)',    email: 'lucas.dubois@uniflow.edu', gradient: 'from-[#0d9488] to-[#14b8a8]', icon: ShieldCheck },
+  { role: 'teacher' as const,  label: 'Enseignant (UB)', email: 'dr.martin@uniflow.edu',    gradient: 'from-[#7c3aed] to-[#a855f7]', icon: Wifi },
   { role: 'admin' as const,    label: 'Admin',      email: 'admin@uniflow.edu',        gradient: 'from-[#d97706] to-[#f59e0b]', icon: Sparkles },
 ]
 
@@ -39,13 +40,21 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
+  const [accountType, setAccountTypeSelection] = useState<'UNIVERSITY' | 'PERSONAL'>('UNIVERSITY')
+  const [universityCode, setUniversityCode] = useState('UY1')
+
   const isIdleTimeout = location.state?.reason === 'idle_timeout'
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setError(null)
     if (!email || !password) { setError('Veuillez remplir tous les champs.'); return }
-    await login({ email, password })
+    await login({
+      email,
+      password,
+      accountType,
+      universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined
+    })
   }
 
   const handleDemo = (demoEmail: string) => {
@@ -207,6 +216,73 @@ export default function LoginPage() {
                   {error}
                 </motion.div>
               )}
+
+              {/* Sélection Type de compte */}
+              <div>
+                <label className="block text-sm font-bold text-[#374151] mb-2">Type de compte</label>
+                <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+                  <button
+                    type="button"
+                    onClick={() => setAccountTypeSelection('UNIVERSITY')}
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                      accountType === 'UNIVERSITY'
+                        ? 'bg-white text-[#1e3a8a] shadow-md border border-slate-200'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <Building2 className="h-4 w-4" /> Université (BD)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAccountTypeSelection('PERSONAL')}
+                    className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                      accountType === 'PERSONAL'
+                        ? 'bg-white text-[#1e3a8a] shadow-md border border-slate-200'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    <User className="h-4 w-4" /> Indépendant
+                  </button>
+                </div>
+              </div>
+
+              {/* Sélection Université dans la BD si Université */}
+              {accountType === 'UNIVERSITY' && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }} 
+                  animate={{ opacity: 1, height: 'auto' }}
+                >
+                  <label className="block text-sm font-bold text-[#374151] mb-2">Université (Base de données)</label>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
+                      <Building2 className="h-5 w-5" />
+                    </div>
+                    <select
+                      value={universityCode}
+                      onChange={(e) => setUniversityCode(e.target.value)}
+                      className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-[#1e3a8a] focus:bg-white transition-all appearance-none cursor-pointer"
+                    >
+                      {UNIVERSITIES.map((univ) => (
+                        <option key={univ.code} value={univ.code}>
+                          {univ.name} ({univ.city})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* Information Badge du Backend */}
+              <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-xs text-[#1e3a8a] flex items-center gap-2">
+                <Building2 className="h-4 w-4 shrink-0 text-[#1e3a8a]" />
+                <div className="leading-tight">
+                  {accountType === 'UNIVERSITY' ? (
+                    <span>Serveur : <strong>Backend Université ({universityCode})</strong> — <code>https://api-uniflow.kernelforge.codes/</code></span>
+                  ) : (
+                    <span>Serveur : <strong>Backend Indépendant (SaaS)</strong> — <code>https://api2-uniflow.kernelforge.codes/</code></span>
+                  )}
+                </div>
+              </div>
 
               {/* Email */}
               <div>

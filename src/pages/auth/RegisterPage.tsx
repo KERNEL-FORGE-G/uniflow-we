@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, Loader2, CheckCircle, User, Mail, Lock, GraduationCap, BookOpen, Award, ArrowRight, ArrowLeft, Sparkles, ShieldCheck } from 'lucide-react'
+import { Eye, EyeOff, Loader2, CheckCircle, User, Mail, Lock, GraduationCap, BookOpen, Award, ArrowRight, ArrowLeft, Sparkles, ShieldCheck, Building2, UserCheck, FileText } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
 import { authApi, type AcademicLevel, type SpecialtyOption } from '../../lib/api'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
+import { UNIVERSITIES } from '../../data/universities'
 
 const benefits = [
   {
@@ -42,6 +43,9 @@ const roleMap: Record<string, BackendRole> = {
 
 export default function RegisterPage() {
   const { register, loading, error, setError } = useAuth()
+  const [accountType, setAccountTypeSelection] = useState<'UNIVERSITY' | 'PERSONAL'>('UNIVERSITY')
+  const [universityCode, setUniversityCode] = useState('UY1')
+
   const [form, setForm] = useState({ 
     firstName: '', 
     lastName: '', 
@@ -51,6 +55,7 @@ export default function RegisterPage() {
     role: 'student', 
     levelId: '', 
     specialtyId: '',
+    matricule: '',
   })
   const [levels, setLevels] = useState<AcademicLevel[]>([])
   const [specialties, setSpecialties] = useState<SpecialtyOption[]>([])
@@ -96,6 +101,11 @@ export default function RegisterPage() {
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault()
+    setError(null)
+    if (!form.firstName || !form.lastName || !form.email) {
+      setError('Veuillez remplir tous les champs obligatoires.')
+      return
+    }
     setStep(2)
   }
 
@@ -111,7 +121,12 @@ export default function RegisterPage() {
         password: form.password,
         firstName: form.firstName,
         lastName: form.lastName,
-        role: roleMap[form.role],
+        role: accountType === 'PERSONAL' 
+          ? (form.role === 'teacher' ? 'INDEPENDENT_TEACHER' : 'INDEPENDENT_STUDENT')
+          : (roleMap[form.role] || 'ETUDIANT'),
+        accountType,
+        universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined,
+        matricule: form.matricule || undefined,
         levelId: form.levelId || undefined,
         specialtyId: form.specialtyId || undefined,
       })
@@ -247,6 +262,79 @@ export default function RegisterPage() {
                   onSubmit={handleNext} 
                   className="space-y-5"
                 >
+                  {error && (
+                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Account Type Selector */}
+                  <div>
+                    <label className="block text-sm font-bold text-[#374151] mb-2">Type de compte</label>
+                    <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setAccountTypeSelection('UNIVERSITY')}
+                        className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                          accountType === 'UNIVERSITY'
+                            ? 'bg-white text-[#0d9488] shadow-md border border-slate-200'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <Building2 className="h-4 w-4" /> Université (BD)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAccountTypeSelection('PERSONAL')}
+                        className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
+                          accountType === 'PERSONAL'
+                            ? 'bg-white text-[#0d9488] shadow-md border border-slate-200'
+                            : 'text-slate-600 hover:text-slate-900'
+                        }`}
+                      >
+                        <User className="h-4 w-4" /> Indépendant
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* University Selection Dropdown if University Account */}
+                  {accountType === 'UNIVERSITY' && (
+                    <motion.div 
+                      initial={{ opacity: 0, height: 0 }} 
+                      animate={{ opacity: 1, height: 'auto' }}
+                    >
+                      <label className="block text-sm font-bold text-[#374151] mb-2">Sélectionnez votre Université dans la Base de Données</label>
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
+                          <Building2 className="h-5 w-5" />
+                        </div>
+                        <select
+                          value={universityCode}
+                          onChange={(e) => setUniversityCode(e.target.value)}
+                          className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-[#0d9488] focus:bg-white transition-all appearance-none cursor-pointer"
+                        >
+                          {UNIVERSITIES.map((univ) => (
+                            <option key={univ.code} value={univ.code}>
+                              {univ.name} ({univ.city})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Server Connection Info */}
+                  <div className="p-3 bg-teal-50/80 rounded-xl border border-teal-200 text-xs text-[#0d9488] flex items-center gap-2">
+                    <Building2 className="h-4 w-4 shrink-0" />
+                    <div className="leading-tight">
+                      {accountType === 'UNIVERSITY' ? (
+                        <span>Destination : <strong>Backend Université ({universityCode})</strong></span>
+                      ) : (
+                        <span>Destination : <strong>Backend Indépendant (SaaS)</strong></span>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Name fields */}
                   <div className="grid grid-cols-2 gap-4">
                     <div>
@@ -346,6 +434,31 @@ export default function RegisterPage() {
                   onSubmit={handleSubmit} 
                   className="space-y-5"
                 >
+                  {error && (
+                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
+                      {error}
+                    </div>
+                  )}
+
+                  {/* Matricule pour compte Université */}
+                  {accountType === 'UNIVERSITY' && (
+                    <div>
+                      <label className="block text-sm font-bold text-[#374151] mb-2">Matricule Étudiant / Enseignant</label>
+                      <div className="relative">
+                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
+                          <FileText className="h-5 w-5" />
+                        </div>
+                        <input 
+                          type="text" 
+                          value={form.matricule} 
+                          onChange={e => set('matricule', e.target.value)} 
+                          className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
+                          placeholder="Ex: 22U1234 (Optionnel)" 
+                        />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Academic info */}
                   <div>
                     <label className="block text-sm font-bold text-[#374151] mb-2">Filière d'études</label>
