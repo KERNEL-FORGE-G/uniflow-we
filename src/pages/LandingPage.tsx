@@ -19,7 +19,7 @@ import { useApi } from '../hooks/useApi'
 import { statsApi } from '../lib/api'
 import { cn } from '../utils/cn'
 
-const landingImg = '/logos/mascotte.png'
+const landingImg = '/landing.png'
 
 const defaultStats = [
   { icon: Users, value: '12 000+', label: 'Étudiants actifs', color: 'text-[#1e3a8a] bg-[#eff3ff]' },
@@ -320,14 +320,15 @@ export default function LandingPage() {
                 </div>
               </motion.div>
 
-              {/* Central Mascot Image Container */}
-              <div className="relative mx-auto w-full max-w-[480px] rounded-3xl border-4 border-slate-200/90 bg-white shadow-2xl overflow-hidden p-6 text-center transform hover:scale-[1.01] transition-transform">
+              {/* Central Hero Landing Image Container */}
+              <div className="relative mx-auto w-full max-w-[540px] rounded-3xl border-4 border-slate-200/90 bg-white shadow-2xl overflow-hidden p-4 sm:p-5 text-center transform hover:scale-[1.01] transition-transform">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 via-transparent to-teal-50/50 pointer-events-none" />
                 <OptimizedImage
                   src={landingImg}
-                  alt="Mascotte UniFlow"
-                  className="w-full h-auto object-contain max-h-[420px] rounded-2xl relative z-10 mx-auto"
+                  alt="Aperçu UniFlow"
+                  className="w-full h-auto object-cover max-h-[440px] rounded-2xl relative z-10 mx-auto shadow-sm"
                   loading="eager"
+                  fallbackSrc="/logos/landing.png"
                 />
                 <div className="mt-4 pt-3 border-t border-slate-100 relative z-10 flex items-center justify-between text-xs font-extrabold text-slate-600 px-2">
                   <span className="flex items-center gap-1 text-blue-700">
