@@ -4,7 +4,8 @@ import { useUserRole } from '../utils/userRole'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, AreaChart, Area } from 'recharts'
 import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
-import { statsApi } from '../lib/api'
+import { statsApi, getAccountType } from '../lib/api'
+import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 
 const gradeDistrib = [
   { name: 'Excellentes', value: 35, color: '#1e3a8a' },
@@ -215,6 +216,13 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Zone Temps Restant Abonnement (Compte Personnel / SaaS) ── */}
+      {(getAccountType() === 'PERSONAL' || (currentUser as any)?.accountType === 'PERSONAL' || (currentUser as any)?.role?.includes('INDEPENDENT')) && (
+        <div className="animate-fade-in">
+          <SubscriptionWidget />
+        </div>
+      )}
 
       {/* ── KPI Stats ── */}
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">

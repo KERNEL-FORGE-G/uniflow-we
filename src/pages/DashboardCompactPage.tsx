@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 import { Badge } from '../components/ui/Badge'
 import { BookOpen, Clock, TrendingUp, UserCheck, ClipboardList } from 'lucide-react'
 import { useApi } from '../hooks/useApi'
-import { statsApi } from '../lib/api'
+import { statsApi, getAccountType } from '../lib/api'
+import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 
 const schedule = [
   { time: '08h30 – 10h00', course: 'Mathématiques', teacher: 'Dr. Martin', room: 'A204', type: 'Cours', status: 'Terminé' as const },
@@ -61,6 +62,10 @@ export default function DashboardCompactPage() {
         </div>
         <Link to="/app" className="text-sm font-medium text-[#1e3a8a] hover:underline">← Vue principale</Link>
       </div>
+
+      {getAccountType() === 'PERSONAL' && (
+        <SubscriptionWidget compact />
+      )}
 
       {/* Quick stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

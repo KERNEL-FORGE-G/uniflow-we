@@ -3,78 +3,74 @@ import { Link } from 'react-router-dom'
 import { 
   ArrowRight, Zap, Sparkles, HelpCircle, 
   Building2, GraduationCap, UserCheck, ChevronDown, Check, 
-  Calculator, CheckCircle2
+  Calculator, CheckCircle2, User, CreditCard, Smartphone, ShieldCheck
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { SubscriptionModal } from '../components/subscription/SubscriptionModal'
 
 const plans = [
   {
-    id: 'student',
-    name: 'Étudiant',
-    icon: GraduationCap,
-    priceMonthly: '0 FCFA',
-    priceAnnually: '0 FCFA',
-    period: 'Gratuit pour toujours',
-    badge: null,
-    highlight: false,
-    description: 'Pour les étudiants souhaitant suivre leurs cours, devoirs et emploi du temps.',
-    btnText: 'Créer un compte gratuit',
-    btnLink: '/register',
-    btnVariant: 'outline',
+    id: 'personal_cm',
+    name: 'Compte Indépendant (Cameroun)',
+    icon: User,
+    priceMonthly: '100 FCFA',
+    priceAnnually: '1 200 FCFA',
+    period: 'Facturation mensuelle sans engagement',
+    badge: 'Populaire (CM)',
+    highlight: true,
+    description: 'Accès complet au Backend 2 Indépendant avec Mobile Money (MTN, Orange, NotchPay).',
+    btnText: 'Souscrire pour 100 FCFA',
+    btnAction: 'open_modal',
+    btnVariant: 'primary',
     features: [
-      'Accès à tous les cours & ressources',
-      'Emploi du temps personnel en temps réel',
-      'Consultation des devoirs & relevés de notes',
-      'Messagerie de cohorte & visioconférence',
-      'Mode offline 100% fonctionnel (PWA)',
-      'Application mobile & notifications push',
-      'Support communautaire',
+      'Serveur dédié SaaS (Backend 2)',
+      'Emploi du temps & gestion des matières 100% libre',
+      'Paiement par MTN MoMo, Orange Money, NotchPay',
+      'Mode hors-ligne PWA & synchronisation cloud',
+      'Messagerie & visioconférence intégrées',
+      'Accès instantané 24/7',
     ],
   },
   {
-    id: 'teacher',
-    name: 'Enseignant & Délégué',
-    icon: UserCheck,
-    priceMonthly: '0 FCFA',
-    priceAnnually: '0 FCFA',
-    period: 'Gratuit pendant la démo',
-    badge: 'Plus Populaire',
-    highlight: true,
-    description: 'Pour les enseignants et délégués de classe gérant l\'appel et la pédagogie.',
-    btnText: 'Essayer gratuitement',
-    btnLink: '/register',
-    btnVariant: 'primary',
+    id: 'personal_eu',
+    name: 'Compte Indépendant (International)',
+    icon: Sparkles,
+    priceMonthly: '1,00 €',
+    priceAnnually: '12,00 €',
+    period: 'Facturation mensuelle sans engagement',
+    badge: 'International',
+    highlight: false,
+    description: 'Accès complet au Backend 2 avec Stripe, Carte Bancaire et Apple Pay.',
+    btnText: 'Souscrire pour 1,00 €',
+    btnAction: 'open_modal',
+    btnVariant: 'teal',
     features: [
-      'Toutes les fonctionnalités Étudiant',
-      'Espace pédagogique enseignant complet',
-      'Prise de présences automatisée (QR Code & NFC)',
-      'Saisie, calcul et export des notes (Excel/PDF)',
-      'Planification de visioconférences LAN/Web',
-      'Rapports d\'assiduité par cohorte',
+      'Serveur dédié SaaS (Backend 2)',
+      'Paiement sécurisé Stripe & Carte Bancaire',
+      'Emploi du temps & espace de cours autonome',
+      'Gestion dynamique des révisions & devoirs',
       'Support prioritaire par email',
     ],
   },
   {
     id: 'campus',
-    name: 'Université & Campus',
+    name: 'Université & Campus (BD)',
     icon: Building2,
     priceMonthly: 'Sur Devis',
     priceAnnually: 'Sur Devis',
-    period: 'Tarification dégressive par étudiant',
+    period: 'Déploiement institutionnel multi-facultés',
     badge: 'Sur Mesure',
     highlight: false,
-    description: 'Pour l\'administration universitaire désireuse de moderniser tout son campus.',
+    description: 'Pour l\'administration universitaire désireuse de connecter tout son campus.',
     btnText: 'Demander une étude',
     btnLink: '/contact',
-    btnVariant: 'teal',
+    btnVariant: 'outline',
     features: [
-      'Déploiement multi-facultés & multi-filières',
+      'Interconnexion Backend 1 Université',
       'Panneau d\'administration centralisé',
-      'Gestion dynamique des salles & emplois du temps',
-      'Intégration du module Sentinelle IoT (Santé & Sécurité)',
-      'Synchronisation SSO / CAS / Annuaire existant',
+      'Gestion des amphis & emplois du temps officiels',
+      'Module Sentinelle IoT (Kiosque Santé / Edge AI)',
       'Garantie de service (SLA 99.9%)',
-      'Formation sur site & accompagnement dédié 24/7',
     ],
   },
 ]
@@ -142,6 +138,7 @@ export default function PricingPage() {
   const [billingCycle] = useState<'monthly' | 'annually'>('annually')
   const [faqCategory, setFaqCategory] = useState<string>('Tous')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const [modalOpen, setModalOpen] = useState<boolean>(false)
   
   // Interactive Simulator State
   const [studentCount, setStudentCount] = useState<number>(5000)
@@ -239,18 +236,34 @@ export default function PricingPage() {
                   </div>
 
                   {/* Action Button */}
-                  <Link
-                    to={plan.btnLink}
-                    className={`block w-full text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer ${
-                      plan.btnVariant === 'primary'
-                        ? 'bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white shadow-blue-900/20'
-                        : plan.btnVariant === 'teal'
-                        ? 'bg-[#0d9488] hover:bg-[#14b8a8] text-white shadow-teal-900/20'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
-                    }`}
-                  >
-                    {plan.btnText}
-                  </Link>
+                  {plan.btnAction === 'open_modal' ? (
+                    <button
+                      type="button"
+                      onClick={() => setModalOpen(true)}
+                      className={`block w-full text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer ${
+                        plan.btnVariant === 'primary'
+                          ? 'bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white shadow-blue-900/20'
+                          : plan.btnVariant === 'teal'
+                          ? 'bg-[#0d9488] hover:bg-[#14b8a8] text-white shadow-teal-900/20'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                      }`}
+                    >
+                      {plan.btnText}
+                    </button>
+                  ) : (
+                    <Link
+                      to={plan.btnLink || '/register'}
+                      className={`block w-full text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer ${
+                        plan.btnVariant === 'primary'
+                          ? 'bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white shadow-blue-900/20'
+                          : plan.btnVariant === 'teal'
+                          ? 'bg-[#0d9488] hover:bg-[#14b8a8] text-white shadow-teal-900/20'
+                          : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                      }`}
+                    >
+                      {plan.btnText}
+                    </Link>
+                  )}
                 </div>
               )
             })}
@@ -441,6 +454,7 @@ export default function PricingPage() {
         </div>
       </section>
 
+      <SubscriptionModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
       <LandingFooter />
     </div>
   )
