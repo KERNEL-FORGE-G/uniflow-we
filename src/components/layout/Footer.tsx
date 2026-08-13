@@ -26,7 +26,18 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <img src="/logos/logo-principal.png" alt="UniFlow" className="h-8 w-auto object-contain" />
+              <img
+                src="https://i.imgur.com/GAiZ7WY.png"
+                alt="UniFlow"
+                className="h-8 w-auto object-contain"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  if (!target.dataset.triedFallback) {
+                    target.dataset.triedFallback = 'true'
+                    target.src = '/logo_1.png'
+                  }
+                }}
+              />
             </div>
             <p className="text-xs text-[#6b7280] leading-relaxed">
               La plateforme universitaire intelligente pour la gestion académique complète.

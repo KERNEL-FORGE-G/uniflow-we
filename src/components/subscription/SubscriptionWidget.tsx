@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Clock, Calendar, Sparkles, AlertCircle, RefreshCw, CheckCircle2, Zap, ArrowRight, ShieldCheck, CreditCard } from 'lucide-react'
+import { Clock, Calendar, RefreshCw, CheckCircle2, CreditCard } from 'lucide-react'
 import { subscriptionApi, type SubscriptionStatus } from '../../lib/api'
-import { SubscriptionModal } from './SubscriptionModal'
 
 export const SubscriptionWidget: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatus | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
-  const [modalOpen, setModalOpen] = useState<boolean>(false)
+  const navigate = useNavigate()
 
   const fetchStatus = async () => {
     setLoading(true)
@@ -95,8 +95,8 @@ export const SubscriptionWidget: React.FC<{ compact?: boolean }> = ({ compact = 
             </button>
 
             <button
-              onClick={() => setModalOpen(true)}
-              className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] hover:opacity-95 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-95"
+              onClick={() => navigate('/subscribe')}
+              className="flex items-center gap-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] hover:opacity-95 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-95 cursor-pointer"
             >
               <CreditCard className="h-3.5 w-3.5" />
               <span>Renouveler</span>
@@ -128,12 +128,6 @@ export const SubscriptionWidget: React.FC<{ compact?: boolean }> = ({ compact = 
           </div>
         </div>
       </div>
-
-      <SubscriptionModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={fetchStatus}
-      />
     </>
   )
 }
