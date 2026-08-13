@@ -102,7 +102,24 @@ export default function AssignmentsPage() {
   // Modals state
   const [showNew, setShowNew] = useState(false)
   const [selectedAssignment, setSelectedAssignment] = useState<ExtendedAssignment | null>(null)
-  const [localAssignments, setLocalAssignments] = useState<ExtendedAssignment[]>(DEFAULT_ASSIGNMENTS)
+  const [localAssignments, setLocalAssignments] = useState<ExtendedAssignment[]>(() => {
+    try {
+      const saved = localStorage.getItem('uniflow_assignments')
+      return saved ? JSON.parse(saved) : DEFAULT_ASSIGNMENTS
+    } catch {
+      return DEFAULT_ASSIGNMENTS
+    }
+  })
+
+  const updateLocalAssignments = (newVal: ExtendedAssignment[] | ((prev: ExtendedAssignment[]) => ExtendedAssignment[])) => {
+    setLocalAssignments(prev => {
+      const updated = typeof newVal === 'function' ? newVal(prev) : newVal
+      try {
+        localStorage.setItem('uniflow_assignments', JSON.stringify(updated))
+      } catch {}
+      return updated
+    })
+  }
 
   // New Assignment form
   const [newTitle, setNewTitle] = useState('')

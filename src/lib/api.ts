@@ -8,8 +8,17 @@ import { playSuccessSound, playErrorSound } from '../utils/sound'
  *   • Backend 2 (Personnel / SaaS Indépendant) : VITE_PERSONAL_API_URL
  */
 
-export const UNIVERSITY_API_URL = (import.meta.env.VITE_UNIVERSITY_API_URL as string) ?? (import.meta.env.VITE_API_URL as string) ?? 'https://api-uniflow.kernelforge.codes'
-export const PERSONAL_API_URL = (import.meta.env.VITE_PERSONAL_API_URL as string) ?? 'https://uniflow-personal-backend.vercel.app'
+const sanitizeUrl = (u?: string) => (u ? u.trim().replace(/\/+$/, '') : '')
+
+export const UNIVERSITY_API_URL = sanitizeUrl(
+  (import.meta.env.VITE_UNIVERSITY_API_URL as string) ??
+  (import.meta.env.VITE_API_URL as string) ??
+  'https://api-uniflow.kernelforge.codes'
+)
+export const PERSONAL_API_URL = sanitizeUrl(
+  (import.meta.env.VITE_PERSONAL_API_URL as string) ??
+  'https://uniflow-personal-backend.vercel.app'
+)
 
 export function getAccountType(): 'UNIVERSITY' | 'PERSONAL' {
   try {
@@ -35,7 +44,8 @@ export function setAccountType(type: 'UNIVERSITY' | 'PERSONAL'): void {
 }
 
 export function getActiveApiUrl(): string {
-  return getAccountType() === 'PERSONAL' ? PERSONAL_API_URL : UNIVERSITY_API_URL
+  const raw = getAccountType() === 'PERSONAL' ? PERSONAL_API_URL : UNIVERSITY_API_URL
+  return sanitizeUrl(raw)
 }
 
 export const BASE_URL = getActiveApiUrl()
@@ -98,6 +108,36 @@ apiClient.interceptors.request.use(
   }
 )
 
+const RECENT_NETWORK_ERRORS = new Map<string, number>()
+
+export function dispatchNetworkErrorEvent(url: string, rawMessage?: string) {
+  const now = Date.now()
+  const cleanUrl = url || 'API'
+  const lastTime = RECENT_NETWORK_ERRORS.get(cleanUrl) || 0
+
+  // Ne pas spammer d'événements pour la même URL sous 5 secondes
+  if (now - lastTime < 5000) return
+  RECENT_NETWORK_ERRORS.set(cleanUrl, now)
+
+  if (RECENT_NETWORK_ERRORS.size > 30) {
+    for (const [k, v] of RECENT_NETWORK_ERRORS.entries()) {
+      if (now - v > 10000) RECENT_NETWORK_ERRORS.delete(k)
+    }
+  }
+
+  try {
+    window.dispatchEvent(
+      new CustomEvent('uniflow:network-error', {
+        detail: {
+          url: cleanUrl,
+          message: rawMessage || 'Échec de connexion réseau ou blocage CORS/Timeout',
+          timestamp: now,
+        },
+      })
+    )
+  } catch {}
+}
+
 // Intercepteur de réponse : Rafraîchissement automatique du jeton si expirée (401) + Diagnostic 401
 apiClient.interceptors.response.use(
   (response) => {
@@ -138,6 +178,7 @@ apiClient.interceptors.response.use(
       console.warn(`[Axios Error ${status}] ${url}:`, error.response.data)
     } else {
       console.warn(`[Axios Network Info] ${url}:`, error.message)
+      dispatchNetworkErrorEvent(url, error.message)
     }
 
     return Promise.reject(error)
@@ -901,17 +942,19 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(init.headers as Record<string, string> ?? {}),
   }
-  const url = `${BASE_URL}${path}`
+  const cleanBase = getActiveApiUrl().replace(/\/+$/, '')
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const url = `${cleanBase}${cleanPath}`
 
   try {
     const res = await fetch(url, { ...init, headers })
 
     if (res.status === 404 && !triedApiPrefix && !path.startsWith('/api/')) {
-      return req<T>(`/api${path}`, init, retry, true)
+      return req<T>(`/api${cleanPath}`, init, retry, true)
     }
 
     if (res.status === 401 && retry) {
-      if (path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/refresh')) {
+      if (cleanPath.startsWith('/auth/login') || cleanPath.startsWith('/auth/register') || cleanPath.startsWith('/auth/refresh')) {
         let msg = 'Identifiants invalides ou non autorisé'
         try {
           const b = await res.json()
@@ -921,12 +964,12 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
       }
 
       const ok = await doRefresh()
-      if (ok) return req<T>(path, init, false)
+      if (ok) return req<T>(cleanPath, init, false)
 
       // Fallback for GET queries (e.g. stats, students, courses, teachers) when offline or token is invalid
       if (!init.method || init.method.toUpperCase() === 'GET') {
         try {
-          return handleLocalRequest<T>(path, init)
+          return handleLocalRequest<T>(cleanPath, init)
         } catch {}
       }
 
@@ -946,6 +989,14 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
         body = await res.json()
         if (body?.message) msg = body.message
       } catch {}
+
+      // Fallback to local DB if backend returned server error (e.g. 500 / 502 / 503)
+      if (res.status >= 500 && (!init.method || init.method.toUpperCase() === 'GET')) {
+        try {
+          return handleLocalRequest<T>(cleanPath, init)
+        } catch {}
+      }
+
       throw new ApiError(res.status, msg, body)
     }
 
@@ -954,6 +1005,14 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
     return data
   } catch (err) {
     if (err instanceof ApiError) throw err
+    
+    dispatchNetworkErrorEvent(cleanPath, err instanceof Error ? err.message : undefined)
+
+    // Fallback to local DB engine on network failure / CORS / offline mode
+    try {
+      return handleLocalRequest<T>(cleanPath, init)
+    } catch {}
+
     throw new ApiError(500, err instanceof Error ? err.message : 'Erreur de connexion au serveur backend')
   }
 }
@@ -967,7 +1026,8 @@ async function doRefresh(): Promise<boolean> {
     const r = getRefreshToken()
     if (!r) return false
     try {
-      const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      const activeBase = getActiveApiUrl().replace(/\/+$/, '')
+      const res = await fetch(`${activeBase}/auth/refresh`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: r }),
@@ -1517,7 +1577,8 @@ export const filesApi = {
   upload: async (formData: FormData) => {
     const token = getToken()
     try {
-      const res = await fetch(`${BASE_URL}/files`, {
+      const activeBase = getActiveApiUrl().replace(/\/+$/, '')
+      const res = await fetch(`${activeBase}/files`, {
         method: 'POST',
         headers: token ? { Authorization: `Bearer ${token}` } : {},
         body: formData,

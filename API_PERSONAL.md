@@ -1,5 +1,7 @@
 # 📙 Documentation API UniFlow - Backend 2 (Comptes Indépendants & SaaS Auto-géré)
 
+> 📘 **Spécifications Complètes** : Voir également [SPECIFICATIONS_BACKEND_INDEPENDANT.md](./SPECIFICATIONS_BACKEND_INDEPENDANT.md) pour les schémas SQL, la gestion complète des cours, des emplois du temps et des abonnements.
+
 Ce backend hébergé sur **Vercel Serverless** gère les **étudiants et enseignants indépendants (non rattachés à une université partenaire)**. Ces utilisateurs gèrent eux-mêmes leurs matières, leurs emplois du temps et leurs notes, et bénéficient d'un tarif adapté à leur zone géographique.
 
 ---
