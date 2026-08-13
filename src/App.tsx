@@ -5,6 +5,7 @@ import { AppLayout } from './components/layout/AppLayout'
 import { AdminLayout } from './components/layout/AdminLayout'
 import { RoleProvider } from './utils/userRole'
 import { IdleTimer } from './components/IdleTimer'
+import { GlobalNetworkToast } from './components/GlobalNetworkToast'
 import { Skeleton } from './components/ui/Skeleton'
 import { pushNotificationService } from './services/pushNotificationService'
 import { initTheme } from './utils/theme'
@@ -90,6 +91,7 @@ export default function App() {
     <RoleProvider>
       <SEOHead />
       <IdleTimer />
+      <GlobalNetworkToast />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<LandingPage />} />

@@ -102,7 +102,26 @@ const INITIAL_POSTS: ForumPost[] = [
 ]
 
 export default function ForumPage() {
-  const [posts, setPosts] = useState<ForumPost[]>(INITIAL_POSTS)
+  const [posts, setPosts] = useState<ForumPost[]>(() => {
+    try {
+      const saved = localStorage.getItem('uniflow_forum_posts')
+      return saved ? JSON.parse(saved) : INITIAL_POSTS
+    } catch {
+      return INITIAL_POSTS
+    }
+  })
+
+  // Synchroniser avec localStorage
+  const updatePosts = (newPosts: ForumPost[] | ((prev: ForumPost[]) => ForumPost[])) => {
+    setPosts(prev => {
+      const updated = typeof newPosts === 'function' ? newPosts(prev) : newPosts
+      try {
+        localStorage.setItem('uniflow_forum_posts', JSON.stringify(updated))
+      } catch {}
+      return updated
+    })
+  }
+
   const [selectedRole, setSelectedRole] = useState<string>('Tous')
   const [searchQuery, setSearchQuery] = useState('')
   const [sortBy, setSortBy] = useState<'recent' | 'popular' | 'rating'>('recent')
@@ -118,7 +137,7 @@ export default function ForumPage() {
   const [postRating, setPostRating] = useState(5)
 
   const handleLike = (id: string) => {
-    setPosts(prev => prev.map(p => {
+    updatePosts(prev => prev.map(p => {
       if (p.id === id) {
         return {
           ...p,
@@ -130,6 +149,11 @@ export default function ForumPage() {
     }))
   }
 
+  const handleDeletePost = (id: string) => {
+    if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return
+    updatePosts(prev => prev.filter(p => p.id !== id))
+  }
+
   const handleSubmitPost = (e: React.FormEvent) => {
     e.preventDefault()
     if (!authorName.trim() || !postTitle.trim() || !postContent.trim()) return
@@ -138,7 +162,7 @@ export default function ForumPage() {
       id: Date.now().toString(),
       author: authorName,
       role: authorRole,
-      university: university || 'Université de Yaoundé I',
+      university: university || 'Université de Yaoundé I (Indépendant)',
       avatarBg: authorRole === 'Enseignant' ? 'bg-teal-600 text-white' : authorRole === 'Délégué' ? 'bg-blue-600 text-white' : authorRole === 'Administration' ? 'bg-[#1e3a8a] text-white' : 'bg-purple-600 text-white',
       verified: true,
       title: postTitle,
@@ -151,7 +175,7 @@ export default function ForumPage() {
       tags: [authorRole, 'Avis']
     }
 
-    setPosts([newPost, ...posts])
+    updatePosts(prev => [newPost, ...prev])
     setShowModal(false)
     setAuthorName('')
     setPostTitle('')
