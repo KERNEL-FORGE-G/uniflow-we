@@ -213,13 +213,41 @@ export class ApiError extends Error {
 
 // ─── Local Database Engine (Persistence fallback) ────────────────────────────
 
-const DB_KEY = 'uniflow_local_db_v1'
+const DB_KEY_UNIV = 'uniflow_local_db_v1'
+const DB_KEY_PERSONAL = 'uniflow_local_db_personal_v1'
+
+function getLocalDbKey(): string {
+  return getAccountType() === 'PERSONAL' ? DB_KEY_PERSONAL : DB_KEY_UNIV
+}
 
 function getLocalDb() {
-  const raw = localStorage.getItem(DB_KEY)
+  const dbKey = getLocalDbKey()
+  const raw = localStorage.getItem(dbKey)
   if (raw) {
     try { return JSON.parse(raw) } catch {}
   }
+
+  const isPersonal = getAccountType() === 'PERSONAL'
+  if (isPersonal) {
+    const emptyDb = {
+      users: [],
+      courses: [],
+      schedules: [],
+      students: [],
+      teachers: [],
+      classrooms: [],
+      notifications: [],
+      assignments: [],
+      grades: [],
+      conversations: [],
+      library: [],
+      ue: [],
+      attendanceSessions: []
+    }
+    localStorage.setItem(dbKey, JSON.stringify(emptyDb))
+    return emptyDb
+  }
+
   const initial = {
     users: [
       { id: 'usr-1', email: 'emma.martin@uniflow.edu', role: 'ETUDIANT', student: { firstName: 'Emma', lastName: 'Martin', matricule: 'ETU-2022-0847', level: 'L2', specialty: 'Informatique' } },
@@ -305,80 +333,15 @@ function getLocalDb() {
       { id: 'ue-3', name: 'Intelligence Artificielle', code: 'UE03', credits: 8 },
       { id: 'ue-4', name: 'Sciences Humaines & Économie', code: 'UE04', credits: 4 },
     ],
-    attendanceSessions: [
-      {
-        id: 'att-s1',
-        date: '2026-08-04',
-        courseId: 'INFO101',
-        course: { name: 'Algorithmique & C', code: 'INFO101' },
-        records: [
-          { id: 'r1', status: 'PRESENT', studentId: 'st-1' },
-          { id: 'r2', status: 'PRESENT', studentId: 'st-2' },
-          { id: 'r3', status: 'PRESENT', studentId: 'st-3' },
-          { id: 'r4', status: 'ABSENT', studentId: 'st-4' },
-          { id: 'r5', status: 'PRESENT', studentId: 'st-5' },
-        ]
-      },
-      {
-        id: 'att-s2',
-        date: '2026-07-28',
-        courseId: 'INFO201',
-        course: { name: 'Bases de Données SQL', code: 'INFO201' },
-        records: [
-          { id: 'r6', status: 'PRESENT', studentId: 'st-1' },
-          { id: 'r7', status: 'PRESENT', studentId: 'st-2' },
-          { id: 'r8', status: 'JUSTIFIE', studentId: 'st-3' },
-          { id: 'r9', status: 'PRESENT', studentId: 'st-4' },
-          { id: 'r10', status: 'PRESENT', studentId: 'st-5' },
-        ]
-      },
-      {
-        id: 'att-s3',
-        date: '2026-07-21',
-        courseId: 'INFO301',
-        course: { name: 'Réseaux & TCP/IP', code: 'INFO301' },
-        records: [
-          { id: 'r11', status: 'PRESENT', studentId: 'st-1' },
-          { id: 'r12', status: 'RETARD', studentId: 'st-2' },
-          { id: 'r13', status: 'ABSENT', studentId: 'st-3' },
-          { id: 'r14', status: 'PRESENT', studentId: 'st-4' },
-          { id: 'r15', status: 'PRESENT', studentId: 'st-5' },
-        ]
-      },
-      {
-        id: 'att-s4',
-        date: '2026-07-14',
-        courseId: 'INFO401',
-        course: { name: 'Intelligence Artificielle', code: 'INFO401' },
-        records: [
-          { id: 'r16', status: 'PRESENT', studentId: 'st-1' },
-          { id: 'r17', status: 'PRESENT', studentId: 'st-2' },
-          { id: 'r18', status: 'PRESENT', studentId: 'st-3' },
-          { id: 'r19', status: 'PRESENT', studentId: 'st-4' },
-          { id: 'r20', status: 'PRESENT', studentId: 'st-5' },
-        ]
-      },
-      {
-        id: 'att-s5',
-        date: '2026-07-07',
-        courseId: 'ECO101',
-        course: { name: 'Économie Numérique', code: 'ECO101' },
-        records: [
-          { id: 'r21', status: 'PRESENT', studentId: 'st-1' },
-          { id: 'r22', status: 'PRESENT', studentId: 'st-2' },
-          { id: 'r23', status: 'ABSENT', studentId: 'st-3' },
-          { id: 'r24', status: 'PRESENT', studentId: 'st-4' },
-          { id: 'r25', status: 'ABSENT', studentId: 'st-5' },
-        ]
-      }
-    ]
+    attendanceSessions: []
   }
-  localStorage.setItem(DB_KEY, JSON.stringify(initial))
+  localStorage.setItem(dbKey, JSON.stringify(initial))
   return initial
 }
 
 function saveLocalDb(db: any) {
-  localStorage.setItem(DB_KEY, JSON.stringify(db))
+  const dbKey = getLocalDbKey()
+  localStorage.setItem(dbKey, JSON.stringify(db))
 }
 
 function handleLocalRequest<T>(path: string, init: RequestInit = {}): T {
@@ -630,12 +593,27 @@ function handleLocalRequest<T>(path: string, init: RequestInit = {}): T {
 
   // STATS
   if (path.startsWith('/stats/overview')) {
+    const studentCount = db.students?.length ?? 0
+    const teacherCount = db.teachers?.length ?? 0
+    const courseCount = db.courses?.length ?? 0
+    const assignmentCount = db.assignments?.length ?? 0
+    const gradeCount = db.grades?.length ?? 0
+
+    let averageGrade: number | null = null
+    if (db.grades && db.grades.length > 0) {
+      const sum = db.grades.reduce((acc: number, g: any) => acc + (Number(g.grade) || 0), 0)
+      averageGrade = Math.round((sum / db.grades.length) * 10) / 10
+    }
+
     return {
-      studentCount: db.students.length,
-      teacherCount: db.teachers.length,
-      courseCount: db.courses.length,
-      satisfactionRate: 98,
-      supportAvailability: 'En ligne 24/7'
+      studentCount,
+      teacherCount,
+      courseCount,
+      assignmentCount,
+      gradeCount,
+      averageGrade,
+      satisfactionRate: courseCount > 0 ? 98 : 0,
+      supportAvailability: getAccountType() === 'PERSONAL' ? 'Mode Indépendant (SaaS)' : 'En ligne 24/7'
     } as T
   }
 
@@ -1218,11 +1196,15 @@ export interface OverviewStats {
   courseCount: number
   satisfactionRate: number
   supportAvailability: string
+  assignmentCount?: number
+  gradeCount?: number
+  averageGrade?: number | null
+  attendanceRate?: number | null
 }
 
 export const statsApi = {
   overview: async (): Promise<OverviewStats> => {
-    if (!getToken()) {
+    if (!getToken() || getAccountType() === 'PERSONAL') {
       return handleLocalRequest<OverviewStats>('/stats/overview')
     }
     try {
@@ -1230,24 +1212,8 @@ export const statsApi = {
       if (res && typeof res.studentCount === 'number') return res
     } catch {}
 
-    // Fetch dynamic counts directly from API endpoints
-    const [students, teachers, courses] = await Promise.all([
-      studentsApi.list().catch(() => []),
-      teachersApi.list().catch(() => []),
-      coursesApi.list().catch(() => []),
-    ])
-
-    const studentCount = students.length > 0 ? students.length : 12000
-    const teacherCount = teachers.length > 0 ? teachers.length : 480
-    const courseCount = courses.length > 0 ? courses.length : 64
-
-    return {
-      studentCount,
-      teacherCount,
-      courseCount,
-      satisfactionRate: 98,
-      supportAvailability: '24/7'
-    }
+    // Fetch dynamic counts directly from API endpoints or local DB
+    return handleLocalRequest<OverviewStats>('/stats/overview')
   },
 }
 

@@ -103,14 +103,14 @@ export default function PresentationPage() {
 
           <div className="mx-auto mb-5 flex justify-center">
             <img 
-              src="/logos/mascotte.png" 
+              src="https://i.imgur.com/GAiZ7WY.png" 
               alt="Mascotte UniFlow" 
               loading="eager"
               decoding="async"
               className="h-20 w-20 object-contain drop-shadow-md animate-bounce" 
               onError={(e) => {
                 const target = e.target as HTMLImageElement
-                target.src = '/mascotte.png'
+                target.src = '/logo_1.png'
               }}
             />
           </div>
@@ -184,7 +184,7 @@ export default function PresentationPage() {
                   preload="metadata"
                   playsInline
                   key={currentVideo.id}
-                  poster="/logos/logo-principal.png"
+                  poster="https://i.imgur.com/GAiZ7WY.png"
                   onError={(e) => {
                     const videoEl = e.currentTarget
                     videoEl.style.display = 'none'

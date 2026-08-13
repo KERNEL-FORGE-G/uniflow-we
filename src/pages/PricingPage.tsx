@@ -13,10 +13,10 @@ const plans = [
     id: 'personal_cm',
     name: 'Compte Indépendant (Cameroun)',
     icon: User,
-    priceMonthly: '100 FCFA',
-    priceAnnually: '1 200 FCFA',
-    period: 'Facturation mensuelle sans engagement',
-    badge: 'Populaire (CM)',
+    priceMonthly: '100 FCFA / mois',
+    priceAnnually: '1 000 FCFA / an',
+    period: 'Facturation mensuelle ou annuelle sans engagement',
+    badge: 'Populaire (CEMAC)',
     highlight: true,
     description: 'Accès complet au Backend 2 Indépendant avec Mobile Money (MTN, Orange, NotchPay).',
     btnText: 'Souscrire pour 100 FCFA',
@@ -35,9 +35,9 @@ const plans = [
     id: 'personal_eu',
     name: 'Compte Indépendant (International)',
     icon: Sparkles,
-    priceMonthly: '1,00 €',
-    priceAnnually: '12,00 €',
-    period: 'Facturation mensuelle sans engagement',
+    priceMonthly: '1,00 € / mois',
+    priceAnnually: '10,00 € / an',
+    period: 'Facturation mensuelle ou annuelle sans engagement',
     badge: 'International',
     highlight: false,
     description: 'Accès complet au Backend 2 avec Stripe, Carte Bancaire et Apple Pay.',
@@ -53,8 +53,29 @@ const plans = [
     ],
   },
   {
+    id: 'teacher_pack',
+    name: 'Formule Enseignant & Amphi',
+    icon: GraduationCap,
+    priceMonthly: '2 500 FCFA / mois',
+    priceAnnually: '25 000 FCFA / an',
+    period: 'Espace pédagogique & gestion d\'assiduité',
+    badge: 'Enseignants',
+    highlight: false,
+    description: 'Générez des QR Codes de présence, suivez les moyennes et organisez des cours vidéo.',
+    btnText: 'Souscrire Formule Enseignant',
+    btnAction: 'open_modal',
+    btnVariant: 'indigo',
+    features: [
+      'Gestion des cohortes et saisie des notes',
+      'Émargement numérique QR Code / NFC',
+      'Salons de visioconférence HD LAN & Cloud',
+      'Exportation automatique des PV d\'examen',
+      'Support réactif 7j/7',
+    ],
+  },
+  {
     id: 'campus',
-    name: 'Université & Campus (BD)',
+    name: 'Université & Campus (Institutionnel)',
     icon: Building2,
     priceMonthly: 'Sur Devis',
     priceAnnually: 'Sur Devis',
@@ -135,7 +156,7 @@ const faqs = [
 ]
 
 export default function PricingPage() {
-  const [billingCycle] = useState<'monthly' | 'annually'>('annually')
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
   const [faqCategory, setFaqCategory] = useState<string>('Tous')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
   const [modalOpen, setModalOpen] = useState<boolean>(false)
@@ -183,7 +204,38 @@ export default function PricingPage() {
       <section className="py-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
         <div className="mx-auto max-w-7xl px-6">
           
-          <div className="grid lg:grid-cols-3 gap-8 items-stretch">
+          {/* Billing Cycle Toggle Switch */}
+          <div className="flex justify-center mb-12">
+            <div className="inline-flex items-center rounded-2xl bg-slate-100 dark:bg-slate-800 p-1.5 border border-slate-200 dark:border-slate-700 shadow-inner">
+              <button
+                type="button"
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  billingCycle === 'monthly'
+                    ? 'bg-white dark:bg-slate-900 text-[#1e3a8a] dark:text-blue-400 shadow-md'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                Mensuel
+              </button>
+              <button
+                type="button"
+                onClick={() => setBillingCycle('annually')}
+                className={`flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  billingCycle === 'annually'
+                    ? 'bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] text-white shadow-md'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                }`}
+              >
+                <span>Annuel</span>
+                <span className="rounded-full bg-amber-400 text-slate-950 px-2 py-0.5 text-[10px] font-extrabold uppercase">
+                  -20% Réduction
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
             {plans.map((plan) => {
               const Icon = plan.icon
               return (

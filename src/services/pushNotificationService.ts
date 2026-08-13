@@ -144,7 +144,7 @@ class PushNotificationService {
       url = '/notifications',
       notificationType = 'general',
       tag = 'uniflow-alert',
-      icon = '/logos/icon-192.png'
+      icon = 'https://i.imgur.com/GAiZ7WY.png'
     } = payload
 
     // Method 1: Use active ServiceWorker registration showNotification

@@ -28,13 +28,14 @@ export function EmptyState({
         {mascot ? (
           <div className="flex h-24 w-24 items-center justify-center rounded-2xl overflow-hidden">
             <img 
-              src="/logos/mascotte.png" 
+              src="https://i.imgur.com/GAiZ7WY.png" 
               alt="UniFlow Mascotte" 
               className="h-full w-full object-contain opacity-60" 
               onError={(e) => {
                 const target = e.currentTarget
-                if (target.src.includes('/logos/mascotte.png')) {
-                  target.src = '/mascotte.png'
+                if (!target.dataset.triedFallback) {
+                  target.dataset.triedFallback = 'true'
+                  target.src = '/logo_1.png'
                 }
               }}
             />

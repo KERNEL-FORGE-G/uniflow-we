@@ -367,10 +367,10 @@ export default function MessagingPage() {
               {active.messages.length === 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
                   <img 
-                    src="/logos/mascotte.png" 
+                    src="https://i.imgur.com/GAiZ7WY.png" 
                     alt="" 
                     className="h-28 w-28 object-contain opacity-10 animate-pulse" 
-                    onError={(e) => { e.currentTarget.src = '/mascotte.png' }}
+                    onError={(e) => { e.currentTarget.src = '/logo_1.png' }}
                   />
                   <p className="text-xs text-[#9ca3af] mt-2 opacity-50">Commencez la conversation locale avec {active.name}…</p>
                 </div>
@@ -378,10 +378,10 @@ export default function MessagingPage() {
               {/* Mascot watermark — toujours présente en fond, très discrète */}
               <div className="pointer-events-none select-none absolute bottom-4 right-4 opacity-[0.04]">
                 <img 
-                  src="/logos/mascotte.png" 
+                  src="https://i.imgur.com/GAiZ7WY.png" 
                   alt="" 
                   className="h-40 w-40 object-contain" 
-                  onError={(e) => { e.currentTarget.src = '/mascotte.png' }}
+                  onError={(e) => { e.currentTarget.src = '/logo_1.png' }}
                 />
               </div>
               {active.messages.map(m => (

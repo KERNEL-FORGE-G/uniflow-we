@@ -136,12 +136,12 @@ export default function ContactPage() {
               {/* Mascotte & Quick Links */}
               <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 to-teal-50 p-6 flex items-center gap-5 shadow-sm">
                 <img 
-                  src="/logos/mascotte.png" 
+                  src="https://i.imgur.com/GAiZ7WY.png" 
                   alt="UniFlow Mascotte" 
                   className="h-16 w-16 object-contain shrink-0 drop-shadow-sm" 
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
-                    target.src = '/mascotte.png'
+                    target.src = '/logo_1.png'
                   }}
                 />
                 <div>
