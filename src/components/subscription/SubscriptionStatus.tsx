@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, Sparkles, ArrowRight, Zap } from 'lucide-react'
+import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, ArrowRight } from 'lucide-react'
 import { subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
-import { SubscriptionModal } from './SubscriptionModal'
 
 export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatusType | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
-  const [modalOpen, setModalOpen] = useState<boolean>(false)
   const navigate = useNavigate()
 
   const fetchStatus = async () => {
@@ -55,11 +53,7 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   const countryLabel = status?.countryCode === 'CM' ? '🇨🇲 Cameroun' : '🇫🇷 International'
 
   const handleRenewClick = () => {
-    if (isUnder7Days) {
-      navigate('/pricing')
-    } else {
-      setModalOpen(true)
-    }
+    navigate('/subscribe')
   }
 
   return (
@@ -177,12 +171,6 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
           </div>
         </div>
       </div>
-
-      <SubscriptionModal
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={fetchStatus}
-      />
     </>
   )
 }

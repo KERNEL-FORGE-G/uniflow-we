@@ -135,9 +135,9 @@ apiClient.interceptors.response.use(
         }
       }
     } else if (error.response) {
-      console.error(`[Axios Error ${status}] ${url}:`, error.response.data)
+      console.warn(`[Axios Error ${status}] ${url}:`, error.response.data)
     } else {
-      console.error(`[Axios Network Error] ${url}:`, error.message)
+      console.warn(`[Axios Network Info] ${url}:`, error.message)
     }
 
     return Promise.reject(error)
@@ -249,6 +249,117 @@ function getLocalDb() {
   }
 
   const initial = {
+    subscriptionPlans: [
+      {
+        id: 'plan_personal_cm',
+        code: 'personal_cm',
+        name: 'Compte Indépendant (Cameroun & CEMAC)',
+        category: 'PERSONAL',
+        countryCode: 'CM',
+        currency: 'XAF',
+        priceMonthlyAmount: 100,
+        priceAnnuallyAmount: 1000,
+        priceMonthly: '100 FCFA / mois',
+        priceAnnually: '1 000 FCFA / an',
+        period: 'Facturation mensuelle ou annuelle sans engagement',
+        badge: 'Populaire (CEMAC)',
+        highlight: true,
+        description: 'Accès complet au Backend 2 Indépendant avec Mobile Money (MTN, Orange, NotchPay).',
+        btnText: 'Souscrire pour 100 FCFA',
+        btnVariant: 'primary',
+        providers: ['MTN_MOMO', 'ORANGE_MONEY', 'NOTCHPAY'],
+        features: [
+          'Serveur dédié SaaS (Backend 2)',
+          'Emploi du temps & gestion des matières 100% libre',
+          'Paiement par MTN MoMo, Orange Money, NotchPay',
+          'Mode hors-ligne PWA & synchronisation cloud',
+          'Messagerie & visioconférence intégrées',
+          'Accès instantané 24/7',
+        ],
+        status: 'ACTIVE'
+      },
+      {
+        id: 'plan_personal_eu',
+        code: 'personal_eu',
+        name: 'Compte Indépendant (International)',
+        category: 'PERSONAL',
+        countryCode: 'FR',
+        currency: 'EUR',
+        priceMonthlyAmount: 1.00,
+        priceAnnuallyAmount: 10.00,
+        priceMonthly: '1,00 € / mois',
+        priceAnnually: '10,00 € / an',
+        period: 'Facturation mensuelle ou annuelle sans engagement',
+        badge: 'International',
+        highlight: false,
+        description: 'Accès complet au Backend 2 avec Stripe, Carte Bancaire et Apple Pay.',
+        btnText: 'Souscrire pour 1,00 €',
+        btnVariant: 'teal',
+        providers: ['STRIPE', 'CARD', 'APPLE_PAY'],
+        features: [
+          'Serveur dédié SaaS (Backend 2)',
+          'Paiement sécurisé Stripe & Carte Bancaire',
+          'Emploi du temps & espace de cours autonome',
+          'Gestion dynamique des révisions & devoirs',
+          'Support prioritaire par email',
+        ],
+        status: 'ACTIVE'
+      },
+      {
+        id: 'plan_teacher_pack',
+        code: 'teacher_pack',
+        name: 'Formule Enseignant & Amphi',
+        category: 'TEACHER',
+        countryCode: 'CM',
+        currency: 'XAF',
+        priceMonthlyAmount: 2500,
+        priceAnnuallyAmount: 25000,
+        priceMonthly: '2 500 FCFA / mois',
+        priceAnnually: '25 000 FCFA / an',
+        period: 'Espace pédagogique & gestion d\'assiduité',
+        badge: 'Enseignants',
+        highlight: false,
+        description: 'Générez des QR Codes de présence, suivez les moyennes et organisez des cours vidéo.',
+        btnText: 'Souscrire Formule Enseignant',
+        btnVariant: 'indigo',
+        providers: ['MTN_MOMO', 'ORANGE_MONEY', 'NOTCHPAY', 'CARD'],
+        features: [
+          'Gestion des cohortes et saisie des notes',
+          'Émargement numérique QR Code / NFC',
+          'Salons de visioconférence HD LAN & Cloud',
+          'Exportation automatique des PV d\'examen',
+          'Support réactif 7j/7',
+        ],
+        status: 'ACTIVE'
+      },
+      {
+        id: 'plan_campus',
+        code: 'campus',
+        name: 'Université & Campus (Institutionnel)',
+        category: 'INSTITUTION',
+        countryCode: 'ALL',
+        currency: 'XAF',
+        priceMonthlyAmount: 0,
+        priceAnnuallyAmount: 0,
+        priceMonthly: 'Sur Devis',
+        priceAnnually: 'Sur Devis',
+        period: 'Déploiement institutionnel multi-facultés',
+        badge: 'Sur Mesure',
+        highlight: false,
+        description: 'Pour l\'administration universitaire désireuse de connecter tout son campus.',
+        btnText: 'Demander une étude',
+        btnVariant: 'outline',
+        providers: ['VIREMENT', 'CONVENTION'],
+        features: [
+          'Interconnexion Backend 1 Université',
+          'Panneau d\'administration centralisé',
+          'Gestion des amphis & emplois du temps officiels',
+          'Module Sentinelle IoT (Kiosque Santé / Edge AI)',
+          'Garantie de service (SLA 99.9%)',
+        ],
+        status: 'ACTIVE'
+      }
+    ],
     users: [
       { id: 'usr-1', email: 'emma.martin@uniflow.edu', role: 'ETUDIANT', student: { firstName: 'Emma', lastName: 'Martin', matricule: 'ETU-2022-0847', level: 'L2', specialty: 'Informatique' } },
       { id: 'usr-2', email: 'lucas.dubois@uniflow.edu', role: 'DELEGUE', student: { firstName: 'Lucas', lastName: 'Dubois', matricule: 'ETU-2022-0520', level: 'L2', specialty: 'Informatique' } },
@@ -624,6 +735,158 @@ function handleLocalRequest<T>(path: string, init: RequestInit = {}): T {
       { id: 'al-2', action: 'CONSULTATION_COURS', resource: 'COURS', userRole: 'ETUDIANT', createdAt: new Date(Date.now()-3600000).toISOString() },
       { id: 'al-3', action: 'MODIFICATION_NOTES', resource: 'NOTES', userRole: 'ENSEIGNANT', createdAt: new Date(Date.now()-7200000).toISOString() },
     ] as T
+  }
+
+  // SUBSCRIPTIONS / PLANS (BD)
+  if (path.startsWith('/subscription/plans')) {
+    if (!db.subscriptionPlans || !Array.isArray(db.subscriptionPlans) || db.subscriptionPlans.length === 0) {
+      db.subscriptionPlans = [
+        {
+          id: 'plan_personal_cm',
+          code: 'personal_cm',
+          name: 'Compte Indépendant (Cameroun & CEMAC)',
+          category: 'PERSONAL',
+          countryCode: 'CM',
+          currency: 'XAF',
+          priceMonthlyAmount: 100,
+          priceAnnuallyAmount: 1000,
+          priceMonthly: '100 FCFA / mois',
+          priceAnnually: '1 000 FCFA / an',
+          period: 'Facturation mensuelle ou annuelle sans engagement',
+          badge: 'Populaire (CEMAC)',
+          highlight: true,
+          description: 'Accès complet au Backend 2 Indépendant avec Mobile Money (MTN, Orange, NotchPay).',
+          btnText: 'Souscrire pour 100 FCFA',
+          btnVariant: 'primary',
+          providers: ['MTN_MOMO', 'ORANGE_MONEY', 'NOTCHPAY'],
+          features: [
+            'Serveur dédié SaaS (Backend 2)',
+            'Emploi du temps & gestion des matières 100% libre',
+            'Paiement par MTN MoMo, Orange Money, NotchPay',
+            'Mode hors-ligne PWA & synchronisation cloud',
+            'Messagerie & visioconférence intégrées',
+            'Accès instantané 24/7',
+          ],
+          status: 'ACTIVE'
+        },
+        {
+          id: 'plan_personal_eu',
+          code: 'personal_eu',
+          name: 'Compte Indépendant (International)',
+          category: 'PERSONAL',
+          countryCode: 'FR',
+          currency: 'EUR',
+          priceMonthlyAmount: 1.00,
+          priceAnnuallyAmount: 10.00,
+          priceMonthly: '1,00 € / mois',
+          priceAnnually: '10,00 € / an',
+          period: 'Facturation mensuelle ou annuelle sans engagement',
+          badge: 'International',
+          highlight: false,
+          description: 'Accès complet au Backend 2 avec Stripe, Carte Bancaire et Apple Pay.',
+          btnText: 'Souscrire pour 1,00 €',
+          btnVariant: 'teal',
+          providers: ['STRIPE', 'CARD', 'APPLE_PAY'],
+          features: [
+            'Serveur dédié SaaS (Backend 2)',
+            'Paiement sécurisé Stripe & Carte Bancaire',
+            'Emploi du temps & espace de cours autonome',
+            'Gestion dynamique des révisions & devoirs',
+            'Support prioritaire par email',
+          ],
+          status: 'ACTIVE'
+        },
+        {
+          id: 'plan_teacher_pack',
+          code: 'teacher_pack',
+          name: 'Formule Enseignant & Amphi',
+          category: 'TEACHER',
+          countryCode: 'CM',
+          currency: 'XAF',
+          priceMonthlyAmount: 2500,
+          priceAnnuallyAmount: 25000,
+          priceMonthly: '2 500 FCFA / mois',
+          priceAnnually: '25 000 FCFA / an',
+          period: 'Espace pédagogique & gestion d\'assiduité',
+          badge: 'Enseignants',
+          highlight: false,
+          description: 'Générez des QR Codes de présence, suivez les moyennes et organisez des cours vidéo.',
+          btnText: 'Souscrire Formule Enseignant',
+          btnVariant: 'indigo',
+          providers: ['MTN_MOMO', 'ORANGE_MONEY', 'NOTCHPAY', 'CARD'],
+          features: [
+            'Gestion des cohortes et saisie des notes',
+            'Émargement numérique QR Code / NFC',
+            'Salons de visioconférence HD LAN & Cloud',
+            'Exportation automatique des PV d\'examen',
+            'Support réactif 7j/7',
+          ],
+          status: 'ACTIVE'
+        },
+        {
+          id: 'plan_campus',
+          code: 'campus',
+          name: 'Université & Campus (Institutionnel)',
+          category: 'INSTITUTION',
+          countryCode: 'ALL',
+          currency: 'XAF',
+          priceMonthlyAmount: 0,
+          priceAnnuallyAmount: 0,
+          priceMonthly: 'Sur Devis',
+          priceAnnually: 'Sur Devis',
+          period: 'Déploiement institutionnel multi-facultés',
+          badge: 'Sur Mesure',
+          highlight: false,
+          description: 'Pour l\'administration universitaire désireuse de connecter tout son campus.',
+          btnText: 'Demander une étude',
+          btnVariant: 'outline',
+          providers: ['VIREMENT', 'CONVENTION'],
+          features: [
+            'Interconnexion Backend 1 Université',
+            'Panneau d\'administration centralisé',
+            'Gestion des amphis & emplois du temps officiels',
+            'Module Sentinelle IoT (Kiosque Santé / Edge AI)',
+            'Garantie de service (SLA 99.9%)',
+          ],
+          status: 'ACTIVE'
+        }
+      ]
+      saveLocalDb(db)
+    }
+
+    const parts = path.split('/')
+    const idOrCode = parts[3]
+    if (idOrCode) {
+      const plan = db.subscriptionPlans.find((p: any) => p.id === idOrCode || p.code === idOrCode)
+      return (plan || db.subscriptionPlans[0]) as T
+    }
+    return db.subscriptionPlans.filter((p: any) => p.status !== 'INACTIVE') as T
+  }
+
+  if (path.startsWith('/subscription/checkout')) {
+    const txId = `TX-UNIFLOW-${Date.now()}`
+    const newSub = {
+      id: txId,
+      status: 'ACTIVE',
+      planId: body.planId || 'personal_cm',
+      paymentProvider: body.paymentProvider || 'MTN_MOMO',
+      phoneNumber: body.phoneNumber || '',
+      email: body.email || '',
+      fullName: body.fullName || '',
+      billingInterval: body.billingInterval || 'MONTHLY',
+      createdAt: new Date().toISOString(),
+      expiresAt: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString()
+    }
+    if (!db.subscriptions) db.subscriptions = []
+    db.subscriptions.unshift(newSub)
+    db.activeSubscription = newSub
+    saveLocalDb(db)
+    return {
+      transactionId: txId,
+      status: 'SUCCESS',
+      message: 'Abonnement enregistré et validé avec succès.',
+      subscription: newSub
+    } as T
   }
 
   return [] as unknown as T
@@ -1330,6 +1593,28 @@ export const supportApi = {
 
 // ─── API ABONNEMENTS ET COMPTES INDÉPENDANTS (BACKEND 2 VERCEL) ───────────────
 
+export interface SubscriptionPlan {
+  id: string
+  code: string
+  name: string
+  category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION'
+  countryCode: string
+  currency: string
+  priceMonthlyAmount: number
+  priceAnnuallyAmount: number
+  priceMonthly: string
+  priceAnnually: string
+  period: string
+  badge?: string
+  highlight?: boolean
+  description: string
+  btnText: string
+  btnVariant?: string
+  providers: string[]
+  features: string[]
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
 export interface PricingInfo {
   countryCode: string
   currency: 'XAF' | 'EUR' | 'USD'
@@ -1349,60 +1634,79 @@ export interface SubscriptionStatus {
 }
 
 export const subscriptionApi = {
+  getPlans: async (): Promise<SubscriptionPlan[]> => {
+    try {
+      const res = u(await api.get<SubscriptionPlan[]>('/subscription/plans'))
+      if (Array.isArray(res) && res.length > 0) return res
+    } catch {}
+    return handleLocalRequest<SubscriptionPlan[]>('/subscription/plans')
+  },
+
+  getPlanById: async (idOrCode: string): Promise<SubscriptionPlan | null> => {
+    try {
+      const res = u(await api.get<SubscriptionPlan>(`/subscription/plans/${idOrCode}`))
+      if (res) return res
+    } catch {}
+    return handleLocalRequest<SubscriptionPlan>(`/subscription/plans/${idOrCode}`)
+  },
+
   getPricing: async (countryCode: string = 'CM'): Promise<PricingInfo> => {
     try {
-      const res = await apiClient.get<PricingInfo>(`/subscription/pricing`, {
-        params: { countryCode }
-      })
-      return res.data
-    } catch {
-      if (countryCode.toUpperCase() === 'CM') {
-        return {
-          countryCode: 'CM',
-          currency: 'XAF',
-          amount: 100,
-          formattedPrice: '100 FCFA / mois',
-          billingInterval: 'MONTHLY',
-          providers: ['MTN_MOMO', 'ORANGE_MONEY', 'NOTCHPAY']
-        }
-      }
+      const res = u(await api.get<PricingInfo>(`/subscription/pricing?countryCode=${countryCode}`))
+      if (res) return res
+    } catch {}
+    if (countryCode.toUpperCase() === 'CM') {
       return {
-        countryCode: countryCode.toUpperCase(),
-        currency: 'EUR',
-        amount: 1.00,
-        formattedPrice: '1,00 € / mois',
+        countryCode: 'CM',
+        currency: 'XAF',
+        amount: 100,
+        formattedPrice: '100 FCFA / mois',
         billingInterval: 'MONTHLY',
-        providers: ['STRIPE', 'CARD']
+        providers: ['MTN_MOMO', 'ORANGE_MONEY', 'NOTCHPAY']
       }
+    }
+    return {
+      countryCode: countryCode.toUpperCase(),
+      currency: 'EUR',
+      amount: 1.00,
+      formattedPrice: '1,00 € / mois',
+      billingInterval: 'MONTHLY',
+      providers: ['STRIPE', 'CARD']
     }
   },
 
   getStatus: async (): Promise<SubscriptionStatus> => {
     try {
-      const res = await apiClient.get<SubscriptionStatus>('/subscription/status')
-      return res.data
-    } catch {
-      return {
-        status: 'ACTIVE',
-        countryCode: 'CM',
-        currency: 'XAF',
-        monthlyAmount: 100,
-        currentPeriodEnd: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
-        isAutoRenew: true
-      }
+      const res = u(await api.get<SubscriptionStatus>('/subscription/status'))
+      if (res) return res
+    } catch {}
+    return {
+      status: 'ACTIVE',
+      countryCode: 'CM',
+      currency: 'XAF',
+      monthlyAmount: 100,
+      currentPeriodEnd: new Date(Date.now() + 30 * 24 * 3600 * 1000).toISOString(),
+      isAutoRenew: true
     }
   },
 
-  createCheckout: async (payload: { countryCode: string; paymentProvider: string; phoneNumber?: string }) => {
+  createCheckout: async (payload: {
+    planId?: string
+    countryCode?: string
+    paymentProvider: string
+    phoneNumber?: string
+    billingInterval?: 'MONTHLY' | 'ANNUALLY'
+    email?: string
+    fullName?: string
+  }) => {
     try {
-      const res = await apiClient.post('/subscription/checkout', payload)
-      return res.data
+      const res = u(await api.post<any>('/subscription/checkout', payload))
+      if (res) return res
     } catch {
-      return {
-        transactionId: `tx_${Date.now()}`,
-        status: 'PENDING',
-        message: 'Demande de paiement générée avec succès.'
-      }
+      return handleLocalRequest('/subscription/checkout', {
+        method: 'POST',
+        body: JSON.stringify(payload)
+      })
     }
   }
 }

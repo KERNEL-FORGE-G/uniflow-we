@@ -1,4 +1,4 @@
-import { useState, Fragment } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { Link } from 'react-router-dom'
 import { 
   ArrowRight, Zap, Sparkles, HelpCircle, 
@@ -6,95 +6,7 @@ import {
   Calculator, CheckCircle2, User, CreditCard, Smartphone, ShieldCheck
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
-import { SubscriptionModal } from '../components/subscription/SubscriptionModal'
-
-const plans = [
-  {
-    id: 'personal_cm',
-    name: 'Compte Indépendant (Cameroun)',
-    icon: User,
-    priceMonthly: '100 FCFA / mois',
-    priceAnnually: '1 000 FCFA / an',
-    period: 'Facturation mensuelle ou annuelle sans engagement',
-    badge: 'Populaire (CEMAC)',
-    highlight: true,
-    description: 'Accès complet au Backend 2 Indépendant avec Mobile Money (MTN, Orange, NotchPay).',
-    btnText: 'Souscrire pour 100 FCFA',
-    btnAction: 'open_modal',
-    btnVariant: 'primary',
-    features: [
-      'Serveur dédié SaaS (Backend 2)',
-      'Emploi du temps & gestion des matières 100% libre',
-      'Paiement par MTN MoMo, Orange Money, NotchPay',
-      'Mode hors-ligne PWA & synchronisation cloud',
-      'Messagerie & visioconférence intégrées',
-      'Accès instantané 24/7',
-    ],
-  },
-  {
-    id: 'personal_eu',
-    name: 'Compte Indépendant (International)',
-    icon: Sparkles,
-    priceMonthly: '1,00 € / mois',
-    priceAnnually: '10,00 € / an',
-    period: 'Facturation mensuelle ou annuelle sans engagement',
-    badge: 'International',
-    highlight: false,
-    description: 'Accès complet au Backend 2 avec Stripe, Carte Bancaire et Apple Pay.',
-    btnText: 'Souscrire pour 1,00 €',
-    btnAction: 'open_modal',
-    btnVariant: 'teal',
-    features: [
-      'Serveur dédié SaaS (Backend 2)',
-      'Paiement sécurisé Stripe & Carte Bancaire',
-      'Emploi du temps & espace de cours autonome',
-      'Gestion dynamique des révisions & devoirs',
-      'Support prioritaire par email',
-    ],
-  },
-  {
-    id: 'teacher_pack',
-    name: 'Formule Enseignant & Amphi',
-    icon: GraduationCap,
-    priceMonthly: '2 500 FCFA / mois',
-    priceAnnually: '25 000 FCFA / an',
-    period: 'Espace pédagogique & gestion d\'assiduité',
-    badge: 'Enseignants',
-    highlight: false,
-    description: 'Générez des QR Codes de présence, suivez les moyennes et organisez des cours vidéo.',
-    btnText: 'Souscrire Formule Enseignant',
-    btnAction: 'open_modal',
-    btnVariant: 'indigo',
-    features: [
-      'Gestion des cohortes et saisie des notes',
-      'Émargement numérique QR Code / NFC',
-      'Salons de visioconférence HD LAN & Cloud',
-      'Exportation automatique des PV d\'examen',
-      'Support réactif 7j/7',
-    ],
-  },
-  {
-    id: 'campus',
-    name: 'Université & Campus (Institutionnel)',
-    icon: Building2,
-    priceMonthly: 'Sur Devis',
-    priceAnnually: 'Sur Devis',
-    period: 'Déploiement institutionnel multi-facultés',
-    badge: 'Sur Mesure',
-    highlight: false,
-    description: 'Pour l\'administration universitaire désireuse de connecter tout son campus.',
-    btnText: 'Demander une étude',
-    btnLink: '/contact',
-    btnVariant: 'outline',
-    features: [
-      'Interconnexion Backend 1 Université',
-      'Panneau d\'administration centralisé',
-      'Gestion des amphis & emplois du temps officiels',
-      'Module Sentinelle IoT (Kiosque Santé / Edge AI)',
-      'Garantie de service (SLA 99.9%)',
-    ],
-  },
-]
+import { subscriptionApi, type SubscriptionPlan } from '../lib/api'
 
 const comparisonCategories = [
   {
@@ -156,13 +68,29 @@ const faqs = [
 ]
 
 export default function PricingPage() {
+  const [dbPlans, setDbPlans] = useState<SubscriptionPlan[]>([])
+  const [loadingPlans, setLoadingPlans] = useState<boolean>(true)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
   const [faqCategory, setFaqCategory] = useState<string>('Tous')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-  const [modalOpen, setModalOpen] = useState<boolean>(false)
   
   // Interactive Simulator State
   const [studentCount, setStudentCount] = useState<number>(5000)
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      setLoadingPlans(true)
+      try {
+        const res = await subscriptionApi.getPlans()
+        setDbPlans(res)
+      } catch (err) {
+        console.error('Erreur lors du chargement des abonnements:', err)
+      } finally {
+        setLoadingPlans(false)
+      }
+    }
+    fetchPlans()
+  }, [])
 
   const filteredFaqs = faqCategory === 'Tous' 
     ? faqs 
@@ -189,13 +117,13 @@ export default function PricingPage() {
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed mb-8">
-            Une plateforme moderne, accessible et conçue pour la sobriété numérique. Profitez de la version d'essai complète sans engagement.
+            Une plateforme moderne, accessible et conçue pour la sobriété numérique. Choisissez votre formule et accédez à votre espace dédié.
           </p>
 
           {/* Banner notification */}
           <div className="inline-flex items-center gap-2 rounded-2xl bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800/80 px-5 py-2.5 text-xs font-semibold text-[#1e3a8a] dark:text-blue-300 shadow-xs">
             <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
-            <span>Phase de lancement : <strong>Accès 100% gratuit</strong> pour tous les utilisateurs durant la démo.</span>
+            <span>Offres gérées en <strong>Base de Données</strong> avec page et étape de souscription dédiée pour chaque formule.</span>
           </div>
         </div>
       </section>
@@ -235,91 +163,93 @@ export default function PricingPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
-            {plans.map((plan) => {
-              const Icon = plan.icon
-              return (
-                <div 
-                  key={plan.id}
-                  className={`relative flex flex-col justify-between rounded-3xl p-7 border transition-all duration-300 ${
-                    plan.highlight
-                      ? 'bg-gradient-to-b from-white to-blue-50/60 border-[#1e3a8a] shadow-xl ring-2 ring-[#1e3a8a]/20 scale-[1.02]'
-                      : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm hover:shadow-md'
-                  }`}
-                >
-                  {plan.badge && (
-                    <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] px-4 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-md">
-                      {plan.badge}
-                    </div>
-                  )}
+          {loadingPlans ? (
+            <div className="text-center py-12 text-slate-500 font-semibold text-sm">
+              Chargement des offres d'abonnement depuis la base de données...
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
+              {dbPlans.map((plan) => {
+                const isInstitution = plan.category === 'INSTITUTION' || plan.code === 'campus'
+                const targetPath = isInstitution ? '/contact' : `/subscribe/${plan.code || plan.id}`
 
-                  <div>
-                    {/* Header */}
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-                        plan.highlight ? 'bg-[#1e3a8a] text-white shadow-md' : 'bg-slate-100 text-slate-700 border border-slate-200'
-                      }`}>
-                        <Icon className="h-6 w-6" />
+                const getIcon = () => {
+                  if (plan.category === 'PERSONAL') return User
+                  if (plan.category === 'TEACHER') return GraduationCap
+                  if (plan.category === 'INSTITUTION') return Building2
+                  return Sparkles
+                }
+                const Icon = getIcon()
+
+                return (
+                  <div 
+                    key={plan.id}
+                    className={`relative flex flex-col justify-between rounded-3xl p-7 border transition-all duration-300 ${
+                      plan.highlight
+                        ? 'bg-gradient-to-b from-white to-blue-50/60 dark:from-slate-900 dark:to-blue-950/40 border-[#1e3a8a] shadow-xl ring-2 ring-[#1e3a8a]/20 scale-[1.02]'
+                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 shadow-sm hover:shadow-md'
+                    }`}
+                  >
+                    {plan.badge && (
+                      <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] px-4 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-md whitespace-nowrap">
+                        {plan.badge}
                       </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-slate-900">{plan.name}</h3>
-                        <p className="text-xs text-slate-500">{plan.period}</p>
-                      </div>
-                    </div>
+                    )}
 
-                    {/* Price */}
-                    <div className="my-5 pb-5 border-b border-slate-200">
-                      <span className="text-3xl font-black text-slate-900 sm:text-4xl">
-                        {billingCycle === 'annually' ? plan.priceAnnually : plan.priceMonthly}
-                      </span>
-                      <p className="text-xs text-slate-500 mt-1 font-normal">{plan.description}</p>
-                    </div>
-
-                    {/* Features List */}
-                    <div className="space-y-3 mb-8">
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inclus dans ce forfait :</p>
-                      {plan.features.map((feature, idx) => (
-                        <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700">
-                          <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
-                          <span>{feature}</span>
+                    <div>
+                      {/* Header */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shrink-0 ${
+                          plan.highlight ? 'bg-[#1e3a8a] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
+                        }`}>
+                          <Icon className="h-6 w-6" />
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{plan.name}</h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{plan.period}</p>
+                        </div>
+                      </div>
 
-                  {/* Action Button */}
-                  {plan.btnAction === 'open_modal' ? (
-                    <button
-                      type="button"
-                      onClick={() => setModalOpen(true)}
-                      className={`block w-full text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer ${
-                        plan.btnVariant === 'primary'
-                          ? 'bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white shadow-blue-900/20'
-                          : plan.btnVariant === 'teal'
-                          ? 'bg-[#0d9488] hover:bg-[#14b8a8] text-white shadow-teal-900/20'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
-                      }`}
-                    >
-                      {plan.btnText}
-                    </button>
-                  ) : (
+                      {/* Price */}
+                      <div className="my-5 pb-5 border-b border-slate-200 dark:border-slate-800">
+                        <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                          {billingCycle === 'annually' ? plan.priceAnnually : plan.priceMonthly}
+                        </span>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-normal">{plan.description}</p>
+                      </div>
+
+                      {/* Features List */}
+                      <div className="space-y-3 mb-8">
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inclus dans cette offre :</p>
+                        {plan.features.map((feature, idx) => (
+                          <div key={idx} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
+                            <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Dedicated Page Link Button */}
                     <Link
-                      to={plan.btnLink || '/register'}
+                      to={targetPath}
                       className={`block w-full text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer ${
-                        plan.btnVariant === 'primary'
+                        plan.btnVariant === 'primary' || plan.highlight
                           ? 'bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white shadow-blue-900/20'
                           : plan.btnVariant === 'teal'
                           ? 'bg-[#0d9488] hover:bg-[#14b8a8] text-white shadow-teal-900/20'
-                          : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'
+                          : plan.btnVariant === 'indigo'
+                          ? 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                          : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700'
                       }`}
                     >
-                      {plan.btnText}
+                      {plan.btnText || 'Souscrire à cette offre'}
                     </Link>
-                  )}
-                </div>
-              )
-            })}
-          </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
 
         </div>
       </section>
@@ -506,7 +436,6 @@ export default function PricingPage() {
         </div>
       </section>
 
-      <SubscriptionModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
       <LandingFooter />
     </div>
   )
