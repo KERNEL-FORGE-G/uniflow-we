@@ -92,7 +92,21 @@ export default function LoginPage() {
         >
           {/* Logo */}
           <motion.div variants={fadeInUp} className="text-center">
-            <img src="/logos/logo-principal.png" alt="UniFlow" className="mx-auto h-20 mb-6 object-contain brightness-0 invert drop-shadow-2xl" />
+            <img
+              src="https://i.imgur.com/GAiZ7WY.png"
+              alt="UniFlow"
+              className="mx-auto h-20 mb-6 object-contain drop-shadow-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                if (!target.dataset.triedFallback1) {
+                  target.dataset.triedFallback1 = 'true'
+                  target.src = '/logo_1.png'
+                } else if (!target.dataset.triedFallback2) {
+                  target.dataset.triedFallback2 = 'true'
+                  target.src = '/logo.png'
+                }
+              }}
+            />
             <h1 className="text-4xl font-black mb-3">Bienvenue sur UniFlow</h1>
             <p className="text-blue-100 text-lg leading-relaxed">
               La plateforme universitaire intelligente qui fonctionne partout, même sans Internet
@@ -370,7 +384,21 @@ export default function LoginPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden mt-8 text-center">
-            <img src="/logos/logo-principal.png" alt="UniFlow" className="mx-auto h-12 object-contain opacity-50" />
+            <img
+              src="https://i.imgur.com/GAiZ7WY.png"
+              alt="UniFlow"
+              className="mx-auto h-12 object-contain opacity-70"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                if (!target.dataset.triedFallback1) {
+                  target.dataset.triedFallback1 = 'true'
+                  target.src = '/logo_1.png'
+                } else if (!target.dataset.triedFallback2) {
+                  target.dataset.triedFallback2 = 'true'
+                  target.src = '/logo.png'
+                }
+              }}
+            />
           </div>
         </motion.div>
       </div>

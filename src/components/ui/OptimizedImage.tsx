@@ -17,7 +17,7 @@ export function OptimizedImage({
   alt, 
   className, 
   loading = 'lazy',
-  fallbackSrc = '/logos/logo-principal.png',
+  fallbackSrc = 'https://i.imgur.com/GAiZ7WY.png',
   onLoad,
   onError
 }: OptimizedImageProps) {
@@ -30,7 +30,16 @@ export function OptimizedImage({
   useEffect(() => {
     setCurrentSrc(src)
     setHasError(false)
+    setIsLoaded(false)
   }, [src])
+
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete) {
+      if (imgRef.current.naturalWidth > 0) {
+        setIsLoaded(true)
+      }
+    }
+  }, [currentSrc, isInView])
 
   useEffect(() => {
     if (loading === 'eager') {

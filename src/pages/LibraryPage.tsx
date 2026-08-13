@@ -887,7 +887,7 @@ export default function LibraryPage() {
                   autoPlay
                   playsInline
                   src="/video/demo.mp4"
-                  poster="/logos/logo-principal.png"
+                  poster="https://i.imgur.com/GAiZ7WY.png"
                   className="w-full h-full object-contain"
                 >
                   Votre navigateur ne supporte pas la vidéo.

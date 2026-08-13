@@ -33,7 +33,7 @@ export default function DemoPage() {
                 onError={() => setVideoError(true)}
                 className="w-full h-full object-contain bg-black"
                 src="/video/demo.mp4"
-                poster="/logos/logo-principal.png"
+                poster="https://i.imgur.com/GAiZ7WY.png"
               >
                 Votre navigateur ne supporte pas la lecture vidéo.
               </video>

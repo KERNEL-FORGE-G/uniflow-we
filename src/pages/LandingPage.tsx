@@ -323,12 +323,21 @@ export default function LandingPage() {
               {/* Central Hero Landing Image Container */}
               <div className="relative mx-auto w-full max-w-[540px] rounded-3xl border-4 border-slate-200/90 bg-white shadow-2xl overflow-hidden p-4 sm:p-5 text-center transform hover:scale-[1.01] transition-transform">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 via-transparent to-teal-50/50 pointer-events-none" />
-                <OptimizedImage
-                  src={landingImg}
+                <img
+                  src="/landing.png"
                   alt="Aperçu UniFlow"
                   className="w-full h-auto object-cover max-h-[440px] rounded-2xl relative z-10 mx-auto shadow-sm"
                   loading="eager"
-                  fallbackSrc="/logos/landing.png"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement
+                    if (!target.dataset.triedFallback1) {
+                      target.dataset.triedFallback1 = 'true'
+                      target.src = '/Image 1.png'
+                    } else if (!target.dataset.triedFallback2) {
+                      target.dataset.triedFallback2 = 'true'
+                      target.src = '/UniFlow_Logo_Principal.png'
+                    }
+                  }}
                 />
                 <div className="mt-4 pt-3 border-t border-slate-100 relative z-10 flex items-center justify-between text-xs font-extrabold text-slate-600 px-2">
                   <span className="flex items-center gap-1 text-blue-700">

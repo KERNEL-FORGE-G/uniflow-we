@@ -37,14 +37,20 @@ export function Sidebar() {
       <div className="relative overflow-hidden border-b border-[#e5e7eb] px-4 py-4">
         <div className="flex items-center justify-between gap-3">
           <img
-            src="/logos/logo-principal.png"
+            src="https://i.imgur.com/GAiZ7WY.png"
             alt="UniFlow"
             loading="eager"
             decoding="async"
             className="h-9 w-auto object-contain"
             onError={(e) => {
               const target = e.target as HTMLImageElement
-              target.src = '/logo-principal.png'
+              if (!target.dataset.triedFallback1) {
+                target.dataset.triedFallback1 = 'true'
+                target.src = '/logo_1.png'
+              } else if (!target.dataset.triedFallback2) {
+                target.dataset.triedFallback2 = 'true'
+                target.src = '/logo.png'
+              }
             }}
           />
           <Sparkles className="h-4 w-4 text-[#0d9488] animate-pulse-dot" />
@@ -307,7 +313,21 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
       {/* Logo + Close */}
       <div className="flex items-center justify-between border-b border-[#e5e7eb] px-5 py-4">
         <div className="flex items-center gap-3">
-          <img src="/logos/logo-principal.png" alt="UniFlow" className="h-8 w-auto object-contain" />
+          <img
+            src="https://i.imgur.com/GAiZ7WY.png"
+            alt="UniFlow"
+            className="h-8 w-auto object-contain"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement
+              if (!target.dataset.triedFallback1) {
+                target.dataset.triedFallback1 = 'true'
+                target.src = '/logo_1.png'
+              } else if (!target.dataset.triedFallback2) {
+                target.dataset.triedFallback2 = 'true'
+                target.src = '/logo.png'
+              }
+            }}
+          />
         </div>
         <button onClick={onClose} className="rounded-xl p-2 hover:bg-[#f3f4f6] transition-colors">
           <X className="h-5 w-5 text-[#6b7280]" />

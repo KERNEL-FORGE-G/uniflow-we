@@ -159,13 +159,14 @@ export default function AboutPage() {
             className="mx-auto mb-8 flex h-24 w-24 items-center justify-center"
           >
             <img 
-              src="/logos/mascotte.png" 
+              src="https://i.imgur.com/GAiZ7WY.png" 
               alt="UniFlow" 
               className="h-24 w-24 object-contain drop-shadow-2xl" 
               onError={(e) => {
                 const target = e.currentTarget
-                if (target.src.includes('/logos/mascotte.png')) {
-                  target.src = '/mascotte.png'
+                if (!target.dataset.triedFallback1) {
+                  target.dataset.triedFallback1 = 'true'
+                  target.src = '/logo_1.png'
                 }
               }}
             />

@@ -6,6 +6,7 @@ import { useState } from 'react'
 import { useApi } from '../hooks/useApi'
 import { statsApi, getAccountType } from '../lib/api'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
+import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 
 const gradeDistrib = [
   { name: 'Excellentes', value: 35, color: '#1e3a8a' },
@@ -78,26 +79,29 @@ export default function DashboardPage() {
   const [activeCalDay, setActiveCalDay] = useState(today)
   const { data: overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useApi(() => statsApi.overview())
 
+  const isPersonal = getAccountType() === 'PERSONAL'
+  const isEmptyData = isPersonal && (overview?.courseCount === 0)
+
   const studentStats = [
-    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '...',      delta: '+8%',    up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
-    { label: 'Devoirs à rendre', value: '5',       delta: '↓1',     up: false, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
-    { label: 'Prochain cours',   value: '2h30',    delta: '+15m',   up: true,  icon: Clock,         bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/emploi-du-temps' },
-    { label: 'Moyenne',          value: '14.6/20', delta: '+0.6',   up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
-    { label: 'Présences',        value: '87%',     delta: '-5%',    up: false, icon: UserCheck,     bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/presences' },
+    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? '+1' : '0',    up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
+    { label: 'Devoirs à rendre', value: overview ? `${overview.assignmentCount ?? 0}` : '0',       delta: '0',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
+    { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: 'Actif',   up: true,  icon: Clock,         bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/emploi-du-temps' },
+    { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: '0',   up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
+    { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: '0%',    up: true, icon: UserCheck,     bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/presences' },
   ]
   const delegateStats = [
-    { label: 'Taux présence',     value: '89%',  delta: '+3%',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/gestion-presences' },
-    { label: 'Sync. en attente',  value: '2',    delta: 'Offline', up: false, icon: ClipboardList, bg: 'bg-[#fee2e2]', color: 'text-[#dc2626]', to: '/app/gestion-presences' },
-    { label: 'Justif. en attente',value: '3',    delta: '↓2',     up: true,  icon: Bell,          bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/gestion-presences' },
-    { label: 'Cohorte L2 Info',   value: overview ? `${overview.studentCount}` : '...',   delta: 'Stable',  up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
-    { label: 'Sessions validées', value: '18',   delta: '+1',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/emploi-du-temps' },
+    { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: '0%',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/gestion-presences' },
+    { label: 'Sync. en attente',  value: '0',    delta: 'En ligne', up: true, icon: ClipboardList, bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/gestion-presences' },
+    { label: 'Justif. en attente',value: '0',    delta: '0',     up: true,  icon: Bell,          bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/gestion-presences' },
+    { label: 'Étudiants suivis',  value: overview ? `${overview.studentCount}` : '0',   delta: 'Personnel',  up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/etudiants' },
+    { label: 'Sessions validées', value: '0',   delta: '0',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/emploi-du-temps' },
   ]
   const teacherStats = [
-    { label: 'Cours assignés',    value: overview ? `${overview.courseCount}` : '4',     delta: 'Stable', up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/mes-cours-enseignant' },
-    { label: 'Étudiants totaux',  value: overview ? `${overview.studentCount}` : '...',   delta: '+12',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/mes-cours-enseignant' },
-    { label: 'Devoirs à corriger',value: '23',    delta: '+5',     up: false, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/mes-cours-enseignant' },
-    { label: 'Notes à saisir',    value: '2',     delta: '↓1',     up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/mes-cours-enseignant' },
-    { label: 'Visioconfs / sem.', value: '3',     delta: '+1',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/visio' },
+    { label: 'Cours créés',       value: overview ? `${overview.courseCount}` : '0',     delta: 'Incrémental', up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/mes-cours-enseignant' },
+    { label: 'Étudiants enregistrés',  value: overview ? `${overview.studentCount}` : '0',   delta: 'Actifs',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/etudiants' },
+    { label: 'Devoirs créés',     value: overview ? `${overview.assignmentCount ?? 0}` : '0',    delta: '0',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
+    { label: 'Notes saisies',     value: overview ? `${overview.gradeCount ?? 0}` : '0',     delta: '0',     up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
+    { label: 'Moyenne générale',  value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—',     delta: '0',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/notes' },
   ]
 
   const stats = currentRole === 'teacher' ? teacherStats : currentRole === 'delegate' ? delegateStats : studentStats
@@ -217,12 +221,10 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Zone Temps Restant Abonnement (Compte Personnel / SaaS) ── */}
-      {(getAccountType() === 'PERSONAL' || (currentUser as any)?.accountType === 'PERSONAL' || (currentUser as any)?.role?.includes('INDEPENDENT')) && (
-        <div className="animate-fade-in">
-          <SubscriptionWidget />
-        </div>
-      )}
+      {/* ── Card Statut d'Abonnement / Plan Académique ── */}
+      <div className="animate-fade-in">
+        <SubscriptionStatus />
+      </div>
 
       {/* ── KPI Stats ── */}
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">

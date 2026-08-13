@@ -183,7 +183,18 @@ export default function RegisterPage() {
         >
           {/* Logo */}
           <motion.div variants={fadeInUp} className="text-center">
-            <img src="/logos/logo-principal.png" alt="UniFlow" className="mx-auto h-20 mb-6 object-contain brightness-0 invert drop-shadow-2xl" />
+            <img
+              src="https://i.imgur.com/GAiZ7WY.png"
+              alt="UniFlow"
+              className="mx-auto h-20 mb-6 object-contain drop-shadow-lg"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                if (!target.dataset.triedFallback) {
+                  target.dataset.triedFallback = 'true'
+                  target.src = '/logo_1.png'
+                }
+              }}
+            />
             <h1 className="text-4xl font-black mb-3">Rejoignez UniFlow</h1>
             <p className="text-teal-100 text-lg leading-relaxed">
               Créez votre compte et profitez d'une expérience universitaire moderne et connectée
@@ -644,7 +655,18 @@ export default function RegisterPage() {
 
           {/* Mobile logo */}
           <div className="lg:hidden mt-8 text-center">
-            <img src="/logos/logo-principal.png" alt="UniFlow" className="mx-auto h-12 object-contain opacity-50" />
+            <img
+              src="https://i.imgur.com/GAiZ7WY.png"
+              alt="UniFlow"
+              className="mx-auto h-12 object-contain opacity-70"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                if (!target.dataset.triedFallback) {
+                  target.dataset.triedFallback = 'true'
+                  target.src = '/logo_1.png'
+                }
+              }}
+            />
           </div>
         </motion.div>
       </div>

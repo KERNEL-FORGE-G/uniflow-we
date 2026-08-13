@@ -22,14 +22,20 @@ export function LandingNavbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
           <img
-            src="/logos/logo-principal.png"
+            src="https://i.imgur.com/GAiZ7WY.png"
             alt="UniFlow"
             loading="eager"
             decoding="async"
             className="h-10 w-auto object-contain"
             onError={(e) => {
               const target = e.target as HTMLImageElement
-              target.src = '/logo-principal.png'
+              if (!target.dataset.triedFallback1) {
+                target.dataset.triedFallback1 = 'true'
+                target.src = '/logo_1.png'
+              } else if (!target.dataset.triedFallback2) {
+                target.dataset.triedFallback2 = 'true'
+                target.src = '/logo.png'
+              }
             }}
           />
         </Link>
@@ -114,12 +120,18 @@ export function LandingFooter() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <img 
-                src="/logos/logo-principal.png" 
+                src="https://i.imgur.com/GAiZ7WY.png" 
                 alt="UniFlow" 
                 className="h-10 w-auto object-contain" 
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
-                  target.src = '/logo-principal.png'
+                  if (!target.dataset.triedFallback1) {
+                    target.dataset.triedFallback1 = 'true'
+                    target.src = '/logo_1.png'
+                  } else if (!target.dataset.triedFallback2) {
+                    target.dataset.triedFallback2 = 'true'
+                    target.src = '/logo.png'
+                  }
                 }} 
               />
             </div>
