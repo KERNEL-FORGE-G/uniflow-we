@@ -65,14 +65,17 @@ const highlights = [
 export default function PresentationPage() {
   const [activeVideoIndex, setActiveVideoIndex] = useState(0)
   const [copied, setCopied] = useState(false)
+  const [videoErrorId, setVideoErrorId] = useState<string | null>(null)
 
   const currentVideo = VIDEOS[activeVideoIndex]
 
   const handlePrev = () => {
+    setVideoErrorId(null)
     setActiveVideoIndex((prev) => (prev === 0 ? VIDEOS.length - 1 : prev - 1))
   }
 
   const handleNext = () => {
+    setVideoErrorId(null)
     setActiveVideoIndex((prev) => (prev === VIDEOS.length - 1 ? 0 : prev + 1))
   }
 
@@ -176,26 +179,25 @@ export default function PresentationPage() {
                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                   allowFullScreen
                 />
+              ) : videoErrorId === currentVideo.id ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900 p-6 text-center text-white">
+                  <Film className="h-10 w-10 text-blue-300" />
+                  <p className="text-sm font-bold">La vidéo ne peut pas être lue dans ce navigateur.</p>
+                  <p className="max-w-md text-xs text-slate-400">Le fichier n’a pas pu être décodé. Vous pouvez essayer de l’ouvrir directement.</p>
+                  <a href={currentVideo.videoSrc} target="_blank" rel="noopener noreferrer" className="rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white hover:bg-blue-500">
+                    Ouvrir le fichier vidéo
+                  </a>
+                </div>
               ) : (
                 <video
                   controls
                   controlsList="nodownload"
-                  className="w-full h-full object-contain"
+                  className="h-full w-full object-contain"
                   preload="metadata"
                   playsInline
                   key={currentVideo.id}
-                  poster="https://i.imgur.com/GAiZ7WY.png"
-                  onError={(e) => {
-                    const videoEl = e.currentTarget
-                    videoEl.style.display = 'none'
-                    const parent = videoEl.parentElement
-                    if (parent && !parent.querySelector('.video-fallback-msg')) {
-                      const div = document.createElement('div')
-                      div.className = 'video-fallback-msg absolute inset-0 flex flex-col items-center justify-center p-6 text-center text-white bg-slate-900'
-                      div.innerHTML = `<div class="h-12 w-12 rounded-xl bg-blue-600/30 flex items-center justify-center mb-3"><svg class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div><p class="font-bold text-sm">Vidéo Démo UniFlow</p><p class="text-xs text-slate-400 mt-1 max-w-sm">Consultez la vidéo de démonstration du produit UniFlow.</p>`
-                      parent.appendChild(div)
-                    }
-                  }}
+                  poster="/logos/landing.png"
+                  onError={() => setVideoErrorId(currentVideo.id)}
                 >
                   <source src={currentVideo.videoSrc} type="video/mp4" />
                   Votre navigateur ne supporte pas la lecture vidéo.
@@ -228,7 +230,7 @@ export default function PresentationPage() {
                   {VIDEOS.map((_, idx) => (
                     <button
                       key={idx}
-                      onClick={() => setActiveVideoIndex(idx)}
+                      onClick={() => { setVideoErrorId(null); setActiveVideoIndex(idx) }}
                       className={`h-2.5 rounded-full transition-all cursor-pointer ${
                         activeVideoIndex === idx
                           ? 'w-7 bg-blue-500'
