@@ -49,3 +49,19 @@ Le bouton Étudiant de démonstration continue de rediriger vers `#/app` après 
 Après attente, la démo redirige bien vers `#/app` et affiche le profil étudiant avec les données locales attendues (5 cours, 4 devoirs, moyenne 15,6/20). Le stockage local contrôlé juste avant la transition ne contenait pas de token, ce qui confirme que l’extraction intermédiaire était transitoire ; après la transition, le tableau de bord est stable.
 
 La modale d’expiration de session a été déclenchée par événement et s’affiche correctement au-dessus du tableau de bord, avec un titre explicite, un texte de protection des données, une fermeture et un bouton « Se reconnecter ».
+
+## Observations externes de production
+
+Source : https://uniflow.kernelforge.codes/
+
+Le site déployé est accessible et sert la landing page UniFlow avec un HashRouter. La route publique `/` rend correctement les liens `#/login`, `#/register`, `#/app` et les pages marketing.
+
+Source backend testée : https://api-uniflow.kernelforge.codes/
+
+`GET /auth/academic-options` a répondu HTTP 200 avec une enveloppe `success/data` contenant des niveaux et spécialités réels. `GET /courses` a répondu HTTP 401 sans jeton. Les chemins `/api/auth/academic-options`, `/api/courses` et `/api/subscription/plans` ne correspondent pas aux chemins actifs observés ; la couche frontend doit donc utiliser les chemins racine (`/auth/...`, `/courses`, etc.) avec l’enveloppe `success/data`.
+
+`https://api-uni.uniflow.edu` ne résout pas dans l’environnement de test. `https://uniflow-personal-backend.vercel.app` répond `DEPLOYMENT_NOT_FOUND`. L’exemple d’environnement a été corrigé pour le backend universitaire actif et le backend personnel est désormais vide tant qu’un déploiement réel n’est pas fourni.
+
+Source backend documentaire : https://github.com/KERNEL-FORGE-G/uniflow-we/blob/main/API_UNIVERSITY.md
+
+La documentation décrit notamment `POST /api/auth/login`, `GET /api/courses/mine`, `POST /api/attendance/scan` et `GET /api/grades/my-grades`, mais les réponses observées en production utilisent les chemins racine correspondants. Cette divergence devra être clarifiée dans la documentation avant la finalisation.
