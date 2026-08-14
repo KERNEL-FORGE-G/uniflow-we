@@ -15,8 +15,6 @@ import { ScrollFloat } from '../components/ui/ScrollFloat'
 import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { fadeInUp, staggerContainer, float } from '../utils/animations'
-import { useApi } from '../hooks/useApi'
-import { statsApi } from '../lib/api'
 import { cn } from '../utils/cn'
 
 const landingImg = 'https://i.imgur.com/35YpEbS.png'
@@ -122,7 +120,9 @@ const faqs = [
 type RoleTab = 'etudiant' | 'delegue' | 'enseignant' | 'admin'
 
 export default function LandingPage() {
-  const { data: overview, error: overviewError } = useApi(() => statsApi.overview())
+  // Les statistiques de campus nécessitent une session universitaire. La page publique
+  // n’appelle donc aucun endpoint protégé et n’invente aucune métrique.
+  const stats: Array<{ icon: typeof Users; value: string; label: string; color: string }> = []
 
   // Interactive Demo State
   const [activeRoleTab, setActiveRoleTab] = useState<RoleTab>('etudiant')
@@ -132,37 +132,6 @@ export default function LandingPage() {
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-
-  const stats = overview
-    ? [
-        { 
-          icon: Users, 
-          value: overview.studentCount >= 1000 
-            ? `${overview.studentCount.toLocaleString('fr-FR').replace(/\s/g, ' ')} +` 
-            : `${overview.studentCount}+`, 
-          label: 'Étudiants actifs', 
-          color: 'text-[#1e3a8a] bg-[#eff3ff]' 
-        },
-        { 
-          icon: Award, 
-          value: `${overview.teacherCount.toLocaleString('fr-FR')}+`, 
-          label: 'Enseignants', 
-          color: 'text-[#0d9488] bg-[#f0fdfa]' 
-        },
-        { 
-          icon: TrendingUp, 
-          value: `${overview.satisfactionRate}%`, 
-          label: 'Satisfaction', 
-          color: 'text-purple-700 bg-purple-50' 
-        },
-        { 
-          icon: Clock, 
-          value: overview.supportAvailability || '24/7', 
-          label: 'Mode offline (24/7)', 
-          color: 'text-amber-700 bg-amber-50' 
-        },
-      ]
-    : []
 
   // Calculated ROI values
   const paperSavedSheets = Math.round(studentCount * 140)
@@ -348,11 +317,9 @@ export default function LandingPage() {
 
       {/* ── Realtime Stats Bar ── */}
       <AnimatedSection className="border-y-2 border-slate-200 bg-white py-12">
-        {overviewError && (
-          <div className="mx-auto max-w-[1920px] px-6 pb-4 text-center text-xs font-bold text-amber-700">
-            * Affichage des métriques d'usage prévisionnelles du campus.
-          </div>
-        )}
+        <div className="mx-auto max-w-[1920px] px-6 pb-4 text-center text-xs font-semibold text-slate-500">
+          Les métriques de campus apparaissent après connexion à un compte universitaire autorisé.
+        </div>
         <div className="mx-auto max-w-[1920px] px-6 lg:px-12">
           <motion.div
             variants={staggerContainer}
