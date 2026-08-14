@@ -460,7 +460,8 @@ export const authApi = {
     const accType = dto.accountType || 'UNIVERSITY'
     setAccountType(accType)
     try {
-      const res = u(await api.post<{ data: AuthResult }>('/auth/register', dto))
+      const { accountType: _accountType, universityCode: _universityCode, ...backendDto } = dto
+      const res = u(await api.post<{ data: AuthResult }>('/auth/register', backendDto))
       if (res && res.user) {
         res.user.accountType = accType
         res.user.universityCode = dto.universityCode || 'UY1'
