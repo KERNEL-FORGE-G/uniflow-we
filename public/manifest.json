@@ -3,7 +3,7 @@
   "short_name": "UniFlow",
   "description": "Plateforme universitaire tout-en-un offline-first : cours, emploi du temps, présences QR code, visioconférence HD et suivi académique.",
   "id": "/",
-  "start_url": "/?source=pwa",
+  "start_url": "/#/app?source=pwa",
   "scope": "/",
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui", "browser"],
@@ -51,7 +51,7 @@
       "name": "Emploi du temps",
       "short_name": "Agenda",
       "description": "Consulter mon emploi du temps académique",
-      "url": "/app/agenda",
+      "url": "/#/app/emploi-du-temps",
       "icons": [
         {
           "src": "/logos/icon-192.png",
@@ -64,7 +64,7 @@
       "name": "Visioconférence HD",
       "short_name": "Visio",
       "description": "Rejoindre un cours en visioconférence",
-      "url": "/app/visio",
+      "url": "/#/app/visio",
       "icons": [
         {
           "src": "/logos/icon-192.png",
@@ -77,7 +77,7 @@
       "name": "Présences & QR Code",
       "short_name": "Présences",
       "description": "Scanner mon QR Code d'émargement",
-      "url": "/app/presences",
+      "url": "/#/app/presences",
       "icons": [
         {
           "src": "/logos/icon-192.png",
@@ -90,7 +90,7 @@
       "name": "Forum & Entraide",
       "short_name": "Forum",
       "description": "Discuter avec mes camarades et professeurs",
-      "url": "/forum",
+      "url": "/#/forum",
       "icons": [
         {
           "src": "/logos/icon-192.png",

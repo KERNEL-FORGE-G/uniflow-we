@@ -7,27 +7,15 @@ import { Course, coursesApi } from '../lib/api'
 
 type Tab = 'infos' | 'documents' | 'videos' | 'visio' | 'syllabus'
 
-const mockDocuments = [
-  { id: 1, name: 'Chapitre 1 - Introduction aux Algorithmes.pdf', type: 'PDF', size: '2.4 Mo', date: '15 janv. 2024', downloads: 145 },
-  { id: 2, name: 'TD 1 - Exercices Algorithmes.pdf', type: 'PDF', size: '1.8 Mo', date: '18 janv. 2024', downloads: 132 },
-  { id: 3, name: 'Correction TD 1.pdf', type: 'PDF', size: '1.2 Mo', date: '22 janv. 2024', downloads: 98 },
-  { id: 4, name: 'Slides Cours 2 - Complexité.pdf', type: 'PDF', size: '3.1 Mo', date: '25 janv. 2024', downloads: 156 },
-]
+type CourseDocument = { id: string; name: string; type: string; size?: string; date?: string; downloads?: number }
+type CourseVideo = { id: string; title: string; duration?: string; date?: string; views?: number }
+type SyllabusItem = { week: number; title: string; topics: string[]; completed?: boolean }
 
-const mockVideos = [
-  { id: 1, title: 'Introduction - Qu\'est-ce qu\'un algorithme ?', duration: '12:34', date: '15 janv. 2024', views: 234 },
-  { id: 2, title: 'Chapitre 1 - Complexité algorithmique', duration: '25:18', date: '18 janv. 2024', views: 198 },
-  { id: 3, title: 'TD 1 - Correction des exercices', duration: '45:22', date: '22 janv. 2024', views: 167 },
-  { id: 4, title: 'Structures de données - Les tableaux', duration: '18:45', date: '25 janv. 2024', views: 189 },
-]
+// Les contenus pédagogiques doivent provenir d’un endpoint backend dédié.
+const documents: CourseDocument[] = []
+const videos: CourseVideo[] = []
+const syllabus: SyllabusItem[] = []
 
-const mockSyllabus = [
-  { week: 1, title: 'Introduction aux algorithmes', topics: ['Définitions', 'Notation asymptotique', 'Premiers algorithmes'], completed: true },
-  { week: 2, title: 'Complexité algorithmique', topics: ['Big O', 'Theta et Omega', 'Analyse de cas'], completed: true },
-  { week: 3, title: 'Structures de données I', topics: ['Tableaux', 'Listes chaînées', 'Piles et files'], completed: false },
-  { week: 4, title: 'Structures de données II', topics: ['Arbres binaires', 'Arbres de recherche', 'AVL'], completed: false },
-  { week: 5, title: 'Algorithmes de tri', topics: ['Tri par insertion', 'Tri fusion', 'Tri rapide'], completed: false },
-]
 interface UiCourse {
   id: string; code: string; name: string; description?: string
   type: 'CM' | 'TD' | 'TP'; credits: number; hours: number
@@ -214,7 +202,8 @@ export default function CourseDetailPage() {
         <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[#111827] mb-4">Documents du cours</h2>
           <div className="space-y-3">
-            {mockDocuments.map(doc => (
+            {documents.length === 0 && <p className="py-10 text-center text-sm text-[#6b7280]">Aucun document n’est disponible pour ce cours.</p>}
+            {documents.map(doc => (
               <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#eff3ff]">
@@ -251,7 +240,8 @@ export default function CourseDetailPage() {
         <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[#111827] mb-4">Vidéos du cours</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {mockVideos.map(video => (
+            {videos.length === 0 && <p className="col-span-full py-10 text-center text-sm text-[#6b7280]">Aucune vidéo n’est disponible pour ce cours.</p>}
+            {videos.map(video => (
               <div key={video.id} className="rounded-xl border border-[#e5e7eb] overflow-hidden hover:shadow-md transition-shadow group cursor-pointer">
                 <div className="relative h-40 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
                   <Film className="h-12 w-12 text-white/30" />
@@ -298,7 +288,8 @@ export default function CourseDetailPage() {
         <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[#111827] mb-4">Programme du cours</h2>
           <div className="space-y-4">
-            {mockSyllabus.map((item, index) => (
+            {syllabus.length === 0 && <p className="py-10 text-center text-sm text-[#6b7280]">Le programme de ce cours n’est pas encore renseigné.</p>}
+            {syllabus.map((item, index) => (
               <div key={index} className={`rounded-lg border p-4 ${item.completed ? 'border-[#0d9488] bg-[#f0fdfa]' : 'border-[#e5e7eb]'}`}>
                 <div className="flex items-start justify-between mb-2">
                   <div>

@@ -18,64 +18,6 @@ interface ExtendedAssignment extends Assignment {
   feedback?: string
 }
 
-const DEFAULT_ASSIGNMENTS: ExtendedAssignment[] = [
-  {
-    id: '1',
-    title: 'TP 2 — Implémentation des graphes et algorithme de Dijkstra',
-    code: 'INFO101',
-    due: '2026-08-15',
-    progress: 40,
-    status: 'À rendre',
-    description: 'Concevoir et implémenter en C/C++ les structures de données pour représenter un graphe orienté pondéré et calculer les plus courts chemins.',
-    instructions: 'Le livrable doit comprendre : le code source commenté, le Makefile de compilation, et un rapport au format PDF expliquant la complexité algorithmique.',
-  },
-  {
-    id: '2',
-    title: 'Projet Synthèse — Développement PWA Offline-First',
-    code: 'INFO201',
-    due: '2026-08-20',
-    progress: 75,
-    status: 'À rendre',
-    description: 'Créer une application web progressive avec IndexedDB et Service Worker pour la synchronisation en tâche de fond.',
-    instructions: 'Déployez l\'application sur Cloud Run ou Vercel et fournissez le lien du dépôt GitHub avec un fichier README complet.',
-  },
-  {
-    id: '3',
-    title: 'TD 4 — Exercices sur les équations différentielles non linéaires',
-    code: 'MATH101',
-    due: '2026-08-01',
-    progress: 0,
-    status: 'En retard',
-    description: 'Résolution analytique et approximations numériques d\'équations différentielles d\'ordre 2.',
-    instructions: 'À remettre scanné en un seul document PDF propre et lisible.',
-  },
-  {
-    id: '4',
-    title: 'Mini-Projet — Analyse microéconomique des marchés émergents',
-    code: 'ECO101',
-    due: '2026-08-05',
-    progress: 100,
-    status: 'Soumis',
-    submittedAt: '2026-08-04 18:30',
-    submittedFile: 'Rapport_Eco_Nghomsi_V2.pdf',
-    submissionNote: 'Veuillez trouver ci-joint notre étude empirique de marché.',
-    description: 'Analyse comparative des comportements de consommation et de l\'élasticité prix.',
-  },
-  {
-    id: '5',
-    title: 'Évaluation 1 — Architecture des Systèmes Répartis',
-    code: 'INFO301',
-    due: '2026-07-28',
-    progress: 100,
-    status: 'Noté',
-    grade: '17.5/20',
-    feedback: 'Excellent travail! L\'analyse des mécanismes de consensus Raft et Paxos est très rigoureuse.',
-    submittedAt: '2026-07-27 14:12',
-    submittedFile: 'Examen_Architecture_Systemes.pdf',
-    description: 'Étude théorique et mise en œuvre pratique de protocoles de consensus.',
-  },
-]
-
 const statusMeta: Record<AssignmentStatus, { variant: 'warning' | 'danger' | 'success' | 'info'; icon: any; label: string }> = {
   'À rendre': { variant: 'warning', icon: Clock, label: 'À rendre' },
   'En retard': { variant: 'danger', icon: AlertCircle, label: 'En retard' },
@@ -102,25 +44,6 @@ export default function AssignmentsPage() {
   // Modals state
   const [showNew, setShowNew] = useState(false)
   const [selectedAssignment, setSelectedAssignment] = useState<ExtendedAssignment | null>(null)
-  const [localAssignments, setLocalAssignments] = useState<ExtendedAssignment[]>(() => {
-    try {
-      const saved = localStorage.getItem('uniflow_assignments')
-      return saved ? JSON.parse(saved) : DEFAULT_ASSIGNMENTS
-    } catch {
-      return DEFAULT_ASSIGNMENTS
-    }
-  })
-
-  const updateLocalAssignments = (newVal: ExtendedAssignment[] | ((prev: ExtendedAssignment[]) => ExtendedAssignment[])) => {
-    setLocalAssignments(prev => {
-      const updated = typeof newVal === 'function' ? newVal(prev) : newVal
-      try {
-        localStorage.setItem('uniflow_assignments', JSON.stringify(updated))
-      } catch {}
-      return updated
-    })
-  }
-
   // New Assignment form
   const [newTitle, setNewTitle] = useState('')
   const [newCode, setNewCode] = useState('INFO101')
@@ -138,15 +61,8 @@ export default function AssignmentsPage() {
   const [gradingScore, setGradingScore] = useState('16/20')
   const [gradingFeedback, setGradingFeedback] = useState('')
 
-  const { data: apiData, loading, refetch } = useApi(() => assignmentsApi.mine())
-
-  // Merge API data with default or local fallback
-  const assignments: ExtendedAssignment[] = (apiData && apiData.length > 0)
-    ? apiData.map(a => {
-        const foundLocal = localAssignments.find(l => l.id === a.id)
-        return foundLocal ? { ...a, ...foundLocal } : a
-      })
-    : localAssignments
+  const { data: apiData, loading, error, refetch } = useApi(() => assignmentsApi.mine())
+  const assignments: ExtendedAssignment[] = apiData ?? []
 
   const filtered = assignments
     .filter(a => filter === 'Tous' || a.status === filter)
@@ -177,35 +93,21 @@ export default function AssignmentsPage() {
         status: 'À rendre',
         description: newDesc,
       })
-    } catch {
-      // Fallback local creation
+      pushNotificationService.notifyNewAssignment({
+        title: newTitle,
+        courseName: newCode,
+        dueDate: newDue,
+      }).catch(err => console.warn('Push notification error:', err))
+      setNewTitle('')
+      setNewDue('')
+      setNewDesc('')
+      setShowNew(false)
+      refetch()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Impossible de créer le devoir.')
+    } finally {
+      setSubmitting(false)
     }
-
-    const newItem: ExtendedAssignment = {
-      id: String(Date.now()),
-      title: newTitle,
-      code: newCode,
-      due: newDue,
-      progress: 0,
-      status: 'À rendre',
-      description: newDesc || 'Aucune description fournie.',
-      instructions: 'Respectez la date limite de rendu.',
-    }
-
-    // Trigger PWA Push Notification to students
-    pushNotificationService.notifyNewAssignment({
-      title: newTitle,
-      courseName: newCode,
-      dueDate: newDue
-    }).catch(err => console.warn('Push notification error:', err))
-
-    setLocalAssignments(prev => [newItem, ...prev])
-    setNewTitle('')
-    setNewDue('')
-    setNewDesc('')
-    setShowNew(false)
-    setSubmitting(false)
-    refetch()
   }
 
   const handleSubmitDevoir = async (e: React.FormEvent) => {
@@ -218,24 +120,11 @@ export default function AssignmentsPage() {
 
     try {
       await assignmentsApi.submit(selectedAssignment.id, fileName)
-    } catch {
-      // Local fallback
+    } catch (err) {
+      setSubmittingDevoir(false)
+      alert(err instanceof Error ? err.message : 'Impossible de remettre ce devoir.')
+      return
     }
-
-    setLocalAssignments(prev =>
-      prev.map(a =>
-        a.id === selectedAssignment.id
-          ? {
-              ...a,
-              status: 'Soumis',
-              progress: 100,
-              submittedAt: nowStr,
-              submittedFile: fileName,
-              submissionNote: submissionNote || a.submissionNote || 'Travail remis dans les temps.',
-            }
-          : a
-      )
-    )
 
     setSelectedAssignment(prev =>
       prev
@@ -260,18 +149,16 @@ export default function AssignmentsPage() {
     e.preventDefault()
     if (!selectedAssignment) return
 
-    setLocalAssignments(prev =>
-      prev.map(a =>
-        a.id === selectedAssignment.id
-          ? {
-              ...a,
-              status: 'Noté',
-              grade: gradingScore,
-              feedback: gradingFeedback || 'Très bonne rédaction.',
-            }
-          : a
-      )
-    )
+    try {
+      await assignmentsApi.update(selectedAssignment.id, {
+        status: 'Noté',
+        grade: gradingScore,
+        feedback: gradingFeedback || undefined,
+      } as Partial<Assignment>)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Impossible d’enregistrer la note.')
+      return
+    }
 
     setSelectedAssignment(prev =>
       prev
@@ -286,10 +173,15 @@ export default function AssignmentsPage() {
     alert('Note et remarques enregistrées avec succès !')
   }
 
-  const handleDeleteAssignment = (id: string) => {
+  const handleDeleteAssignment = async (id: string) => {
     if (!confirm('Voulez-vous supprimer ce devoir ?')) return
-    setLocalAssignments(prev => prev.filter(a => a.id !== id))
-    if (selectedAssignment?.id === id) setSelectedAssignment(null)
+    try {
+      await assignmentsApi.delete(id)
+      if (selectedAssignment?.id === id) setSelectedAssignment(null)
+      refetch()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Impossible de supprimer le devoir.')
+    }
   }
 
   return (
@@ -313,6 +205,12 @@ export default function AssignmentsPage() {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          Impossible de charger les devoirs : {error}
+        </div>
+      )}
 
       {/* Search & Filters Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">

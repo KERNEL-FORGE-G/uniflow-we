@@ -21,11 +21,12 @@ export default function AttendanceManagePage() {
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [students, setStudents] = useState<StudentRoll[]>([])
   const [showQR, setShowQR] = useState(false)
-  const [pending, setPending] = useState(isOfflineMode ? 2 : 0)
+  const [pending, setPending] = useState(0)
   const [saved, setSaved] = useState(false)
   const [activeTab, setActiveTab] = useState<'appel'|'annonces'>('appel')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const announcements = [
     { id: 1, title: 'Réunion délégués', desc: 'Vendredi 17 mai à 13h — Salle C102.', time: 'il y a 1h', type: 'info' },
@@ -37,8 +38,8 @@ export default function AttendanceManagePage() {
     async function loadData() {
       try {
         const [myCourses, studentList] = await Promise.all([
-          coursesApi.mine().catch(() => []),
-          studentsApi.list().catch(() => [])
+          coursesApi.mine(),
+          studentsApi.list(),
         ])
 
         setCourses(myCourses)
@@ -55,7 +56,7 @@ export default function AttendanceManagePage() {
         }))
         setStudents(rolls)
       } catch (err) {
-        console.error('Failed to load courses/students', err)
+        setError(err instanceof Error ? err.message : 'Impossible de charger les cours et les étudiants.')
       } finally {
         setLoading(false)
       }
@@ -77,13 +78,12 @@ export default function AttendanceManagePage() {
 
   const handleSave = async () => {
     if (!course) return
+    if (isOfflineMode) {
+      alert('La validation des présences nécessite une connexion au backend. Désactivez le mode hors ligne puis réessayez.')
+      return
+    }
     setSaving(true)
     try {
-      if (isOfflineMode) {
-        // Mock save to offline store
-        setSaved(true)
-        setTimeout(() => setSaved(false), 3500)
-      } else {
         // Create session
         const session = await attendanceApi.createSession({
           courseId: course.id,
@@ -100,18 +100,15 @@ export default function AttendanceManagePage() {
 
         // Submit each student attendance
         await Promise.all(
-          students.map(s =>
-            attendanceApi.mark(session.id, {
-              studentId: s.id,
-              status: statusMap[s.status]
-            }).catch(e => console.error(`Error marking student ${s.name}:`, e))
-          )
+          students.map(s => attendanceApi.mark(session.id, {
+            studentId: s.id,
+            status: statusMap[s.status],
+          }))
         )
 
         setSaved(true)
         setPending(0)
         setTimeout(() => setSaved(false), 3500)
-      }
     } catch (err) {
       alert('Erreur lors de la validation : ' + (err as any).message)
     } finally {
@@ -129,6 +126,7 @@ export default function AttendanceManagePage() {
 
   return (
     <div className="space-y-5 animate-fade-in">
+      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div>}
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
         <div>
