@@ -48,162 +48,12 @@ interface ResourceItem {
   audioColor?: string
 }
 
-const initialResources: ResourceItem[] = [
-  {
-    id: 'res-1',
-    title: 'Cours Algorithmique - Chapitre 1',
-    course: 'INFO101',
-    type: 'PDF',
-    category: 'Documents',
-    size: '2.4 MB',
-    date: '15 mai 2026',
-    downloads: 245,
-    tags: ['Algorithmique', 'Cours'],
-    isFavorite: true
-  },
-  {
-    id: 'res-2',
-    title: "Introduction à l'Algorithmique",
-    course: 'INFO101',
-    type: 'MP4',
-    category: 'Vidéos',
-    size: '120 MB',
-    date: '14 mai 2026',
-    duration: '45:30',
-    views: 1250,
-    tags: ['Algorithmique'],
-    isFavorite: false,
-    videoThumbnailGradient: 'from-blue-900 via-indigo-900 to-slate-900'
-  },
-  {
-    id: 'res-3',
-    title: "Podcast - Histoire de l'IA",
-    course: 'INFO401',
-    type: 'MP3',
-    category: 'Audios',
-    size: '25 MB',
-    date: '11 mai 2026',
-    duration: '28:45',
-    listens: 456,
-    tags: ['IA', 'Podcast'],
-    isFavorite: true
-  },
-  {
-    id: 'res-4',
-    title: 'TD Bases de données - Exercices',
-    course: 'INFO201',
-    type: 'PDF',
-    category: 'Documents',
-    size: '1.8 MB',
-    date: '12 mai 2026',
-    downloads: 189,
-    tags: ['BDD', 'TD'],
-    isFavorite: false
-  },
-  {
-    id: 'res-5',
-    title: 'TP Python - Structures de données',
-    course: 'INFO102',
-    type: 'DOCX',
-    category: 'Documents',
-    size: '1.2 MB',
-    date: '10 mai 2026',
-    downloads: 310,
-    tags: ['Python', 'TP'],
-    isFavorite: true
-  },
-  {
-    id: 'res-6',
-    title: 'Conception Modèle Conceptuel (MCD)',
-    course: 'INFO201',
-    type: 'MP4',
-    category: 'Vidéos',
-    size: '280 MB',
-    date: '08 mai 2026',
-    duration: '1:12:45',
-    views: 890,
-    tags: ['BDD', 'SGBD'],
-    isFavorite: false,
-    videoThumbnailGradient: 'from-indigo-900 via-purple-900 to-slate-900'
-  },
-  {
-    id: 'res-7',
-    title: 'Rapport Projet Web Fullstack',
-    course: 'INFO302',
-    type: 'DOCX',
-    category: 'Documents',
-    size: '3.5 MB',
-    date: '05 mai 2026',
-    downloads: 142,
-    tags: ['Web', 'Projet'],
-    isFavorite: false
-  },
-  {
-    id: 'res-8',
-    title: 'Interview Dr. Kamga - Méthodologie',
-    course: 'GÉNÉRAL',
-    type: 'MP3',
-    category: 'Audios',
-    size: '38 MB',
-    date: '01 mai 2026',
-    duration: '42:10',
-    listens: 820,
-    tags: ['Orientation', 'Podcast'],
-    isFavorite: false
-  },
-  {
-    id: 'res-9',
-    title: 'Analyse Trames Wireshark & TCP/IP',
-    course: 'INFO301',
-    type: 'MP4',
-    category: 'Vidéos',
-    size: '195 MB',
-    date: '25 avr 2026',
-    duration: '2:15:30',
-    views: 1890,
-    tags: ['Réseaux', 'TP'],
-    isFavorite: true,
-    videoThumbnailGradient: 'from-blue-950 via-teal-900 to-slate-900'
-  },
-  {
-    id: 'res-10',
-    title: 'Cours Réseaux - Modèle OSI & TCP/IP',
-    course: 'INFO301',
-    type: 'PDF',
-    category: 'Documents',
-    size: '4.1 MB',
-    date: '20 avr 2026',
-    downloads: 520,
-    tags: ['Réseaux', 'Cours'],
-    isFavorite: false
-  },
-  {
-    id: 'res-11',
-    title: 'Conférence - Web3 & Cryptographie',
-    course: 'INFO301',
-    type: 'MP3',
-    category: 'Audios',
-    size: '72 MB',
-    date: '14 fev 2026',
-    duration: '1:18:20',
-    listens: 630,
-    tags: ['Crypto', 'Podcast'],
-    isFavorite: true
-  }
-]
-
 export default function LibraryPage() {
   const [activeTab, setActiveTab] = useState<TabCategory>('Tout')
   const [search, setSearch] = useState('')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
   const [sortBy, setSortBy] = useState<SortOption>('recent')
-  const [favorites, setFavorites] = useState<Record<string, boolean>>({
-    'res-1': true,
-    'res-3': true,
-    'res-5': true,
-    'res-9': true,
-    'res-11': true
-  })
+  const [favorites, setFavorites] = useState<Record<string, boolean>>({})
 
   // Active Media Players
   const [activeMediaModal, setActiveMediaModal] = useState<ResourceItem | null>(null)
@@ -227,22 +77,19 @@ export default function LibraryPage() {
     return {
       id: r.id || `api-res-${i}`,
       title: r.title,
-      course: r.course || 'INFO101',
+      course: r.course || 'Cours non renseigné',
       type: fileType,
       category: cat,
-      size: r.size || '2.0 MB',
-      date: r.date || 'Mai 2026',
-      duration: r.duration || (cat === 'Vidéos' ? '15:00' : cat === 'Audios' ? '20:00' : undefined),
-      downloads: Math.floor(Math.random() * 300) + 50,
-      views: cat === 'Vidéos' ? Math.floor(Math.random() * 1000) + 200 : undefined,
-      listens: cat === 'Audios' ? Math.floor(Math.random() * 500) + 100 : undefined,
+      size: r.size || 'Taille non renseignée',
+      date: r.date || 'Date non renseignée',
+      duration: r.duration,
       tags: [r.course || 'Général', cat.slice(0, -1)],
       isFavorite: !!favorites[r.id],
       videoThumbnailGradient: 'from-blue-900 via-indigo-950 to-slate-900'
     }
   })
 
-  const resourcesList = apiResources.length > 0 ? [...apiResources, ...initialResources] : initialResources
+  const resourcesList = apiResources
 
   // Toggle favorite
   const toggleFavorite = (id: string, e?: React.MouseEvent) => {
@@ -881,51 +728,18 @@ export default function LibraryPage() {
 
             {/* Modal Body Preview */}
             {activeMediaModal.category === 'Vidéos' ? (
-              <div className="relative aspect-video rounded-2xl bg-black overflow-hidden flex items-center justify-center border border-slate-800">
-                <video
-                  controls
-                  autoPlay
-                  playsInline
-                  src="/video/demo.mp4"
-                  poster="https://i.imgur.com/GAiZ7WY.png"
-                  className="w-full h-full object-contain"
-                >
-                  Votre navigateur ne supporte pas la vidéo.
-                </video>
+              <div className="relative aspect-video rounded-2xl bg-slate-950 overflow-hidden flex items-center justify-center border border-slate-800 p-6 text-center">
+                <p className="max-w-md text-sm text-slate-400">La prévisualisation vidéo n’est pas disponible : l’API bibliothèque ne fournit pas encore d’URL média exploitable.</p>
               </div>
             ) : activeMediaModal.category === 'Audios' ? (
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 p-6 border border-emerald-800/40 text-center space-y-4">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/20">
-                  <HiMusicalNote className="h-8 w-8" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-emerald-300">{activeMediaModal.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1">Durée : {activeMediaModal.duration} • Taille : {activeMediaModal.size}</p>
-                </div>
-                {/* Audio Waveform */}
-                <div className="flex items-center justify-center gap-1.5 h-10 py-1">
-                  {[40, 80, 50, 100, 65, 85, 30, 95, 70, 45, 90, 60, 80, 40].map((h, i) => (
-                    <div
-                      key={i}
-                      style={{ height: `${h}%` }}
-                      className="w-1.5 rounded-full bg-emerald-400 animate-pulse"
-                    />
-                  ))}
-                </div>
+              <div className="rounded-2xl bg-slate-950 p-8 border border-slate-800 text-center">
+                <HiMusicalNote className="mx-auto h-10 w-10 text-slate-500" />
+                <p className="mt-4 text-sm text-slate-400">La lecture audio n’est pas disponible : l’API bibliothèque ne fournit pas encore d’URL média exploitable.</p>
               </div>
             ) : (
-              /* Document Viewer Mock */
-              <div className="rounded-2xl bg-slate-950 p-8 border border-slate-800 text-center space-y-4">
-                <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg">
-                  <HiDocumentText className="h-8 w-8" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-white">{activeMediaModal.title}</h4>
-                  <p className="text-xs text-slate-400 mt-1">Format : {activeMediaModal.type} • Taille : {activeMediaModal.size} • Date : {activeMediaModal.date}</p>
-                </div>
-                <div className="rounded-xl bg-slate-900 p-4 text-xs text-slate-300 max-w-md mx-auto border border-slate-800">
-                  📄 Aperçu du document pédagogique révisé pour l'université. Vous pouvez le télécharger ou le consulter en mode plein écran.
-                </div>
+              <div className="rounded-2xl bg-slate-950 p-8 border border-slate-800 text-center">
+                <HiDocumentText className="mx-auto h-10 w-10 text-slate-500" />
+                <p className="mt-4 text-sm text-slate-400">La prévisualisation document n’est pas disponible : l’API bibliothèque ne fournit pas encore de contenu consultable.</p>
               </div>
             )}
 

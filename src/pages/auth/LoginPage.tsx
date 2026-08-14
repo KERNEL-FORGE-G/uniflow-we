@@ -125,19 +125,6 @@ export default function LoginPage() {
             })}
           </motion.div>
 
-          {/* Stats */}
-          <motion.div variants={fadeInUp} className="flex items-center justify-center gap-8 pt-4">
-            {[
-              { value: '12k+', label: 'Étudiants' },
-              { value: '480+', label: 'Enseignants' },
-              { value: '98%', label: 'Satisfaction' },
-            ].map(stat => (
-              <div key={stat.label} className="text-center">
-                <p className="text-3xl font-black text-white">{stat.value}</p>
-                <p className="text-sm text-blue-200 mt-1">{stat.label}</p>
-              </div>
-            ))}
-          </motion.div>
         </motion.div>
       </div>
 
