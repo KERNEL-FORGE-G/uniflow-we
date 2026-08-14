@@ -11,8 +11,8 @@ import {
  type Tab = 'courses' | 'schedule' | 'assignments' | 'grades'
 
 const emptyCourse = { code: '', title: '', instructor: '', credits: 0, colorHex: '#2563eb', classroom: '', description: '' }
-const emptySchedule = { courseId: '', dayOfWeek: 'MONDAY', startTime: '08:00', endTime: '10:00', classroom: '', type: 'CM' }
-const emptyAssignment = { courseId: '', title: '', dueDate: '', description: '', priority: 'MEDIUM', status: 'PENDING' }
+const emptySchedule = { courseId: '', dayOfWeek: 'LUNDI', startTime: '08:00', endTime: '10:00', classroom: '', type: 'CM' }
+const emptyAssignment = { courseId: '', title: '', dueDate: '', description: '', priority: 'MEDIUM', status: 'TODO' }
 const emptyGrade = { courseId: '', evaluationTitle: '', score: '', maxScore: '20', coefficient: '1' }
 
 function errorMessage(error: unknown): string {
@@ -33,6 +33,7 @@ export default function IndependentWorkspacePage() {
   const [editingCourse, setEditingCourse] = useState<PersonalCourse | null>(null)
   const [editingSchedule, setEditingSchedule] = useState<PersonalSchedule | null>(null)
   const [editingAssignment, setEditingAssignment] = useState<PersonalAssignment | null>(null)
+  const [editingGrade, setEditingGrade] = useState<PersonalGrade | null>(null)
   const [courseForm, setCourseForm] = useState(emptyCourse)
   const [scheduleForm, setScheduleForm] = useState(emptySchedule)
   const [assignmentForm, setAssignmentForm] = useState(emptyAssignment)
@@ -67,6 +68,7 @@ export default function IndependentWorkspacePage() {
     setEditingCourse(null)
     setEditingSchedule(null)
     setEditingAssignment(null)
+    setEditingGrade(null)
     setCourseForm(emptyCourse)
     setScheduleForm(emptySchedule)
     setAssignmentForm(emptyAssignment)
@@ -211,16 +213,38 @@ export default function IndependentWorkspacePage() {
     setSaving(true)
     setError(null)
     try {
-      const created = await personalApi.grades.create({
+      const payload = {
         courseId: gradeForm.courseId,
         evaluationTitle: gradeForm.evaluationTitle.trim(),
         score,
         maxScore,
         coefficient,
-      })
-      setGrades(previous => [created, ...previous])
-      setGradeForm(emptyGrade)
-      setNotice('Note enregistrée.')
+      }
+      if (editingGrade) {
+        const updated = await personalApi.grades.update(editingGrade.id, payload)
+        setGrades(previous => previous.map(item => item.id === editingGrade.id ? updated : item))
+        setNotice('Note mise à jour.')
+      } else {
+        const created = await personalApi.grades.create(payload)
+        setGrades(previous => [created, ...previous])
+        setNotice('Note enregistrée.')
+      }
+      closeForms()
+    } catch (err) {
+      setError(errorMessage(err))
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleGradeDelete = async (grade: PersonalGrade) => {
+    if (!window.confirm(`Supprimer la note « ${grade.evaluationTitle} » ?`)) return
+    setSaving(true)
+    setError(null)
+    try {
+      await personalApi.grades.delete(grade.id)
+      setGrades(previous => previous.filter(item => item.id !== grade.id))
+      setNotice('Note supprimée.')
     } catch (err) {
       setError(errorMessage(err))
     } finally {
@@ -295,8 +319,8 @@ export default function IndependentWorkspacePage() {
 
       {tab === 'grades' && (
         <section className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div className="space-y-3">{grades.length === 0 ? <EmptyState label="Aucune note personnelle enregistrée." /> : grades.map(item => <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold text-teal-600">{courseById.get(item.courseId)?.code || 'Cours non renseigné'}</p><h2 className="mt-1 font-bold text-slate-900 dark:text-white">{item.evaluationTitle}</h2><p className="mt-1 text-xs text-slate-500">Coefficient {item.coefficient}</p></div><p className="text-2xl font-black text-[#1e3a8a]">{item.score}/{item.maxScore}</p></div></div>)}</div>
-          <GradeForm form={gradeForm} setForm={setGradeForm} courses={courses} saving={saving} onSubmit={handleGradeSubmit} />
+          <div className="space-y-3">{grades.length === 0 ? <EmptyState label="Aucune note personnelle enregistrée." /> : grades.map(item => <div key={item.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className="flex items-center justify-between gap-4"><div><p className="text-xs font-bold text-teal-600">{courseById.get(item.courseId)?.code || 'Cours non renseigné'}</p><h2 className="mt-1 font-bold text-slate-900 dark:text-white">{item.evaluationTitle}</h2><p className="mt-1 text-xs text-slate-500">Coefficient {item.coefficient}</p></div><div className="flex items-center gap-3"><p className="text-2xl font-black text-[#1e3a8a]">{item.score}/{item.maxScore}</p><div className="flex gap-1"><button type="button" onClick={() => { setEditingGrade(item); setGradeForm({ courseId: item.courseId, evaluationTitle: item.evaluationTitle, score: String(item.score), maxScore: String(item.maxScore), coefficient: String(item.coefficient) }); setNotice(null) }} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><Save className="h-4 w-4" /></button><button type="button" onClick={() => handleGradeDelete(item)} className="rounded-lg p-2 text-rose-500 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button></div></div></div></div>)}</div>
+          <GradeForm form={gradeForm} setForm={setGradeForm} courses={courses} editing={Boolean(editingGrade)} saving={saving} onSubmit={handleGradeSubmit} onCancel={closeForms} />
         </section>
       )}
     </div>
@@ -320,13 +344,13 @@ function CourseForm({ form, setForm, editing, saving, onSubmit, onCancel }: any)
 }
 
 function ScheduleForm({ form, setForm, courses, editing, saving, onSubmit, onCancel }: any) {
-  return <FormCard title="un créneau" editing={editing} saving={saving} onSubmit={onSubmit} onCancel={onCancel}><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Cours<select required value={form.courseId} onChange={event => setForm({ ...form, courseId: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800"><option value="">Sélectionner un cours</option>{courses.map((course: PersonalCourse) => <option key={course.id} value={course.id}>{course.code} — {course.title}</option>)}</select></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Jour<select value={form.dayOfWeek} onChange={event => setForm({ ...form, dayOfWeek: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800">{['MONDAY','TUESDAY','WEDNESDAY','THURSDAY','FRIDAY','SATURDAY'].map(day => <option key={day}>{day}</option>)}</select></label><div className="grid grid-cols-2 gap-3"><Field label="Début" type="time" value={form.startTime} onChange={(value) => setForm({ ...form, startTime: value })} /><Field label="Fin" type="time" value={form.endTime} onChange={(value) => setForm({ ...form, endTime: value })} /></div><Field label="Salle" value={form.classroom} onChange={(value) => setForm({ ...form, classroom: value })} /><Field label="Type" value={form.type} onChange={(value) => setForm({ ...form, type: value })} /></FormCard>
+  return <FormCard title="un créneau" editing={editing} saving={saving} onSubmit={onSubmit} onCancel={onCancel}><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Cours<select required value={form.courseId} onChange={event => setForm({ ...form, courseId: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800"><option value="">Sélectionner un cours</option>{courses.map((course: PersonalCourse) => <option key={course.id} value={course.id}>{course.code} — {course.title}</option>)}</select></label><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Jour<select value={form.dayOfWeek} onChange={event => setForm({ ...form, dayOfWeek: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800">{['LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI','DIMANCHE'].map(day => <option key={day}>{day}</option>)}</select></label><div className="grid grid-cols-2 gap-3"><Field label="Début" type="time" value={form.startTime} onChange={(value) => setForm({ ...form, startTime: value })} /><Field label="Fin" type="time" value={form.endTime} onChange={(value) => setForm({ ...form, endTime: value })} /></div><Field label="Salle" value={form.classroom} onChange={(value) => setForm({ ...form, classroom: value })} /><Field label="Type" value={form.type} onChange={(value) => setForm({ ...form, type: value })} /></FormCard>
 }
 
 function AssignmentForm({ form, setForm, courses, editing, saving, onSubmit, onCancel }: any) {
   return <FormCard title="un devoir" editing={editing} saving={saving} onSubmit={onSubmit} onCancel={onCancel}><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Cours<select required value={form.courseId} onChange={event => setForm({ ...form, courseId: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800"><option value="">Sélectionner un cours</option>{courses.map((course: PersonalCourse) => <option key={course.id} value={course.id}>{course.code} — {course.title}</option>)}</select></label><Field label="Titre" required value={form.title} onChange={(value) => setForm({ ...form, title: value })} /><Field label="Échéance" required type="datetime-local" value={form.dueDate} onChange={(value) => setForm({ ...form, dueDate: value })} /><Field label="Priorité" value={form.priority} onChange={(value) => setForm({ ...form, priority: value })} /><Field label="Description" value={form.description} onChange={(value) => setForm({ ...form, description: value })} /></FormCard>
 }
 
-function GradeForm({ form, setForm, courses, saving, onSubmit }: any) {
-  return <FormCard title="une note" saving={saving} onSubmit={onSubmit}><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Cours<select required value={form.courseId} onChange={event => setForm({ ...form, courseId: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800"><option value="">Sélectionner un cours</option>{courses.map((course: PersonalCourse) => <option key={course.id} value={course.id}>{course.code} — {course.title}</option>)}</select></label><Field label="Évaluation" required value={form.evaluationTitle} onChange={(value) => setForm({ ...form, evaluationTitle: value })} /><div className="grid grid-cols-2 gap-3"><Field label="Note" required type="number" value={form.score} onChange={(value) => setForm({ ...form, score: value })} /><Field label="Maximum" required type="number" value={form.maxScore} onChange={(value) => setForm({ ...form, maxScore: value })} /></div><Field label="Coefficient" required type="number" value={form.coefficient} onChange={(value) => setForm({ ...form, coefficient: value })} /></FormCard>
+function GradeForm({ form, setForm, courses, editing, saving, onSubmit, onCancel }: any) {
+  return <FormCard title="une note" editing={editing} saving={saving} onSubmit={onSubmit} onCancel={onCancel}><label className="block text-xs font-bold text-slate-600 dark:text-slate-300">Cours<select required value={form.courseId} onChange={event => setForm({ ...form, courseId: event.target.value })} className="mt-1.5 w-full rounded-xl border border-slate-300 bg-white px-3 py-2.5 text-sm dark:border-slate-700 dark:bg-slate-800"><option value="">Sélectionner un cours</option>{courses.map((course: PersonalCourse) => <option key={course.id} value={course.id}>{course.code} — {course.title}</option>)}</select></label><Field label="Évaluation" required value={form.evaluationTitle} onChange={(value) => setForm({ ...form, evaluationTitle: value })} /><div className="grid grid-cols-2 gap-3"><Field label="Note" required type="number" value={form.score} onChange={(value) => setForm({ ...form, score: value })} /><Field label="Maximum" required type="number" value={form.maxScore} onChange={(value) => setForm({ ...form, maxScore: value })} /></div><Field label="Coefficient" required type="number" value={form.coefficient} onChange={(value) => setForm({ ...form, coefficient: value })} /></FormCard>
 }
