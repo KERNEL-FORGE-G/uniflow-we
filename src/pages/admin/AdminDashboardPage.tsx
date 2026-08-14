@@ -63,14 +63,14 @@ export default function AdminDashboardPage() {
     setError(null)
     try {
       const [statsRes, studentsRes, sessionsRes] = await Promise.all([
-        statsApi.overview().catch(() => null),
-        studentsApi.list().catch(() => []),
-        attendanceApi.listSessions().catch(() => [])
+        statsApi.overview(),
+        studentsApi.list(),
+        attendanceApi.listSessions(),
       ])
 
-      if (statsRes) setStats(statsRes)
-      if (Array.isArray(studentsRes)) setStudents(studentsRes)
-      if (Array.isArray(sessionsRes)) setSessions(sessionsRes)
+      setStats(statsRes)
+      setStudents(studentsRes)
+      setSessions(sessionsRes)
     } catch (e: any) {
       setError(e.message || 'Erreur lors de la récupération des données analytiques.')
     } finally {
@@ -102,17 +102,9 @@ export default function AdminDashboardPage() {
   // 1. Compute Répartition des étudiants par filière (/students)
   const filiereCounts: Record<string, number> = {}
   students.forEach((st) => {
-    const filiereName = st.specialty?.name || st.level?.name || 'Informatique'
+    const filiereName = st.specialty?.name || st.level?.name || 'Non renseignée'
     filiereCounts[filiereName] = (filiereCounts[filiereName] || 0) + 1
   })
-
-  // Fallback default distribution if DB is empty to ensure visualization
-  if (Object.keys(filiereCounts).length === 0) {
-    filiereCounts['Informatique'] = 65
-    filiereCounts['Mathématiques'] = 25
-    filiereCounts['Sciences Économiques'] = 20
-    filiereCounts['Génie Logiciel'] = 15
-  }
 
   const studentFiliereData = Object.entries(filiereCounts).map(([name, count], index) => ({
     name,
@@ -134,7 +126,7 @@ export default function AdminDashboardPage() {
     const absentCount = session.records?.filter((r) => r.status === 'ABSENT').length || 0
     const justifieCount = session.records?.filter((r) => r.status === 'JUSTIFIE').length || 0
 
-    const rate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 100
+    const rate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0
 
     // Format week label
     const dateObj = new Date(session.date)
@@ -157,32 +149,22 @@ export default function AdminDashboardPage() {
     }
   })
 
-  // Fallback mock trend if no sessions recorded yet
-  const attendanceTrendData =
-    weeklyAttendanceData.length > 0
-      ? weeklyAttendanceData
-      : [
-          { label: 'Sem. 07/07', rate: 82, present: 41, absent: 9, courseCode: 'ECO101' },
-          { label: 'Sem. 14/07', rate: 100, present: 50, absent: 0, courseCode: 'INFO401' },
-          { label: 'Sem. 21/07', rate: 80, present: 40, absent: 10, courseCode: 'INFO301' },
-          { label: 'Sem. 28/07', rate: 90, present: 45, absent: 5, courseCode: 'INFO201' },
-          { label: 'Sem. 04/08', rate: 85, present: 42, absent: 8, courseCode: 'INFO101' }
-        ]
+  const attendanceTrendData = weeklyAttendanceData
 
-  // KPI Metrics
-  const totalStudentsCount = students.length || stats?.studentCount || 125
-  const totalSessionsCount = sessions.length || 5
-  const avgAttendanceRate = Math.round(
-    attendanceTrendData.reduce((acc, curr) => acc + curr.rate, 0) / attendanceTrendData.length
-  )
-  const topFiliere = studentFiliereData[0]?.name || 'Informatique'
+  // KPI Metrics : aucune valeur n’est inventée lorsque la base est vide.
+  const totalStudentsCount = stats?.studentCount ?? students.length
+  const totalSessionsCount = sessions.length
+  const avgAttendanceRate = attendanceTrendData.length > 0
+    ? Math.round(attendanceTrendData.reduce((acc, curr) => acc + curr.rate, 0) / attendanceTrendData.length)
+    : 0
+  const topFiliere = studentFiliereData[0]?.name || '—'
 
   const filteredStudents =
     selectedFiliere === 'Toutes'
       ? students
       : students.filter(
           (s) =>
-            (s.specialty?.name || s.level?.name || 'Informatique') === selectedFiliere
+            (s.specialty?.name || s.level?.name || 'Non renseignée') === selectedFiliere
         )
 
   // Framer Motion Animation Variants

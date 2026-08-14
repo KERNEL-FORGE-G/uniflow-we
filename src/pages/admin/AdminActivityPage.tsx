@@ -1,5 +1,7 @@
 import { useState } from 'react'
-import { Activity, User, Settings, BookOpen, Users, Shield, Trash2, Edit, Plus, LogIn, LogOut, AlertTriangle, CheckCircle, Filter, Search, Download, RefreshCw } from 'lucide-react'
+import { Activity, User, Settings, BookOpen, Edit, LogIn, AlertTriangle, CheckCircle, Search, Download, RefreshCw } from 'lucide-react'
+import { auditLogsApi, type AuditLog } from '../../lib/api'
+import { useApi } from '../../hooks/useApi'
 
 interface LogEntry {
   id: string
@@ -13,20 +15,26 @@ interface LogEntry {
   category: 'auth' | 'user' | 'academic' | 'system' | 'content'
 }
 
-const mockLogs: LogEntry[] = [
-  { id: '1', timestamp: '06/08/2026 08:42:15', user: 'Admin Principal', role: 'Admin',      action: 'Connexion',              target: 'Tableau de bord',          ip: '192.168.1.100', status: 'success', category: 'auth' },
-  { id: '2', timestamp: '06/08/2026 08:35:02', user: 'Dr. Kamga',       role: 'Enseignant', action: 'Publication notes',       target: 'INFO101 — Algorithmique',  ip: '192.168.1.45',  status: 'success', category: 'academic' },
-  { id: '3', timestamp: '06/08/2026 08:28:47', user: 'Lucas Dubois',    role: 'Délégué',    action: 'Export présences',        target: 'INFO201 — BDD L2',         ip: '192.168.1.78',  status: 'success', category: 'academic' },
-  { id: '4', timestamp: '06/08/2026 08:12:30', user: 'Admin Principal', role: 'Admin',      action: 'Modification utilisateur', target: 'Tchoumba Alice',           ip: '192.168.1.100', status: 'success', category: 'user' },
-  { id: '5', timestamp: '06/08/2026 07:55:11', user: 'Système',         role: 'Système',    action: 'Sauvegarde automatique',  target: 'Base de données',          ip: '127.0.0.1',     status: 'success', category: 'system' },
-  { id: '6', timestamp: '06/08/2026 07:43:22', user: 'Emma Martin',     role: 'Étudiant',   action: 'Tentative connexion',     target: 'emma@uniflow.edu',         ip: '41.202.219.33', status: 'error',   category: 'auth' },
-  { id: '7', timestamp: '06/08/2026 07:41:05', user: 'Emma Martin',     role: 'Étudiant',   action: 'Connexion',               target: 'Tableau de bord',          ip: '41.202.219.33', status: 'success', category: 'auth' },
-  { id: '8', timestamp: '06/08/2026 07:30:18', user: 'Admin Principal', role: 'Admin',      action: 'Suppression cours',       target: 'ECO302 — Ancien',          ip: '192.168.1.100', status: 'warning', category: 'content' },
-  { id: '9', timestamp: '06/08/2026 07:15:44', user: 'Pr. Martin',      role: 'Enseignant', action: 'Upload document',         target: 'TP Réseaux — Fiche 3',     ip: '192.168.1.62',  status: 'success', category: 'content' },
-  { id: '10',timestamp: '06/08/2026 07:02:31', user: 'Admin Principal', role: 'Admin',      action: 'Ajout utilisateur',       target: 'Sophie Kamga (Enseignant)', ip: '192.168.1.100', status: 'success', category: 'user' },
-  { id: '11',timestamp: '06/08/2026 06:50:09', user: 'Système',         role: 'Système',    action: 'Nettoyage cache',         target: 'Cache Redis',              ip: '127.0.0.1',     status: 'success', category: 'system' },
-  { id: '12',timestamp: '06/08/2026 06:32:17', user: 'Admin Principal', role: 'Admin',      action: 'Modification paramètres', target: 'Seuil présence → 75%',     ip: '192.168.1.100', status: 'success', category: 'system' },
-]
+const categoryFor = (resource: string): LogEntry['category'] => {
+  const value = resource.toLowerCase()
+  if (value.includes('auth') || value.includes('login') || value.includes('session')) return 'auth'
+  if (value.includes('user') || value.includes('student') || value.includes('teacher')) return 'user'
+  if (value.includes('course') || value.includes('grade') || value.includes('attendance')) return 'academic'
+  if (value.includes('setting') || value.includes('system')) return 'system'
+  return 'content'
+}
+
+const mapAuditLog = (log: AuditLog): LogEntry => ({
+  id: log.id,
+  timestamp: new Date(log.createdAt).toLocaleString('fr-FR'),
+  user: log.userId || 'Utilisateur système',
+  role: log.userRole || '—',
+  action: log.action,
+  target: log.resourceId ? `${log.resource} #${log.resourceId}` : log.resource,
+  ip: log.ipAddress || '—',
+  status: (log.statusCode ?? 200) >= 500 ? 'error' : (log.statusCode ?? 200) >= 400 ? 'warning' : 'success',
+  category: categoryFor(log.resource),
+})
 
 const actionIcon: Record<string, any> = {
   'auth': LogIn,
@@ -46,7 +54,8 @@ export default function AdminActivityPage() {
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
-  const [logs, setLogs] = useState<LogEntry[]>(mockLogs)
+  const { data: apiLogs, loading, error, refetch } = useApi(() => auditLogsApi.list())
+  const logs = (apiLogs ?? []).map(mapAuditLog)
 
   const filtered = logs.filter(l => {
     const matchSearch = !search || l.user.toLowerCase().includes(search.toLowerCase()) || l.action.toLowerCase().includes(search.toLowerCase()) || l.target.toLowerCase().includes(search.toLowerCase())
@@ -75,16 +84,22 @@ export default function AdminActivityPage() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => setLogs([...mockLogs])}
+            onClick={() => refetch()}
             className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all"
           >
-            <RefreshCw className="h-4 w-4" /> Actualiser
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
           </button>
           <button className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
             <Download className="h-4 w-4" /> Exporter logs
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          Impossible de charger le journal : {error}
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
@@ -138,7 +153,7 @@ export default function AdminActivityPage() {
       <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b border-[#e5e7eb] flex items-center justify-between">
           <span className="text-sm font-semibold text-[#111827]">{filtered.length} événements</span>
-          <span className="text-xs text-[#6b7280]">Mis à jour à 08:42:15</span>
+          <span className="text-xs text-[#6b7280]">Données du backend</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
