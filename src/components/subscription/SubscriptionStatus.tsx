@@ -7,15 +7,19 @@ import { subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } fr
 export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatusType | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const [statusError, setStatusError] = useState<string | null>(null)
   const navigate = useNavigate()
 
   const fetchStatus = async () => {
     setLoading(true)
+    setStatusError(null)
     try {
       const data = await subscriptionApi.getStatus()
       setStatus(data)
     } catch (err) {
       console.error('Erreur chargement statut abonnement:', err)
+      setStatus(null)
+      setStatusError(err instanceof Error ? err.message : 'Statut indisponible')
     } finally {
       setLoading(false)
     }
@@ -25,32 +29,37 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
     fetchStatus()
   }, [])
 
-  // Time calculations
+  if (!status && !loading) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900">Abonnement indisponible</h3>
+            <p className="mt-1 text-xs text-slate-500">Le backend ne fournit pas encore de statut d’abonnement pour ce compte.</p>
+            {statusError && <p className="mt-1 text-[11px] text-slate-400">{statusError}</p>}
+          </div>
+          <button onClick={fetchStatus} className="rounded-xl bg-slate-100 p-2.5 text-slate-600 hover:bg-slate-200" title="Actualiser le statut">
+            <RefreshCw className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  if (!status) return null
+
   const now = new Date()
-  const periodEnd = status?.currentPeriodEnd
-    ? new Date(status.currentPeriodEnd)
-    : new Date(now.getTime() + 30 * 24 * 3600 * 1000)
-
-  const totalMs = 30 * 24 * 3600 * 1000 // 30 days cycle
-  const diffMs = periodEnd.getTime() - now.getTime()
-
+  const periodEnd = new Date(status.currentPeriodEnd)
+  const hasPeriodEnd = Number.isFinite(periodEnd.getTime())
+  const diffMs = hasPeriodEnd ? periodEnd.getTime() - now.getTime() : 0
   const remainingDays = Math.max(0, Math.floor(diffMs / (24 * 3600 * 1000)))
   const remainingHours = Math.max(0, Math.floor((diffMs % (24 * 3600 * 1000)) / (3600 * 1000)))
-  const percentRemaining = Math.min(100, Math.max(0, Math.round((diffMs / totalMs) * 100)))
-
-  const isUnder7Days = remainingDays < 7
-
-  const formattedExpDate = periodEnd.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
-
-  const priceFormatted = status?.currency === 'XAF' || status?.countryCode === 'CM'
-    ? '100 FCFA / mois'
-    : '1,00 € / mois'
-
-  const countryLabel = status?.countryCode === 'CM' ? '🇨🇲 Cameroun' : '🇫🇷 International'
+  const isUnder7Days = status.status === 'EXPIRED' || remainingDays < 7
+  const formattedExpDate = hasPeriodEnd
+    ? periodEnd.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })
+    : 'non communiquée'
+  const priceFormatted = new Intl.NumberFormat('fr-FR', { style: 'currency', currency: status.currency }).format(status.monthlyAmount)
+  const statusLabel = status.status === 'ACTIVE' ? 'Abonnement actif' : status.status === 'TRIAL' ? 'Période d’essai' : `Abonnement ${status.status.toLowerCase()}`
 
   const handleRenewClick = () => {
     navigate('/subscribe')
@@ -97,19 +106,17 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
                 }`}
               >
                 <CheckCircle2 className="h-3 w-3" />
-                Plan Académique Actif
+                {statusLabel}
               </span>
 
               <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-                • {priceFormatted} ({countryLabel})
+                • {priceFormatted} · {status.countryCode}
               </span>
             </div>
 
             <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
               <Clock className={`h-5 w-5 ${isUnder7Days ? 'text-amber-500' : 'text-[#0d9488]'}`} />
-              <span>
-                {remainingDays} {remainingDays > 1 ? 'jours' : 'jour'} et {remainingHours}h restants
-              </span>
+              <span>{hasPeriodEnd ? `${remainingDays} ${remainingDays > 1 ? 'jours' : 'jour'} et ${remainingHours}h restants` : 'Durée non communiquée'}</span>
             </h3>
 
             <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
@@ -146,30 +153,6 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
           </div>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80">
-          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5">
-            <span>Progression de la période mensuelle</span>
-            <span className={isUnder7Days ? 'text-amber-600 font-bold' : 'text-[#0d9488] font-bold'}>
-              {remainingDays} / 30 Jours restants ({percentRemaining}%)
-            </span>
-          </div>
-
-          <div className="w-full h-2.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden p-0.5">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${percentRemaining}%` }}
-              transition={{ duration: 0.8, ease: 'easeOut' }}
-              className={`h-full rounded-full ${
-                remainingDays > 7
-                  ? 'bg-gradient-to-r from-[#1e3a8a] to-[#0d9488]'
-                  : remainingDays > 2
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500'
-                  : 'bg-gradient-to-r from-rose-500 to-red-600'
-              }`}
-            />
-          </div>
-        </div>
       </div>
     </>
   )
