@@ -76,6 +76,14 @@ Pour vérifier le typage et le linting :
 npm run lint
 ```
 
+### Configuration réseau et mode démonstration
+
+Copiez `.env.example` vers `.env` puis adaptez les URLs des backends selon votre environnement. Le délai maximal des requêtes API est configurable avec `VITE_API_TIMEOUT_MS` et vaut 8 secondes par défaut.
+
+Les boutons « Connexion rapide (démo) » activent explicitement un compte local de démonstration lorsque le backend distant est indisponible. Une connexion saisie manuellement ne bascule jamais automatiquement vers un compte mock : une erreur d’authentification reste une erreur et n’ouvre pas de session locale.
+
+Le service worker et le manifeste utilisent les routes `HashRouter` de l’application, par exemple `/#/app`, `/#/app/emploi-du-temps` et `/#/app/presences`. Après modification des assets ou des règles de cache, désinstallez puis réinstallez la PWA afin de forcer l’activation du nouveau cache.
+
 ---
 
 ## 📄 Licence
