@@ -47,6 +47,7 @@ const SentinellePage = lazy(() => import('./pages/SentinellePage'))
 const ForumPage = lazy(() => import('./pages/ForumPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
 const PromotionPage = lazy(() => import('./pages/PromotionPage'))
+const PersonalAccountPage = lazy(() => import('./pages/PersonalAccountPages'))
 
 // Admin pages lazy loaded
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
@@ -83,6 +84,10 @@ function StudentApp({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>
 }
 
+function PersonalAwareRoute({ kind, children }: { kind: 'profile' | 'settings' | 'messages' | 'library' | 'attendance' | 'notifications' | 'video' | 'classrooms' | 'help'; children: React.ReactNode }) {
+  return getAccountType() === 'PERSONAL' ? <PersonalAccountPage kind={kind} /> : <>{children}</>
+}
+
 function AccountHomePage() {
   const isIndependent = Boolean(getToken()) && getAccountType() === 'PERSONAL'
   return isIndependent ? <IndependentWorkspacePage /> : <DashboardPage />
@@ -117,40 +122,40 @@ export default function App() {
           {/* Partie 1 — Dashboard */}
           <Route path="/app" element={<StudentApp><AccountHomePage /></StudentApp>} />
           <Route path="/app/independent" element={<StudentApp><IndependentWorkspacePage /></StudentApp>} />
-          <Route path="/app/accueil-compact" element={<StudentApp><DashboardCompactPage /></StudentApp>} />
+          <Route path="/app/accueil-compact" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage /> : <DashboardCompactPage />}</StudentApp>} />
 
           {/* Partie 2 — Cours, Profil, Emploi du temps */}
-          <Route path="/app/cours" element={<StudentApp><CoursesPage /></StudentApp>} />
-          <Route path="/app/cours/:courseId" element={<StudentApp><CourseDetailPage /></StudentApp>} />
-          <Route path="/app/profil" element={<StudentApp><ProfilePage /></StudentApp>} />
-          <Route path="/app/emploi-du-temps" element={<StudentApp><SchedulePage /></StudentApp>} />
+          <Route path="/app/cours" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="courses" /> : <CoursesPage />}</StudentApp>} />
+          <Route path="/app/cours/:courseId" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="courses" /> : <CourseDetailPage />}</StudentApp>} />
+          <Route path="/app/profil" element={<StudentApp><PersonalAwareRoute kind="profile"><ProfilePage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/emploi-du-temps" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="schedule" /> : <SchedulePage />}</StudentApp>} />
 
           {/* Partie 3 — Présences, Visioconf, Notifications */}
-          <Route path="/app/presences" element={<StudentApp><AttendancePage /></StudentApp>} />
-          <Route path="/app/visio" element={<StudentApp><VideoLobbyPage /></StudentApp>} />
-          <Route path="/app/visioconference" element={<VideoConfPage />} />
-          <Route path="/app/visioconference/:id" element={<VideoConfPage />} />
-          <Route path="/app/visio/room/:id" element={<VideoConfPage />} />
-          <Route path="/app/notifications" element={<StudentApp><NotificationsPage /></StudentApp>} />
+          <Route path="/app/presences" element={<StudentApp><PersonalAwareRoute kind="attendance"><AttendancePage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/visio" element={<StudentApp><PersonalAwareRoute kind="video"><VideoLobbyPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/visioconference" element={<StudentApp><PersonalAwareRoute kind="video"><VideoConfPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/visioconference/:id" element={<StudentApp><PersonalAwareRoute kind="video"><VideoConfPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/visio/room/:id" element={<StudentApp><PersonalAwareRoute kind="video"><VideoConfPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/notifications" element={<StudentApp><PersonalAwareRoute kind="notifications"><NotificationsPage /></PersonalAwareRoute></StudentApp>} />
 
           {/* Partie 4 — Devoirs, Notes, Messagerie */}
-          <Route path="/app/devoirs" element={<StudentApp><AssignmentsPage /></StudentApp>} />
-          <Route path="/app/notes" element={<StudentApp><GradesPage /></StudentApp>} />
-          <Route path="/app/messages" element={<StudentApp><MessagingPage /></StudentApp>} />
+          <Route path="/app/devoirs" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="assignments" /> : <AssignmentsPage />}</StudentApp>} />
+          <Route path="/app/notes" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="grades" /> : <GradesPage />}</StudentApp>} />
+          <Route path="/app/messages" element={<StudentApp><PersonalAwareRoute kind="messages"><MessagingPage /></PersonalAwareRoute></StudentApp>} />
 
           {/* Partie 5 — Délégué & Promotion */}
-          <Route path="/app/gestion-presences" element={<StudentApp><AttendanceManagePage /></StudentApp>} />
-          <Route path="/app/promotion" element={<StudentApp><PromotionPage /></StudentApp>} />
+          <Route path="/app/gestion-presences" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><AttendanceManagePage /></StudentApp>} />
+          <Route path="/app/promotion" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><PromotionPage /></StudentApp>} />
 
           {/* Partie 8 — Enseignant Spécifique */}
-          <Route path="/app/mes-cours-enseignant" element={<StudentApp><TeacherCoursesPage /></StudentApp>} />
+          <Route path="/app/mes-cours-enseignant" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><TeacherCoursesPage /></StudentApp>} />
 
           {/* Partie 6 — Paramètres, Bibliothèque, Aide, Salles */}
-          <Route path="/app/parametres" element={<StudentApp><SettingsPage /></StudentApp>} />
-          <Route path="/app/bibliotheque" element={<StudentApp><LibraryPage /></StudentApp>} />
-          <Route path="/app/salles" element={<StudentApp><ClassroomsPage /></StudentApp>} />
-          <Route path="/app/aide" element={<StudentApp><HelpPage /></StudentApp>} />
-          <Route path="/app/demo" element={<StudentApp><DemoPage /></StudentApp>} />
+          <Route path="/app/parametres" element={<StudentApp><PersonalAwareRoute kind="settings"><SettingsPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/bibliotheque" element={<StudentApp><PersonalAwareRoute kind="library"><LibraryPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/salles" element={<StudentApp><PersonalAwareRoute kind="classrooms"><ClassroomsPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/aide" element={<StudentApp><PersonalAwareRoute kind="help"><HelpPage /></PersonalAwareRoute></StudentApp>} />
+          <Route path="/app/demo" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><DemoPage /></StudentApp>} />
 
           {/* Partie 5 — Administration */}
           <Route path="/admin" element={<AdminLayout />}>

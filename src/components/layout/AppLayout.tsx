@@ -20,6 +20,7 @@ const roleConfig = {
   delegate: { badge: 'Délégué',     icon: Megaphone,     gradient: 'from-purple-700 to-purple-500', bg: 'bg-purple-50',  text: 'text-purple-700', dot: 'bg-purple-600' },
   teacher:  { badge: 'Enseignant',  icon: UserCheck,     gradient: 'from-[#0d9488] to-[#14b8a8]', bg: 'bg-[#f0fdfa]', text: 'text-[#0d9488]', dot: 'bg-[#0d9488]' },
   admin:    { badge: 'Admin',       icon: Settings,      gradient: 'from-amber-600 to-amber-500',  bg: 'bg-amber-50',  text: 'text-amber-700', dot: 'bg-amber-500' },
+  independent: { badge: 'Compte indépendant', icon: Sparkles, gradient: 'from-[#0f766e] to-[#1e3a8a]', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500' },
 }
 
 export function Sidebar() {
@@ -29,11 +30,11 @@ export function Sidebar() {
   const filteredNav = navItems.filter(item => {
     if (!item.roles?.includes(currentRole)) return false
     if (!isIndependent) return true
-    return ['/app', '/app/independent', '/app/parametres', '/app/aide'].includes(item.to)
+    return ['/app', '/app/independent', '/app/cours', '/app/emploi-du-temps', '/app/devoirs', '/app/notes', '/app/profil', '/app/parametres', '/app/messages', '/app/bibliotheque', '/app/presences', '/app/notifications', '/app/visio', '/app/aide', '/pricing'].includes(item.to)
   })
-  const role = roleConfig[currentRole]
+  const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
   const RoleIcon = role.icon
-  const { data } = useApi(() => notificationsApi.unreadCount())
+  const { data } = useApi(() => isIndependent ? Promise.resolve(0) : notificationsApi.unreadCount(), [isIndependent])
   const unreadCount = data ?? 0
 
   return (
@@ -203,11 +204,12 @@ export function Sidebar() {
 export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const navigate = useNavigate()
   const { language, currentUser, currentRole } = useUserRole()
+  const isIndependent = currentUser.accountType === 'PERSONAL'
   const { logout } = useAuth()
-  const { data } = useApi(() => notificationsApi.unreadCount())
-  const unreadCount = data ?? 0
-  const role = roleConfig[currentRole]
+  const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
   const RoleIcon = role.icon
+  const { data } = useApi(() => isIndependent ? Promise.resolve(0) : notificationsApi.unreadCount(), [isIndependent])
+  const unreadCount = data ?? 0
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm px-4 sm:px-6 shadow-sm">
@@ -313,9 +315,9 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
   const filteredNav = navItems.filter(item => {
     if (!item.roles?.includes(currentRole)) return false
     if (!isIndependent) return true
-    return ['/app', '/app/independent', '/app/parametres', '/app/aide'].includes(item.to)
+    return ['/app', '/app/independent', '/app/cours', '/app/emploi-du-temps', '/app/devoirs', '/app/notes', '/app/profil', '/app/parametres', '/app/messages', '/app/bibliotheque', '/app/presences', '/app/notifications', '/app/visio', '/app/aide', '/pricing'].includes(item.to)
   })
-  const role = roleConfig[currentRole]
+  const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
   const RoleIcon = role.icon
 
   return (
