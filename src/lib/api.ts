@@ -12,7 +12,7 @@ const sanitizeUrl = (u?: string) => (u ? u.trim().replace(/\/+$/, '') : '')
 const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS)
 const API_REQUEST_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout >= 1000
   ? configuredTimeout
-  : 8000
+  : 15000
 
 export const UNIVERSITY_API_URL = sanitizeUrl(
   (import.meta.env.VITE_UNIVERSITY_API_URL as string) ??
