@@ -119,6 +119,12 @@ class PushNotificationService {
     }
   }
 
+  private toAppUrl(url?: string): string {
+    if (!url) return '/#/app/notifications'
+    if (/^(https?:|mailto:|tel:)/i.test(url) || url.includes('#/')) return url
+    return `/#${url.startsWith('/') ? url : `/${url}`}`
+  }
+
   /**
    * Dispatch a push notification using ServiceWorker registration
    */
@@ -141,11 +147,13 @@ class PushNotificationService {
     const {
       title,
       body,
-      url = '/notifications',
+      url = '/#/app/notifications',
       notificationType = 'general',
       tag = 'uniflow-alert',
-      icon = 'https://i.imgur.com/GAiZ7WY.png'
+      icon = '/logos/icon-192.png'
     } = payload
+
+    const targetUrl = this.toAppUrl(url)
 
     // Method 1: Use active ServiceWorker registration showNotification
     if (this.swRegistration && this.swRegistration.active) {
@@ -156,7 +164,7 @@ class PushNotificationService {
           badge: icon,
           vibrate: [100, 50, 100],
           data: {
-            url,
+            url: targetUrl,
             type: notificationType,
             timestamp: Date.now()
           },
@@ -182,7 +190,7 @@ class PushNotificationService {
       })
       notif.onclick = () => {
         window.focus()
-        window.location.href = url
+        window.location.href = targetUrl
         notif.close()
       }
       return true
@@ -209,7 +217,7 @@ class PushNotificationService {
     return this.sendPushNotification({
       title,
       body,
-      url: '/assignments',
+      url: '/#/app/devoirs',
       notificationType: 'devoir',
       tag: `assignment-${assignment.id || Date.now()}`
     })
@@ -232,7 +240,7 @@ class PushNotificationService {
     return this.sendPushNotification({
       title,
       body,
-      url: '/notifications',
+      url: '/#/app/notifications',
       notificationType: 'annonce',
       tag: `announcement-${announcement.id || Date.now()}`
     })
@@ -245,7 +253,7 @@ class PushNotificationService {
     return this.sendPushNotification({
       title: '🔔 Test Notification Push PWA UniFlow',
       body: 'Le ServiceWorker UniFlow fonctionne parfaitement ! Vous recevrez désormais les alertes de devoirs et d\'annonces.',
-      url: '/assignments',
+      url: '/#/app/devoirs',
       notificationType: 'system',
       tag: 'test-push'
     })

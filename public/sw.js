@@ -75,7 +75,7 @@ self.addEventListener('push', (event) => {
   let data = {
     title: 'UniFlow — Notification',
     body: 'Un nouvel événement universitaire est disponible.',
-    url: '/notifications',
+    url: '/#/app/notifications',
     type: 'general',
     icon: '/logos/icon-192.png',
     badge: '/logos/icon-192.png'
@@ -96,7 +96,7 @@ self.addEventListener('push', (event) => {
     badge: data.badge || '/logos/icon-192.png',
     vibrate: [100, 50, 100],
     data: {
-      url: data.url || '/notifications',
+      url: data.url || '/#/app/notifications',
       type: data.type || 'general',
       timestamp: Date.now()
     },
@@ -125,7 +125,7 @@ self.addEventListener('notificationclick', (event) => {
 
   if (event.action === 'close') return
 
-  const targetUrl = event.notification.data?.url || '/notifications'
+  const targetUrl = event.notification.data?.url || '/#/app/notifications'
 
   event.waitUntil(
     self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
@@ -152,7 +152,7 @@ self.addEventListener('message', (event) => {
       badge: '/logos/icon-192.png',
       vibrate: [100, 50, 100],
       data: {
-        url: url || '/notifications',
+        url: url || '/#/app/notifications',
         type: notificationType || 'devoir',
         timestamp: Date.now()
       },
