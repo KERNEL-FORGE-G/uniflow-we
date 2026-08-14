@@ -87,3 +87,19 @@ Les correctifs suivants ont été publiés directement sur `main` et vérifiés 
 Les commandes `npm run typecheck`, `npm run build` et `git diff --check` ont réussi pour chaque série de modifications. Le build conserve uniquement un avertissement non bloquant sur la taille de certains chunks Vite.
 
 Les limites backend restent explicites : aucun endpoint de candidature/promotion, de visioconférence, de rapports agrégés ou de statut d’abonnement n’est disponible à ce jour ; l’application affiche donc un état indisponible ou vide au lieu de fabriquer des données. Les écrans qui nécessitent une session JWT doivent être testés avec un compte réel connecté ; hors session, les données personnelles restent vides.
+
+## 2026-08-14 — Commit 05795a0 — PricingPage production
+
+Après déploiement du commit `05795a0`, `https://uniflow.kernelforge.codes/?v=05795a0#/pricing` affiche le choix du cycle mensuel/annuel et le sélecteur de pays (Cameroun, France, Belgique, Canada, États-Unis). Lorsque le backend personnel n’est pas disponible, la page affiche explicitement « Tarification indépendante indisponible » et « Erreur du backend personnel HTTP 404 », avec un lien de contact. Aucun simulateur d’économies ni montant de secours hardcodé n’est rendu. L’endpoint personnel attendu `/subscription/plans` renvoie actuellement HTTP 404 dans l’environnement de production, ce qui est correctement reflété par l’interface.
+
+Le contrôle visuel a été effectué après attente du rendu final, le 14 août 2026.
+
+## 2026-08-14 — Commit 05795a0 — Espace indépendant production
+
+La route `https://uniflow.kernelforge.codes/?v=05795a0#/app/independent` rend l’espace « Gérez vous-même votre parcours » avec les quatre onglets `Mes cours`, `Emploi du temps`, `Devoirs` et `Notes`, chacun initialisé à zéro, ainsi qu’un formulaire CRUD de cours avec code, titre, enseignant, crédits, salle et description. Aucun enregistrement académique fictif n’est affiché. Le test hors session a affiché « Session expirée » sur l’appel réseau, ce qui confirme qu’un compte PERSONAL réel et un backend personnel déployé sont nécessaires pour valider les mutations CRUD de bout en bout.
+
+Le contrôle visuel a été effectué après attente du rendu final, le 14 août 2026.
+
+## 2026-08-14 — Commit 05795a0 — Checkout personnel production
+
+La route `https://uniflow.kernelforge.codes/?v=05795a0#/subscribe/personal_cm` affiche après chargement « Souscription indisponible » et « Erreur du backend personnel HTTP 404 », avec un retour vers les tarifs. Aucun formulaire de carte/Mobile Money, aucune référence de transaction et aucune confirmation d’abonnement ne sont affichés tant que le backend personnel ne fournit pas de plan réel.
