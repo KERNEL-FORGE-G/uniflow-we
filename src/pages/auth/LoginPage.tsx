@@ -6,13 +6,6 @@ import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { useAuth } from '../../hooks/useAuth'
 import { UNIVERSITIES } from '../../data/universities'
 
-const demoAccounts = [
-  { role: 'student' as const,  label: 'Étudiant (UY1)',   email: 'emma.martin@uniflow.edu',  gradient: 'from-[#1e3a8a] to-[#2d4fa8]', icon: GraduationCap },
-  { role: 'delegate' as const, label: 'Délégué (UDLA)',    email: 'lucas.dubois@uniflow.edu', gradient: 'from-[#0d9488] to-[#14b8a8]', icon: ShieldCheck },
-  { role: 'teacher' as const,  label: 'Enseignant (UB)', email: 'dr.martin@uniflow.edu',    gradient: 'from-[#7c3aed] to-[#a855f7]', icon: Wifi },
-  { role: 'admin' as const,    label: 'Admin',      email: 'admin@uniflow.edu',        gradient: 'from-[#d97706] to-[#f59e0b]', icon: Sparkles },
-]
-
 const features = [
   { 
     icon: GraduationCap, 
@@ -55,12 +48,6 @@ export default function LoginPage() {
       accountType,
       universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined,
     })
-  }
-
-  const handleDemo = (demoEmail: string) => {
-    setEmail(demoEmail)
-    setPassword('password123')
-    setError(null)
   }
 
   return (
@@ -187,31 +174,6 @@ export default function LoginPage() {
                 </div>
               </div>
             )}
-
-            {/* Quick demo buttons */}
-            <div className="mb-8 space-y-3">
-              <p className="text-xs font-bold text-[#9ca3af] uppercase tracking-wider">Connexion rapide (démo)</p>
-              <div className="grid grid-cols-2 gap-3">
-                {demoAccounts.map(acc => {
-                  const Icon = acc.icon
-                  return (
-                    <motion.button 
-                      key={acc.role} 
-                      type="button" 
-                      onClick={() => handleDemo(acc.email)}
-                      whileHover={{ scale: 1.05, y: -2 }}
-                      whileTap={{ scale: 0.95 }}
-                      className={`group rounded-xl bg-gradient-to-br ${acc.gradient} px-4 py-3 text-white shadow-lg hover:shadow-xl transition-all`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Icon className="h-4 w-4 group-hover:scale-110 transition-transform" />
-                        <span className="text-sm font-bold">{acc.label}</span>
-                      </div>
-                    </motion.button>
-                  )
-                })}
-              </div>
-            </div>
 
             {/* Divider */}
             <div className="flex items-center gap-3 mb-8">
