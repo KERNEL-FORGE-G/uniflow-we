@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Search, Plus, Phone, Video, Paperclip, Smile, Mic, Send, MoreHorizontal, X, AlertTriangle, UserCircle, Mail, Loader2 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { AnimatedList } from '../components/ui/AnimatedList'
-import { studentsApi, teachersApi } from '../lib/api'
+import { messagingApi, type ChatConversation } from '../lib/api'
 import { useNavigate } from 'react-router-dom'
 
 const TYPING_DELAY = 1200
@@ -48,130 +48,26 @@ export default function MessagingPage() {
     }
   }, [active?.messages, isTyping])
 
-  // Load real users from the backend + custom saved contacts
+  // Load conversations from the real backend only.
   useEffect(() => {
-    async function loadContacts() {
+    async function loadConversations() {
       try {
-        const [students, teachers] = await Promise.all([
-          studentsApi.list().catch(() => []),
-          teachersApi.list().catch(() => [])
-        ])
-
-        const list: Conversation[] = []
-
-        // Load custom contacts added by email
-        try {
-          const customSaved = JSON.parse(localStorage.getItem('uniflow_custom_contacts') || '[]')
-          if (Array.isArray(customSaved)) {
-            list.push(...customSaved)
-          }
-        } catch {}
-
-        // Add teachers
-        teachers.forEach((t: any) => {
-          const email = t.user?.email || `${t.firstName.toLowerCase()}.${t.lastName.toLowerCase()}@uniflow.edu`
-          if (!list.some(c => c.email.toLowerCase() === email.toLowerCase())) {
-            list.push({
-              id: `teacher-${t.id}`,
-              name: `${t.firstName} ${t.lastName}`,
-              role: 'Enseignant',
-              email,
-              online: Math.random() > 0.5,
-              time: '10:00',
-              preview: 'Cliquez pour ouvrir la discussion',
-              unread: 0,
-              messages: [
-                { id: 'm1', from: 'them', text: `Bonjour ! Contactez-moi directement via cette messagerie ou à l'adresse ${email}.`, time: '10:00' }
-              ]
-            })
-          }
-        })
-
-        // Add students
-        students.forEach((s: any) => {
-          const email = s.user?.email || `${s.firstName.toLowerCase()}.${s.lastName.toLowerCase()}@uniflow.edu`
-          if (!list.some(c => c.email.toLowerCase() === email.toLowerCase())) {
-            list.push({
-              id: `student-${s.id}`,
-              name: `${s.firstName} ${s.lastName}`,
-              role: s.status === 'delegate' || s.role === 'DELEGUE' ? 'Délégué' : 'Étudiant',
-              email,
-              online: Math.random() > 0.5,
-              time: '09:30',
-              preview: 'Cliquez pour ouvrir la discussion',
-              unread: 0,
-              messages: []
-            })
-          }
-        })
-
-        setConvos(list)
-        if (list.length > 0) {
-          setActive(list[0])
-        }
+        const list = await messagingApi.conversations()
+        const conversations = (list ?? []) as ChatConversation[]
+        setConvos(conversations)
+        if (conversations.length > 0) setActive(conversations[0])
       } catch (err) {
-        console.error('Failed to load contacts', err)
+        console.error('Failed to load conversations', err)
       } finally {
         setLoading(false)
       }
     }
-    loadContacts()
+    loadConversations()
   }, [])
 
-  // Add a contact by user email
   const handleAddContactByEmail = (e: React.FormEvent) => {
     e.preventDefault()
-    const emailClean = newEmailInput.trim().toLowerCase()
-    if (!emailClean) return
-
-    if (!emailClean.includes('@') || !emailClean.includes('.')) {
-      setAddError('Veuillez saisir une adresse e-mail valide (ex: nom@uniflow.edu).')
-      return
-    }
-
-    // Check if contact already exists
-    const existing = convos.find(c => c.email.toLowerCase() === emailClean)
-    if (existing) {
-      setActive(existing)
-      setShowAddModal(false)
-      setNewEmailInput('')
-      setAddError(null)
-      return
-    }
-
-    // Create new contact from email reference
-    const namePart = emailClean.split('@')[0]
-    const formattedName = namePart
-      .split('.')
-      .map(p => p.charAt(0).toUpperCase() + p.slice(1))
-      .join(' ')
-
-    const newConvo: Conversation = {
-      id: `custom-${Date.now()}`,
-      name: formattedName || emailClean,
-      role: 'Contact Réseau',
-      email: emailClean,
-      online: true,
-      time: 'À l\'instant',
-      preview: 'Nouveau contact ajouté',
-      unread: 0,
-      messages: [
-        { id: `m-${Date.now()}`, from: 'them', text: `Conversation démarrée avec ${emailClean}. Tapez votre message ci-dessous.`, time: 'À l\'instant' }
-      ]
-    }
-
-    const updated = [newConvo, ...convos]
-    setConvos(updated)
-    setActive(newConvo)
-
-    try {
-      const customSaved = JSON.parse(localStorage.getItem('uniflow_custom_contacts') || '[]')
-      localStorage.setItem('uniflow_custom_contacts', JSON.stringify([newConvo, ...customSaved]))
-    } catch {}
-
-    setShowAddModal(false)
-    setNewEmailInput('')
-    setAddError(null)
+    setAddError('La création de conversations par e-mail n’est pas disponible via le backend.')
   }
 
   // Clear unread on select
@@ -181,38 +77,22 @@ export default function MessagingPage() {
     setIsTyping(false)
   }
 
-  const sendMessage = (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim() || !active) return
-    const now = new Date()
-    const time = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`
-    const newMsg: Message = { id: Date.now().toString(), from: 'me', text: text.trim(), time }
-
-    const updated = { ...active, messages: [...active.messages, newMsg], preview: text.trim(), time }
-    setActive(updated)
-    setConvos(prev => prev.map(c => c.id === active.id ? updated : c))
-    setText('')
-
-    // Simulate auto-reply after delay
     setIsTyping(true)
-    setTimeout(() => {
+    setAddError(null)
+    try {
+      const updated = await messagingApi.sendMessage(active.id, text.trim())
+      const conversation = updated as ChatConversation
+      setActive(conversation)
+      setConvos(prev => prev.map(c => c.id === conversation.id ? conversation : c))
+      setText('')
+    } catch (err: any) {
+      setAddError(err?.message || 'Le message n’a pas pu être envoyé par le backend.')
+    } finally {
       setIsTyping(false)
-      const replies = [
-        'Merci pour votre message ! Je vous répondrai dès que possible.',
-        'Bien reçu. N\'hésitez pas à m\'envoyer un e-mail officiel si c\'est urgent.',
-        'D\'accord, je vérifie cela tout de suite.',
-        'Je suis actuellement en cours, je vous reviens plus tard.',
-        'Parfait, merci pour l\'information !',
-      ]
-      const replyText = replies[Math.floor(Math.random() * replies.length)]
-      const replyTime = `${new Date().getHours().toString().padStart(2,'0')}:${new Date().getMinutes().toString().padStart(2,'0')}`
-      const reply: Message = { id: (Date.now() + 1).toString(), from: 'them', text: replyText, time: replyTime }
-      setActive(prev => {
-        if (!prev) return null
-        return { ...prev, messages: [...prev.messages, reply], preview: replyText }
-      })
-      setConvos(prev => prev.map(c => c.id === active.id ? { ...c, messages: [...c.messages, reply], preview: replyText } : c))
-    }, TYPING_DELAY)
+    }
   }
 
   const filteredConvos = convos.filter(c => 

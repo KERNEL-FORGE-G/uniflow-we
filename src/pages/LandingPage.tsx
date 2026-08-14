@@ -21,13 +21,6 @@ import { cn } from '../utils/cn'
 
 const landingImg = 'https://i.imgur.com/35YpEbS.png'
 
-const defaultStats = [
-  { icon: Users, value: '12 000+', label: 'Étudiants actifs', color: 'text-[#1e3a8a] bg-[#eff3ff]' },
-  { icon: Award, value: '480+', label: 'Enseignants', color: 'text-[#0d9488] bg-[#f0fdfa]' },
-  { icon: TrendingUp, value: '98%', label: 'Satisfaction', color: 'text-purple-700 bg-purple-50' },
-  { icon: Clock, value: '24/7', label: 'Disponibilité', color: 'text-amber-700 bg-amber-50' },
-]
-
 const features = [
   {
     icon: GraduationCap,
@@ -169,7 +162,7 @@ export default function LandingPage() {
           color: 'text-amber-700 bg-amber-50' 
         },
       ]
-    : defaultStats
+    : []
 
   // Calculated ROI values
   const paperSavedSheets = Math.round(studentCount * 140)
