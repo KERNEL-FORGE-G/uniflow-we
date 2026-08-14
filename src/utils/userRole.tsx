@@ -17,35 +17,11 @@ export interface UserProfile {
   matricule?: string
 }
 
-const usersByRole: Record<Role, UserProfile> = {
-  student: {
-    name: 'Étudiant UniFlow',
-    roleLabel: 'Étudiant',
-    email: 'etudiant@uniflow.edu',
-    status: 'En ligne',
-    filiere: 'L2 Info - Informatique',
-    level: 'L2',
-  },
-  delegate: {
-    name: 'Délégué UniFlow',
-    roleLabel: 'Délégué',
-    email: 'delegate@uniflow.edu',
-    status: 'En ligne',
-    filiere: 'L2 Info - Informatique',
-    level: 'L2',
-  },
-  teacher: {
-    name: 'Enseignant UniFlow',
-    roleLabel: 'Enseignant',
-    email: 'enseignant@uniflow.edu',
-    status: 'En ligne',
-  },
-  admin: {
-    name: 'Administrateur',
-    roleLabel: 'Super Admin',
-    email: 'admin@uniflow.edu',
-    status: 'En ligne',
-  },
+const EMPTY_PROFILE: UserProfile = {
+  name: 'Utilisateur non connecté',
+  roleLabel: 'Non connecté',
+  email: '—',
+  status: 'Hors ligne',
 }
 
 interface RoleContextProps {
@@ -76,7 +52,7 @@ function mapRole(raw: string | undefined): Role {
 }
 
 function buildUserProfile(user: BackendUser | null): UserProfile {
-  if (!user) return usersByRole.student
+  if (!user) return EMPTY_PROFILE
 
   const role = mapRole(user.role)
   const firstName = user.student?.firstName ?? user.teacher?.firstName ?? user.email.split('@')[0]
