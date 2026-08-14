@@ -65,3 +65,9 @@ Source backend testée : https://api-uniflow.kernelforge.codes/
 Source backend documentaire : https://github.com/KERNEL-FORGE-G/uniflow-we/blob/main/API_UNIVERSITY.md
 
 La documentation décrit notamment `POST /api/auth/login`, `GET /api/courses/mine`, `POST /api/attendance/scan` et `GET /api/grades/my-grades`, mais les réponses observées en production utilisent les chemins racine correspondants. Cette divergence devra être clarifiée dans la documentation avant la finalisation.
+
+## Test d’inscription réel après correction du contrat
+
+Le backend `https://api-uniflow.kernelforge.codes/auth/register` a d’abord rejeté la propriété `matricule` avec HTTP 400 (`property matricule should not exist`). Le frontend a été corrigé pour retirer cette propriété du payload transmis, tout en conservant les champs d’affichage côté formulaire.
+
+Un second test réel a réussi avec HTTP 201. Compte de test créé : `uniflow.test.1786728331.36b487@mailinator.com`, rôle `ETUDIANT`, niveau `Licence 1`, spécialité `Informatique`. Le backend a généré lui-même le matricule `UY1-2026-00015` et a renvoyé une session JWT. Aucun jeton n’est conservé dans ces notes.
