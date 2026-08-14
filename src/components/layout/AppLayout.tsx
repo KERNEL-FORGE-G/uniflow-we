@@ -353,22 +353,6 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
           </div>
         </div>
 
-        <div>
-          <label className="block text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider mb-1.5 px-1">Mode démo</label>
-          <div className="relative">
-            <RoleIcon className={cn('absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 pointer-events-none', role.text)} />
-            <select
-              value={currentRole}
-              onChange={e => setCurrentRole(e.target.value as any)}
-              className={cn('w-full rounded-lg border border-[#e5e7eb] pl-8 pr-3 py-2 text-sm font-semibold outline-none focus:border-[#1e3a8a] appearance-none cursor-pointer', role.bg, role.text)}
-            >
-              <option value="student">Étudiant</option>
-              <option value="delegate">Délégué</option>
-              <option value="teacher">Enseignant</option>
-              <option value="admin">Administrateur</option>
-            </select>
-          </div>
-        </div>
       </div>
 
       {/* Navigation */}
