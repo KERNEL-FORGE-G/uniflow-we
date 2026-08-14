@@ -19,44 +19,12 @@ interface Candidacy {
   status: 'pending' | 'approved' | 'rejected'
 }
 
-const DEFAULT_LEVEL_UES: Record<string, { code: string; name: string }[]> = {
-  'L1': [
-    { code: 'UE01', name: 'Algorithmique & Initiation à la Programmation' },
-    { code: 'UE02', name: 'Architecture des Ordinateurs & Systèmes' },
-    { code: 'UE03', name: 'Mathématiques & Logique Informatique' },
-    { code: 'UE04', name: 'Anglais & Communication Web' },
-  ],
-  'L2': [
-    { code: 'UE01', name: 'Structures de Données & POO (C++/Java)' },
-    { code: 'UE02', name: 'Bases de Données Relationnelles & SQL' },
-    { code: 'UE03', name: 'Réseaux Informatiques & Protocoles' },
-    { code: 'UE04', name: 'Probabilités & Statistiques pour l\'Ingénieur' },
-  ],
-  'L3': [
-    { code: 'UE01', name: 'Programmation Web Avancée & Frameworks' },
-    { code: 'UE02', name: 'Administration Systèmes & Réseaux Linux' },
-    { code: 'UE03', name: 'Intelligence Artificielle & Machine Learning' },
-    { code: 'UE04', name: 'Sécurité Informatique & Cryptographie' },
-  ],
-  'M1': [
-    { code: 'UE01', name: 'Génie Logiciel & Microservices' },
-    { code: 'UE02', name: 'Data Science & Big Data Analytics' },
-    { code: 'UE03', name: 'Cloud Computing & DevOps' },
-  ],
-  'M2': [
-    { code: 'UE01', name: 'Management des Systèmes d\'Information' },
-    { code: 'UE02', name: 'Cybersécurité Avancée & Audit' },
-  ]
-}
-
 export default function PromotionPage() {
   const { currentUser, currentRole: role, setCurrentRole: setRole } = useUserRole()
   const userLevel = currentUser.level || 'L3'
 
-  // Load custom student enrolled UEs from localStorage or fallback to level defaults
   const [availableUEs, setAvailableUEs] = useState<{ code: string; name: string }[]>([])
-  
-  const [candidacies, setCandidacies] = useState<Candidacy[]>([])
+  const [candidacies] = useState<Candidacy[]>([])
   const [formType, setFormType] = useState<'global' | 'ue'>('global')
   const [selectedUE, setSelectedUE] = useState<string>('')
   const [motivation, setMotivation] = useState('')
@@ -66,111 +34,22 @@ export default function PromotionPage() {
   const [successMsg, setSuccessMsg] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
 
-  // Initialize UEs and saved candidacies
   useEffect(() => {
-    // Check if student selected specific UEs in Settings
-    let studentUEs: any[] = []
-    try {
-      const saved = localStorage.getItem('uniflow_student_ues')
-      if (saved) {
-        studentUEs = JSON.parse(saved)
-      }
-    } catch {}
-
-    if (Array.isArray(studentUEs) && studentUEs.length > 0) {
-      setAvailableUEs(studentUEs)
-      setSelectedUE(studentUEs[0].code)
-    } else {
-      const defaults = DEFAULT_LEVEL_UES[userLevel] || DEFAULT_LEVEL_UES['L3']
-      setAvailableUEs(defaults)
-      setSelectedUE(defaults[0].code)
-    }
-
-    // Load saved candidacies
-    try {
-      const savedCand = localStorage.getItem('uniflow_candidacies')
-      if (savedCand) {
-        setCandidacies(JSON.parse(savedCand))
-      } else {
-        // Initial sample candidacy
-        const sample: Candidacy = {
-          id: 'cand-1',
-          type: 'global',
-          level: userLevel,
-          motivation: 'Volonté de faciliter la transmission des supports de cours et d\'harmoniser la communication entre la promo et les enseignants.',
-          projects: 'Mise en place de séances de révision partagées et remontée rapide des absences.',
-          gpa: '15.4/20',
-          submittedAt: new Date().toLocaleDateString('fr-FR'),
-          status: 'pending'
-        }
-        setCandidacies([sample])
-        localStorage.setItem('uniflow_candidacies', JSON.stringify([sample]))
-      }
-    } catch {}
+    setAvailableUEs([])
+    setSelectedUE('')
   }, [userLevel])
 
-  // Save candidacies helper
-  const saveCandidacies = (list: Candidacy[]) => {
-    setCandidacies(list)
-    try {
-      localStorage.setItem('uniflow_candidacies', JSON.stringify(list))
-    } catch {}
-  }
-
-  // Submit new candidacy
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setErrorMsg(null)
-
-    if (!motivation.trim() || motivation.length < 15) {
-      setErrorMsg('Veuillez détailler vos motivations (au moins 15 caractères).')
-      return
-    }
-
-    if (!agreed) {
-      setErrorMsg('Veuillez accepter l\'engagement de responsabilité des délégués.')
-      return
-    }
-
-    const ueObj = availableUEs.find(u => u.code === selectedUE)
-
-    const newCand: Candidacy = {
-      id: `cand-${Date.now()}`,
-      type: formType,
-      ueCode: formType === 'ue' ? ueObj?.code : undefined,
-      ueName: formType === 'ue' ? ueObj?.name : undefined,
-      level: userLevel,
-      motivation: motivation.trim(),
-      projects: projects.trim(),
-      gpa: gpa.trim() || 'Non renseignée',
-      submittedAt: new Date().toLocaleDateString('fr-FR'),
-      status: 'pending'
-    }
-
-    const updated = [newCand, ...candidacies]
-    saveCandidacies(updated)
-
-    setMotivation('')
-    setProjects('')
-    setGpa('')
-    setAgreed(false)
-    setSuccessMsg('Votre candidature a été soumise avec succès ! Elle est en cours de révision par la scolarité.')
-
-    setTimeout(() => setSuccessMsg(null), 5000)
+    setErrorMsg('La candidature ne peut pas être enregistrée : aucun endpoint backend de promotion n’est disponible.')
   }
 
-  // Fast-track demo validation
-  const handleApproveCand = (id: string) => {
-    const updated = candidacies.map(c => c.id === id ? { ...c, status: 'approved' as const } : c)
-    saveCandidacies(updated)
-    setRole('delegate')
-    setSuccessMsg('Félicitations ! Votre candidature a été approuvée. Votre rôle a été promu en "Délégué de classe".')
-    setTimeout(() => setSuccessMsg(null), 6000)
+  const handleApproveCand = () => {
+    setErrorMsg('La validation des candidatures doit être effectuée par la scolarité via le backend.')
   }
 
-  const handleWithdrawCand = (id: string) => {
-    const updated = candidacies.filter(c => c.id !== id)
-    saveCandidacies(updated)
+  const handleWithdrawCand = () => {
+    setErrorMsg('Le retrait des candidatures doit être effectué via le backend.')
   }
 
   return (
@@ -378,21 +257,6 @@ export default function PromotionPage() {
         {/* Right Column: Candidacies List & Fast Track */}
         <div className="lg:col-span-5 space-y-6">
           
-          {/* Fast-Track Demo Info Card */}
-          <div className="rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-slate-900 p-5 shadow-xs">
-            <div className="flex items-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-700 dark:text-amber-300">
-                <Sparkles className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="font-bold text-amber-900 dark:text-amber-200 text-sm">Mode Démo UniFlow</h3>
-                <p className="text-xs text-amber-800 dark:text-amber-300/90 mt-1 leading-relaxed">
-                  Pour vous permettre d'évaluer directement les fonctionnalités avancées de gestion de classe et d'émargement QR, vous pouvez valider instantanément votre candidature ci-dessous.
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Submitted Candidacies */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
@@ -463,14 +327,14 @@ export default function PromotionPage() {
                         <div className="flex items-center gap-2 pt-2">
                           <button
                             type="button"
-                            onClick={() => handleApproveCand(c.id)}
+                            onClick={handleApproveCand}
                             className="flex-1 flex items-center justify-center gap-1.5 rounded-lg bg-emerald-600 text-white py-1.5 px-3 text-xs font-bold hover:bg-emerald-700 transition-colors shadow-xs"
                           >
-                            <UserCheck className="h-3.5 w-3.5" /> Valider (Démo)
+                            <UserCheck className="h-3.5 w-3.5" /> Valider
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleWithdrawCand(c.id)}
+                            onClick={handleWithdrawCand}
                             className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-2.5 py-1.5 text-xs text-slate-500 hover:text-rose-600 transition-colors"
                           >
                             Retirer
