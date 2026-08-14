@@ -28,6 +28,8 @@
   ],
   "env": {
     "VITE_API_URL": "https://api-uniflow.kernelforge.codes",
+    "VITE_UNIVERSITY_API_URL": "https://api-uniflow.kernelforge.codes",
+    "VITE_PERSONAL_API_URL": "https://api2-uniflow.kernelforge.codes",
     "VITE_APP_URL": "https://uniflow.kernelforge.codes",
     "VITE_API_TIMEOUT_MS": "15000"
   }

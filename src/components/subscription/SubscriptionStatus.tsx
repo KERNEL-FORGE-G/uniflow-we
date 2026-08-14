@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, ArrowRight } from 'lucide-react'
-import { subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
+import { getAccountType, personalSubscriptionApi, subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
 
 export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatusType | null>(null)
@@ -14,7 +14,9 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
     setLoading(true)
     setStatusError(null)
     try {
-      const data = await subscriptionApi.getStatus()
+      const data = getAccountType() === 'PERSONAL'
+        ? await personalSubscriptionApi.getStatus()
+        : await subscriptionApi.getStatus()
       setStatus(data)
     } catch (err) {
       console.error('Erreur chargement statut abonnement:', err)
@@ -98,7 +100,7 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
           <div className="mb-4 flex items-center gap-2 rounded-xl bg-amber-500/15 border border-amber-500/30 px-3.5 py-2 text-xs font-semibold text-amber-800 dark:text-amber-300">
             <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400 animate-pulse" />
             <span>
-              <strong>Attention :</strong> Votre formule académique expire dans <strong>{remainingDays} jours</strong>. Renouvelez dès maintenant pour conserver vos accès illimités.
+              <strong>Attention :</strong> Votre formule expire dans <strong>{remainingDays} jours</strong>. Renouvelez dès maintenant pour conserver vos accès illimités.
             </span>
           </div>
         )}

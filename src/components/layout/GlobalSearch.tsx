@@ -2,12 +2,12 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, BookOpen, ClipboardList, Building2, X, ArrowRight, CornerDownLeft, Sparkles, Filter } from 'lucide-react'
 import { useUserRole } from '../../utils/userRole'
-import { coursesApi, assignmentsApi, classroomsApi, Course, Assignment, Classroom } from '../../lib/api'
+import { coursesApi, assignmentsApi, classroomsApi, personalApi, Course, Assignment, Classroom, PersonalCourse, PersonalAssignment } from '../../lib/api'
 import { cn } from '../../utils/cn'
 
 type CategoryFilter = 'all' | 'courses' | 'assignments' | 'classrooms'
 
-export function GlobalSearch() {
+function UniversityGlobalSearch() {
   const navigate = useNavigate()
   const { language, currentRole } = useUserRole()
   const [query, setQuery] = useState('')
@@ -428,6 +428,108 @@ export function GlobalSearch() {
             <span className="flex items-center gap-1 font-mono">
               <CornerDownLeft className="h-3 w-3" /> Entrée pour naviguer
             </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+
+export function GlobalSearch() {
+  const { currentUser } = useUserRole()
+  return currentUser.accountType === 'PERSONAL' ? <PersonalGlobalSearch /> : <UniversityGlobalSearch />
+}
+
+function PersonalGlobalSearch() {
+  const navigate = useNavigate()
+  const { language } = useUserRole()
+  const [query, setQuery] = useState('')
+  const [isOpen, setIsOpen] = useState(false)
+  const [courses, setCourses] = useState<PersonalCourse[]>([])
+  const [assignments, setAssignments] = useState<PersonalAssignment[]>([])
+  const [loading, setLoading] = useState(false)
+  const containerRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    let mounted = true
+    setLoading(true)
+    Promise.all([personalApi.courses.list(), personalApi.assignments.list()])
+      .then(([courseData, assignmentData]) => {
+        if (!mounted) return
+        setCourses(courseData ?? [])
+        setAssignments(assignmentData ?? [])
+      })
+      .catch(() => {
+        if (!mounted) return
+        setCourses([])
+        setAssignments([])
+      })
+      .finally(() => mounted && setLoading(false))
+    return () => { mounted = false }
+  }, [])
+
+  useEffect(() => {
+    const close = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) setIsOpen(false)
+    }
+    document.addEventListener('mousedown', close)
+    return () => document.removeEventListener('mousedown', close)
+  }, [])
+
+  useEffect(() => {
+    const keyboard = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault()
+        inputRef.current?.focus()
+        setIsOpen(true)
+      }
+      if (event.key === 'Escape') setIsOpen(false)
+    }
+    window.addEventListener('keydown', keyboard)
+    return () => window.removeEventListener('keydown', keyboard)
+  }, [])
+
+  const trimmed = query.trim().toLowerCase()
+  const filteredCourses = courses.filter(course => !trimmed || [course.code, course.title, course.instructor].some(value => value?.toLowerCase().includes(trimmed)))
+  const filteredAssignments = assignments.filter(task => !trimmed || [task.title, task.description, task.priority, task.status].some(value => value?.toLowerCase().includes(trimmed)))
+  const go = (path: string) => { setIsOpen(false); setQuery(''); navigate(path) }
+
+  return (
+    <div ref={containerRef} className="relative flex-1 max-w-md">
+      <div className="relative flex items-center">
+        <Search className="pointer-events-none absolute left-3.5 h-4 w-4 text-teal-600" />
+        <input
+          ref={inputRef}
+          value={query}
+          onChange={event => setQuery(event.target.value)}
+          onFocus={() => setIsOpen(true)}
+          placeholder={language === 'FR' ? 'Rechercher dans mon espace…' : 'Search my workspace…'}
+          className="w-full rounded-xl border border-teal-100 bg-teal-50/60 py-2 pl-10 pr-16 text-sm outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/15"
+        />
+        {query ? <button type="button" onClick={() => { setQuery(''); inputRef.current?.focus() }} className="absolute right-2 rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700" aria-label="Effacer"><X className="h-3.5 w-3.5" /></button> : <kbd className="absolute right-2 hidden rounded-md border border-teal-100 bg-white px-1.5 py-0.5 text-[10px] font-bold text-teal-700 sm:inline-flex">Ctrl K</kbd>}
+      </div>
+
+      {isOpen && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-2 max-h-[72vh] overflow-y-auto rounded-2xl border border-slate-200 bg-white p-3 shadow-2xl">
+          <div className="mb-3 flex items-center justify-between border-b border-slate-100 pb-2">
+            <p className="text-[11px] font-extrabold uppercase tracking-wider text-teal-700">Espace personnel</p>
+            {loading && <span className="text-[11px] text-slate-400">Actualisation…</span>}
+          </div>
+          {!trimmed && !loading && courses.length === 0 && assignments.length === 0 && <p className="px-2 py-7 text-center text-sm text-slate-500">Aucune donnée personnelle à rechercher.</p>}
+          {trimmed && filteredCourses.length === 0 && filteredAssignments.length === 0 && !loading && <p className="px-2 py-7 text-center text-sm text-slate-500">Aucun résultat pour « {query} ».</p>}
+          {filteredCourses.length > 0 && <div className="space-y-1">
+            <p className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-teal-700">Matières</p>
+            {filteredCourses.slice(0, 6).map(course => <button key={course.id} type="button" onClick={() => go('/app/cours')} className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left hover:bg-teal-50"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-teal-100 text-[10px] font-black text-teal-800">{course.code.slice(0, 4)}</span><span className="min-w-0"><strong className="block truncate text-xs text-slate-900">{course.title}</strong><span className="block truncate text-[11px] text-slate-500">{course.code}{course.instructor ? ` · ${course.instructor}` : ''}</span></span><ArrowRight className="ml-auto h-4 w-4 shrink-0 text-teal-500" /></button>)}
+          </div>}
+          {filteredAssignments.length > 0 && <div className="mt-3 space-y-1 border-t border-slate-100 pt-3">
+            <p className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-amber-700">Tâches</p>
+            {filteredAssignments.slice(0, 6).map(task => <button key={task.id} type="button" onClick={() => go('/app/devoirs')} className="flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left hover:bg-amber-50"><span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-100 text-amber-800"><ClipboardList className="h-4 w-4" /></span><span className="min-w-0"><strong className="block truncate text-xs text-slate-900">{task.title}</strong><span className="block truncate text-[11px] text-slate-500">{task.dueDate ? new Date(task.dueDate).toLocaleDateString('fr-FR') : 'Sans échéance'} · {task.status ?? 'TODO'}</span></span><ArrowRight className="ml-auto h-4 w-4 shrink-0 text-amber-500" /></button>)}
+          </div>}
+          <div className="mt-3 flex gap-2 border-t border-slate-100 pt-3">
+            <button type="button" onClick={() => go('/app/cours')} className="flex-1 rounded-lg bg-teal-50 px-3 py-2 text-[11px] font-bold text-teal-800 hover:bg-teal-100">Voir mes matières</button>
+            <button type="button" onClick={() => go('/app/devoirs')} className="flex-1 rounded-lg bg-amber-50 px-3 py-2 text-[11px] font-bold text-amber-800 hover:bg-amber-100">Voir mes tâches</button>
           </div>
         </div>
       )}

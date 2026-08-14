@@ -9,6 +9,7 @@ import {
   BarChart3,
   Users,
   BookMarked,
+  CircleDollarSign,
   Database,
   ClipboardList,
   HelpCircle,
@@ -61,7 +62,8 @@ export const navItems: NavItem[] = [
   { to: '/app/bibliotheque',       icon: BookMarked,    labelFr: 'Bibliothèque',       labelEn: 'Library',         roles: ['student', 'delegate'] },
   { to: '/app/salles',             icon: MapPin,        labelFr: 'Salles',             labelEn: 'Classrooms',      roles: ['student', 'delegate', 'teacher'] },
   { to: '/app/promotion',          icon: Award,         labelFr: 'Postuler Délégué',   labelEn: 'Delegate Candidacy', roles: ['student', 'delegate'] },
-  { to: '/app/parametres',         icon: Settings,      labelFr: 'Paramètres',         labelEn: 'Settings',        roles: ['student', 'delegate', 'teacher', 'admin'] },
+    { to: '/app/parametres',         icon: Settings,         labelFr: 'Paramètres',         labelEn: 'Settings',          roles: ['student', 'delegate', 'teacher', 'admin'] },
+  { to: '/pricing',                icon: CircleDollarSign, labelFr: 'Tarifs personnels',    labelEn: 'Personal pricing',     roles: ['student', 'teacher'] },
   { to: '/app/aide',               icon: HelpCircle,    labelFr: 'Aide & FAQ',         labelEn: 'Help & FAQ',      roles: ['student', 'delegate', 'teacher'] },
 ]
 

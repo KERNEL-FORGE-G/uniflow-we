@@ -351,7 +351,8 @@ async function doRefresh(): Promise<boolean> {
     if (!r) return false
     try {
       const activeBase = getActiveApiUrl().replace(/\/+$/, '')
-      const res = await fetch(`${activeBase}/auth/refresh`, {
+      const refreshPath = getAccountType() === 'PERSONAL' ? '/api/v1/auth/refresh' : '/auth/refresh'
+      const res = await fetch(`${activeBase}${refreshPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refreshToken: r }),
@@ -429,6 +430,8 @@ export interface BackendUser {
   id: string
   email: string
   role: string
+  firstName?: string
+  lastName?: string
   fullName?: string
   accountType?: string
   accountCategory?: string
@@ -515,7 +518,7 @@ export const authApi = {
   academicOptions: async () => u(await api.get<{ data: { levels: AcademicLevel[]; specialties: SpecialtyOption[] } }>('/auth/academic-options')),
   specialties: async (levelId?: string) => u(await api.get<{ data: SpecialtyOption[] }>(`/auth/specialties${levelId ? `?levelId=${encodeURIComponent(levelId)}` : ''}`)),
   logout:   ()                       => clearTokens(),
-  updateProfile: async (dto: Partial<StudentProfile & TeacherProfile & { email: string; phone?: string; address?: string }>) =>
+  updateProfile: async (dto: Partial<StudentProfile & TeacherProfile & { email: string; phone?: string; address?: string; firstName?: string; lastName?: string; countryCode?: string; preferredCurrency?: string }>) =>
     u(await api.patch<{ data: BackendUser }>('/auth/me', dto))
 }
 
@@ -638,7 +641,7 @@ export const personalApi = {
   grades: {
     list: async () => u(await api.get<{ data: PersonalGrade[] }>('/personal/grades')),
     create: async (dto: Omit<PersonalGrade, 'id'>) => u(await api.post<{ data: PersonalGrade }>('/personal/grades', { ...dto, subjectId: dto.courseId })),
-    update: async (id: string, dto: Partial<PersonalGrade>) => u(await api.put<{ data: PersonalGrade }>(`/personal/grades/${id}`, dto)),
+    update: async (id: string, dto: Partial<PersonalGrade>) => u(await api.put<{ data: PersonalGrade }>(`/personal/grades/${id}`, { ...dto, ...(dto.courseId ? { subjectId: dto.courseId } : {}) })),
     delete: async (id: string) => u(await api.delete<void>(`/personal/grades/${id}`)),
   },
 }
