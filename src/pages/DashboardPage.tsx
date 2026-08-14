@@ -8,28 +8,13 @@ import { statsApi, getAccountType } from '../lib/api'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 
-const gradeDistrib = [
-  { name: 'Excellentes', value: 35, color: '#1e3a8a' },
-  { name: 'Bonnes',      value: 30, color: '#0d9488' },
-  { name: 'Moyennes',    value: 25, color: '#f59e0b' },
-  { name: 'Faibles',     value: 10, color: '#ef4444' },
-]
+type AttendancePoint = { week: string; rate: number }
+type GradePoint = { week: string; average: number }
+type GradeDistributionPoint = { name: string; value: number; color: string }
 
-const attendanceTrend = [
-  { week: 'S1', rate: 85 }, { week: 'S2', rate: 88 }, { week: 'S3', rate: 78 },
-  { week: 'S4', rate: 92 }, { week: 'S5', rate: 86 }, { week: 'S6', rate: 91 },
-]
-
-const teacherGradeData = [
-  { week: 'S1', average: 13.2 }, { week: 'S2', average: 13.8 }, { week: 'S3', average: 14.1 },
-  { week: 'S4', average: 13.9 }, { week: 'S5', average: 14.5 }, { week: 'S6', average: 14.8 },
-]
-
-const delegateAttendance = [
-  { day: 'Lun', present: 48, absent: 4 }, { day: 'Mar', present: 46, absent: 6 },
-  { day: 'Mer', present: 50, absent: 2 }, { day: 'Jeu', present: 45, absent: 7 },
-  { day: 'Ven', present: 49, absent: 3 },
-]
+const gradeDistrib: GradeDistributionPoint[] = []
+const attendanceTrend: AttendancePoint[] = []
+const teacherGradeData: GradePoint[] = []
 
 // Calendar helper
 const calDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -68,13 +53,7 @@ export default function DashboardPage() {
   const calTotal = new Date(currentYear, currentMonth + 1, 0).getDate()
   const today = todayNumber
 
-  const eventDays = [
-    Math.max(1, today - 4),
-    Math.max(1, today - 1),
-    today,
-    Math.min(calTotal, today + 3),
-    Math.min(calTotal, today + 6),
-  ]
+  const eventDays: number[] = []
 
   const [activeCalDay, setActiveCalDay] = useState(today)
   const { data: overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useApi(() => statsApi.overview())
@@ -106,25 +85,7 @@ export default function DashboardPage() {
 
   const stats = currentRole === 'teacher' ? teacherStats : currentRole === 'delegate' ? delegateStats : studentStats
 
-  const studentActivities = [
-    { text: 'Mathématiques : Devoir 1 rendu',    time: 'Il y a 2h',  icon: ClipboardList, color: 'text-[#1e3a8a] bg-[#eff3ff]' },
-    { text: 'Économie : Quiz noté 15/20',         time: 'Il y a 5h',  icon: Star,          color: 'text-[#d97706] bg-[#fef3c7]' },
-    { text: 'Anglais : Nouveau cours disponible', time: 'Hier',       icon: BookOpen,      color: 'text-[#0d9488] bg-[#f0fdfa]' },
-    { text: 'Physique : Document ajouté',         time: 'Hier',       icon: CheckCircle,   color: 'text-[#059669] bg-[#d1fae5]' },
-  ]
-  const teacherActivities = [
-    { text: 'Support "Arbres & Graphes" publié',  time: 'À l\'instant', icon: BookOpen,   color: 'text-[#1e3a8a] bg-[#eff3ff]' },
-    { text: 'Grille de notes INFO201 validée',     time: 'Il y a 2h',  icon: CheckCircle, color: 'text-[#059669] bg-[#d1fae5]' },
-    { text: 'Rapport d\'assiduité examiné',        time: 'Hier',       icon: BarChart3,   color: 'text-[#0d9488] bg-[#f0fdfa]' },
-    { text: 'Cours initié via visioconférence',    time: 'Hier',       icon: Video,       color: 'text-[#7c3aed] bg-[#ede9fe]' },
-  ]
-  const delegateActivities = [
-    { text: 'Appel validé : Structures de données', time: 'Il y a 1h', icon: UserCheck,     color: 'text-[#0d9488] bg-[#f0fdfa]' },
-    { text: 'SMS envoyé à Yasmine Ngo',             time: 'Il y a 3h', icon: MessageSquare, color: 'text-[#1e3a8a] bg-[#eff3ff]' },
-    { text: 'Rapport d\'assiduité exporté',         time: 'Hier',      icon: CheckCircle,   color: 'text-[#059669] bg-[#d1fae5]' },
-    { text: 'QR Code généré pour INFO201',          time: 'Hier',      icon: Star,          color: 'text-[#d97706] bg-[#fef3c7]' },
-  ]
-  const activities = currentRole === 'teacher' ? teacherActivities : currentRole === 'delegate' ? delegateActivities : studentActivities
+  const activities: Array<{ text: string; time: string; icon: typeof BookOpen; color: string }> = []
 
   const studentQuickActions = [
     { label: 'Mes cours',       icon: BookOpen,      to: '/app/cours',          gradient: 'from-[#1e3a8a] to-[#2d4fa8]' },
@@ -150,11 +111,7 @@ export default function DashboardPage() {
   const RoleIcon = currentRole === 'teacher' ? UserCheck : currentRole === 'delegate' ? Megaphone : GraduationCap
   const roleLabel = currentRole === 'teacher' ? 'Enseignant' : currentRole === 'delegate' ? 'Délégué' : 'Étudiant'
 
-  const upcomingEvents = [
-    { time: '08:00', title: 'Algorithmique — CM', room: 'Salle A204', type: 'CM' },
-    { time: '10:15', title: 'Bases de données — TD', room: 'Salle B101', type: 'TD' },
-    { time: '14:00', title: 'Réseaux — TP', room: 'Labo C205', type: 'TP' },
-  ]
+  const upcomingEvents: Array<{ time: string; title: string; room: string; type: string }> = []
 
   const typeColor: Record<string, string> = {
     CM: 'bg-[#eff3ff] text-[#1e3a8a]',
@@ -286,23 +243,24 @@ export default function DashboardPage() {
                   Voir détails →
                 </button>
               </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={attendanceTrend}>
-                  <defs>
-                    <linearGradient id="attendanceGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#1e3a8a" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[65, 100]} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                  <Tooltip
-                    formatter={(v: any) => [`${v}%`, 'Présence']}
-                    contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12 }}
-                  />
-                  <Area type="monotone" dataKey="rate" stroke="#1e3a8a" strokeWidth={2.5} fill="url(#attendanceGrad)" dot={{ r: 4, fill: '#1e3a8a', strokeWidth: 0 }} />
-                </AreaChart>
-              </ResponsiveContainer>
+              {attendanceTrend.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={attendanceTrend}>
+                    <defs>
+                      <linearGradient id="attendanceGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#1e3a8a" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#1e3a8a" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[65, 100]} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                    <Tooltip formatter={(v: any) => [`${v}%`, 'Présence']} contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12 }} />
+                    <Area type="monotone" dataKey="rate" stroke="#1e3a8a" strokeWidth={2.5} fill="url(#attendanceGrad)" dot={{ r: 4, fill: '#1e3a8a', strokeWidth: 0 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="flex h-[180px] items-center justify-center text-xs text-[#6b7280]">Aucune donnée de présence disponible.</p>
+              )}
             </div>
           ) : (
             <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
@@ -315,20 +273,24 @@ export default function DashboardPage() {
                   Voir détails →
                 </button>
               </div>
-              <ResponsiveContainer width="100%" height={180}>
-                <AreaChart data={teacherGradeData}>
-                  <defs>
-                    <linearGradient id="gradeGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%"  stopColor="#0d9488" stopOpacity={0.15} />
-                      <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                  <YAxis domain={[10, 20]} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
-                  <Tooltip formatter={(v: any) => [`${v}/20`, 'Moyenne']} contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12 }} />
-                  <Area type="monotone" dataKey="average" stroke="#0d9488" strokeWidth={2.5} fill="url(#gradeGrad)" dot={{ r: 4, fill: '#0d9488', strokeWidth: 0 }} />
-                </AreaChart>
-              </ResponsiveContainer>
+              {teacherGradeData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={teacherGradeData}>
+                    <defs>
+                      <linearGradient id="gradeGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0d9488" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#0d9488" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="week" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                    <YAxis domain={[10, 20]} tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
+                    <Tooltip formatter={(v: any) => [`${v}/20`, 'Moyenne']} contentStyle={{ borderRadius: 10, border: '1px solid #e5e7eb', fontSize: 12 }} />
+                    <Area type="monotone" dataKey="average" stroke="#0d9488" strokeWidth={2.5} fill="url(#gradeGrad)" dot={{ r: 4, fill: '#0d9488', strokeWidth: 0 }} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="flex h-[180px] items-center justify-center text-xs text-[#6b7280]">Aucune moyenne disponible.</p>
+              )}
             </div>
           )}
 
@@ -338,19 +300,21 @@ export default function DashboardPage() {
               <h2 className="text-sm font-bold text-[#111827]">Activité récente</h2>
               <span className="text-xs text-[#9ca3af]">Aujourd'hui</span>
             </div>
-            <div className="space-y-3">
-              {activities.map(({ text, time, icon: Icon, color }, i) => (
-                <div key={i} className={`flex items-start gap-3 animate-stagger-${i + 1}`}>
-                  <div className={`flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0 ${color}`}>
-                    <Icon className="h-4 w-4" />
+            {activities.length > 0 ? (
+              <div className="space-y-3">
+                {activities.map(({ text, time, icon: Icon, color }, i) => (
+                  <div key={i} className={`flex items-start gap-3 animate-stagger-${i + 1}`}>
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0 ${color}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="flex-1 min-w-0"><p className="text-sm text-[#111827] font-medium leading-snug">{text}</p></div>
+                    <span className="text-xs text-[#9ca3af] flex-shrink-0 whitespace-nowrap">{time}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[#111827] font-medium leading-snug">{text}</p>
-                  </div>
-                  <span className="text-xs text-[#9ca3af] flex-shrink-0 whitespace-nowrap">{time}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#6b7280]">Aucune activité récente fournie par le backend.</p>
+            )}
           </div>
         </div>
 
@@ -403,20 +367,19 @@ export default function DashboardPage() {
               <h2 className="text-sm font-bold text-[#111827]">Aujourd'hui</h2>
               <button onClick={() => navigate('/app/emploi-du-temps')} className="text-xs font-semibold text-[#1e3a8a] hover:underline">Voir tout →</button>
             </div>
-            <div className="space-y-3">
-              {upcomingEvents.map(({ time, title, room, type }, i) => (
-                <div key={i} className={`flex items-center gap-3 rounded-xl p-3 ${i === 0 ? 'bg-[#eff3ff] border border-[#1e3a8a]/10' : 'bg-[#f9fafb]'} animate-stagger-${i + 1}`}>
-                  <div className="text-center flex-shrink-0 w-10">
-                    <p className="text-xs font-bold text-[#1e3a8a]">{time}</p>
+            {upcomingEvents.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingEvents.map(({ time, title, room, type }, i) => (
+                  <div key={i} className={`flex items-center gap-3 rounded-xl p-3 ${i === 0 ? 'bg-[#eff3ff] border border-[#1e3a8a]/10' : 'bg-[#f9fafb]'} animate-stagger-${i + 1}`}>
+                    <div className="text-center flex-shrink-0 w-10"><p className="text-xs font-bold text-[#1e3a8a]">{time}</p></div>
+                    <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-[#111827] truncate">{title}</p><p className="text-[11px] text-[#6b7280]">{room}</p></div>
+                    <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${typeColor[type] || 'bg-[#f3f4f6] text-[#6b7280]'}`}>{type}</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-[#111827] truncate">{title}</p>
-                    <p className="text-[11px] text-[#6b7280]">{room}</p>
-                  </div>
-                  <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${typeColor[type]}`}>{type}</span>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#6b7280]">Aucun cours prévu aujourd’hui dans le backend.</p>
+            )}
           </div>
 
           {/* Grade distribution (student only) */}
@@ -426,89 +389,47 @@ export default function DashboardPage() {
                 <h2 className="text-sm font-bold text-[#111827]">Distribution des notes</h2>
                 <button onClick={() => navigate('/app/notes')} className="text-xs font-semibold text-[#1e3a8a] hover:underline">Voir →</button>
               </div>
-              <ResponsiveContainer width="100%" height={130}>
-                <PieChart>
-                  <Pie data={gradeDistrib} cx="50%" cy="50%" innerRadius={32} outerRadius={52} dataKey="value" paddingAngle={4}>
-                    {gradeDistrib.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip formatter={(v: any) => [`${v}%`, '']} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="grid grid-cols-2 gap-1.5">
-                {gradeDistrib.map(d => (
-                  <div key={d.name} className="flex items-center gap-1.5 text-xs">
-                    <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: d.color }} />
-                    <span className="text-[#6b7280]">{d.name}</span>
-                    <span className="ml-auto font-bold text-[#111827]">{d.value}%</span>
+              {gradeDistrib.length > 0 ? (
+                <>
+                  <ResponsiveContainer width="100%" height={130}>
+                    <PieChart>
+                      <Pie data={gradeDistrib} cx="50%" cy="50%" innerRadius={32} outerRadius={52} dataKey="value" paddingAngle={4}>
+                        {gradeDistrib.map((e, i) => <Cell key={i} fill={e.color} />)}
+                      </Pie>
+                      <Tooltip formatter={(v: any) => [`${v}%`, '']} contentStyle={{ borderRadius: 8, fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {gradeDistrib.map(d => (
+                      <div key={d.name} className="flex items-center gap-1.5 text-xs"><span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: d.color }} /><span className="text-[#6b7280]">{d.name}</span><span className="ml-auto font-bold text-[#111827]">{d.value}%</span></div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </>
+              ) : (
+                <p className="py-8 text-xs text-[#6b7280]">Aucune note disponible pour calculer une distribution.</p>
+              )}
             </div>
           )}
 
-          {/* Teacher: pending tasks */}
           {currentRole === 'teacher' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-[#111827]">À faire</h2>
+            <div className="rounded-2xl border border-dashed border-[#d1d5db] bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
                 <AlertTriangle className="h-4 w-4 text-[#d97706]" />
+                <h2 className="text-sm font-bold text-[#111827]">Tâches pédagogiques</h2>
               </div>
-              <div className="space-y-2.5">
-                {[
-                  { task: '23 copies à corriger', course: 'INFO101 Algorithmique', urgent: true },
-                  { task: 'Saisir notes INFO201', course: 'Bases de données L2',  urgent: false },
-                  { task: 'Préparer TD Réseaux', course: 'INFO301 Vendredi',       urgent: false },
-                ].map(({ task, course, urgent }, i) => (
-                  <div key={i} className={`flex items-start gap-3 rounded-xl p-3 ${urgent ? 'bg-red-50 border border-red-100' : 'bg-[#f9fafb]'}`}>
-                    <div className={`h-2 w-2 rounded-full mt-1.5 flex-shrink-0 ${urgent ? 'bg-red-500' : 'bg-[#9ca3af]'}`} />
-                    <div>
-                      <p className={`text-xs font-semibold ${urgent ? 'text-red-700' : 'text-[#111827]'}`}>{task}</p>
-                      <p className="text-[11px] text-[#6b7280]">{course}</p>
-                    </div>
-                  </div>
-                ))}
-                <button
-                  onClick={() => navigate('/app/mes-cours-enseignant')}
-                  className="w-full rounded-xl bg-[#1e3a8a] py-2 text-xs font-bold text-white hover:bg-[#2d4fa8] transition-colors mt-1"
-                >
-                  Gérer l'espace pédagogique →
-                </button>
-              </div>
+              <p className="text-xs text-[#6b7280]">Les tâches seront affichées ici dès que le backend fournira les données de votre espace enseignant.</p>
+              <button onClick={() => navigate('/app/mes-cours-enseignant')} className="mt-3 text-xs font-bold text-[#1e3a8a] hover:underline">Ouvrir l’espace pédagogique →</button>
             </div>
           )}
 
-          {/* Delegate: cohorte summary */}
           {currentRole === 'delegate' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-sm font-bold text-[#111827]">Cohorte L2 Info</h2>
+            <div className="rounded-2xl border border-dashed border-[#d1d5db] bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2 mb-2">
                 <Users className="h-4 w-4 text-[#0d9488]" />
+                <h2 className="text-sm font-bold text-[#111827]">Suivi de cohorte</h2>
               </div>
-              <div className="text-center py-2 mb-4">
-                <div className="text-4xl font-extrabold text-[#1e3a8a] stat-number">89%</div>
-                <p className="text-xs text-[#6b7280] mt-1">Taux de présence global</p>
-                <div className="mt-3 h-2 rounded-full bg-[#e5e7eb] overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] progress-animated" style={{ width: '89%' }} />
-                </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 text-center">
-                {[
-                  { v: '46', l: 'Présents', c: 'text-emerald-600 bg-emerald-50' },
-                  { v: '4',  l: 'Absents',  c: 'text-red-600 bg-red-50' },
-                  { v: '2',  l: 'Retards',  c: 'text-amber-600 bg-amber-50' },
-                ].map(({ v, l, c }) => (
-                  <div key={l} className={`rounded-xl py-2 ${c}`}>
-                    <p className="text-xl font-extrabold stat-number">{v}</p>
-                    <p className="text-[10px] font-semibold">{l}</p>
-                  </div>
-                ))}
-              </div>
-              <button
-                onClick={() => navigate('/app/gestion-presences')}
-                className="w-full mt-3 rounded-xl bg-[#0d9488] py-2 text-xs font-bold text-white hover:bg-[#0a7167] transition-colors"
-              >
-                Gérer les présences →
-              </button>
+              <p className="text-xs text-[#6b7280]">Les statistiques de cohorte seront affichées après synchronisation avec le backend.</p>
+              <button onClick={() => navigate('/app/gestion-presences')} className="mt-3 text-xs font-bold text-[#0d9488] hover:underline">Gérer les présences →</button>
             </div>
           )}
         </div>
