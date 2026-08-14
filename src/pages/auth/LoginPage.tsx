@@ -40,6 +40,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
+  const [demoMode, setDemoMode] = useState(false)
   const [accountType, setAccountTypeSelection] = useState<'UNIVERSITY' | 'PERSONAL'>('UNIVERSITY')
   const [universityCode, setUniversityCode] = useState('UY1')
 
@@ -53,13 +54,16 @@ export default function LoginPage() {
       email,
       password,
       accountType,
-      universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined
+      universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined,
+      demo: demoMode,
     })
   }
 
   const handleDemo = (demoEmail: string) => {
+    setDemoMode(true)
     setEmail(demoEmail)
     setPassword('password123')
+    setError(null)
   }
 
   return (
@@ -237,7 +241,10 @@ export default function LoginPage() {
                 <div className="grid grid-cols-2 gap-2 p-1.5 bg-slate-100 rounded-2xl border border-slate-200">
                   <button
                     type="button"
-                    onClick={() => setAccountTypeSelection('UNIVERSITY')}
+                    onClick={() => {
+                      setDemoMode(false)
+                      setAccountTypeSelection('UNIVERSITY')
+                    }}
                     className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                       accountType === 'UNIVERSITY'
                         ? 'bg-white text-[#1e3a8a] shadow-md border border-slate-200'
@@ -248,7 +255,10 @@ export default function LoginPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setAccountTypeSelection('PERSONAL')}
+                    onClick={() => {
+                      setDemoMode(false)
+                      setAccountTypeSelection('PERSONAL')
+                    }}
                     className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl text-xs font-bold transition-all ${
                       accountType === 'PERSONAL'
                         ? 'bg-white text-[#1e3a8a] shadow-md border border-slate-200'
@@ -308,7 +318,10 @@ export default function LoginPage() {
                   <input 
                     type="email" 
                     value={email} 
-                    onChange={e => setEmail(e.target.value)} 
+                                        onChange={e => {
+                      setDemoMode(false)
+                      setEmail(e.target.value)
+                    }}
                     required
                     className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#1e3a8a] focus:bg-white transition-all"
                     placeholder="votre@uniflow.edu" 
@@ -326,7 +339,10 @@ export default function LoginPage() {
                   <input 
                     type={showPwd ? 'text' : 'password'} 
                     value={password} 
-                    onChange={e => setPassword(e.target.value)} 
+                                        onChange={e => {
+                      setDemoMode(false)
+                      setPassword(e.target.value)
+                    }}
                     required
                     className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-12 py-3 text-sm font-medium outline-none focus:border-[#1e3a8a] focus:bg-white transition-all"
                     placeholder="••••••••" 
