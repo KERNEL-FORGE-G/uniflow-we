@@ -7,11 +7,15 @@ import type { Role } from '@/utils/userRole'
 // Mapper le rôle backend → rôle frontend
 function mapRole(backendRole: string): Role {
   switch (backendRole) {
-    case 'ETUDIANT':    return 'student'
-    case 'DELEGUE':     return 'delegate'
-    case 'ENSEIGNANT':  return 'teacher'
-    case 'ADMIN':       return 'admin'
-    default:            return 'student'
+    case 'ETUDIANT':
+    case 'STUDENT':
+    case 'INDEPENDENT_STUDENT': return 'student'
+    case 'DELEGUE': return 'delegate'
+    case 'ENSEIGNANT':
+    case 'TEACHER':
+    case 'INDEPENDENT_TEACHER': return 'teacher'
+    case 'ADMIN': return 'admin'
+    default: return 'student'
   }
 }
 

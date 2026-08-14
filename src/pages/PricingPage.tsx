@@ -1,12 +1,12 @@
 import { useState, useEffect, Fragment } from 'react'
 import { Link } from 'react-router-dom'
-import { 
-  ArrowRight, Zap, Sparkles, HelpCircle, 
-  Building2, GraduationCap, UserCheck, ChevronDown, Check, 
-  Calculator, CheckCircle2, User, CreditCard, Smartphone, ShieldCheck
+import {
+  ArrowRight, Zap, Sparkles, HelpCircle,
+  Building2, GraduationCap, UserCheck, ChevronDown, Check,
+  CheckCircle2, User, RefreshCw, Globe2
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
-import { subscriptionApi, type SubscriptionPlan } from '../lib/api'
+import { personalSubscriptionApi, type PricingInfo, type SubscriptionPlan } from '../lib/api'
 
 const comparisonCategories = [
   {
@@ -69,36 +69,42 @@ const faqs = [
 
 export default function PricingPage() {
   const [dbPlans, setDbPlans] = useState<SubscriptionPlan[]>([])
+  const [pricingInfo, setPricingInfo] = useState<PricingInfo | null>(null)
   const [loadingPlans, setLoadingPlans] = useState<boolean>(true)
+  const [plansError, setPlansError] = useState<string | null>(null)
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
+  const [countryCode, setCountryCode] = useState('CM')
   const [faqCategory, setFaqCategory] = useState<string>('Tous')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-  
-  // Interactive Simulator State
-  const [studentCount, setStudentCount] = useState<number>(5000)
 
   useEffect(() => {
-    const fetchPlans = async () => {
+    let mounted = true
+    const fetchPricing = async () => {
       setLoadingPlans(true)
-      try {
-        const res = await subscriptionApi.getPlans()
-        setDbPlans(res)
-      } catch (err) {
-        console.error('Erreur lors du chargement des abonnements:', err)
-      } finally {
-        setLoadingPlans(false)
+      setPlansError(null)
+      const [plansResult, pricingResult] = await Promise.allSettled([
+        personalSubscriptionApi.getPlans(),
+        personalSubscriptionApi.getPricing(countryCode),
+      ])
+      if (!mounted) return
+      if (plansResult.status === 'fulfilled') {
+        setDbPlans(plansResult.value ?? [])
+      } else {
+        setDbPlans([])
+        setPlansError(plansResult.reason instanceof Error ? plansResult.reason.message : 'Les offres ne sont pas disponibles.')
       }
+      if (pricingResult.status === 'fulfilled') setPricingInfo(pricingResult.value)
+      else setPricingInfo(null)
+      setLoadingPlans(false)
     }
-    fetchPlans()
-  }, [])
+    fetchPricing()
+    return () => { mounted = false }
+  }, [countryCode])
 
   const filteredFaqs = faqCategory === 'Tous' 
     ? faqs 
     : faqs.filter(f => f.cat === faqCategory)
 
-  // Estimated savings vs traditional paper/software overhead
-  const paperSavings = Math.round(studentCount * 3500) // FCFA saved per year in paper/printing
-  const timeSavingsHours = Math.round(studentCount * 1.8) // Hours saved in attendance per year
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans selection:bg-[#1e3a8a] selection:text-white">
@@ -149,24 +155,26 @@ export default function PricingPage() {
               <button
                 type="button"
                 onClick={() => setBillingCycle('annually')}
-                className={`flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                   billingCycle === 'annually'
                     ? 'bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] text-white shadow-md'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
                 }`}
               >
-                <span>Annuel</span>
-                <span className="rounded-full bg-amber-400 text-slate-950 px-2 py-0.5 text-[10px] font-extrabold uppercase">
-                  -20% Réduction
-                </span>
+                Annuel
               </button>
             </div>
           </div>
 
+          <div className="mx-auto mb-10 grid max-w-4xl gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-[220px_minmax(0,1fr)] sm:items-center dark:border-slate-700 dark:bg-slate-800/50">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200"><Globe2 className="h-4 w-4 text-[#0d9488]" /> Pays de facturation<select value={countryCode} onChange={event => setCountryCode(event.target.value)} className="ml-auto rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs dark:border-slate-600 dark:bg-slate-900"><option value="CM">Cameroun</option><option value="FR">France</option><option value="BE">Belgique</option><option value="CA">Canada</option><option value="US">États-Unis</option></select></label>
+            {pricingInfo ? <div className="text-xs text-slate-600 dark:text-slate-300"><span className="font-bold text-slate-900 dark:text-white">Tarif géolocalisé : {pricingInfo.formattedPrice}</span><span className="ml-2">Moyens disponibles : {pricingInfo.providers.join(', ') || 'non renseignés par le backend'}</span></div> : <div className="text-xs text-slate-500">Le tarif géolocalisé sera affiché dès que le backend personnel répondra.</div>}
+          </div>
+
           {loadingPlans ? (
-            <div className="text-center py-12 text-slate-500 font-semibold text-sm">
-              Chargement des offres d'abonnement depuis la base de données...
-            </div>
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-sm font-semibold text-slate-500"><RefreshCw className="h-6 w-6 animate-spin text-[#0d9488]" />Chargement des offres depuis le backend personnel...</div>
+          ) : dbPlans.length === 0 ? (
+            <div className="mx-auto max-w-2xl rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200"><p className="font-bold">Tarification indépendante indisponible</p><p className="mt-2">{plansError || 'Aucune offre active n’a été renvoyée par le backend personnel.'}</p><Link to="/contact" className="mt-4 inline-flex rounded-xl bg-[#1e3a8a] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white">Contacter UniFlow</Link></div>
           ) : (
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 items-stretch">
               {dbPlans.map((plan) => {
@@ -251,61 +259,6 @@ export default function PricingPage() {
             </div>
           )}
 
-        </div>
-      </section>
-
-      {/* CALCULATOR SIMULATOR SECTION */}
-      <section className="py-16 bg-slate-50 border-b border-slate-200">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="rounded-3xl bg-white border border-slate-200 p-6 sm:p-10 shadow-lg">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 pb-6 border-b border-slate-200">
-              <div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-100 border border-teal-200 px-3 py-1 text-xs font-bold text-teal-800 mb-2">
-                  <Calculator className="h-3.5 w-3.5" /> Estimateur de Gains Campus
-                </span>
-                <h2 className="text-2xl font-bold text-slate-900">Simulez les Économies pour Votre Établissement</h2>
-                <p className="text-xs text-slate-500 mt-1">Ajustez l'effectif étudiant pour calculer les économies d'encre, papier et temps administratif.</p>
-              </div>
-
-              {/* Slider Input */}
-              <div className="w-full md:w-64 shrink-0 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-                <div className="flex justify-between text-xs font-bold mb-2">
-                  <span className="text-slate-600">Effectif Étudiants :</span>
-                  <span className="text-[#0d9488] font-mono text-sm">{studentCount.toLocaleString()}</span>
-                </div>
-                <input
-                  type="range"
-                  min={500}
-                  max={30000}
-                  step={500}
-                  value={studentCount}
-                  onChange={(e) => setStudentCount(Number(e.target.value))}
-                  className="w-full accent-[#0d9488] cursor-pointer"
-                />
-              </div>
-            </div>
-
-            {/* Results Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div className="rounded-2xl bg-emerald-50/60 p-5 border border-emerald-200">
-                <p className="text-xs font-bold text-emerald-800 mb-1">Économie Papier & Impression / an</p>
-                <p className="text-2xl font-black text-emerald-700">{paperSavings.toLocaleString()} FCFA</p>
-                <p className="text-[11px] text-emerald-600 mt-1">Suppression des fiches d'appel & relevés papier</p>
-              </div>
-
-              <div className="rounded-2xl bg-cyan-50/60 p-5 border border-cyan-200">
-                <p className="text-xs font-bold text-cyan-800 mb-1">Temps Enseignant Économisé / an</p>
-                <p className="text-2xl font-black text-cyan-700">{timeSavingsHours.toLocaleString()} heures</p>
-                <p className="text-[11px] text-cyan-600 mt-1">Prise de présence instantanée par QR / NFC</p>
-              </div>
-
-              <div className="rounded-2xl bg-blue-50/60 p-5 border border-blue-200 sm:col-span-2 lg:col-span-1">
-                <p className="text-xs font-bold text-[#1e3a8a] mb-1">Incertitude & Réclamations</p>
-                <p className="text-2xl font-black text-[#1e3a8a]">- 95% de litiges</p>
-                <p className="text-[11px] text-blue-600 mt-1">Traçabilité numérique horodatée des notes</p>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
 

@@ -25,7 +25,12 @@ const roleConfig = {
 export function Sidebar() {
   const { currentRole, setCurrentRole, currentUser, isOfflineMode, setIsOfflineMode, language, setLanguage } = useUserRole()
   const navigate = useNavigate()
-  const filteredNav = navItems.filter(item => item.roles && item.roles.includes(currentRole))
+  const isIndependent = currentUser.accountType === 'PERSONAL'
+  const filteredNav = navItems.filter(item => {
+    if (!item.roles?.includes(currentRole)) return false
+    if (!isIndependent) return true
+    return ['/app', '/app/independent', '/app/parametres', '/app/aide'].includes(item.to)
+  })
   const role = roleConfig[currentRole]
   const RoleIcon = role.icon
   const { data } = useApi(() => notificationsApi.unreadCount())
@@ -304,7 +309,12 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 function MobileSidebar({ onClose }: { onClose: () => void }) {
   const { currentRole, setCurrentRole, currentUser, isOfflineMode, setIsOfflineMode, language, setLanguage } = useUserRole()
   const navigate = useNavigate()
-  const filteredNav = navItems.filter(item => item.roles && item.roles.includes(currentRole))
+  const isIndependent = currentUser.accountType === 'PERSONAL'
+  const filteredNav = navItems.filter(item => {
+    if (!item.roles?.includes(currentRole)) return false
+    if (!isIndependent) return true
+    return ['/app', '/app/independent', '/app/parametres', '/app/aide'].includes(item.to)
+  })
   const role = roleConfig[currentRole]
   const RoleIcon = role.icon
 

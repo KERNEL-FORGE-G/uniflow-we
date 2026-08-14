@@ -410,19 +410,42 @@ export interface RegisterDto {
 }
 
 export interface AuthResult {
-  accessToken: string; refreshToken: string
-  user: { id: string; email: string; role: string; accountType?: string; universityCode?: string; student?: StudentProfile; teacher?: TeacherProfile }
+  accessToken: string
+  refreshToken: string
+  user: BackendUser
 }
+
 export interface BackendUser {
   id: string
   email: string
   role: string
+  fullName?: string
   accountType?: string
+  accountCategory?: string
+  countryCode?: string
   universityCode?: string
+  subscriptionStatus?: string
   student?: StudentProfile
   teacher?: TeacherProfile
 }
 interface StudentProfile { firstName: string; lastName: string; matricule?: string; level?: string; specialty?: string }
+
+type RawAuthResponse = {
+  accessToken?: string
+  refreshToken?: string
+  user?: BackendUser
+  tokens?: { accessToken?: string; refreshToken?: string }
+}
+
+function normalizeAuthResult(raw: RawAuthResponse | AuthResult): AuthResult {
+  const value = raw as RawAuthResponse
+  const accessToken = value.accessToken ?? value.tokens?.accessToken
+  const refreshToken = value.refreshToken ?? value.tokens?.refreshToken
+  if (!accessToken || !refreshToken || !value.user) {
+    throw new ApiError(502, 'Réponse d’authentification backend incomplète.')
+  }
+  return { accessToken, refreshToken, user: value.user }
+}
 interface TeacherProfile { firstName: string; lastName: string }
 
 export interface AcademicLevel {
@@ -440,37 +463,43 @@ export const authApi = {
   login: async (dto: LoginDto): Promise<AuthResult> => {
     const accType = dto.accountType || 'UNIVERSITY'
     setAccountType(accType)
-    try {
-      const res = u(await api.post<{ data: AuthResult }>('/auth/login', {
-        email: dto.email,
-        password: dto.password,
-      }))
-      if (res && res.user) {
-        res.user.accountType = accType
-        res.user.universityCode = dto.universityCode || 'UY1'
-        localStorage.setItem('uniflow_user', JSON.stringify(res.user))
-      }
-      return res
-    } catch (err) {
-      throw err
+    const res = normalizeAuthResult(u(await api.post<RawAuthResponse>('/auth/login', {
+      email: dto.email,
+      password: dto.password,
+    })))
+    res.user = {
+      ...res.user,
+      accountType: res.user.accountType ?? res.user.accountCategory ?? accType,
+      universityCode: res.user.universityCode ?? (accType === 'UNIVERSITY' ? (dto.universityCode || 'UY1') : undefined),
     }
+    localStorage.setItem('uniflow_user', JSON.stringify(res.user))
+    return res
   },
 
   register: async (dto: RegisterDto): Promise<AuthResult> => {
     const accType = dto.accountType || 'UNIVERSITY'
     setAccountType(accType)
-    try {
-      const { accountType: _accountType, universityCode: _universityCode, matricule: _matricule, ...backendDto } = dto
-      const res = u(await api.post<{ data: AuthResult }>('/auth/register', backendDto))
-      if (res && res.user) {
-        res.user.accountType = accType
-        res.user.universityCode = dto.universityCode || 'UY1'
-        localStorage.setItem('uniflow_user', JSON.stringify(res.user))
-      }
-      return res
-    } catch (err) {
-      throw err
+    const backendDto = accType === 'PERSONAL'
+      ? {
+          email: dto.email,
+          password: dto.password,
+          fullName: `${dto.firstName} ${dto.lastName}`.trim(),
+          role: dto.role === 'INDEPENDENT_TEACHER' ? 'TEACHER' : 'STUDENT',
+          accountCategory: 'PERSONAL',
+          countryCode: dto.countryCode || 'CM',
+        }
+      : (() => {
+          const { accountType: _accountType, universityCode: _universityCode, matricule: _matricule, ...universityDto } = dto
+          return universityDto
+        })()
+    const res = normalizeAuthResult(u(await api.post<RawAuthResponse>('/auth/register', backendDto)))
+    res.user = {
+      ...res.user,
+      accountType: res.user.accountType ?? res.user.accountCategory ?? accType,
+      universityCode: res.user.universityCode ?? (accType === 'UNIVERSITY' ? (dto.universityCode || 'UY1') : undefined),
     }
+    localStorage.setItem('uniflow_user', JSON.stringify(res.user))
+    return res
   },
   me:       async ()                 => u(await api.get<{ data: BackendUser }>('/auth/me')),
   academicOptions: async () => u(await api.get<{ data: { levels: AcademicLevel[]; specialties: SpecialtyOption[] } }>('/auth/academic-options')),
@@ -499,6 +528,75 @@ export const coursesApi = {
   create: async (dto: Partial<Course> & { teachingUnitId?: string; teacherId?: string; classroomId?: string }) => u(await api.post<{ data: Course }>('/courses', dto)),
   update: async (id: string, dto: Partial<Course>) => u(await api.patch<{ data: Course }>(`/courses/${id}`, dto)),
   delete: async (id: string) => u(await api.delete<void>(`/courses/${id}`)),
+}
+
+export interface PersonalCourse {
+  id: string
+  code: string
+  title: string
+  instructor?: string
+  credits?: number
+  colorHex?: string
+  classroom?: string
+  description?: string
+  createdAt?: string
+}
+
+export interface PersonalSchedule {
+  id: string
+  courseId: string
+  courseTitle?: string
+  courseCode?: string
+  dayOfWeek: string
+  startTime: string
+  endTime: string
+  classroom?: string
+  colorHex?: string
+  type?: string
+}
+
+export interface PersonalAssignment {
+  id: string
+  courseId: string
+  title: string
+  dueDate: string
+  description?: string
+  priority?: string
+  status?: string
+}
+
+export interface PersonalGrade {
+  id: string
+  courseId: string
+  evaluationTitle: string
+  score: number
+  maxScore: number
+  coefficient: number
+}
+
+export const personalApi = {
+  courses: {
+    list: async () => u(await api.get<{ data: PersonalCourse[] }>('/courses/my')),
+    create: async (dto: Omit<PersonalCourse, 'id' | 'createdAt'>) => u(await api.post<{ data: PersonalCourse }>('/courses', dto)),
+    update: async (id: string, dto: Partial<PersonalCourse>) => u(await api.put<{ data: PersonalCourse }>(`/courses/${id}`, dto)),
+    delete: async (id: string) => u(await api.delete<void>(`/courses/${id}`)),
+  },
+  schedules: {
+    list: async () => u(await api.get<{ data: PersonalSchedule[] }>('/schedules/my')),
+    create: async (dto: Omit<PersonalSchedule, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => u(await api.post<{ data: PersonalSchedule }>('/schedules', dto)),
+    update: async (id: string, dto: Partial<PersonalSchedule>) => u(await api.put<{ data: PersonalSchedule }>(`/schedules/${id}`, dto)),
+    delete: async (id: string) => u(await api.delete<void>(`/schedules/${id}`)),
+  },
+  assignments: {
+    list: async () => u(await api.get<{ data: PersonalAssignment[] }>('/assignments')),
+    create: async (dto: Omit<PersonalAssignment, 'id'>) => u(await api.post<{ data: PersonalAssignment }>('/assignments', dto)),
+    update: async (id: string, dto: Partial<PersonalAssignment>) => u(await api.put<{ data: PersonalAssignment }>(`/assignments/${id}`, dto)),
+    delete: async (id: string) => u(await api.delete<void>(`/assignments/${id}`)),
+  },
+  grades: {
+    list: async () => u(await api.get<{ data: PersonalGrade[] }>('/personal/grades')),
+    create: async (dto: Omit<PersonalGrade, 'id'>) => u(await api.post<{ data: PersonalGrade }>('/personal/grades', dto)),
+  },
 }
 
 // =============================================================================
@@ -893,6 +991,18 @@ export interface CheckoutResult {
   message?: string
 }
 
+export type CheckoutPayload = {
+  planId?: string
+  planCode?: string
+  countryCode?: string
+  paymentProvider: string
+  phoneNumber?: string
+  billingInterval?: 'MONTHLY' | 'ANNUALLY'
+  billingCycle?: 'monthly' | 'annually'
+  email?: string
+  fullName?: string
+}
+
 export const subscriptionApi = {
   getPlans: async (): Promise<SubscriptionPlan[]> =>
     u(await api.get<SubscriptionPlan[]>('/subscription/plans')),
@@ -902,15 +1012,41 @@ export const subscriptionApi = {
     u(await api.get<PricingInfo>(`/subscription/pricing?countryCode=${encodeURIComponent(countryCode)}`)),
   getStatus: async (): Promise<SubscriptionStatus> =>
     u(await api.get<SubscriptionStatus>('/subscription/status')),
-  createCheckout: async (payload: {
-    planId?: string
-    countryCode?: string
-    paymentProvider: string
-    phoneNumber?: string
-    billingInterval?: 'MONTHLY' | 'ANNUALLY'
-    email?: string
-    fullName?: string
-  }) => u(await api.post<CheckoutResult>('/subscription/checkout', payload)),
+  createCheckout: async (payload: CheckoutPayload) =>
+    u(await api.post<CheckoutResult>('/subscription/checkout', payload)),
+}
+
+async function personalRequest<T>(path: string, init: RequestInit = {}, triedApiPrefix = false): Promise<T> {
+  const base = PERSONAL_API_URL.replace(/\/+$/, '')
+  if (!base) throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
+  const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const token = getToken()
+  const response = await fetch(`${base}${cleanPath}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(init.headers ?? {}),
+    },
+  })
+  if (response.status === 404 && !triedApiPrefix && !cleanPath.startsWith('/api/')) {
+    return personalRequest<T>(`/api${cleanPath}`, init, true)
+  }
+  if (!response.ok) {
+    let body: { message?: string } | null = null
+    try { body = await response.json() } catch {}
+    throw new ApiError(response.status, body?.message || `Erreur du backend personnel HTTP ${response.status}`, body)
+  }
+  if (response.status === 204) return null as T
+  return u(await response.json())
+}
+
+export const personalSubscriptionApi = {
+  getPlans: async (): Promise<SubscriptionPlan[]> => personalRequest<SubscriptionPlan[]>('/subscription/plans'),
+  getPlanById: async (idOrCode: string): Promise<SubscriptionPlan | null> => personalRequest<SubscriptionPlan | null>(`/subscription/plans/${encodeURIComponent(idOrCode)}`),
+  getPricing: async (countryCode = 'CM'): Promise<PricingInfo> => personalRequest<PricingInfo>(`/subscription/pricing?countryCode=${encodeURIComponent(countryCode)}`),
+  getStatus: async (): Promise<SubscriptionStatus> => personalRequest<SubscriptionStatus>('/subscription/status'),
+  createCheckout: async (payload: CheckoutPayload): Promise<CheckoutResult> => personalRequest<CheckoutResult>('/subscription/checkout', { method: 'POST', body: JSON.stringify(payload) }),
 }
 
 

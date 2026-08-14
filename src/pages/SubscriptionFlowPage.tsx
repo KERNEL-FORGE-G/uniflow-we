@@ -7,7 +7,7 @@ import {
   HelpCircle, Receipt, Download, RefreshCw, Zap
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
-import { subscriptionApi, type SubscriptionPlan } from '../lib/api'
+import { personalSubscriptionApi, type CheckoutResult, type SubscriptionPlan, ApiError } from '../lib/api'
 
 export default function SubscriptionFlowPage() {
   const { planId } = useParams<{ planId?: string }>()
@@ -16,6 +16,7 @@ export default function SubscriptionFlowPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null)
   const [loading, setLoading] = useState<boolean>(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
   // Step state: 1 = Plan & Cycle, 2 = Infos & Contact, 3 = Paiement, 4 = Confirmation
   const [currentStep, setCurrentStep] = useState<number>(1)
@@ -26,34 +27,33 @@ export default function SubscriptionFlowPage() {
   const [email, setEmail] = useState<string>('')
   const [phoneNumber, setPhoneNumber] = useState<string>('')
   const [institution, setInstitution] = useState<string>('')
-  const [promoCode, setPromoCode] = useState<string>('')
-  const [discountPercent, setDiscountPercent] = useState<number>(0)
-  const [promoMessage, setPromoMessage] = useState<string>('')
+  const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Payment state
   const [paymentProvider, setPaymentProvider] = useState<string>('MTN_MOMO')
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
-  const [transactionResult, setTransactionResult] = useState<{ transactionId?: string; message?: string } | null>(null)
+  const [transactionResult, setTransactionResult] = useState<CheckoutResult | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true)
       try {
-        const fetchedPlans = await subscriptionApi.getPlans()
+        setLoadError(null)
+        const fetchedPlans = await personalSubscriptionApi.getPlans()
         setPlans(fetchedPlans)
 
         const targetCode = planId || 'personal_cm'
         const match = fetchedPlans.find(p => p.code === targetCode || p.id === targetCode)
         if (match) {
           setSelectedPlan(match)
-          if (match.providers && match.providers.length > 0) {
-            setPaymentProvider(match.providers[0])
-          }
+          setPaymentProvider(match.providers?.[0] || '')
         } else if (fetchedPlans.length > 0) {
           setSelectedPlan(fetchedPlans[0])
+          setPaymentProvider(fetchedPlans[0].providers?.[0] || '')
         }
       } catch (err) {
-        console.error('Erreur de chargement des abonnements:', err)
+        const message = err instanceof ApiError ? err.message : 'Les offres personnelles ne sont pas disponibles.'
+        setLoadError(message)
       } finally {
         setLoading(false)
       }
@@ -77,34 +77,37 @@ export default function SubscriptionFlowPage() {
     }
   }, [])
 
-  const applyPromo = () => {
-    if (!promoCode.trim()) return
-    const code = promoCode.trim().toUpperCase()
-    if (code === 'UNIFLOW2026' || code === 'STUDENT' || code === 'DEMO') {
-      setDiscountPercent(10)
-      setPromoMessage('Code appliqué : -10% de réduction !')
-    } else {
-      setPromoMessage('Code promo invalide ou expiré.')
-    }
-  }
-
   const handleProcessPayment = async () => {
     if (!selectedPlan) return
+    if (!paymentProvider) {
+      setPaymentError('Aucun moyen de paiement actif n’est fourni par cette formule.')
+      return
+    }
+    if (!fullName.trim() || !email.trim()) {
+      setPaymentError('Le nom complet et l’adresse email sont obligatoires.')
+      return
+    }
+    if ((paymentProvider === 'MTN_MOMO' || paymentProvider === 'ORANGE_MONEY') && !phoneNumber.trim()) {
+      setPaymentError('Le numéro Mobile Money est obligatoire pour ce moyen de paiement.')
+      return
+    }
     setIsSubmitting(true)
+    setPaymentError(null)
     try {
-      const res = await subscriptionApi.createCheckout({
-        planId: selectedPlan.id || selectedPlan.code,
+      const res = await personalSubscriptionApi.createCheckout({
+        planCode: selectedPlan.code || selectedPlan.id,
         countryCode: selectedPlan.countryCode || 'CM',
         paymentProvider,
-        phoneNumber,
-        billingInterval: billingCycle,
-        email,
-        fullName
+        phoneNumber: phoneNumber.trim() || undefined,
+        billingCycle: billingCycle.toLowerCase() as 'monthly' | 'annually',
+        email: email.trim(),
+        fullName: fullName.trim(),
       })
       setTransactionResult(res)
       setCurrentStep(4)
     } catch (err) {
-      console.error('Erreur lors du paiement:', err)
+      const message = err instanceof ApiError ? err.message : 'Le paiement n’a pas pu être initialisé.'
+      setPaymentError(message)
     } finally {
       setIsSubmitting(false)
     }
@@ -119,7 +122,9 @@ export default function SubscriptionFlowPage() {
   }
 
   const basePrice = getBasePrice()
-  const finalPrice = Math.max(0, Math.round(basePrice * (1 - discountPercent / 100)))
+  const finalPrice = basePrice
+  const checkoutStatus = transactionResult?.status?.toUpperCase()
+  const paymentConfirmed = checkoutStatus === 'SUCCESS' || checkoutStatus === 'ACTIVE' || checkoutStatus === 'PAID'
 
   const getCurrencyLabel = () => {
     if (!selectedPlan) return 'FCFA'
@@ -133,6 +138,22 @@ export default function SubscriptionFlowPage() {
         <div className="flex flex-col items-center justify-center py-24 text-slate-600 dark:text-slate-300">
           <RefreshCw className="h-10 w-10 animate-spin text-[#1e3a8a] mb-4" />
           <p className="text-sm font-semibold">Chargement des détails de souscription depuis la base de données...</p>
+        </div>
+        <LandingFooter />
+      </div>
+    )
+  }
+
+  if (!selectedPlan) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+        <LandingNavbar />
+        <div className="mx-auto max-w-xl px-6 py-24 text-center">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <h1 className="text-2xl font-black">Souscription indisponible</h1>
+            <p className="mt-3 text-sm">{loadError || 'Aucune formule active n’a été renvoyée par le backend personnel.'}</p>
+            <Link to="/pricing" className="mt-6 inline-flex rounded-xl bg-[#1e3a8a] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white">Retour aux tarifs</Link>
+          </div>
         </div>
         <LandingFooter />
       </div>
@@ -263,7 +284,7 @@ export default function SubscriptionFlowPage() {
                         return (
                           <div
                             key={p.id}
-                            onClick={() => setSelectedPlan(p)}
+                            onClick={() => { setSelectedPlan(p); setPaymentProvider(p.providers?.[0] || ''); setPaymentError(null) }}
                             className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                               isSelected
                                 ? 'bg-blue-50/70 dark:bg-blue-950/40 border-[#1e3a8a] dark:border-blue-500 shadow-sm'
@@ -432,32 +453,8 @@ export default function SubscriptionFlowPage() {
                     </div>
                   </div>
 
-                  {/* Code Promo Block */}
-                  <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700 mb-8">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-2">
-                      Code Promo / Réduction (Optionnel) :
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={promoCode}
-                        onChange={(e) => setPromoCode(e.target.value)}
-                        placeholder="Ex: UNIFLOW2026"
-                        className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-2.5 text-xs focus:border-[#1e3a8a] focus:outline-none uppercase font-mono"
-                      />
-                      <button
-                        type="button"
-                        onClick={applyPromo}
-                        className="px-4 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-xs font-bold cursor-pointer"
-                      >
-                        Appliquer
-                      </button>
-                    </div>
-                    {promoMessage && (
-                      <p className={`text-xs mt-2 font-medium ${discountPercent > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-500'}`}>
-                        {promoMessage}
-                      </p>
-                    )}
+                  <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+                    Les éventuelles réductions sont validées par le backend lors du checkout. Aucun code promo local n’est appliqué par cette interface.
                   </div>
 
                   {/* Actions */}
@@ -498,8 +495,10 @@ export default function SubscriptionFlowPage() {
                       Étape 3 sur 4
                     </span>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white">Sélection du Mode de Paiement</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Payez en toute sécurité par Mobile Money, Carte Bancaire ou Virement.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sélectionnez l’un des moyens de paiement proposés par la formule active du backend.</p>
                   </div>
+
+                  {paymentError && <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300">{paymentError}</div>}
 
                   {/* Payment Options */}
                   <div className="space-y-4 mb-8">
@@ -507,7 +506,8 @@ export default function SubscriptionFlowPage() {
                       Moyen de Règlement Sécurisé :
                     </label>
 
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    {selectedPlan.providers?.length ? <div className="grid sm:grid-cols-2 gap-3">
+                      {selectedPlan.providers?.includes('MTN_MOMO') && <>
                       {/* MTN MoMo */}
                       <button
                         type="button"
@@ -527,7 +527,9 @@ export default function SubscriptionFlowPage() {
                         </div>
                         <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'MTN_MOMO' ? 'bg-amber-500 border-amber-500' : 'border-slate-400'}`} />
                       </button>
+                      </>}
 
+                      {selectedPlan.providers?.includes('ORANGE_MONEY') && <>
                       {/* Orange Money */}
                       <button
                         type="button"
@@ -547,7 +549,9 @@ export default function SubscriptionFlowPage() {
                         </div>
                         <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'ORANGE_MONEY' ? 'bg-orange-500 border-orange-500' : 'border-slate-400'}`} />
                       </button>
+                      </>}
 
+                      {selectedPlan.providers?.includes('NOTCHPAY') && <>
                       {/* NotchPay */}
                       <button
                         type="button"
@@ -567,7 +571,9 @@ export default function SubscriptionFlowPage() {
                         </div>
                         <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'NOTCHPAY' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-400'}`} />
                       </button>
+                      </>}
 
+                      {selectedPlan.providers?.includes('STRIPE') && <>
                       {/* Stripe / Card */}
                       <button
                         type="button"
@@ -587,7 +593,8 @@ export default function SubscriptionFlowPage() {
                         </div>
                         <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'STRIPE' ? 'bg-blue-500 border-blue-500' : 'border-slate-400'}`} />
                       </button>
-                    </div>
+                      </>}
+                    </div> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">Aucun moyen de paiement n’est configuré pour cette formule.</p>}
                   </div>
 
                   {/* Payment Details Input */}
@@ -604,7 +611,7 @@ export default function SubscriptionFlowPage() {
                         className="w-full rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm focus:outline-none"
                       />
                       <p className="text-[11px] text-amber-700 dark:text-amber-400">
-                        Une notification USSD apparaîtra sur votre téléphone pour valider la transaction par votre code secret.
+                        La validation et les instructions de confirmation sont fournies par le prestataire de paiement via le backend.
                       </p>
                     </div>
                   )}
@@ -612,10 +619,10 @@ export default function SubscriptionFlowPage() {
                   {paymentProvider === 'STRIPE' && (
                     <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/60 mb-8 space-y-3">
                       <label className="block text-xs font-bold text-blue-900 dark:text-blue-300">
-                        Paiement par Carte Bancaire Sécurisé (SSL 256-bit)
+                        Paiement par carte via le prestataire configuré
                       </label>
                       <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Le paiement sera traité de manière chiffrée. Aucune donnée bancaire n'est stockée sur nos serveurs.
+                        Les données de carte sont saisies uniquement sur la page sécurisée du prestataire si un lien de paiement est renvoyé par le backend.
                       </p>
                     </div>
                   )}
@@ -623,7 +630,7 @@ export default function SubscriptionFlowPage() {
                   {/* Guarantee banner */}
                   <div className="flex items-center gap-2 text-xs text-slate-500 mb-8 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span>Transaction 100% chiffrée & Garantie de satisfaction 14 jours.</span>
+                    <span>Le statut affiché après cette étape provient exclusivement de la réponse du backend et du prestataire de paiement.</span>
                   </div>
 
                   {/* Actions */}
@@ -639,7 +646,7 @@ export default function SubscriptionFlowPage() {
 
                     <button
                       type="button"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !paymentProvider}
                       onClick={handleProcessPayment}
                       className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] hover:opacity-95 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 cursor-pointer"
                     >
@@ -659,49 +666,35 @@ export default function SubscriptionFlowPage() {
                 </motion.div>
               )}
 
-              {/* STEP 4: CONFIRMATION */}
+                  {/* STEP 4: RESULTAT DU CHECKOUT */}
               {currentStep === 4 && (
                 <motion.div
                   key="step4"
                   initial={{ opacity: 0, scale: 0.98 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 text-center shadow-lg"
+                  className="rounded-3xl bg-white p-8 text-center shadow-lg dark:bg-slate-900"
                 >
-                  <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 ring-8 ring-emerald-50 dark:ring-emerald-950/40">
-                    <CheckCircle2 className="h-10 w-10" />
+                  <div className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full ring-8 ${paymentConfirmed ? 'bg-emerald-100 text-emerald-600 ring-emerald-50 dark:bg-emerald-950/80 dark:text-emerald-400 dark:ring-emerald-950/40' : 'bg-amber-100 text-amber-600 ring-amber-50 dark:bg-amber-950/80 dark:text-amber-400 dark:ring-amber-950/40'}`}>
+                    {paymentConfirmed ? <CheckCircle2 className="h-10 w-10" /> : <RefreshCw className="h-10 w-10" />}
                   </div>
 
-                  <span className="inline-block rounded-full bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300 text-[11px] font-extrabold uppercase tracking-wider px-3.5 py-1 mb-3">
-                    Abonnement Confirmé
+                  <span className={`mb-3 inline-block rounded-full px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider ${paymentConfirmed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300'}`}>
+                    {paymentConfirmed ? 'Paiement confirmé' : 'Paiement en attente de confirmation'}
                   </span>
 
-                  <h2 className="text-3xl font-black text-slate-900 dark:text-white mb-2">Félicitations ! Votre Souscription est Active</h2>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 max-w-md mx-auto mb-8">
-                    Votre compte a été activé en base de données. Vous bénéficiez désormais de l'ensemble des accès à la plateforme UniFlow.
+                  <h2 className="mb-2 text-3xl font-black text-slate-900 dark:text-white">{paymentConfirmed ? 'Votre abonnement est actif' : 'Votre paiement doit encore être confirmé'}</h2>
+                  <p className="mx-auto mb-8 max-w-md text-sm text-slate-600 dark:text-slate-300">
+                    {paymentConfirmed ? 'Le backend a confirmé la transaction et l’activation de votre abonnement.' : 'Le backend a initialisé la transaction. Suivez le lien de paiement ou validez la demande Mobile Money, puis consultez le statut depuis votre espace.'}
                   </p>
 
-                  {/* Summary receipt box */}
-                  <div className="max-w-md mx-auto p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 text-left mb-8 space-y-2.5 text-xs">
-                    <div className="flex justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="text-slate-500">Référence Transaction :</span>
-                      <span className="font-mono font-bold text-slate-900 dark:text-white">{transactionResult?.transactionId || 'TX-UNIFLOW-OK'}</span>
-                    </div>
-
-                    <div className="flex justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="text-slate-500">Formule souscrite :</span>
-                      <span className="font-bold text-slate-900 dark:text-white">{selectedPlan?.name}</span>
-                    </div>
-
-                    <div className="flex justify-between pb-2 border-b border-slate-200 dark:border-slate-700">
-                      <span className="text-slate-500">Titulaire :</span>
-                      <span className="font-bold text-slate-900 dark:text-white">{fullName} ({email})</span>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-slate-500">Montant Réglé :</span>
-                      <span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span>
-                    </div>
+                  <div className="mx-auto mb-8 max-w-md space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
+                    {transactionResult?.transactionId && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Référence transaction :</span><span className="font-mono font-bold text-slate-900 dark:text-white">{transactionResult.transactionId}</span></div>}
+                    <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Formule :</span><span className="font-bold text-slate-900 dark:text-white">{selectedPlan?.name}</span></div>
+                    <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Statut backend :</span><span className="font-bold text-slate-900 dark:text-white">{transactionResult?.status || 'PENDING'}</span></div>
+                    <div className="flex justify-between gap-4"><span className="text-slate-500">Montant :</span><span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span></div>
                   </div>
+
+                  {transactionResult?.paymentUrl && !paymentConfirmed && <a href={transactionResult.paymentUrl} target="_blank" rel="noreferrer" className="mb-6 inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md">Poursuivre le paiement sécurisé <ArrowRight className="h-4 w-4" /></a>}
 
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Link
@@ -752,13 +745,6 @@ export default function SubscriptionFlowPage() {
                       <span className="text-slate-500">Cycle :</span>
                       <span className="font-semibold">{billingCycle === 'ANNUALLY' ? 'Annuel (-20%)' : 'Mensuel'}</span>
                     </div>
-
-                    {discountPercent > 0 && (
-                      <div className="flex justify-between text-emerald-600 dark:text-emerald-400 font-semibold">
-                        <span>Réduction Code Promo :</span>
-                        <span>-{discountPercent}%</span>
-                      </div>
-                    )}
 
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center font-bold text-sm text-slate-900 dark:text-white">
                       <span>Total à régler :</span>
