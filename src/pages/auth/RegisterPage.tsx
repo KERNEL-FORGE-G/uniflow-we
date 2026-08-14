@@ -88,25 +88,10 @@ export default function RegisterPage() {
         }
       } catch (err) {
         if (!mounted) return
-        // Auto fallback
-        const defaultLevels: AcademicLevel[] = [
-          { id: 'lvl_l1', name: 'Licence 1', programName: 'Licence' },
-          { id: 'lvl_l2', name: 'Licence 2', programName: 'Licence' },
-          { id: 'lvl_l3', name: 'Licence 3', programName: 'Licence' },
-          { id: 'lvl_m1', name: 'Master 1', programName: 'Master' },
-          { id: 'lvl_m2', name: 'Master 2', programName: 'Master' },
-        ]
-        const defaultSpecialties: SpecialtyOption[] = [
-          { id: 'spec_info_l1', name: 'Informatique & Technologies', levelId: 'lvl_l1' },
-          { id: 'spec_math_l1', name: 'Mathématiques & Applications', levelId: 'lvl_l1' },
-          { id: 'spec_info_l2', name: 'Informatique & Systèmes', levelId: 'lvl_l2' },
-          { id: 'spec_info_l3', name: 'Génie Logiciel & Data', levelId: 'lvl_l3' },
-          { id: 'spec_info_m1', name: 'Intelligence Artificielle & Réseaux', levelId: 'lvl_m1' },
-          { id: 'spec_info_m2', name: 'Génie Logiciel Avancé', levelId: 'lvl_m2' },
-        ]
-        setLevels(defaultLevels)
-        setSpecialties(defaultSpecialties)
-        setForm(f => ({ ...f, levelId: 'lvl_l1', specialtyId: 'spec_info_l1' }))
+        setAcademicError(err instanceof Error ? err.message : 'Impossible de charger les options académiques.')
+        setLevels([])
+        setSpecialties([])
+        setForm(f => ({ ...f, levelId: '', specialtyId: '' }))
       } finally {
         if (!mounted) return
         setAcademicLoading(false)
@@ -149,7 +134,7 @@ export default function RegisterPage() {
         specialtyId: form.specialtyId || undefined,
       })
     } catch {
-      // error handled by useAuth
+      // L’erreur est affichée par useAuth ; aucune inscription locale n’est créée.
     }
   }
 
