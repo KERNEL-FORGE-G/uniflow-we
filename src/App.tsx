@@ -9,6 +9,7 @@ import { GlobalNetworkToast } from './components/GlobalNetworkToast'
 import { Skeleton } from './components/ui/Skeleton'
 import { pushNotificationService } from './services/pushNotificationService'
 import { initTheme } from './utils/theme'
+import { getAccountType, getToken } from './lib/api'
 
 // Pages chargées immédiatement (landing, auth)
 import LandingPage from './pages/LandingPage'
@@ -17,6 +18,7 @@ import RegisterPage from './pages/auth/RegisterPage'
 
 // Lazy loading pour les pages de l'app
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+const IndependentWorkspacePage = lazy(() => import('./pages/IndependentWorkspacePage'))
 const DashboardCompactPage = lazy(() => import('./pages/DashboardCompactPage'))
 const CoursesPage = lazy(() => import('./pages/CoursesPage'))
 const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'))
@@ -81,6 +83,11 @@ function StudentApp({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>
 }
 
+function AccountHomePage() {
+  const isIndependent = Boolean(getToken()) && getAccountType() === 'PERSONAL'
+  return isIndependent ? <IndependentWorkspacePage /> : <DashboardPage />
+}
+
 export default function App() {
   useEffect(() => {
     initTheme()
@@ -108,7 +115,8 @@ export default function App() {
           <Route path="/teams" element={<TeamsPage />} />
 
           {/* Partie 1 — Dashboard */}
-          <Route path="/app" element={<StudentApp><DashboardPage /></StudentApp>} />
+          <Route path="/app" element={<StudentApp><AccountHomePage /></StudentApp>} />
+          <Route path="/app/independent" element={<StudentApp><IndependentWorkspacePage /></StudentApp>} />
           <Route path="/app/accueil-compact" element={<StudentApp><DashboardCompactPage /></StudentApp>} />
 
           {/* Partie 2 — Cours, Profil, Emploi du temps */}

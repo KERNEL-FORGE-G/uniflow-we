@@ -43,6 +43,7 @@ export interface AdminNavGroup {
 export const navItems: NavItem[] = [
   // Common
   { to: '/app',                    icon: Home,          labelFr: 'Tableau de bord',   labelEn: 'Dashboard',       end: true, roles: ['student', 'delegate', 'teacher'] },
+  { to: '/app/independent',        icon: ClipboardList, labelFr: 'Gestion personnelle', labelEn: 'Personal workspace', roles: ['student', 'teacher'] },
   { to: '/app/cours',              icon: BookOpen,      labelFr: 'Mes cours',          labelEn: 'My Courses',      roles: ['student', 'delegate'] },
   { to: '/app/emploi-du-temps',    icon: Calendar,      labelFr: 'Emploi du temps',    labelEn: 'Schedule',        roles: ['student', 'delegate', 'teacher'] },
   { to: '/app/presences',          icon: UserCheck,     labelFr: 'Présences',          labelEn: 'My Attendance',   roles: ['student', 'delegate'] },

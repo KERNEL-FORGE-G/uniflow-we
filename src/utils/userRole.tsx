@@ -15,6 +15,8 @@ export interface UserProfile {
   address?: string
   level?: string
   matricule?: string
+  accountType?: 'UNIVERSITY' | 'PERSONAL'
+  countryCode?: string
 }
 
 const EMPTY_PROFILE: UserProfile = {
@@ -39,14 +41,18 @@ const RoleContext = createContext<RoleContextProps | undefined>(undefined)
 
 function mapRole(raw: string | undefined): Role {
   switch (raw) {
-    case 'ETUDIANT': return 'student'
-    case 'DELEGUE': return 'delegate'
-    case 'ENSEIGNANT': return 'teacher'
-    case 'ADMIN': return 'admin'
-    case 'student': return 'student'
+    case 'ETUDIANT':
+    case 'STUDENT':
+    case 'INDEPENDENT_STUDENT': return 'student'
+    case 'DELEGUE':
     case 'delegate': return 'delegate'
+    case 'ENSEIGNANT':
+    case 'TEACHER':
+    case 'INDEPENDENT_TEACHER':
     case 'teacher': return 'teacher'
+    case 'ADMIN':
     case 'admin': return 'admin'
+    case 'student': return 'student'
     default: return 'student'
   }
 }
@@ -55,8 +61,9 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
   if (!user) return EMPTY_PROFILE
 
   const role = mapRole(user.role)
-  const firstName = user.student?.firstName ?? user.teacher?.firstName ?? user.email.split('@')[0]
-  const lastName = user.student?.lastName ?? user.teacher?.lastName ?? ''
+  const fullNameParts = user.fullName?.trim().split(/\s+/).filter(Boolean) ?? []
+  const firstName = user.student?.firstName ?? user.teacher?.firstName ?? fullNameParts[0] ?? user.email.split('@')[0]
+  const lastName = user.student?.lastName ?? user.teacher?.lastName ?? fullNameParts.slice(1).join(' ')
   const name = `${firstName}${lastName ? ` ${lastName}` : ''}`
   const roleLabel = role === 'student'
     ? 'Étudiant'
@@ -83,6 +90,8 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
     filiere: filiereValue,
     level: role === 'student' ? studentLevel : undefined,
     matricule: user.student?.matricule,
+    accountType: user.accountType === 'PERSONAL' || user.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY',
+    countryCode: user.countryCode,
   }
 }
 

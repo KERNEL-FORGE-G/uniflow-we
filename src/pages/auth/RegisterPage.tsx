@@ -45,6 +45,7 @@ export default function RegisterPage() {
   const { register, loading, error, setError } = useAuth()
   const [accountType, setAccountTypeSelection] = useState<'UNIVERSITY' | 'PERSONAL'>('UNIVERSITY')
   const [universityCode, setUniversityCode] = useState('UY1')
+  const [countryCode, setCountryCode] = useState('CM')
 
   const [form, setForm] = useState({ 
     firstName: '', 
@@ -68,6 +69,15 @@ export default function RegisterPage() {
 
   useEffect(() => {
     let mounted = true
+
+    if (accountType === 'PERSONAL') {
+      setAcademicLoading(false)
+      setAcademicError(null)
+      setLevels([])
+      setSpecialties([])
+      setForm(f => ({ ...f, levelId: '', specialtyId: '', matricule: '' }))
+      return () => { mounted = false }
+    }
 
     const loadAcademicOptions = async () => {
       setAcademicLoading(true)
@@ -100,7 +110,7 @@ export default function RegisterPage() {
 
     loadAcademicOptions()
     return () => { mounted = false }
-  }, [])
+  }, [accountType])
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault()
@@ -128,7 +138,7 @@ export default function RegisterPage() {
           ? (form.role === 'teacher' ? 'INDEPENDENT_TEACHER' : 'INDEPENDENT_STUDENT')
           : (roleMap[form.role] || 'ETUDIANT'),
         accountType,
-        universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined,
+        countryCode: accountType === 'PERSONAL' ? countryCode : undefined,
         matricule: form.matricule || undefined,
         levelId: form.levelId || undefined,
         specialtyId: form.specialtyId || undefined,
@@ -249,7 +259,7 @@ export default function RegisterPage() {
                 <User className="h-8 w-8 text-white" />
               </motion.div>
               <h2 className="text-3xl font-black text-[#111827]">Créer un compte</h2>
-              <p className="mt-2 text-sm text-[#6b7280]">Étape {step} sur 2 - {step === 1 ? 'Informations personnelles' : 'Informations académiques'}</p>
+              <p className="mt-2 text-sm text-[#6b7280]">Étape {step} sur 2 - {step === 1 ? 'Informations personnelles' : accountType === 'PERSONAL' ? 'Sécurité du compte indépendant' : 'Informations académiques'}</p>
             </div>
 
             {/* Progress bar */}
@@ -382,7 +392,7 @@ export default function RegisterPage() {
 
                   {/* Email */}
                   <div>
-                    <label className="block text-sm font-bold text-[#374151] mb-2">Adresse email universitaire</label>
+                    <label className="block text-sm font-bold text-[#374151] mb-2">                        {accountType === 'PERSONAL' ? 'Adresse email' : 'Adresse email universitaire'}</label>
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
                         <Mail className="h-5 w-5" />
@@ -547,8 +557,21 @@ export default function RegisterPage() {
                   )}
 
                   {/* Password */}
-                  <div>
-                    <label className="block text-sm font-bold text-[#374151] mb-2">Mot de passe</label>
+                      {accountType === 'PERSONAL' && (
+                        <div>
+                          <label className="block text-sm font-bold text-[#374151] mb-2">Pays de facturation</label>
+                          <select value={countryCode} onChange={e => setCountryCode(e.target.value)} className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all">
+                            <option value="CM">Cameroun (XAF)</option>
+                            <option value="FR">France (EUR)</option>
+                            <option value="BE">Belgique (EUR)</option>
+                            <option value="CA">Canada (CAD)</option>
+                            <option value="US">États-Unis (USD)</option>
+                          </select>
+                        </div>
+                      )}
+
+                      <div>
+                        <label className="block text-sm font-bold text-[#374151] mb-2">Mot de passe</label>
                     <div className="relative">
                       <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
                         <Lock className="h-5 w-5" />
