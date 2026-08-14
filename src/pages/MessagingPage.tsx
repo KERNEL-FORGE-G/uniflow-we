@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Search, Plus, Phone, Video, Paperclip, Smile, Mic, Send, MoreHorizontal, X, AlertTriangle, UserCircle, Mail, Loader2 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { AnimatedList } from '../components/ui/AnimatedList'
-import { messagingApi, type ChatConversation } from '../lib/api'
+import { getToken, messagingApi, type ChatConversation } from '../lib/api'
 import { useNavigate } from 'react-router-dom'
 
 const TYPING_DELAY = 1200
@@ -50,6 +50,11 @@ export default function MessagingPage() {
 
   // Load conversations from the real backend only.
   useEffect(() => {
+    if (!getToken()) {
+      setLoading(false)
+      return
+    }
+
     async function loadConversations() {
       try {
         const list = await messagingApi.conversations()
