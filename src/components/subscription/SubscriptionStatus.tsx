@@ -47,9 +47,18 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   }
 
   if (!status) return null
+  if (status.status === 'NONE' || !status.currency || status.monthlyAmount == null) {
+    return (
+      <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
+        <h3 className="text-sm font-bold text-slate-900">Aucun abonnement actif</h3>
+        <p className="mt-1 text-xs text-slate-500">Aucune souscription persistée n’est associée à ce compte.</p>
+        {statusError && <p className="mt-1 text-[11px] text-slate-400">{statusError}</p>}
+      </div>
+    )
+  }
 
   const now = new Date()
-  const periodEnd = new Date(status.currentPeriodEnd)
+  const periodEnd = new Date(status.currentPeriodEnd ?? '')
   const hasPeriodEnd = Number.isFinite(periodEnd.getTime())
   const diffMs = hasPeriodEnd ? periodEnd.getTime() - now.getTime() : 0
   const remainingDays = Math.max(0, Math.floor(diffMs / (24 * 3600 * 1000)))

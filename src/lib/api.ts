@@ -258,6 +258,7 @@ export class ApiError extends Error {
 // ─── Core fetch connecting strictly to the Real Backend ──────────────────────────
 
 async function req<T>(path: string, init: RequestInit = {}, retry = true, triedApiPrefix = false): Promise<T> {
+  const accountType = getAccountType()
   const token = getToken()
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -266,10 +267,13 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
   }
   const cleanBase = getActiveApiUrl().replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const requestPath = cleanPath.startsWith('/api/')
+    ? cleanPath
+    : accountType === 'PERSONAL' ? `/api/v1${cleanPath}` : cleanPath
   if (!cleanBase) {
     throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
   }
-  const url = `${cleanBase}${cleanPath}`
+  const url = `${cleanBase}${requestPath}`
 
   const controller = new AbortController()
   const timeoutId = window.setTimeout(() => controller.abort(), API_REQUEST_TIMEOUT_MS)
@@ -277,7 +281,7 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
   try {
     const res = await fetch(url, { ...init, headers, signal: controller.signal })
 
-    if (res.status === 404 && !triedApiPrefix && !path.startsWith('/api/')) {
+    if (res.status === 404 && accountType === 'UNIVERSITY' && !triedApiPrefix && !cleanPath.startsWith('/api/')) {
       return req<T>(`/api${cleanPath}`, init, retry, true)
     }
 
@@ -308,8 +312,14 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
       let msg = `Erreur API HTTP ${res.status}`
       try {
         body = await res.json()
-        if (body?.message) msg = body.message
+        const backendMessage = body?.message || body?.error?.message || body?.error?.error
+        if (backendMessage) msg = backendMessage
       } catch {}
+
+      if (res.status === 404) {
+        const backendKind = getAccountType() === 'PERSONAL' ? 'personnel' : 'universitaire'
+        msg = `Route ${cleanPath} introuvable sur le backend ${backendKind} configuré (${cleanBase}). Vérifiez que le service expose cette route et que VITE_${getAccountType() === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'}_API_URL pointe vers la bonne version.`
+      }
 
       throw new ApiError(res.status, msg, body)
     }
@@ -574,28 +584,62 @@ export interface PersonalGrade {
   coefficient: number
 }
 
+const personalDayToApi: Record<string, string> = {
+  MONDAY: 'LUNDI', TUESDAY: 'MARDI', WEDNESDAY: 'MERCREDI', THURSDAY: 'JEUDI',
+  FRIDAY: 'VENDREDI', SATURDAY: 'SAMEDI', SUNDAY: 'DIMANCHE',
+}
+
+const toPersonalCourseDto = (dto: Partial<PersonalCourse>) => ({
+  code: dto.code,
+  name: dto.title,
+  instructorName: dto.instructor || undefined,
+  credits: dto.credits,
+  colorHex: dto.colorHex,
+  semesterLabel: dto.classroom || undefined,
+})
+
+const toPersonalScheduleDto = (dto: Partial<PersonalSchedule>) => ({
+  subjectId: dto.courseId,
+  dayOfWeek: personalDayToApi[dto.dayOfWeek || ''] || dto.dayOfWeek,
+  startTime: dto.startTime,
+  endTime: dto.endTime,
+  classroomLocation: dto.classroom || undefined,
+  notes: dto.type || undefined,
+})
+
+const toPersonalTaskDto = (dto: Partial<PersonalAssignment>) => ({
+  subjectId: dto.courseId || undefined,
+  title: dto.title,
+  dueDate: dto.dueDate || undefined,
+  description: dto.description || undefined,
+  priority: dto.priority || undefined,
+  status: dto.status || undefined,
+})
+
 export const personalApi = {
   courses: {
-    list: async () => u(await api.get<{ data: PersonalCourse[] }>('/courses/my')),
-    create: async (dto: Omit<PersonalCourse, 'id' | 'createdAt'>) => u(await api.post<{ data: PersonalCourse }>('/courses', dto)),
-    update: async (id: string, dto: Partial<PersonalCourse>) => u(await api.put<{ data: PersonalCourse }>(`/courses/${id}`, dto)),
-    delete: async (id: string) => u(await api.delete<void>(`/courses/${id}`)),
+    list: async () => u(await api.get<{ data: PersonalCourse[] }>('/personal/subjects')),
+    create: async (dto: Omit<PersonalCourse, 'id' | 'createdAt'>) => u(await api.post<{ data: PersonalCourse }>('/personal/subjects', toPersonalCourseDto(dto))),
+    update: async (id: string, dto: Partial<PersonalCourse>) => u(await api.put<{ data: PersonalCourse }>(`/personal/subjects/${id}`, toPersonalCourseDto(dto))),
+    delete: async (id: string) => u(await api.delete<void>(`/personal/subjects/${id}`)),
   },
   schedules: {
-    list: async () => u(await api.get<{ data: PersonalSchedule[] }>('/schedules/my')),
-    create: async (dto: Omit<PersonalSchedule, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => u(await api.post<{ data: PersonalSchedule }>('/schedules', dto)),
-    update: async (id: string, dto: Partial<PersonalSchedule>) => u(await api.put<{ data: PersonalSchedule }>(`/schedules/${id}`, dto)),
-    delete: async (id: string) => u(await api.delete<void>(`/schedules/${id}`)),
+    list: async () => u(await api.get<{ data: PersonalSchedule[] }>('/personal/schedules')),
+    create: async (dto: Omit<PersonalSchedule, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => u(await api.post<{ data: PersonalSchedule }>('/personal/schedules', toPersonalScheduleDto(dto))),
+    update: async (id: string, dto: Partial<PersonalSchedule>) => u(await api.put<{ data: PersonalSchedule }>(`/personal/schedules/${id}`, toPersonalScheduleDto(dto))),
+    delete: async (id: string) => u(await api.delete<void>(`/personal/schedules/${id}`)),
   },
   assignments: {
-    list: async () => u(await api.get<{ data: PersonalAssignment[] }>('/assignments')),
-    create: async (dto: Omit<PersonalAssignment, 'id'>) => u(await api.post<{ data: PersonalAssignment }>('/assignments', dto)),
-    update: async (id: string, dto: Partial<PersonalAssignment>) => u(await api.put<{ data: PersonalAssignment }>(`/assignments/${id}`, dto)),
-    delete: async (id: string) => u(await api.delete<void>(`/assignments/${id}`)),
+    list: async () => u(await api.get<{ data: PersonalAssignment[] }>('/personal/tasks')),
+    create: async (dto: Omit<PersonalAssignment, 'id'>) => u(await api.post<{ data: PersonalAssignment }>('/personal/tasks', toPersonalTaskDto(dto))),
+    update: async (id: string, dto: Partial<PersonalAssignment>) => u(await api.put<{ data: PersonalAssignment }>(`/personal/tasks/${id}`, toPersonalTaskDto(dto))),
+    delete: async (id: string) => u(await api.delete<void>(`/personal/tasks/${id}`)),
   },
   grades: {
     list: async () => u(await api.get<{ data: PersonalGrade[] }>('/personal/grades')),
-    create: async (dto: Omit<PersonalGrade, 'id'>) => u(await api.post<{ data: PersonalGrade }>('/personal/grades', dto)),
+    create: async (dto: Omit<PersonalGrade, 'id'>) => u(await api.post<{ data: PersonalGrade }>('/personal/grades', { ...dto, subjectId: dto.courseId })),
+    update: async (id: string, dto: Partial<PersonalGrade>) => u(await api.put<{ data: PersonalGrade }>(`/personal/grades/${id}`, dto)),
+    delete: async (id: string) => u(await api.delete<void>(`/personal/grades/${id}`)),
   },
 }
 
@@ -949,8 +993,8 @@ export interface SubscriptionPlan {
   code: string
   name: string
   category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION'
-  countryCode: string
-  currency: string
+  countryCode?: string
+  currency?: string
   priceMonthlyAmount: number
   priceAnnuallyAmount: number
   priceMonthly: string
@@ -963,7 +1007,7 @@ export interface SubscriptionPlan {
   btnVariant?: string
   providers: string[]
   features: string[]
-  status: 'ACTIVE' | 'INACTIVE'
+  status?: 'ACTIVE' | 'INACTIVE'
 }
 
 export interface PricingInfo {
@@ -976,11 +1020,12 @@ export interface PricingInfo {
 }
 
 export interface SubscriptionStatus {
-  status: 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'
-  countryCode: string
-  currency: string
-  monthlyAmount: number
-  currentPeriodEnd: string
+  status: 'NONE' | 'PENDING' | 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'
+  planCode?: string | null
+  countryCode?: string | null
+  currency?: string | null
+  monthlyAmount?: number | null
+  currentPeriodEnd?: string | null
   isAutoRenew: boolean
 }
 
@@ -993,12 +1038,12 @@ export interface CheckoutResult {
 
 export type CheckoutPayload = {
   planId?: string
-  planCode?: string
-  countryCode?: string
-  paymentProvider: string
+  planCode: string
+  countryCode: string
+  paymentProvider?: string
   phoneNumber?: string
   billingInterval?: 'MONTHLY' | 'ANNUALLY'
-  billingCycle?: 'monthly' | 'annually'
+  billingCycle: 'monthly' | 'annually'
   email?: string
   fullName?: string
 }
@@ -1016,12 +1061,13 @@ export const subscriptionApi = {
     u(await api.post<CheckoutResult>('/subscription/checkout', payload)),
 }
 
-async function personalRequest<T>(path: string, init: RequestInit = {}, triedApiPrefix = false): Promise<T> {
+async function personalRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
   const base = PERSONAL_API_URL.replace(/\/+$/, '')
   if (!base) throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
+  const requestPath = cleanPath.startsWith('/api/') ? cleanPath : `/api/v1${cleanPath}`
   const token = getToken()
-  const response = await fetch(`${base}${cleanPath}`, {
+  const response = await fetch(`${base}${requestPath}`, {
     ...init,
     headers: {
       'Content-Type': 'application/json',
@@ -1029,13 +1075,13 @@ async function personalRequest<T>(path: string, init: RequestInit = {}, triedApi
       ...(init.headers ?? {}),
     },
   })
-  if (response.status === 404 && !triedApiPrefix && !cleanPath.startsWith('/api/')) {
-    return personalRequest<T>(`/api${cleanPath}`, init, true)
-  }
   if (!response.ok) {
     let body: { message?: string } | null = null
     try { body = await response.json() } catch {}
-    throw new ApiError(response.status, body?.message || `Erreur du backend personnel HTTP ${response.status}`, body)
+    const message = response.status === 404
+      ? `Route ${requestPath} introuvable sur le backend personnel configuré (${base}). Vérifiez que le service expose cette route.`
+      : body?.message || `Erreur du backend personnel HTTP ${response.status}`
+    throw new ApiError(response.status, message, body)
   }
   if (response.status === 204) return null as T
   return u(await response.json())

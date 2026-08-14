@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, CreditCard, Smartphone, CheckCircle, ShieldCheck, Sparkles, Loader2, ArrowRight, Zap, Globe, AlertCircle } from 'lucide-react'
-import { subscriptionApi, type PricingInfo } from '../../lib/api'
+import { personalSubscriptionApi, type PricingInfo, type SubscriptionPlan } from '../../lib/api'
 import { playSuccessSound, playErrorSound } from '../../utils/sound'
 
 interface SubscriptionModalProps {
@@ -13,6 +13,8 @@ interface SubscriptionModalProps {
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [countryCode, setCountryCode] = useState<'CM' | 'FR'>('CM')
   const [pricing, setPricing] = useState<PricingInfo | null>(null)
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [selectedPlanCode, setSelectedPlanCode] = useState<string>('')
   const [loadingPricing, setLoadingPricing] = useState<boolean>(false)
   const [selectedProvider, setSelectedProvider] = useState<string>('MTN_MOMO')
   const [phoneNumber, setPhoneNumber] = useState<string>('')
@@ -25,13 +27,20 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     const fetchPricing = async () => {
       setLoadingPricing(true)
       try {
-        const p = await subscriptionApi.getPricing(countryCode)
+        const [p, availablePlans] = await Promise.all([
+          personalSubscriptionApi.getPricing(countryCode),
+          personalSubscriptionApi.getPlans(),
+        ])
         setPricing(p)
+        setPlans(availablePlans)
+        setSelectedPlanCode(current => current || availablePlans[0]?.code || '')
         if (p.providers && p.providers.length > 0) {
           setSelectedProvider(p.providers[0])
         }
       } catch (err) {
         console.error('Erreur chargement prix:', err)
+        setPricing(null)
+        setPlans([])
       } finally {
         setLoadingPricing(false)
       }
@@ -48,14 +57,17 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({ isOpen, on
     setSuccessMessage(null)
 
     try {
-      const res = await subscriptionApi.createCheckout({
+      if (!selectedPlanCode) throw new Error('Aucun plan d’abonnement disponible.')
+      const res = await personalSubscriptionApi.createCheckout({
+        planCode: selectedPlanCode,
+        billingCycle: 'monthly',
         countryCode,
         paymentProvider: selectedProvider,
-        phoneNumber: phoneNumber || undefined
+        phoneNumber: phoneNumber || undefined,
       })
 
-      playSuccessSound()
-      setSuccessMessage(res.message || 'Votre abonnement a été renouvelé avec succès !')
+      if (res.status === 'SUCCESS') playSuccessSound()
+      setSuccessMessage(res.message || 'Transaction enregistrée, en attente de confirmation du prestataire.')
       if (onSuccess) onSuccess()
       setTimeout(() => {
         setSuccessMessage(null)
