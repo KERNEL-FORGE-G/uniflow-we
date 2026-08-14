@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { BookMarked, Search, Download, Plus, Eye, Edit, Trash2, Users, Clock, FileText } from 'lucide-react'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
+import { ueApi, type UE as BackendUE } from '../../lib/api'
 
 interface UE {
   id: string
@@ -15,27 +16,45 @@ interface UE {
   teacher: string
   studentsEnrolled: number
   capacity: number
-  type: 'Cours Magistral' | 'Travaux Dirigés' | 'Travaux Pratiques' | 'Projet'
-  status: 'active' | 'archived' | 'planned'
+  type: 'Cours Magistral' | 'Travaux Dirigés' | 'Travaux Pratiques' | 'Projet' | ''
+  status: 'active' | 'archived' | 'planned' | ''
 }
 
-const mockUEs: UE[] = [
-  { id: '1', code: 'INF301', name: 'Intelligence Artificielle', department: 'Informatique', level: 'L3', semester: 'S5', credits: 6, hours: 48, teacher: 'Pr. Martin Dupont', studentsEnrolled: 85, capacity: 100, type: 'Cours Magistral', status: 'active' },
-  { id: '2', code: 'INF302', name: 'Bases de Données Avancées', department: 'Informatique', level: 'L3', semester: 'S5', credits: 5, hours: 42, teacher: 'Dr. Sophie Kamga', studentsEnrolled: 78, capacity: 80, type: 'Cours Magistral', status: 'active' },
-  { id: '3', code: 'INF201', name: 'Structures de Données', department: 'Informatique', level: 'L2', semester: 'S3', credits: 6, hours: 48, teacher: 'Dr. Marie Ngo Bisse', studentsEnrolled: 120, capacity: 120, type: 'Cours Magistral', status: 'active' },
-  { id: '4', code: 'MAT401', name: 'Analyse Numérique', department: 'Mathématiques', level: 'M1', semester: 'S7', credits: 7, hours: 54, teacher: 'Pr. Jean Mbida', studentsEnrolled: 42, capacity: 50, type: 'Cours Magistral', status: 'active' },
-  { id: '5', code: 'INF101', name: 'Introduction à la Programmation', department: 'Informatique', level: 'L1', semester: 'S1', credits: 6, hours: 60, teacher: 'Dr. Alice Fouda', studentsEnrolled: 0, capacity: 150, type: 'Cours Magistral', status: 'planned' },
-  { id: '6', code: 'INF205', name: 'Réseaux Informatiques', department: 'Informatique', level: 'L2', semester: 'S4', credits: 5, hours: 45, teacher: 'Dr. Marie Ngo Bisse', studentsEnrolled: 95, capacity: 100, type: 'Travaux Pratiques', status: 'active' },
-  { id: '7', code: 'ECO301', name: 'Économétrie Avancée', department: 'Économie', level: 'L3', semester: 'S6', credits: 6, hours: 48, teacher: 'Pr. Paul Essomba', studentsEnrolled: 68, capacity: 80, type: 'Cours Magistral', status: 'archived' },
-]
+const normalizeUE = (item: BackendUE): UE => ({
+  id: item.id,
+  code: item.code || '',
+  name: item.name || '',
+  department: '',
+  level: '',
+  semester: '',
+  credits: item.credits || 0,
+  hours: 0,
+  teacher: '',
+  studentsEnrolled: 0,
+  capacity: 0,
+  type: '',
+  status: '',
+})
 
 export default function UEPage() {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterDept, setFilterDept] = useState<string>('all')
   const [filterLevel, setFilterLevel] = useState<string>('all')
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [ues, setUes] = useState<UE[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
 
-  const filtered = mockUEs.filter(ue => {
+  useEffect(() => {
+    let mounted = true
+    ueApi.list()
+      .then(data => { if (mounted) setUes(data.map(normalizeUE)) })
+      .catch(error => { if (mounted) setLoadError(error instanceof Error ? error.message : 'Impossible de charger les UE.') })
+      .finally(() => { if (mounted) setLoading(false) })
+    return () => { mounted = false }
+  }, [])
+
+  const filtered = ues.filter(ue => {
     const matchSearch = ue.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        ue.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        ue.teacher.toLowerCase().includes(searchTerm.toLowerCase())
@@ -46,10 +65,10 @@ export default function UEPage() {
   })
 
   const stats = [
-    { label: 'Total UE', value: mockUEs.length, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
-    { label: 'Actives', value: mockUEs.filter(u => u.status === 'active').length, color: 'text-[#059669]', bg: 'bg-emerald-50' },
-    { label: 'Planifiées', value: mockUEs.filter(u => u.status === 'planned').length, color: 'text-[#d97706]', bg: 'bg-amber-50' },
-    { label: 'Crédits totaux', value: mockUEs.reduce((sum, u) => sum + u.credits, 0), color: 'text-[#7c3aed]', bg: 'bg-purple-50' },
+    { label: 'Total UE', value: ues.length, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
+    { label: 'Actives', value: ues.filter(u => u.status === 'active').length, color: 'text-[#059669]', bg: 'bg-emerald-50' },
+    { label: 'Planifiées', value: ues.filter(u => u.status === 'planned').length, color: 'text-[#d97706]', bg: 'bg-amber-50' },
+    { label: 'Crédits totaux', value: ues.reduce((sum, u) => sum + u.credits, 0), color: 'text-[#7c3aed]', bg: 'bg-purple-50' },
   ]
 
   const statusConfig = {
@@ -158,7 +177,7 @@ export default function UEPage() {
             </thead>
             <tbody className="divide-y divide-[#f3f4f6]">
               {filtered.map(ue => {
-                const fillRate = (ue.studentsEnrolled / ue.capacity) * 100
+                const fillRate = ue.capacity > 0 ? (ue.studentsEnrolled / ue.capacity) * 100 : 0
                 return (
                   <tr key={ue.id} className="hover:bg-[#f9fafb] transition-colors">
                     <td className="px-4 py-3 text-sm font-mono font-medium text-[#1e3a8a]">{ue.code}</td>
@@ -175,7 +194,8 @@ export default function UEPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeColors[ue.type]}`}>
+                                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeColors[ue.type as keyof typeof typeColors] || 'bg-[#f3f4f6] text-[#6b7280]'}`}>
+
                         {ue.type}
                       </span>
                     </td>
@@ -202,8 +222,8 @@ export default function UEPage() {
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant={statusConfig[ue.status].variant}>
-                        {statusConfig[ue.status].label}
+                      <Badge variant={statusConfig[ue.status as keyof typeof statusConfig]?.variant || 'neutral'}>
+                        {statusConfig[ue.status as keyof typeof statusConfig]?.label || '—'}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
@@ -225,11 +245,8 @@ export default function UEPage() {
             </tbody>
           </table>
         </div>
-        {filtered.length === 0 && (
-          <div className="py-12 text-center">
-            <p className="text-sm text-[#9ca3af]">Aucune UE trouvée</p>
-          </div>
-        )}
+        {loading && <div className="py-12 text-center"><p className="text-sm text-[#6b7280]">Chargement des UE…</p></div>}
+        {!loading && filtered.length === 0 && <div className="py-12 text-center"><p className="text-sm text-[#9ca3af]">{loadError || 'Aucune UE fournie par le backend.'}</p></div>}
       </div>
     </div>
   )
