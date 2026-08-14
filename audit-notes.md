@@ -71,3 +71,19 @@ La documentation décrit notamment `POST /api/auth/login`, `GET /api/courses/min
 Le backend `https://api-uniflow.kernelforge.codes/auth/register` a d’abord rejeté la propriété `matricule` avec HTTP 400 (`property matricule should not exist`). Le frontend a été corrigé pour retirer cette propriété du payload transmis, tout en conservant les champs d’affichage côté formulaire.
 
 Un second test réel a réussi avec HTTP 201. Compte de test créé : `uniflow.test.1786728331.36b487@mailinator.com`, rôle `ETUDIANT`, niveau `Licence 1`, spécialité `Informatique`. Le backend a généré lui-même le matricule `UY1-2026-00015` et a renvoyé une session JWT. Aucun jeton n’est conservé dans ces notes.
+
+## 2026-08-14 — Nettoyage final des données fictives
+
+Les correctifs suivants ont été publiés directement sur `main` et vérifiés après déploiement Vercel :
+
+| Commit | Correction | Vérification production |
+|---|---|---|
+| `a2e4ac0` | Suppression de la simulation locale des candidatures de promotion | `/app/promotion` affiche 0 candidature et aucun mode démo après propagation |
+| `2cd9c83` | Suppression du catalogue initial fictif de la bibliothèque, des statistiques marketing non sourcées, des lecteurs média simulés, des rapports administratifs fictifs, et branchement de la messagerie sur `messagingApi` | `/app/bibliotheque` affiche 0 ressource sans backend ; `/app/messages` affiche 0 contact sans session |
+| `161ef65` | Suppression du lobby visioconférence fictif réellement servi par `/app/visio` | `/app/visio` affiche « Visioconférence indisponible » sans cours, codes ou participants inventés |
+| `27924de` | Suppression du sélecteur local « Mode démo » et du changement de rôle côté navigation | La navigation de production n’affiche plus le sélecteur Étudiant/Délégué/Enseignant/Administrateur |
+| `48e3ddf` | Évite le chargement infini de la messagerie sans JWT | `/app/messages` affiche directement l’état vide hors session |
+
+Les commandes `npm run typecheck`, `npm run build` et `git diff --check` ont réussi pour chaque série de modifications. Le build conserve uniquement un avertissement non bloquant sur la taille de certains chunks Vite.
+
+Les limites backend restent explicites : aucun endpoint de candidature/promotion, de visioconférence, de rapports agrégés ou de statut d’abonnement n’est disponible à ce jour ; l’application affiche donc un état indisponible ou vide au lieu de fabriquer des données. Les écrans qui nécessitent une session JWT doivent être testés avec un compte réel connecté ; hors session, les données personnelles restent vides.
