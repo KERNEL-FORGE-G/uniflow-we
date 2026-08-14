@@ -20,8 +20,7 @@ export const UNIVERSITY_API_URL = sanitizeUrl(
   'https://api-uniflow.kernelforge.codes'
 )
 export const PERSONAL_API_URL = sanitizeUrl(
-  (import.meta.env.VITE_PERSONAL_API_URL as string) ??
-  'https://uniflow-personal-backend.vercel.app'
+  (import.meta.env.VITE_PERSONAL_API_URL as string) ?? ''
 )
 
 export function getAccountType(): 'UNIVERSITY' | 'PERSONAL' {
@@ -267,6 +266,9 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
   }
   const cleanBase = getActiveApiUrl().replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
+  if (!cleanBase) {
+    throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
+  }
   const url = `${cleanBase}${cleanPath}`
 
   const controller = new AbortController()
@@ -439,7 +441,10 @@ export const authApi = {
     const accType = dto.accountType || 'UNIVERSITY'
     setAccountType(accType)
     try {
-      const res = u(await api.post<{ data: AuthResult }>('/auth/login', dto))
+      const res = u(await api.post<{ data: AuthResult }>('/auth/login', {
+        email: dto.email,
+        password: dto.password,
+      }))
       if (res && res.user) {
         res.user.accountType = accType
         res.user.universityCode = dto.universityCode || 'UY1'
