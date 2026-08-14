@@ -36,8 +36,8 @@ export function GlobalNetworkToast() {
         type: 'warning',
         title: 'Serveur distant indisponible (CORS / Timeout)',
         message: shortUrl
-          ? `Accès à ${shortUrl} bloqué ou en délai dépassé. Basculement automatique en mode local PWA.`
-          : 'Problème de connexion avec le serveur distant. Données chargées depuis le stockage local.',
+          ? `Accès à ${shortUrl} bloqué ou en délai dépassé. Les données distantes ne sont pas disponibles.`
+          : 'Problème de connexion avec le serveur distant. Aucune donnée distante n’a été chargée.',
         duration: 7000,
       })
     }
@@ -47,7 +47,7 @@ export function GlobalNetworkToast() {
       addToast({
         type: 'error',
         title: 'Connexion réseau interrompue',
-        message: 'Vous êtes actuellement hors-ligne. UniFlow fonctionne en mode autonome local.',
+        message: 'Vous êtes actuellement hors-ligne. Les actions nécessitant le backend sont suspendues jusqu’au retour du réseau.',
         duration: 8000,
       })
     }
