@@ -9,6 +9,10 @@ import { playSuccessSound, playErrorSound } from '../utils/sound'
  */
 
 const sanitizeUrl = (u?: string) => (u ? u.trim().replace(/\/+$/, '') : '')
+const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS)
+const API_REQUEST_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout >= 1000
+  ? configuredTimeout
+  : 8000
 
 export const UNIVERSITY_API_URL = sanitizeUrl(
   (import.meta.env.VITE_UNIVERSITY_API_URL as string) ??
@@ -946,8 +950,11 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
   const cleanPath = path.startsWith('/') ? path : `/${path}`
   const url = `${cleanBase}${cleanPath}`
 
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), API_REQUEST_TIMEOUT_MS)
+
   try {
-    const res = await fetch(url, { ...init, headers })
+    const res = await fetch(url, { ...init, headers, signal: controller.signal })
 
     if (res.status === 404 && !triedApiPrefix && !path.startsWith('/api/')) {
       return req<T>(`/api${cleanPath}`, init, retry, true)
@@ -1005,7 +1012,7 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
     return data
   } catch (err) {
     if (err instanceof ApiError) throw err
-    
+
     dispatchNetworkErrorEvent(cleanPath, err instanceof Error ? err.message : undefined)
 
     // Fallback to local DB engine on network failure / CORS / offline mode
@@ -1013,7 +1020,12 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
       return handleLocalRequest<T>(cleanPath, init)
     } catch {}
 
-    throw new ApiError(500, err instanceof Error ? err.message : 'Erreur de connexion au serveur backend')
+    const message = err instanceof DOMException && err.name === 'AbortError'
+      ? `Le serveur ne répond pas après ${Math.round(API_REQUEST_TIMEOUT_MS / 1000)} secondes.`
+      : err instanceof Error ? err.message : 'Erreur de connexion au serveur backend'
+    throw new ApiError(500, message)
+  } finally {
+    window.clearTimeout(timeoutId)
   }
 }
 
@@ -1079,6 +1091,8 @@ export interface LoginDto {
   password: string
   accountType?: 'UNIVERSITY' | 'PERSONAL'
   universityCode?: string
+  /** Active explicitement le compte de démonstration local. */
+  demo?: boolean
 }
 
 export interface RegisterDto {
@@ -1135,6 +1149,10 @@ export const authApi = {
       }
       return res
     } catch (err) {
+      // Un échec d’authentification réel ne doit jamais ouvrir une session mock.
+      // Le fallback est réservé aux boutons de démonstration explicites.
+      if (!dto.demo) throw err
+
       console.warn('[API Auth] Fallback local mode pour démonstration de connexion.')
       const mockUser = {
         id: accType === 'PERSONAL' ? 'pusr_demo' : 'usr_demo',
