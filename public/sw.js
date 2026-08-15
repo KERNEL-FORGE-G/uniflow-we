@@ -3,7 +3,7 @@
  * Handles Offline Caching, Push Notifications, and Background Sync
  * ============================================================================ */
 
-const CACHE_NAME = 'uniflow-pwa-cache-v1'
+const CACHE_NAME = 'uniflow-pwa-cache-v2'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
