@@ -16,7 +16,7 @@ interface StudentRoll {
 }
 
 export default function AttendanceManagePage() {
-  const { isOfflineMode } = useUserRole()
+  const { isOfflineMode, currentUser } = useUserRole()
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [students, setStudents] = useState<StudentRoll[]>([])
@@ -28,10 +28,7 @@ export default function AttendanceManagePage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const announcements = [
-    { id: 1, title: 'Réunion délégués', desc: 'Vendredi 17 mai à 13h — Salle C102.', time: 'il y a 1h', type: 'info' },
-    { id: 2, title: 'Changement de salle INFO201', desc: 'Le cours de demain aura lieu en Amphi B au lieu de la salle B101.', time: 'il y a 3h', type: 'warning' },
-  ]
+  const announcements: Array<{ id: string; title: string; desc: string; time: string; type: string }> = []
 
   // Load courses and student list
   useEffect(() => {
@@ -134,7 +131,7 @@ export default function AttendanceManagePage() {
             <Megaphone className="h-3.5 w-3.5" /> ESPACE DÉLÉGUÉ / ENSEIGNANT
           </span>
           <h1 className="text-xl font-bold text-[#111827]">Gestion des présences</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Lucas Dubois · En ligne · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+          <p className="text-sm text-[#6b7280] mt-0.5">{currentUser.name} · {currentUser.status} · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
         </div>
         <div className="flex gap-2">
           {course && (
