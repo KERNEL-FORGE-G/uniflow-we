@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, Play, CheckCircle, GraduationCap, Users, Wifi, Shield,
   MessageSquare, BarChart3, Zap, ChevronRight,
-  Smartphone, Globe, Monitor, Star, TrendingUp, Clock, Award,
+  Smartphone, Globe, Monitor, TrendingUp, Clock, Award,
   QrCode, BookOpen, Calendar, Calculator, HelpCircle, ChevronDown,
   Sparkles, Check, Laptop, ShieldCheck, FileText, CheckCircle2
 } from 'lucide-react'
@@ -70,30 +70,6 @@ const platforms = [
   { icon: Monitor, label: 'Desktop', sub: 'Windows, Mac, Linux', color: 'text-purple-700' },
 ]
 
-const testimonials = [
-  {
-    name: 'Dr. Kamga',
-    role: 'Enseignant — Informatique',
-    text: 'UniFlow a transformé ma gestion de cours. La synchronisation offline est parfaite pour nos campus avec une connexion instable.',
-    avatar: 'K',
-    rating: 5
-  },
-  {
-    name: 'Emma Martin',
-    role: 'Étudiante L2 — Informatique',
-    text: 'Je suis mes cours, devoirs et présences depuis mon téléphone, même sans connexion. Interface intuitive et rapide.',
-    avatar: 'E',
-    rating: 5
-  },
-  {
-    name: 'Lucas Dubois',
-    role: 'Délégué — L2 Info',
-    text: 'La gestion des présences par QR code en mode local, avec statistiques en temps réel. Exactement ce dont on avait besoin.',
-    avatar: 'L',
-    rating: 5
-  },
-]
-
 const faqs = [
   {
     q: "UniFlow fonctionne-t-il réellement sans connexion Internet ?",
@@ -128,15 +104,15 @@ export default function LandingPage() {
   const [activeRoleTab, setActiveRoleTab] = useState<RoleTab>('etudiant')
 
   // Calculator State
-  const [studentCount, setStudentCount] = useState<number>(3500)
+  const [studentCount, setStudentCount] = useState<number | null>(null)
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState<number | null>(0)
 
   // Calculated ROI values
-  const paperSavedSheets = Math.round(studentCount * 140)
-  const hoursSavedPerSemester = Math.round((studentCount / 100) * 18)
-  const treesSaved = (paperSavedSheets / 8000).toFixed(1)
+  const paperSavedSheets = studentCount === null ? null : Math.round(studentCount * 140)
+  const hoursSavedPerSemester = studentCount === null ? null : Math.round((studentCount / 100) * 18)
+  const treesSaved = paperSavedSheets === null ? null : (paperSavedSheets / 8000).toFixed(1)
 
   return (
     <div className="min-h-screen bg-white font-sans overflow-x-hidden selection:bg-blue-600 selection:text-white">
@@ -423,17 +399,17 @@ export default function LandingPage() {
                     </div>
                     <div className="p-3 rounded-xl bg-blue-900/40 border border-blue-600/40 space-y-1">
                       <div className="flex justify-between text-xs font-black text-blue-200">
-                        <span>INFO101 — Algorithmique</span>
-                        <span>08:00 - 10:00</span>
+                        <span>Aucune séance chargée</span>
+                        <span>—</span>
                       </div>
-                      <p className="text-[11px] text-blue-300 font-medium">Amphi 500 · Dr. Kamga · Présence validée ✓</p>
+                      <p className="text-[11px] text-blue-200 font-medium">Aucune session active — connectez-vous pour afficher vos données réelles.</p>
                     </div>
                     <div className="p-3 rounded-xl bg-slate-900 border border-slate-800 space-y-1">
                       <div className="flex justify-between text-xs font-black text-slate-200">
-                        <span>INFO201 — Bases de Données</span>
-                        <span>10:15 - 12:15</span>
+                        <span>Aucun cours chargé</span>
+                        <span>—</span>
                       </div>
-                      <p className="text-[11px] text-slate-400 font-medium">Salle A204 · Devoir à rendre dans 2 jours</p>
+                      <p className="text-[11px] text-slate-400 font-medium">Connectez-vous pour charger votre emploi du temps réel.</p>
                     </div>
                   </div>
                 </motion.div>
@@ -467,10 +443,10 @@ export default function LandingPage() {
                       <QrCode className="h-24 w-24 mx-auto" />
                     </div>
                     <p className="text-xs font-black text-amber-300 uppercase tracking-wider">
-                      QR Code de Présence Dynamique · INFO101
+                      QR Code de présence — aucune session active
                     </p>
                     <p className="text-[11px] text-slate-400">
-                      48 étudiants émargés sur 52 en amphi · Mises à jour en direct
+                      Les présences réelles apparaîtront après connexion à un compte délégué.
                     </p>
                   </div>
                 </motion.div>
@@ -501,16 +477,16 @@ export default function LandingPage() {
 
                   <div className="md:col-span-6 bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-3 font-mono text-xs">
                     <div className="flex justify-between text-teal-300 font-bold border-b border-slate-800 pb-2">
-                      <span>Saisie des Notes · CC1 INFO101</span>
-                      <span className="text-xs bg-teal-900/60 text-teal-200 px-2 py-0.5 rounded">Moyenne: 14.2/20</span>
+                      <span>Saisie des notes — aucune évaluation chargée</span>
+                      <span className="text-xs bg-teal-900/60 text-teal-200 px-2 py-0.5 rounded">Moyenne : —</span>
                     </div>
                     <div className="flex justify-between items-center bg-slate-900 p-2 rounded">
-                      <span className="text-slate-200">EKOTTO Jean</span>
-                      <span className="text-emerald-400 font-bold">16.5 / 20</span>
+                      <span className="text-slate-400">Aucune note chargée</span>
+                      <span className="text-slate-500 font-bold">—</span>
                     </div>
                     <div className="flex justify-between items-center bg-slate-900 p-2 rounded">
-                      <span className="text-slate-200">MBARGA Marie</span>
-                      <span className="text-emerald-400 font-bold">18.0 / 20</span>
+                      <span className="text-slate-400">Aucune note chargée</span>
+                      <span className="text-slate-500 font-bold">—</span>
                     </div>
                   </div>
                 </motion.div>
@@ -542,16 +518,16 @@ export default function LandingPage() {
                   <div className="md:col-span-6 bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-3">
                     <div className="text-xs font-bold text-purple-300 border-b border-slate-800 pb-2 flex justify-between">
                       <span>Tableau de Bord Campus</span>
-                      <span className="text-emerald-400 font-mono">12,450 étudiants inscrits</span>
+                      <span className="text-emerald-400 font-mono">Données campus disponibles après connexion</span>
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-center text-xs">
                       <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                        <div className="text-lg font-extrabold text-white">94.8%</div>
+                        <div className="text-lg font-extrabold text-white">—</div>
                         <div className="text-[10px] text-slate-400">Présence Globale</div>
                       </div>
                       <div className="p-3 bg-slate-900 rounded-xl border border-slate-800">
-                        <div className="text-lg font-extrabold text-teal-400">18 / 22</div>
-                        <div className="text-[10px] text-slate-400">Amphis Occupés</div>
+                        <div className="text-lg font-extrabold text-teal-400">—</div>
+                        <div className="text-[10px] text-slate-400">Occupation des amphis</div>
                       </div>
                     </div>
                   </div>
@@ -583,7 +559,7 @@ export default function LandingPage() {
                 <div className="flex justify-between items-center text-sm font-extrabold text-white">
                   <span>Nombre d'étudiants inscrits :</span>
                   <span className="text-xl font-black text-amber-300 bg-black/20 px-3 py-1 rounded-xl border border-amber-300/30 font-mono">
-                    {studentCount.toLocaleString()} étudiants
+                    {studentCount === null ? 'Saisissez un effectif' : `${studentCount.toLocaleString()} étudiants`}
                   </span>
                 </div>
                 <input
@@ -591,7 +567,7 @@ export default function LandingPage() {
                   min="200"
                   max="25000"
                   step="100"
-                  value={studentCount}
+                  value={studentCount ?? 200}
                   onChange={e => setStudentCount(Number(e.target.value))}
                   className="w-full h-3 bg-white/30 rounded-lg appearance-none cursor-pointer accent-amber-400"
                 />
@@ -605,21 +581,21 @@ export default function LandingPage() {
               {/* Calculated Outputs */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
                 <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-md border border-white/25 shadow-md">
-                  <div className="text-3xl font-black text-amber-300 font-mono">{paperSavedSheets.toLocaleString()}</div>
+                  <div className="text-3xl font-black text-amber-300 font-mono">{paperSavedSheets === null ? '—' : paperSavedSheets.toLocaleString()}</div>
                   <div className="text-xs font-extrabold text-blue-100 uppercase tracking-wider mt-1">Feuilles de papier / an économisées</div>
-                  <div className="text-[10px] text-emerald-200 mt-1 font-bold">🍃 Soit env. {treesSaved} arbres préservés</div>
+                  <div className="text-[10px] text-emerald-200 mt-1 font-bold">{treesSaved === null ? 'Résultat après saisie' : `Soit env. ${treesSaved} arbres préservés`}</div>
                 </div>
 
                 <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-md border border-white/25 shadow-md">
-                  <div className="text-3xl font-black text-teal-300 font-mono">{hoursSavedPerSemester.toLocaleString()} h</div>
+                  <div className="text-3xl font-black text-teal-300 font-mono">{hoursSavedPerSemester === null ? '—' : `${hoursSavedPerSemester.toLocaleString()} h`}</div>
                   <div className="text-xs font-extrabold text-blue-100 uppercase tracking-wider mt-1">Heures de cours gagnées / sem</div>
                   <div className="text-[10px] text-teal-200 mt-1 font-bold">⚡ Prise d'appel QR code instantanée</div>
                 </div>
 
                 <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-md border border-white/25 shadow-md">
-                  <div className="text-3xl font-black text-white font-mono">100%</div>
+                  <div className="text-3xl font-black text-white font-mono">—</div>
                   <div className="text-xs font-extrabold text-blue-100 uppercase tracking-wider mt-1">Numérisation des bulletins & PV</div>
-                  <div className="text-[10px] text-blue-200 mt-1 font-bold">🔒 Sécurité & archivage garanti</div>
+                  <div className="text-[10px] text-blue-200 mt-1 font-bold">Disponible après connexion à un campus</div>
                 </div>
               </div>
             </div>
@@ -701,48 +677,16 @@ export default function LandingPage() {
         </div>
       </AnimatedSection>
 
-      {/* ── Testimonials Section ── */}
-      <section className="bg-[#f8fafc] py-24 border-b border-slate-200">
-        <div className="mx-auto max-w-[1920px] px-6 lg:px-12">
-          <div className="text-center mb-16 space-y-3">
-            <ScrollFloat
-              containerClassName="text-3xl sm:text-5xl font-black text-[#0f172a]"
-              animationDuration={0.8}
-              stagger={0.02}
-            >
-              Ce qu'en disent les Utilisateurs du Campus
-            </ScrollFloat>
+      {/* ── Verified feedback Section ── */}
+      <section className="bg-[#f8fafc] py-20 border-b border-slate-200">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 shadow-sm">
+            <Award className="mx-auto h-10 w-10 text-[#0d9488]" />
+            <h2 className="mt-4 text-2xl font-black text-slate-900">Retours utilisateurs vérifiés</h2>
+            <p className="mt-3 text-sm leading-relaxed text-slate-600">
+              Cette section sera alimentée uniquement par des retours consentis et vérifiables depuis des comptes UniFlow réels.
+            </p>
           </div>
-
-          <motion.div
-            variants={staggerContainer}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid gap-8 md:grid-cols-3"
-          >
-            {testimonials.map((test, idx) => (
-              <AnimatedItem key={idx}>
-                <Card hover className="h-full space-y-6 p-7 rounded-3xl border-2 border-slate-200/80 bg-white shadow-md">
-                  <div className="flex gap-1">
-                    {[...Array(test.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-slate-700 text-sm leading-relaxed font-medium italic">"{test.text}"</p>
-                  <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                    <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-700 to-teal-600 text-white font-black text-base shadow-xs">
-                      {test.avatar}
-                    </div>
-                    <div>
-                      <p className="text-sm font-extrabold text-slate-900">{test.name}</p>
-                      <p className="text-xs font-semibold text-slate-500">{test.role}</p>
-                    </div>
-                  </div>
-                </Card>
-              </AnimatedItem>
-            ))}
-          </motion.div>
         </div>
       </section>
 
