@@ -269,7 +269,7 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
   const cleanPath = path.startsWith('/') ? path : `/${path}`
   const requestPath = cleanPath.startsWith('/api/')
     ? cleanPath
-    : `/api/v1${cleanPath}`
+    : `/api${cleanPath}`
   if (!cleanBase) {
     throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
   }
