@@ -269,7 +269,7 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
   const cleanPath = path.startsWith('/') ? path : `/${path}`
   const requestPath = cleanPath.startsWith('/api/')
     ? cleanPath
-    : accountType === 'PERSONAL' ? `/api/v1${cleanPath}` : cleanPath
+    : `/api/v1${cleanPath}`
   if (!cleanBase) {
     throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
   }
@@ -280,10 +280,6 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
 
   try {
     const res = await fetch(url, { ...init, headers, signal: controller.signal })
-
-    if (res.status === 404 && accountType === 'UNIVERSITY' && !triedApiPrefix && !cleanPath.startsWith('/api/')) {
-      return req<T>(`/api${cleanPath}`, init, retry, true)
-    }
 
     if (res.status === 401 && retry) {
       if (cleanPath.startsWith('/auth/login') || cleanPath.startsWith('/auth/register') || cleanPath.startsWith('/auth/refresh')) {
@@ -351,7 +347,7 @@ async function doRefresh(): Promise<boolean> {
     if (!r) return false
     try {
       const activeBase = getActiveApiUrl().replace(/\/+$/, '')
-      const refreshPath = getAccountType() === 'PERSONAL' ? '/api/v1/auth/refresh' : '/auth/refresh'
+      const refreshPath = '/api/v1/auth/refresh'
       const res = await fetch(`${activeBase}${refreshPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
