@@ -267,9 +267,9 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
   }
   const cleanBase = (baseOverride ?? getActiveApiUrl()).replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
-  const requestPath = cleanPath.startsWith('/api/')
-    ? cleanPath
-    : `/api${cleanPath}`
+  // Les endpoints métier sont désormais canoniques à la racine.
+  // Les appels explicites `/api/*` et `/api/v1/*` restent transmis aux alias backend.
+  const requestPath = cleanPath
   if (!cleanBase) {
     throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
   }
@@ -349,7 +349,7 @@ async function doRefresh(baseOverride?: string): Promise<boolean> {
     if (!r) return false
     try {
       const activeBase = (baseOverride ?? getActiveApiUrl()).replace(/\/+$/, '')
-      const refreshPath = '/api/v1/auth/refresh'
+      const refreshPath = '/auth/refresh'
       const res = await fetch(`${activeBase}${refreshPath}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
