@@ -3,32 +3,15 @@ import { Badge } from '../components/ui/Badge'
 import { BookOpen, Clock, TrendingUp, UserCheck, ClipboardList } from 'lucide-react'
 import { useApi } from '../hooks/useApi'
 import { statsApi, getAccountType } from '../lib/api'
+import { useUserRole } from '../utils/userRole'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 
-const schedule = [
-  { time: '08h30 – 10h00', course: 'Mathématiques', teacher: 'Dr. Martin', room: 'A204', type: 'Cours', status: 'Terminé' as const },
-  { time: '10h15 – 11h45', course: 'Économie',      teacher: 'Pr. Dubois', room: 'B101', type: 'TD',    status: 'Terminé' as const },
-  { time: '13h30 – 15h00', course: 'Histoire',       teacher: 'Dr. Bernard',room: 'C203', type: 'Cours', status: 'À venir' as const },
-  { time: '15h15 – 16h45', course: 'Physique',       teacher: 'Dr. Lefèvre', room: 'B202', type: 'TD',   status: 'À venir' as const },
-  { time: '17h00 – 18h30', course: 'Anglais',        teacher: 'Mme Johnson', room: 'A105', type: 'Cours', status: 'À venir' as const },
-]
-
-const lateHomework = [
-  { title: 'Économie — TD 3', due: '09 mai 2024' },
-  { title: 'Maths — Devoir 2', due: '10 mai 2024' },
-]
-
-const quickStats = [
-  { label: 'Cours inscrits', value: '12', change: '↑8%', icon: BookOpen, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
-  { label: 'Devoirs à rendre', value: '5', change: '↑1', icon: ClipboardList, color: 'text-[#d97706]', bg: 'bg-[#fef3c7]' },
-  { label: 'Prochain cours', value: '2h30', change: '+15m', icon: Clock, color: 'text-[#0d9488]', bg: 'bg-[#f0fdfa]' },
-  { label: 'Moyenne', value: '14.6/20', change: '+0.6', icon: TrendingUp, color: 'text-[#7c3aed]', bg: 'bg-[#ede9fe]' },
-  { label: 'Présences', value: '87%', change: '+5%', icon: UserCheck, color: 'text-[#059669]', bg: 'bg-[#d1fae5]' },
-]
+const schedule: Array<{ time: string; course: string; teacher: string; room: string; type: string; status: 'Terminé' | 'À venir' }> = []
 
 export default function DashboardCompactPage() {
   const { data: overview } = useApi(() => statsApi.overview())
+  const { currentUser } = useUserRole()
 
   const now = new Date()
   const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1)
@@ -40,17 +23,14 @@ export default function DashboardCompactPage() {
   const examDate = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000)
   const examFormatted = capitalize(examDate.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }))
 
-  const lateHomework = [
-    { title: 'Économie — TD 3', due: yesterdayFormatted },
-    { title: 'Maths — Devoir 2', due: twoDaysAgoFormatted },
-  ]
+  const lateHomework: Array<{ title: string; due: string }> = []
 
   const quickStats = [
-    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '...', change: '↑8%', icon: BookOpen, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
-    { label: 'Devoirs à rendre', value: '5', change: '↑1', icon: ClipboardList, color: 'text-[#d97706]', bg: 'bg-[#fef3c7]' },
-    { label: 'Prochain cours', value: '2h30', change: '+15m', icon: Clock, color: 'text-[#0d9488]', bg: 'bg-[#f0fdfa]' },
-    { label: 'Moyenne', value: '14.6/20', change: '+0.6', icon: TrendingUp, color: 'text-[#7c3aed]', bg: 'bg-[#ede9fe]' },
-    { label: 'Présences', value: '87%', change: '+5%', icon: UserCheck, color: 'text-[#059669]', bg: 'bg-[#d1fae5]' },
+    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '—', change: '—', icon: BookOpen, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
+    { label: 'Devoirs à rendre', value: overview?.assignmentCount == null ? '—' : `${overview.assignmentCount}`, change: '—', icon: ClipboardList, color: 'text-[#d97706]', bg: 'bg-[#fef3c7]' },
+    { label: 'Prochain cours', value: '—', change: '—', icon: Clock, color: 'text-[#0d9488]', bg: 'bg-[#f0fdfa]' },
+    { label: 'Moyenne', value: overview?.averageGrade == null ? '—' : `${overview.averageGrade}/20`, change: '—', icon: TrendingUp, color: 'text-[#7c3aed]', bg: 'bg-[#ede9fe]' },
+    { label: 'Présences', value: overview?.attendanceRate == null ? '—' : `${overview.attendanceRate}%`, change: '—', icon: UserCheck, color: 'text-[#059669]', bg: 'bg-[#d1fae5]' },
   ]
 
   return (
@@ -59,7 +39,7 @@ export default function DashboardCompactPage() {
       <div className="flex items-center justify-between rounded-xl bg-white border border-[#e5e7eb] px-5 py-4 shadow-sm">
         <div>
           <h1 className="text-lg font-bold text-[#111827]">Cours du jour — {todayFormatted}</h1>
-          <p className="text-xs text-[#6b7280] mt-0.5">Emma Martin · Étudiante · L2 Info</p>
+          <p className="text-xs text-[#6b7280] mt-0.5">{currentUser.name} · {currentUser.roleLabel}{currentUser.filiere ? ` · ${currentUser.filiere}` : ''}</p>
         </div>
         <Link to="/app" className="text-sm font-medium text-[#1e3a8a] hover:underline">← Vue principale</Link>
       </div>
