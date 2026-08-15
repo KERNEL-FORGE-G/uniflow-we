@@ -12,19 +12,9 @@ interface Session {
   active: boolean
 }
 
-const activeSessions: Session[] = [
-  { id: '1', user: 'Admin Principal', role: 'Admin',      ip: '192.168.1.100', device: 'Chrome / Windows 11', location: 'Yaoundé, CM', lastActive: 'En cours',    active: true },
-  { id: '2', user: 'Dr. Kamga',       role: 'Enseignant', ip: '192.168.1.45',  device: 'Firefox / macOS',     location: 'Yaoundé, CM', lastActive: 'Il y a 5 min', active: true },
-  { id: '3', user: 'Emma Martin',     role: 'Étudiant',   ip: '41.202.219.33', device: 'Mobile / Android',    location: 'Douala, CM',  lastActive: 'Il y a 12 min',active: true },
-  { id: '4', user: 'Lucas Dubois',    role: 'Délégué',    ip: '192.168.1.78',  device: 'Chrome / Ubuntu',     location: 'Yaoundé, CM', lastActive: 'Il y a 20 min',active: true },
-]
+const activeSessions: Session[] = []
 
-const securityAlerts = [
-  { id: '1', type: 'warning', message: '3 tentatives de connexion échouées — emma@uniflow.edu', time: 'Il y a 1h', resolved: false },
-  { id: '2', type: 'info',    message: 'Connexion depuis un nouvel appareil — Dr. Kamga', time: 'Il y a 2h', resolved: false },
-  { id: '3', type: 'success', message: 'Sauvegarde chiffrée complétée avec succès', time: 'Ce matin', resolved: true },
-  { id: '4', type: 'warning', message: 'IP suspecte détectée — 41.202.219.33', time: 'Hier', resolved: true },
-]
+const securityAlerts: Array<{ id: string; type: 'warning' | 'info' | 'success'; message: string; time: string; resolved: boolean }> = []
 
 export default function AdminSecurityPage() {
   const [sessions, setSessions] = useState<Session[]>(activeSessions)
@@ -89,8 +79,8 @@ export default function AdminSecurityPage() {
             <h2 className="text-sm font-bold text-emerald-800">Score de sécurité</h2>
           </div>
           <div className="text-center">
-            <div className="text-5xl font-black text-emerald-600 stat-number">87</div>
-            <p className="text-sm text-emerald-700 font-semibold mt-1">/ 100 — Bon</p>
+            <div className="text-5xl font-black text-slate-400 stat-number">—</div>
+            <p className="text-sm text-slate-500 font-semibold mt-1">Score disponible après connexion au journal de sécurité</p>
           </div>
           <div className="mt-4 space-y-2">
             {[
@@ -241,11 +231,7 @@ export default function AdminSecurityPage() {
           </button>
         </div>
         <div className="space-y-3">
-          {[
-            { name: 'Clé production', key: 'sk-prod-a8f2b9c3...', created: '01/01/2026', last: '06/08/2026', active: true },
-            { name: 'Clé développement', key: 'sk-dev-x7y8z9a0...', created: '15/06/2025', last: '01/08/2026', active: true },
-            { name: 'Clé webhook', key: 'wk-prod-p1q2r3s4...', created: '10/03/2026', last: 'Jamais', active: false },
-          ].map(k => (
+          {([] as Array<{ name: string; key: string; created: string; last: string; active: boolean }>).map(k => (
             <div key={k.name} className="flex items-center gap-4 rounded-xl border border-[#e5e7eb] p-4 bg-[#f9fafb]">
               <Key className="h-5 w-5 text-[#6b7280] flex-shrink-0" />
               <div className="flex-1 min-w-0">
