@@ -595,10 +595,10 @@ const personalDayToApi: Record<string, string> = {
 const toPersonalCourseDto = (dto: Partial<PersonalCourse>) => ({
   code: dto.code,
   name: dto.title,
-  instructorName: dto.instructor || undefined,
-  credits: dto.credits,
-  colorHex: dto.colorHex,
-  semesterLabel: dto.classroom || undefined,
+  ...(dto.instructor?.trim() ? { instructorName: dto.instructor.trim() } : {}),
+  ...(typeof dto.credits === 'number' && dto.credits > 0 ? { credits: dto.credits } : {}),
+  ...(dto.colorHex?.trim() ? { colorHex: dto.colorHex.trim() } : {}),
+  ...(dto.classroom?.trim() ? { semesterLabel: dto.classroom.trim() } : {}),
 })
 
 const toPersonalScheduleDto = (dto: Partial<PersonalSchedule>) => ({
