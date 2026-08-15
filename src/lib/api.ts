@@ -257,7 +257,7 @@ export class ApiError extends Error {
 
 // ─── Core fetch connecting strictly to the Real Backend ──────────────────────────
 
-async function req<T>(path: string, init: RequestInit = {}, retry = true, triedApiPrefix = false): Promise<T> {
+async function req<T>(path: string, init: RequestInit = {}, retry = true, triedApiPrefix = false, baseOverride?: string): Promise<T> {
   const accountType = getAccountType()
   const token = getToken()
   const headers: Record<string, string> = {
@@ -265,7 +265,7 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...(init.headers as Record<string, string> ?? {}),
   }
-  const cleanBase = getActiveApiUrl().replace(/\/+$/, '')
+  const cleanBase = (baseOverride ?? getActiveApiUrl()).replace(/\/+$/, '')
   const cleanPath = path.startsWith('/') ? path : `/${path}`
   const requestPath = cleanPath.startsWith('/api/')
     ? cleanPath
@@ -291,8 +291,8 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
         throw new ApiError(401, msg)
       }
 
-      const ok = await doRefresh()
-      if (ok) return req<T>(cleanPath, init, false)
+      const ok = await doRefresh(baseOverride)
+      if (ok) return req<T>(cleanPath, init, false, false, baseOverride)
 
       if (token) {
         clearTokens()
@@ -313,8 +313,10 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
       } catch {}
 
       if (res.status === 404) {
-        const backendKind = getAccountType() === 'PERSONAL' ? 'personnel' : 'universitaire'
-        msg = `Route ${cleanPath} introuvable sur le backend ${backendKind} configuré (${cleanBase}). Vérifiez que le service expose cette route et que VITE_${getAccountType() === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'}_API_URL pointe vers la bonne version.`
+        const isPersonalBackend = baseOverride !== undefined || getAccountType() === 'PERSONAL'
+        const backendKind = isPersonalBackend ? 'personnel' : 'universitaire'
+        const variableName = isPersonalBackend ? 'PERSONAL' : 'UNIVERSITY'
+        msg = `Route ${cleanPath} introuvable sur le backend ${backendKind} configuré (${cleanBase}). Vérifiez que le service expose cette route et que VITE_${variableName}_API_URL pointe vers la bonne version.`
       }
 
       throw new ApiError(res.status, msg, body)
@@ -339,14 +341,14 @@ async function req<T>(path: string, init: RequestInit = {}, retry = true, triedA
 
 let _refreshPromise: Promise<boolean> | null = null
 
-async function doRefresh(): Promise<boolean> {
+async function doRefresh(baseOverride?: string): Promise<boolean> {
   if (_refreshPromise) return _refreshPromise
 
   _refreshPromise = (async () => {
     const r = getRefreshToken()
     if (!r) return false
     try {
-      const activeBase = getActiveApiUrl().replace(/\/+$/, '')
+      const activeBase = (baseOverride ?? getActiveApiUrl()).replace(/\/+$/, '')
       const refreshPath = '/api/v1/auth/refresh'
       const res = await fetch(`${activeBase}${refreshPath}`, {
         method: 'POST',
@@ -383,6 +385,20 @@ export const api = {
   patch:  <T>(p: string, b?: unknown) => req<T>(p, { method: 'PATCH',  body: JSON.stringify(b) }),
   put:    <T>(p: string, b?: unknown) => req<T>(p, { method: 'PUT',    body: JSON.stringify(b) }),
   delete: <T>(p: string)              => req<T>(p, { method: 'DELETE' }),
+}
+
+/**
+ * Client explicite du backend personnel. Les écrans indépendants ne doivent
+ * pas dépendre de `uniflow_account_type` pour choisir leur serveur : un état
+ * local absent ou périmé ne doit jamais envoyer `/personal/*` au backend
+ * universitaire.
+ */
+const personalApiClient = {
+  get:    <T>(p: string)              => req<T>(p, {}, true, false, PERSONAL_API_URL),
+  post:   <T>(p: string, b?: unknown) => req<T>(p, { method: 'POST', body: JSON.stringify(b) }, true, false, PERSONAL_API_URL),
+  put:    <T>(p: string, b?: unknown) => req<T>(p, { method: 'PUT', body: JSON.stringify(b) }, true, false, PERSONAL_API_URL),
+  patch:  <T>(p: string, b?: unknown) => req<T>(p, { method: 'PATCH', body: JSON.stringify(b) }, true, false, PERSONAL_API_URL),
+  delete: <T>(p: string)              => req<T>(p, { method: 'DELETE' }, true, false, PERSONAL_API_URL),
 }
 
 // ─── Unwrap (TransformInterceptor → { data: T }) ──────────────────────────────
@@ -617,28 +633,28 @@ const toPersonalTaskDto = (dto: Partial<PersonalAssignment>) => ({
 
 export const personalApi = {
   courses: {
-    list: async () => u(await api.get<{ data: PersonalCourse[] }>('/personal/subjects')),
-    create: async (dto: Omit<PersonalCourse, 'id' | 'createdAt'>) => u(await api.post<{ data: PersonalCourse }>('/personal/subjects', toPersonalCourseDto(dto))),
-    update: async (id: string, dto: Partial<PersonalCourse>) => u(await api.put<{ data: PersonalCourse }>(`/personal/subjects/${id}`, toPersonalCourseDto(dto))),
-    delete: async (id: string) => u(await api.delete<void>(`/personal/subjects/${id}`)),
+    list: async () => u(await personalApiClient.get<{ data: PersonalCourse[] }>('/personal/subjects')),
+    create: async (dto: Omit<PersonalCourse, 'id' | 'createdAt'>) => u(await personalApiClient.post<{ data: PersonalCourse }>('/personal/subjects', toPersonalCourseDto(dto))),
+    update: async (id: string, dto: Partial<PersonalCourse>) => u(await personalApiClient.put<{ data: PersonalCourse }>(`/personal/subjects/${id}`, toPersonalCourseDto(dto))),
+    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/subjects/${id}`)),
   },
   schedules: {
-    list: async () => u(await api.get<{ data: PersonalSchedule[] }>('/personal/schedules')),
-    create: async (dto: Omit<PersonalSchedule, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => u(await api.post<{ data: PersonalSchedule }>('/personal/schedules', toPersonalScheduleDto(dto))),
-    update: async (id: string, dto: Partial<PersonalSchedule>) => u(await api.put<{ data: PersonalSchedule }>(`/personal/schedules/${id}`, toPersonalScheduleDto(dto))),
-    delete: async (id: string) => u(await api.delete<void>(`/personal/schedules/${id}`)),
+    list: async () => u(await personalApiClient.get<{ data: PersonalSchedule[] }>('/personal/schedules')),
+    create: async (dto: Omit<PersonalSchedule, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => u(await personalApiClient.post<{ data: PersonalSchedule }>('/personal/schedules', toPersonalScheduleDto(dto))),
+    update: async (id: string, dto: Partial<PersonalSchedule>) => u(await personalApiClient.put<{ data: PersonalSchedule }>(`/personal/schedules/${id}`, toPersonalScheduleDto(dto))),
+    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/schedules/${id}`)),
   },
   assignments: {
-    list: async () => u(await api.get<{ data: PersonalAssignment[] }>('/personal/tasks')),
-    create: async (dto: Omit<PersonalAssignment, 'id'>) => u(await api.post<{ data: PersonalAssignment }>('/personal/tasks', toPersonalTaskDto(dto))),
-    update: async (id: string, dto: Partial<PersonalAssignment>) => u(await api.put<{ data: PersonalAssignment }>(`/personal/tasks/${id}`, toPersonalTaskDto(dto))),
-    delete: async (id: string) => u(await api.delete<void>(`/personal/tasks/${id}`)),
+    list: async () => u(await personalApiClient.get<{ data: PersonalAssignment[] }>('/personal/tasks')),
+    create: async (dto: Omit<PersonalAssignment, 'id'>) => u(await personalApiClient.post<{ data: PersonalAssignment }>('/personal/tasks', toPersonalTaskDto(dto))),
+    update: async (id: string, dto: Partial<PersonalAssignment>) => u(await personalApiClient.put<{ data: PersonalAssignment }>(`/personal/tasks/${id}`, toPersonalTaskDto(dto))),
+    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/tasks/${id}`)),
   },
   grades: {
-    list: async () => u(await api.get<{ data: PersonalGrade[] }>('/personal/grades')),
-    create: async (dto: Omit<PersonalGrade, 'id'>) => u(await api.post<{ data: PersonalGrade }>('/personal/grades', { ...dto, subjectId: dto.courseId })),
-    update: async (id: string, dto: Partial<PersonalGrade>) => u(await api.put<{ data: PersonalGrade }>(`/personal/grades/${id}`, { ...dto, ...(dto.courseId ? { subjectId: dto.courseId } : {}) })),
-    delete: async (id: string) => u(await api.delete<void>(`/personal/grades/${id}`)),
+    list: async () => u(await personalApiClient.get<{ data: PersonalGrade[] }>('/personal/grades')),
+    create: async (dto: Omit<PersonalGrade, 'id'>) => u(await personalApiClient.post<{ data: PersonalGrade }>('/personal/grades', { ...dto, subjectId: dto.courseId })),
+    update: async (id: string, dto: Partial<PersonalGrade>) => u(await personalApiClient.put<{ data: PersonalGrade }>(`/personal/grades/${id}`, { ...dto, ...(dto.courseId ? { subjectId: dto.courseId } : {}) })),
+    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/grades/${id}`)),
   },
 }
 
