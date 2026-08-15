@@ -23,103 +23,11 @@ interface ForumPost {
   isLiked?: boolean
 }
 
-const INITIAL_POSTS: ForumPost[] = [
-  {
-    id: '1',
-    author: 'KOUAMÉ Jean-Luc',
-    role: 'Délégué',
-    university: 'Université de Yaoundé I — ICT4D',
-    avatarBg: 'bg-blue-600 text-white',
-    verified: true,
-    title: 'La prise de présence QR Code nous fait gagner 20 minutes par cours !',
-    content: 'En tant que délégué du niveau 3 Informatique, faire l\'appel manuellement prenait énormément de temps avant chaque TPE. Avec le scanner QR Code d\'UniFlow, les étudiants flashent leur badge en entrant et le rapport PDF est généré immédiatement pour l\'enseignant. Un vrai soulagement !',
-    rating: 5,
-    likes: 42,
-    date: 'Hier à 14:30',
-    category: 'Prise de Présence',
-    tags: ['QR Code', 'Délégué', 'Gain de Temps']
-  },
-  {
-    id: '2',
-    author: 'Dr. MBARGA Samuel',
-    role: 'Enseignant',
-    university: 'Faculté des Sciences — Département de Mathématiques',
-    avatarBg: 'bg-teal-600 text-white',
-    verified: true,
-    title: 'Une aubaine pour la gestion des notes et la détection d\'anomalies',
-    content: 'La possibilité de saisir les notes en mode offline sur mon ordinateur portable dans les amphis peu couverts par le réseau, puis d\'effectuer la synchronisation automatique dès que je rentre à mon bureau, change complètement la donne. Plus aucune perte de fichier Excel.',
-    rating: 5,
-    likes: 38,
-    date: 'Il y a 2 jours',
-    category: 'Gestion Académique',
-    tags: ['Saisie Notes', 'Offline First', 'Enseignant']
-  },
-  {
-    id: '3',
-    author: 'NGONO Patricia',
-    role: 'Étudiant',
-    university: 'Niveau 2 — Biochimie',
-    avatarBg: 'bg-purple-600 text-white',
-    verified: false,
-    title: 'Je consulte mon emploi du temps même sans connexion Internet',
-    content: 'En début de semestre les emplois du temps bougent souvent. Avec la PWA UniFlow installée sur mon téléphone Android, j\'ai accès instantanément aux salles modifiées même quand je n\'ai plus de crédit data. Merci à l\'équipe KERNEL FORGE pour ce travail formidable.',
-    rating: 5,
-    likes: 29,
-    date: 'Il y a 3 jours',
-    category: 'Emploi du Temps',
-    tags: ['Offline PWA', 'Mobile', 'Étudiant']
-  },
-  {
-    id: '4',
-    author: 'Prof. TCHAMBA Alexis',
-    role: 'Administration',
-    university: 'Doyen Adjoint — Université de Douala',
-    avatarBg: 'bg-[#1e3a8a] text-white',
-    verified: true,
-    title: 'Un outil stratégique pour la gouvernance numérique de nos facultés',
-    content: 'Nous avons testé la démo globale d\'UniFlow avec nos chefs de départements. Les tableaux de bord de présence par filière et les statistiques globales nous offrent une visibilité sans précédent sur le déroulement réel des enseignements.',
-    rating: 5,
-    likes: 56,
-    date: 'Il y a 5 jours',
-    category: 'Gouvernance',
-    tags: ['Statistiques', 'Administration', 'Gouvernance']
-  },
-  {
-    id: '5',
-    author: 'BASSOMPIE Grace',
-    role: 'Étudiant',
-    university: 'Master 1 — Génie Logiciel',
-    avatarBg: 'bg-emerald-600 text-white',
-    verified: true,
-    title: 'Le module Sentinelle IoT apporte un vrai sentiment de sécurité',
-    content: 'Avoir un Kiosque Santé sur le campus capable de prendre les constantes vitale de base (température, tension, SpO2) en toute confidentialité et sans file d\'attente est une innovation fantastique pour les étudiants.',
-    rating: 5,
-    likes: 19,
-    date: 'Il y a 1 semaine',
-    category: 'Sentinelle IoT',
-    tags: ['Santé', 'IoT', 'Campus Care']
-  }
-]
-
 export default function ForumPage() {
-  const [posts, setPosts] = useState<ForumPost[]>(() => {
-    try {
-      const saved = localStorage.getItem('uniflow_forum_posts')
-      return saved ? JSON.parse(saved) : INITIAL_POSTS
-    } catch {
-      return INITIAL_POSTS
-    }
-  })
+  const [posts, setPosts] = useState<ForumPost[]>([])
 
-  // Synchroniser avec localStorage
   const updatePosts = (newPosts: ForumPost[] | ((prev: ForumPost[]) => ForumPost[])) => {
-    setPosts(prev => {
-      const updated = typeof newPosts === 'function' ? newPosts(prev) : newPosts
-      try {
-        localStorage.setItem('uniflow_forum_posts', JSON.stringify(updated))
-      } catch {}
-      return updated
-    })
+    setPosts(prev => typeof newPosts === 'function' ? newPosts(prev) : newPosts)
   }
 
   const [selectedRole, setSelectedRole] = useState<string>('Tous')
@@ -164,7 +72,7 @@ export default function ForumPage() {
       role: authorRole,
       university: university || 'Université de Yaoundé I (Indépendant)',
       avatarBg: authorRole === 'Enseignant' ? 'bg-teal-600 text-white' : authorRole === 'Délégué' ? 'bg-blue-600 text-white' : authorRole === 'Administration' ? 'bg-[#1e3a8a] text-white' : 'bg-purple-600 text-white',
-      verified: true,
+      verified: false,
       title: postTitle,
       content: postContent,
       rating: postRating,
@@ -199,7 +107,7 @@ export default function ForumPage() {
 
   // Stats calculation
   const totalReviews = posts.length
-  const avgRating = (posts.reduce((acc, p) => acc + p.rating, 0) / totalReviews).toFixed(1)
+  const avgRating = totalReviews ? (posts.reduce((acc, p) => acc + p.rating, 0) / totalReviews).toFixed(1) : '—'
   const totalLikes = posts.reduce((acc, p) => acc + p.likes, 0)
 
   return (
@@ -226,7 +134,7 @@ export default function ForumPage() {
           <div className="grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
             <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm text-center">
               <span className="text-2xl font-black text-[#1e3a8a]">{totalReviews}</span>
-              <p className="text-xs text-slate-500 font-medium">Avis Vérifiés Publiés</p>
+              <p className="text-xs text-slate-500 font-medium">Avis publiés dans cette session</p>
             </div>
             <div className="rounded-2xl bg-white border border-slate-200 p-4 shadow-sm text-center">
               <div className="flex items-center justify-center gap-1">
