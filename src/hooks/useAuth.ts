@@ -1,7 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowRole, type UniFlowUser } from '@/lib/appwrite'
-import { setAccountType } from '@/lib/api'
 import { useUserRole } from '@/utils/userRole'
 import type { Role } from '@/utils/userRole'
 
@@ -52,6 +51,10 @@ function persistUser(user: UniFlowUser) {
   localStorage.setItem('uniflow_user', JSON.stringify(user))
 }
 
+function persistAccountType(user: UniFlowUser) {
+  localStorage.setItem('uniflow_account_type', user.accountType)
+}
+
 export function useAuth() {
   const navigate = useNavigate()
   const { setCurrentRole, setAuthUser } = useUserRole()
@@ -64,7 +67,7 @@ export function useAuth() {
     try {
       const user = await loginAccount(payload.email, payload.password, payload.accountType)
       persistUser(user)
-      setAccountType(user.accountType)
+      persistAccountType(user)
       setAuthUser(user)
       setCurrentRole(mapRole(user.role))
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
@@ -91,7 +94,7 @@ export function useAuth() {
         normalizeRole(payload.role),
       )
       persistUser(user)
-      setAccountType(user.accountType)
+      persistAccountType(user)
       setAuthUser(user)
       setCurrentRole(mapRole(user.role))
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}

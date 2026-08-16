@@ -89,6 +89,9 @@ export async function createAccount(email: string, password: string, name: strin
 }
 
 export async function loginAccount(email: string, password: string, accountType: UniFlowAccountType) {
+  // Un client Appwrite ne peut conserver qu’une session email active dans ce flux.
+  // Fermer la session courante permet de changer de compte sans erreur 401/409.
+  try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
   const profile = await appwriteAccount.get()
   const collectionId = accountType === 'PERSONAL' ? 'personal_users' : 'users'
