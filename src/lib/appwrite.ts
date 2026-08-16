@@ -259,7 +259,7 @@ export const personalAppwriteApi = {
     list: async () => (await listPersonalSubjects(storedOwnerId())).map(subjectToCourse),
     create: async (dto: Omit<PersonalCourseRecord, 'id' | 'createdAt'>) => {
       const ownerId = storedOwnerId()
-      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_subjects', ID.unique(), { ownerId, name: dto.title, code: dto.code, title: dto.title, instructor: dto.instructor || '', credits: dto.credits || 0, colorHex: dto.colorHex || '#0d9488', classroom: dto.classroom || '', description: dto.description || '' }, ownerPermissions(ownerId))
+      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_subjects', ID.unique(), { ownerId, name: dto.title, code: dto.code, title: dto.title, instructor: dto.instructor || '', credits: dto.credits || 0, colorHex: dto.colorHex || '#0d9488', classroom: dto.classroom || '', description: dto.description || '' })
       return subjectToCourse(doc as Record<string, any>)
     },
     update: async (id: string, dto: Partial<PersonalCourseRecord>) => {
@@ -272,7 +272,7 @@ export const personalAppwriteApi = {
     list: async () => (await listPersonalSchedules(storedOwnerId())).map(scheduleToUi),
     create: async (dto: Omit<PersonalScheduleRecord, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => {
       const ownerId = storedOwnerId()
-      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), { ownerId, ...dto }, ownerPermissions(ownerId))
+      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), { ownerId, ...dto })
       return scheduleToUi(doc as Record<string, any>)
     },
     update: async (id: string, dto: Partial<PersonalScheduleRecord>) => scheduleToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_schedules', id, dto) as Record<string, any>),
@@ -282,7 +282,7 @@ export const personalAppwriteApi = {
     list: async () => (await listPersonalTasks(storedOwnerId())).map(taskToUi),
     create: async (dto: Omit<PersonalAssignmentRecord, 'id'>) => {
       const ownerId = storedOwnerId()
-      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), { ownerId, ...dto }, ownerPermissions(ownerId))
+      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), { ownerId, ...dto })
       return taskToUi(doc as Record<string, any>)
     },
     update: async (id: string, dto: Partial<PersonalAssignmentRecord>) => taskToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_tasks', id, dto) as Record<string, any>),
@@ -292,7 +292,7 @@ export const personalAppwriteApi = {
     list: async () => (await listPersonalGrades(storedOwnerId())).map(gradeToUi),
     create: async (dto: Omit<PersonalGradeRecord, 'id'>) => {
       const ownerId = storedOwnerId()
-      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), { ownerId, subjectId: dto.courseId, courseId: dto.courseId, label: dto.evaluationTitle, evaluationTitle: dto.evaluationTitle, score: String(dto.score), maxScore: String(dto.maxScore), coefficient: String(dto.coefficient) }, ownerPermissions(ownerId))
+      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), { ownerId, subjectId: dto.courseId, courseId: dto.courseId, label: dto.evaluationTitle, evaluationTitle: dto.evaluationTitle, score: String(dto.score), maxScore: String(dto.maxScore), coefficient: String(dto.coefficient) })
       return gradeToUi(doc as Record<string, any>)
     },
     update: async (id: string, dto: Partial<PersonalGradeRecord>) => gradeToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_grades', id, { ...dto, ...(dto.courseId ? { subjectId: dto.courseId } : {}), ...(dto.evaluationTitle ? { label: dto.evaluationTitle } : {}) }) as Record<string, any>),
