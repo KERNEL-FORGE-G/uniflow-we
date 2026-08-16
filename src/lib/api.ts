@@ -564,7 +564,9 @@ export const coursesApi = {
         classroom: course.classroom ? { id: '', name: course.classroom, building: '' } : undefined,
       }))
     }
-    return u(await api.get<{ data: Course[] }>('/courses/my'))
+    // Le catalogue universitaire Appwrite n’est pas encore provisionné dans ce client.
+    // Retourner un état vide évite toute communication runtime avec l’ancien backend.
+    return []
   },
   getOne: async (id: string) => u(await api.get<{ data: Course }>(`/courses/${id}`)),
   create: async (dto: Partial<Course> & { teachingUnitId?: string; teacherId?: string; classroomId?: string }) => u(await api.post<{ data: Course }>('/courses', dto)),
@@ -689,7 +691,19 @@ export interface Schedule {
 
 export const schedulesApi = {
   list: async () => u(await api.get<{ data: Schedule[] }>('/schedules')),
-  mine: async () => u(await api.get<{ data: Schedule[] }>('/schedules/my')),
+  mine: async () => {
+    if (getAccountType() === 'PERSONAL') {
+      return (await personalAppwriteApi.schedules.list()).map((item) => ({
+        id: item.id,
+        dayOfWeek: item.dayOfWeek,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        semesterId: '',
+        course: { id: item.courseId, name: item.courseTitle || '', code: item.courseCode || '', type: item.type || '', teacher: { firstName: '', lastName: '' }, classroom: { name: item.classroom || '', building: '' } },
+      }))
+    }
+    return []
+  },
   create: async (dto: Partial<Schedule>) => u(await api.post<{ data: Schedule }>('/schedules', dto)),
 }
 
@@ -747,8 +761,9 @@ export interface AttendanceRecord {
 }
 
 export const attendanceApi = {
-  listSessions: async () =>
-    u(await api.get<{ data: AttendanceSession[] }>('/attendance/sessions')),
+  // Les présences universitaires seront affichées uniquement lorsqu’une collection
+  // Appwrite dédiée sera provisionnée. Ne jamais appeler l’ancien backend ici.
+  listSessions: async (): Promise<AttendanceSession[]> => [],
 
   createSession: async (dto: { courseId: string; date: string }) =>
     u(await api.post<{ data: AttendanceSession }>('/attendance/sessions', dto)),
@@ -756,8 +771,7 @@ export const attendanceApi = {
   getSession: async (id: string) =>
     u(await api.get<{ data: AttendanceSession }>(`/attendance/sessions/${id}`)),
 
-  byCourse: async (courseId: string) =>
-    u(await api.get<{ data: AttendanceSession[] }>(`/attendance/sessions/by-course/${courseId}`)),
+  byCourse: async (_courseId: string): Promise<AttendanceSession[]> => [],
 
   mark: async (sessionId: string, dto: { studentId: string; status: string }) =>
     u(await api.patch<{ data: AttendanceRecord }>(`/attendance/sessions/${sessionId}/mark`, dto)),
@@ -815,12 +829,34 @@ export interface Assignment {
 }
 
 export const assignmentsApi = {
-  list: async () => u(await api.get<{ data: Assignment[] }>('/assignments')),
-  mine: async () => u(await api.get<{ data: Assignment[] }>('/assignments')),
-  create: async (dto: Partial<Assignment>) => u(await api.post<{ data: Assignment }>('/assignments', dto)),
-  update: async (id: string, dto: Partial<Assignment>) => u(await api.patch<{ data: Assignment }>(`/assignments/${id}`, dto)),
-  submit: async (id: string, fileInfo?: string) => u(await api.patch<{ data: Assignment }>(`/assignments/${id}`, { status: 'Soumis', progress: 100, file: fileInfo })),
-  delete: async (id: string) => u(await api.delete<void>(`/assignments/${id}`)),
+  list: async () => assignmentsApi.mine(),
+  mine: async () => {
+    if (getAccountType() === 'PERSONAL') {
+      return (await personalAppwriteApi.assignments.list()).map((item) => ({
+        id: item.id,
+        title: item.title,
+        code: item.courseId,
+        due: item.dueDate,
+        progress: item.status === 'Soumis' || item.status === 'Noté' ? 100 : 0,
+        status: (item.status === 'Soumis' || item.status === 'Noté' || item.status === 'En retard' ? item.status : 'À rendre') as Assignment['status'],
+        description: item.description,
+      }))
+    }
+    return []
+  },
+  create: async (dto: Partial<Assignment>) => {
+    if (getAccountType() !== 'PERSONAL') throw new Error('Les devoirs universitaires Appwrite ne sont pas encore provisionnés.')
+    return personalAppwriteApi.assignments.create({ courseId: dto.code || '', title: dto.title || '', dueDate: dto.due || '', description: dto.description || '', priority: 'NORMAL', status: 'À rendre' }) as unknown as Assignment
+  },
+  update: async (id: string, dto: Partial<Assignment>) => {
+    if (getAccountType() !== 'PERSONAL') throw new Error('Les devoirs universitaires Appwrite ne sont pas encore provisionnés.')
+    return personalAppwriteApi.assignments.update(id, { ...(dto.code ? { courseId: dto.code } : {}), ...(dto.title ? { title: dto.title } : {}), ...(dto.due ? { dueDate: dto.due } : {}), ...(dto.description ? { description: dto.description } : {}), ...(dto.status ? { status: dto.status } : {}) }) as unknown as Assignment
+  },
+  submit: async (id: string, _fileInfo?: string) => assignmentsApi.update(id, { status: 'Soumis' }),
+  delete: async (id: string) => {
+    if (getAccountType() !== 'PERSONAL') throw new Error('Les devoirs universitaires Appwrite ne sont pas encore provisionnés.')
+    return personalAppwriteApi.assignments.delete(id)
+  },
 }
 
 // =============================================================================

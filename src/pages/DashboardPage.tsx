@@ -78,9 +78,9 @@ export default function DashboardPage() {
   const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 
   const studentStats = [
-    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? '+1' : '0',    up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
+    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',    up: Boolean(overview?.courseCount),  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
     { label: 'Devoirs à rendre', value: overview ? `${overview.assignmentCount ?? 0}` : '0',       delta: '0',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
-    { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: 'Actif',   up: true,  icon: Clock,         bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/emploi-du-temps' },
+    { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',   up: Boolean(overview?.courseCount),  icon: Clock,         bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/emploi-du-temps' },
     { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: '0',   up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
     { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: '0%',    up: true, icon: UserCheck,     bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/presences' },
   ]
@@ -156,12 +156,6 @@ export default function DashboardPage() {
                 <RoleIcon className="h-3.5 w-3.5" />
                 {roleLabel}
               </span>
-              {currentRole === 'student' && (
-                <span className="flex items-center gap-1 rounded-full bg-emerald-400/20 border border-emerald-400/30 px-3 py-1 text-xs font-semibold text-emerald-300">
-                  <Zap className="h-3 w-3" />
-                  Semestre 2 actif
-                </span>
-              )}
             </div>
           </div>
 
@@ -188,7 +182,6 @@ export default function DashboardPage() {
               className="relative rounded-xl bg-white/10 border border-white/20 p-2.5 text-white hover:bg-white/20 transition-all"
             >
               <Bell className="h-5 w-5" />
-              <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-400" />
             </Link>
           </div>
         </div>
