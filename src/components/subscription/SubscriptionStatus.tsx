@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, ArrowRight } from 'lucide-react'
-import { getAccountType, personalSubscriptionApi, subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
+import type { SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
 
 export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatusType | null>(null)
@@ -11,24 +11,15 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   const navigate = useNavigate()
 
   const fetchStatus = async () => {
-    setLoading(true)
-    setStatusError(null)
-    try {
-      const data = getAccountType() === 'PERSONAL'
-        ? await personalSubscriptionApi.getStatus()
-        : await subscriptionApi.getStatus()
-      setStatus(data)
-    } catch (err) {
-      console.error('Erreur chargement statut abonnement:', err)
-      setStatus(null)
-      setStatusError(err instanceof Error ? err.message : 'Statut indisponible')
-    } finally {
-      setLoading(false)
-    }
+    // The Web client is Appwrite-only. Until an Appwrite subscription
+    // collection/provider is configured, do not call the retired API.
+    setLoading(false)
+    setStatus(null)
+    setStatusError('Le statut d’abonnement n’est pas encore disponible dans Appwrite.')
   }
 
   useEffect(() => {
-    fetchStatus()
+    void fetchStatus()
   }, [])
 
   if (!status && !loading) {
@@ -37,7 +28,7 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-slate-900">Abonnement indisponible</h3>
-            <p className="mt-1 text-xs text-slate-500">Le backend ne fournit pas encore de statut d’abonnement pour ce compte.</p>
+            <p className="mt-1 text-xs text-slate-500">Aucun statut d’abonnement n’est encore fourni par Appwrite pour ce compte.</p>
             {statusError && <p className="mt-1 text-[11px] text-slate-400">{statusError}</p>}
           </div>
           <button onClick={fetchStatus} className="rounded-xl bg-slate-100 p-2.5 text-slate-600 hover:bg-slate-200" title="Actualiser le statut">
