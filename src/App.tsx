@@ -96,7 +96,26 @@ function AccountHomePage() {
 export default function App() {
   useEffect(() => {
     initTheme()
-    pushNotificationService.init()
+    let disposed = false
+
+    const syncWhenOnline = async () => {
+      if (disposed || !navigator.onLine) return
+      await pushNotificationService.update()
+      if (!disposed) {
+        window.dispatchEvent(new CustomEvent('uniflow:network-restored'))
+        window.dispatchEvent(new CustomEvent('uniflow:session-restored'))
+      }
+    }
+
+    pushNotificationService.init().then(() => {
+      // Check once after startup and again whenever the device reconnects.
+      void syncWhenOnline()
+    })
+    window.addEventListener('online', syncWhenOnline)
+    return () => {
+      disposed = true
+      window.removeEventListener('online', syncWhenOnline)
+    }
   }, [])
 
   return (

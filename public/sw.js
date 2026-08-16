@@ -3,7 +3,7 @@
  * Handles Offline Caching, Push Notifications, and Background Sync
  * ============================================================================ */
 
-const CACHE_NAME = 'uniflow-pwa-cache-v2'
+const CACHE_NAME = 'uniflow-pwa-cache-v3'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -38,10 +38,16 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+// Activate a waiting worker when the application confirms it is online.
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
+})
+
 // 3. Fetch Strategy: Network First with Cache Fallback for offline resilience
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
-  if (event.request.url.includes('/api/') || event.request.url.includes('api-uniflow')) return // Let API calls handle network/mock directly
+  // Appwrite/API requests must always reach the network; never cache user data.
+  if (event.request.url.includes('/api/') || event.request.url.includes('appwrite.io') || event.request.url.includes('api-uniflow')) return
 
   event.respondWith(
     fetch(event.request)

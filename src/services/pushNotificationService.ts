@@ -16,6 +16,7 @@ export interface PushNotificationPayload {
 class PushNotificationService {
   private swRegistration: ServiceWorkerRegistration | null = null
   private storageKey = 'uniflow_push_notifications_enabled'
+  private updateBound = false
 
   /**
    * Initialize Service Worker and Push Notification Service
@@ -33,6 +34,12 @@ class PushNotificationService {
 
       this.swRegistration = registration
 
+      // Apply a newly installed worker on the next safe navigation instead of
+      // keeping an obsolete app shell alive indefinitely.
+      navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (this.updateBound) window.location.reload()
+      })
+
       // Listen for updates
       registration.onupdatefound = () => {
         const installingWorker = registration.installing
@@ -49,11 +56,25 @@ class PushNotificationService {
         }
       }
 
+      this.updateBound = true
       console.log('[UniFlow PWA] Service Worker registered successfully:', registration.scope)
       return registration
     } catch (error) {
       console.error('[UniFlow PWA] Service Worker registration failed:', error)
       return null
+    }
+  }
+
+  /** Ask the browser for a fresh service-worker script and app shell. */
+  async update(): Promise<void> {
+    if (!this.swRegistration) {
+      await this.init()
+    }
+    try {
+      await this.swRegistration?.update()
+      this.swRegistration?.waiting?.postMessage({ type: 'SKIP_WAITING' })
+    } catch (error) {
+      console.warn('[UniFlow PWA] Update check failed:', error)
     }
   }
 
