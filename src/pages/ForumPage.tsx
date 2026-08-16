@@ -1,4 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createForumPost, deleteForumPost, listForumPosts, updateForumPostLikes, type ForumPost as AppwriteForumPost } from '../lib/appwrite'
+import { useAuth } from '../hooks/useAuth'
 import { 
   MessageSquare, ThumbsUp, Star, Search, Filter, Plus, ShieldCheck, 
   UserCheck, GraduationCap, CheckCircle, Send, Award, Users, 
@@ -6,25 +8,40 @@ import {
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 
-interface ForumPost {
+type ForumPost = AppwriteForumPost & {
   id: string
   author: string
-  role: 'Étudiant' | 'Enseignant' | 'Délégué' | 'Administration'
-  university: string
   avatarBg: string
   verified: boolean
-  title: string
-  content: string
-  rating: number
-  likes: number
   date: string
-  category: string
-  tags: string[]
   isLiked?: boolean
 }
 
 export default function ForumPage() {
+  const { getCurrentUser } = useAuth()
   const [posts, setPosts] = useState<ForumPost[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    listForumPosts()
+      .then((documents) => {
+        if (!mounted) return
+        setPosts(documents.map((post) => ({
+          ...post,
+          id: post.$id,
+          author: post.authorName,
+          avatarBg: 'bg-blue-600 text-white',
+          verified: Boolean(post.authorId),
+          date: new Date(post.createdAt).toLocaleString('fr-FR'),
+          tags: Array.isArray(post.tags) ? post.tags : [],
+        })))
+      })
+      .catch((err) => mounted && setError(err instanceof Error ? err.message : 'Impossible de charger le forum depuis Appwrite.'))
+      .finally(() => mounted && setLoading(false))
+    return () => { mounted = false }
+  }, [])
 
   const updatePosts = (newPosts: ForumPost[] | ((prev: ForumPost[]) => ForumPost[])) => {
     setPosts(prev => typeof newPosts === 'function' ? newPosts(prev) : newPosts)
@@ -44,50 +61,60 @@ export default function ForumPage() {
   const [postCategory, setPostCategory] = useState('Retour d\'expérience')
   const [postRating, setPostRating] = useState(5)
 
-  const handleLike = (id: string) => {
-    updatePosts(prev => prev.map(p => {
-      if (p.id === id) {
-        return {
-          ...p,
-          likes: p.isLiked ? p.likes - 1 : p.likes + 1,
-          isLiked: !p.isLiked
-        }
-      }
-      return p
-    }))
-  }
-
-  const handleDeletePost = (id: string) => {
-    if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return
-    updatePosts(prev => prev.filter(p => p.id !== id))
-  }
-
-  const handleSubmitPost = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!authorName.trim() || !postTitle.trim() || !postContent.trim()) return
-
-    const newPost: ForumPost = {
-      id: Date.now().toString(),
-      author: authorName,
-      role: authorRole,
-      university: university || 'Université de Yaoundé I (Indépendant)',
-      avatarBg: authorRole === 'Enseignant' ? 'bg-teal-600 text-white' : authorRole === 'Délégué' ? 'bg-blue-600 text-white' : authorRole === 'Administration' ? 'bg-[#1e3a8a] text-white' : 'bg-purple-600 text-white',
-      verified: false,
-      title: postTitle,
-      content: postContent,
-      rating: postRating,
-      likes: 1,
-      isLiked: true,
-      date: 'À l\'instant',
-      category: postCategory,
-      tags: [authorRole, 'Avis']
+  const handleLike = async (id: string) => {
+    const current = posts.find((post) => post.id === id)
+    if (!current) return
+    const nextLikes = current.isLiked ? Math.max(0, current.likes - 1) : current.likes + 1
+    try {
+      await updateForumPostLikes(id, nextLikes)
+      updatePosts(prev => prev.map(post => post.id === id ? { ...post, likes: nextLikes, isLiked: !post.isLiked } : post))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Impossible de mettre à jour la recommandation.')
     }
+  }
 
-    updatePosts(prev => [newPost, ...prev])
-    setShowModal(false)
-    setAuthorName('')
-    setPostTitle('')
-    setPostContent('')
+  const handleDeletePost = async (id: string) => {
+    if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return
+    try {
+      await deleteForumPost(id)
+      updatePosts(prev => prev.filter(p => p.id !== id))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Vous ne pouvez supprimer que vos propres publications.')
+    }
+  }
+
+  const handleSubmitPost = async (e: React.FormEvent) => {
+    e.preventDefault()
+    const user = getCurrentUser()
+    if (!user) {
+      setError('Connectez-vous avec un compte UniFlow pour publier dans le forum.')
+      return
+    }
+    if (!postTitle.trim() || !postContent.trim()) return
+    try {
+      const created = await createForumPost(user, {
+        title: postTitle.trim(),
+        content: postContent.trim(),
+        category: postCategory,
+        rating: postRating,
+        tags: [authorRole, 'Avis'],
+      })
+      const newPost: ForumPost = {
+        ...(created as unknown as AppwriteForumPost),
+        id: created.$id,
+        author: created.authorName,
+        avatarBg: 'bg-blue-600 text-white',
+        verified: true,
+        date: new Date(created.createdAt).toLocaleString('fr-FR'),
+      }
+      updatePosts(prev => [newPost, ...prev])
+      setShowModal(false)
+      setAuthorName('')
+      setPostTitle('')
+      setPostContent('')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'La publication n’a pas pu être enregistrée dans Appwrite.')
+    }
   }
 
   // Filter & Sort Logic
@@ -97,7 +124,7 @@ export default function ForumPage() {
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      post.university.toLowerCase().includes(searchQuery.toLowerCase())
+      (post.university || '').toLowerCase().includes(searchQuery.toLowerCase())
     return matchesRole && matchesSearch
   }).sort((a, b) => {
     if (sortBy === 'popular') return b.likes - a.likes
@@ -211,7 +238,11 @@ export default function ForumPage() {
 
           {/* Posts List */}
           <div className="space-y-4">
-            {filteredPosts.length === 0 ? (
+            {loading ? (
+              <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500">Chargement des publications depuis Appwrite…</div>
+            ) : error ? (
+              <div className="rounded-3xl border border-red-200 bg-red-50 p-12 text-center text-red-700">{error}</div>
+            ) : filteredPosts.length === 0 ? (
               <div className="rounded-3xl border border-slate-200 bg-white p-12 text-center text-slate-500">
                 <MessageSquare className="mx-auto h-12 w-12 text-slate-300 mb-3" />
                 <p className="font-bold text-slate-700 text-sm">Aucun résultat ne correspond à votre recherche.</p>
