@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { Megaphone, FileText, Video, Settings, Star, Trash2, Check, UserCheck } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { AnimatedList } from '../components/ui/AnimatedList'
-import { notificationsApi, type Notification } from '@/lib/api'
-import { useApi } from '@/hooks/useApi'
+import { listAppwriteNotifications, markAppwriteNotificationRead, deleteAppwriteNotification, type AppwriteNotification } from '../lib/appwrite'
+import { useEffect } from 'react'
 import PushNotificationControl from '../components/PushNotificationControl'
 
 const iconMap: Record<string, any> = {
@@ -30,10 +30,27 @@ const tabs = [
   { label: 'Non lues', filter: 'unread' },
 ] as const
 
+type Notification = AppwriteNotification & { id: string; isRead: boolean; message: string }
+
 export default function NotificationsPage() {
-  const { data: notifs = [], loading, refetch } = useApi(() => notificationsApi.list())
+  const [notifs, setNotifs] = useState<Notification[]>([])
+  const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<string>('Tous')
   const [selected, setSelected] = useState<Notification | null>(null)
+
+  const refetch = async () => {
+    setLoading(true)
+    try {
+      const raw = localStorage.getItem('uniflow_user')
+      const user = raw ? JSON.parse(raw) as { id?: string } : null
+      const rows = user?.id ? await listAppwriteNotifications(user.id) : []
+      setNotifs(rows.map(row => ({ ...row, id: row.$id, message: row.message || row.title })))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { void refetch() }, [])
 
   const unreadCount = (notifs ?? []).filter(n => !n.isRead).length
 
@@ -46,21 +63,21 @@ export default function NotificationsPage() {
 
   const markAllRead = async () => {
     // no bulk endpoint: mark each unread as read
-    await Promise.all((notifs ?? []).filter(n => !n.isRead).map(n => notificationsApi.markRead(n.id).catch(() => null)))
+    await Promise.all((notifs ?? []).filter(n => !n.isRead).map(n => markAppwriteNotificationRead(n.id).catch(() => null)))
     refetch()
   }
   const markRead = async (id: string) => {
-    await notificationsApi.markRead(id).catch(() => null)
+    await markAppwriteNotificationRead(id).catch(() => null)
     refetch()
   }
   const deleteNotif = async (id: string) => {
-    await notificationsApi.delete(id).catch(() => null)
+    await deleteAppwriteNotification(id).catch(() => null)
     refetch()
     if (selected && selected.id === id) setSelected(null)
   }
   const acknowledge = async () => {
     if (!selected) return
-    await notificationsApi.markRead(selected.id).catch(() => null)
+    await markAppwriteNotificationRead(selected.id).catch(() => null)
     refetch()
   }
 
