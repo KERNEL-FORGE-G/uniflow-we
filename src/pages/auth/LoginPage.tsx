@@ -244,11 +244,7 @@ export default function LoginPage() {
               <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-xs text-[#1e3a8a] flex items-center gap-2">
                 <Building2 className="h-4 w-4 shrink-0 text-[#1e3a8a]" />
                 <div className="leading-tight">
-                  {accountType === 'UNIVERSITY' ? (
-                    <span>Serveur : <strong>Backend Université ({universityCode})</strong> — <code>https://api-uniflow.kernelforge.codes/</code></span>
-                  ) : (
-                    <span>Serveur : <strong>Backend Indépendant (SaaS)</strong> — <code>https://api2-uniflow.kernelforge.codes/</code></span>
-                  )}
+                  <span>Source : <strong>Appwrite Cloud</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
                 </div>
               </div>
 

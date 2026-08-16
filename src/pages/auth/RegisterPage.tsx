@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, Loader2, CheckCircle, User, Mail, Lock, GraduationCap, BookOpen, Award, ArrowRight, ArrowLeft, Sparkles, ShieldCheck, Building2, UserCheck, FileText } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-import { authApi, type AcademicLevel, type SpecialtyOption } from '../../lib/api'
+type AcademicLevel = { id: string; name: string; programName?: string }
+type SpecialtyOption = { id: string; name: string; levelId?: string }
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { UNIVERSITIES } from '../../data/universities'
 
@@ -68,48 +69,11 @@ export default function RegisterPage() {
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
   useEffect(() => {
-    let mounted = true
-
-    if (accountType === 'PERSONAL') {
-      setAcademicLoading(false)
-      setAcademicError(null)
-      setLevels([])
-      setSpecialties([])
-      setForm(f => ({ ...f, levelId: '', specialtyId: '', matricule: '' }))
-      return () => { mounted = false }
-    }
-
-    const loadAcademicOptions = async () => {
-      setAcademicLoading(true)
-      setAcademicError(null)
-      try {
-        const data = await authApi.academicOptions()
-        if (!mounted) return
-        setLevels(data.levels)
-        setSpecialties(data.specialties)
-        if (data.levels.length > 0) {
-          const firstLevelId = data.levels[0].id
-          const firstSpecialty = data.specialties.find(s => s.levelId === firstLevelId)
-          setForm(f => ({
-            ...f,
-            levelId: firstLevelId,
-            specialtyId: firstSpecialty?.id ?? data.specialties[0]?.id ?? '',
-          }))
-        }
-      } catch (err) {
-        if (!mounted) return
-        setAcademicError(err instanceof Error ? err.message : 'Impossible de charger les options académiques.')
-        setLevels([])
-        setSpecialties([])
-        setForm(f => ({ ...f, levelId: '', specialtyId: '' }))
-      } finally {
-        if (!mounted) return
-        setAcademicLoading(false)
-      }
-    }
-
-    loadAcademicOptions()
-    return () => { mounted = false }
+    setAcademicLoading(false)
+    setAcademicError(null)
+    setLevels([])
+    setSpecialties([])
+    setForm(f => ({ ...f, levelId: '', specialtyId: '', matricule: accountType === 'PERSONAL' ? '' : f.matricule }))
   }, [accountType])
 
   const handleNext = (e: React.FormEvent) => {
@@ -351,11 +315,7 @@ export default function RegisterPage() {
                   <div className="p-3 bg-teal-50/80 rounded-xl border border-teal-200 text-xs text-[#0d9488] flex items-center gap-2">
                     <Building2 className="h-4 w-4 shrink-0" />
                     <div className="leading-tight">
-                      {accountType === 'UNIVERSITY' ? (
-                        <span>Destination : <strong>Backend Université ({universityCode})</strong></span>
-                      ) : (
-                        <span>Destination : <strong>Backend Indépendant (SaaS)</strong></span>
-                      )}
+                      <span>Destination : <strong>Appwrite Cloud</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
                     </div>
                   </div>
 
