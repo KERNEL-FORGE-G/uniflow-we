@@ -6,7 +6,7 @@ import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
 import PushNotificationControl from '../components/PushNotificationControl'
 import { applyTheme, getStoredTheme, ThemeMode } from '../utils/theme'
-import { settingsApi, authApi } from '../lib/api'
+import { authApi } from '../lib/api'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 
 const sections = ['Profil', 'Abonnement', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
@@ -122,21 +122,27 @@ export default function SettingsPage() {
   const [pwdFeedback, setPwdFeedback] = useState('')
 
   useEffect(() => {
-    settingsApi.get().then(s => {
-      if (s.notifications) setNotifications(prev => ({ ...prev, ...s.notifications }))
-      if (s.privacy) setPrivacy(prev => ({ ...prev, ...s.privacy }))
-      if (s.advanced) setAdvanced(prev => ({ ...prev, ...s.advanced }))
-    }).catch(() => null)
+    // Settings are kept locally until the Appwrite preferences collection is
+    // provisioned. Do not call the retired `/settings` backend route.
+    try {
+      const saved = localStorage.getItem('uniflow_settings')
+      if (!saved) return
+      const parsed = JSON.parse(saved) as { notifications?: typeof notifications; privacy?: typeof privacy; advanced?: typeof advanced }
+      if (parsed.notifications) setNotifications(prev => ({ ...prev, ...parsed.notifications }))
+      if (parsed.privacy) setPrivacy(prev => ({ ...prev, ...parsed.privacy }))
+      if (parsed.advanced) setAdvanced(prev => ({ ...prev, ...parsed.advanced }))
+    } catch {
+      // Ignore malformed local preferences and keep safe defaults.
+    }
   }, [])
 
   const handleSave = async () => {
-    // Persist settings to backend API & localStorage
-    await settingsApi.update({
-      notifications,
-      privacy,
-      advanced,
-      language,
-    }).catch(() => null)
+    // Persist preferences locally until the Appwrite preferences collection is available.
+    try {
+      localStorage.setItem('uniflow_settings', JSON.stringify({ notifications, privacy, advanced, language }))
+    } catch {
+      // Keep the UI usable if browser storage is unavailable.
+    }
 
     const nameParts = fullName.trim().split(' ')
     await authApi.updateProfile({

@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosError } from 'axios'
 import { playSuccessSound, playErrorSound } from '../utils/sound'
+import { personalAppwriteApi } from './appwrite'
 
 /**
  * Client API UniFlow avec Axios, Moteur Réseau & Intercepteurs d'Authentification
@@ -548,7 +549,23 @@ export interface Course {
 
 export const coursesApi = {
   list:   async ()          => u(await api.get<{ data: Course[] }>('/courses')),
-  mine:   async ()          => u(await api.get<{ data: Course[] }>('/courses/my')),
+  mine: async () => {
+    if (getAccountType() === 'PERSONAL') {
+      const personalCourses = await personalAppwriteApi.courses.list()
+      return personalCourses.map((course) => ({
+        id: course.id,
+        name: course.title,
+        code: course.code,
+        description: course.description,
+        type: 'CM' as const,
+        credits: course.credits ?? 0,
+        hours: 0,
+        teacher: course.instructor ? { id: '', firstName: course.instructor, lastName: '' } : undefined,
+        classroom: course.classroom ? { id: '', name: course.classroom, building: '' } : undefined,
+      }))
+    }
+    return u(await api.get<{ data: Course[] }>('/courses/my'))
+  },
   getOne: async (id: string) => u(await api.get<{ data: Course }>(`/courses/${id}`)),
   create: async (dto: Partial<Course> & { teachingUnitId?: string; teacherId?: string; classroomId?: string }) => u(await api.post<{ data: Course }>('/courses', dto)),
   update: async (id: string, dto: Partial<Course>) => u(await api.patch<{ data: Course }>(`/courses/${id}`, dto)),
