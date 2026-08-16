@@ -2,9 +2,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { BookOpen, ClipboardList, Clock, TrendingUp, UserCheck, Calendar, Bell, GraduationCap, Megaphone, Video, MessageSquare, BarChart3, ChevronRight, Star, Zap, Users, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
 import { useUserRole } from '../utils/userRole'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, AreaChart, Area } from 'recharts'
-import { useState } from 'react'
-import { useApi } from '../hooks/useApi'
-import { statsApi, getAccountType } from '../lib/api'
+import { useEffect, useState } from 'react'
+import { personalAppwriteApi } from '../lib/appwrite'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 
@@ -56,10 +55,27 @@ export default function DashboardPage() {
   const eventDays: number[] = []
 
   const [activeCalDay, setActiveCalDay] = useState(today)
-  const { data: overview, loading: overviewLoading, error: overviewError, refetch: refetchOverview } = useApi(() => statsApi.overview())
+  const [overview, setOverview] = useState<{ courseCount: number; assignmentCount: number; gradeCount: number; averageGrade: number | null; attendanceRate: number | null; studentCount: number }>({ courseCount: 0, assignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
+  const [overviewLoading, setOverviewLoading] = useState(true)
+  const [overviewError, setOverviewError] = useState<string | null>(null)
 
-  const isPersonal = getAccountType() === 'PERSONAL'
-  const isEmptyData = isPersonal && (overview?.courseCount === 0)
+  const refetchOverview = async () => {
+    setOverviewLoading(true)
+    setOverviewError(null)
+    try {
+      const [courses, assignments, grades] = await Promise.all([personalAppwriteApi.courses.list(), personalAppwriteApi.assignments.list(), personalAppwriteApi.grades.list()])
+      const gradeAverage = grades.length ? grades.reduce((sum, grade) => sum + (Number(grade.score) / Math.max(Number(grade.maxScore), 1)) * 20, 0) / grades.length : null
+      setOverview({ courseCount: courses.length, assignmentCount: assignments.length, gradeCount: grades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: null, studentCount: 0 })
+    } catch (err) {
+      setOverviewError(err instanceof Error ? err.message : 'Impossible de charger les données Appwrite du dashboard.')
+      setOverview({ courseCount: 0, assignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
+    } finally {
+      setOverviewLoading(false)
+    }
+  }
+
+  useEffect(() => { void refetchOverview() }, [])
+  const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 
   const studentStats = [
     { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? '+1' : '0',    up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
@@ -178,6 +194,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {overviewError && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{overviewError}</div>}
       {/* ── Card Statut d'Abonnement / Plan Académique ── */}
       <div className="animate-fade-in">
         <SubscriptionStatus />
