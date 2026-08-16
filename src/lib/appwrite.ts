@@ -236,7 +236,9 @@ function storedOwnerId() {
 }
 
 function ownerPermissions(ownerId: string) {
-  return [Permission.read(Role.user(ownerId)), Permission.create(Role.user(ownerId)), Permission.update(Role.user(ownerId)), Permission.delete(Role.user(ownerId))]
+  // Appwrite interdit Permission.create au niveau d’un document/row.
+  // CREATE doit être accordé au niveau de la collection ; le document reste privé au propriétaire.
+  return [Permission.read(Role.user(ownerId)), Permission.update(Role.user(ownerId)), Permission.delete(Role.user(ownerId))]
 }
 
 function subjectToCourse(doc: Record<string, any>): PersonalCourseRecord {
