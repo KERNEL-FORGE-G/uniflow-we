@@ -78,19 +78,9 @@ export async function createAccount(email: string, password: string, name: strin
   const account = await appwriteAccount.create(ID.unique(), email.trim(), password, name.trim())
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
   const profile = await appwriteAccount.get()
-  try {
-    await appwriteDatabases.createDocument(
-      APPWRITE_DATABASE_ID,
-      accountType === 'PERSONAL' ? 'personal_users' : 'users',
-      profile.$id,
-      { email: profile.email, displayName: profile.name || name.trim(), role },
-      userPermissions(profile.$id),
-    )
-  } catch (error) {
-    // Le compte Auth reste valide même si la collection de profil n’a pas encore sa permission CREATE.
-    // Les écrans utilisent alors un profil minimal et affichent un état incomplet honnête.
-    console.warn('Profil Appwrite non créé : permission de collection à provisionner.', error)
-  }
+  // L’inscription ne dépend pas d’une collection de profil optionnelle :
+  // le compte Auth est la source de vérité immédiate. Le profil sera créé par
+  // le flux de paramètres dès que la collection est provisionnée avec CREATE.
   return normalizeUser(profile, accountType, role)
 }
 
