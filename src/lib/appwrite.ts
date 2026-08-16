@@ -76,6 +76,10 @@ const userPermissions = (userId: string) => [
 
 export async function createAccount(email: string, password: string, name: string, accountType: UniFlowAccountType, role: UniFlowRole) {
   const account = await appwriteAccount.create(ID.unique(), email.trim(), password, name.trim())
+  // Appwrite interdit plusieurs sessions simultanées dans ce flux client :
+  // fermer une session résiduelle permet de terminer une inscription depuis
+  // une page conservée ouverte ou après un changement de compte.
+  try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
   const profile = await appwriteAccount.get()
   // L’inscription ne dépend pas d’une collection de profil optionnelle :
@@ -134,19 +138,19 @@ export async function listPersonalGrades(ownerId: string) {
 }
 
 export async function createPersonalSubject(ownerId: string, data: Omit<PersonalSubject, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_subjects', ID.unique(), { ownerId, ...data }, userPermissions(ownerId))
+  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_subjects', ID.unique(), { ownerId, ...data })
 }
 
 export async function createPersonalTask(ownerId: string, data: Omit<PersonalTask, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), { ownerId, ...data }, userPermissions(ownerId))
+  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), { ownerId, ...data })
 }
 
 export async function createPersonalSchedule(ownerId: string, data: Omit<PersonalSchedule, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), { ownerId, ...data }, userPermissions(ownerId))
+  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), { ownerId, ...data })
 }
 
 export async function createPersonalGrade(ownerId: string, data: Omit<PersonalGrade, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), { ownerId, ...data }, userPermissions(ownerId))
+  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), { ownerId, ...data })
 }
 
 export async function listForumPosts() {
