@@ -12,8 +12,6 @@ import { GlobalSearch } from './GlobalSearch'
 import { cn } from '../../utils/cn'
 import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
-import { notificationsApi } from '../../lib/api'
-import { useApi } from '../../hooks/useApi'
 
 const roleConfig = {
   student:  { badge: 'Étudiant',    icon: GraduationCap, gradient: 'from-[#1e3a8a] to-[#2d4fa8]', bg: 'bg-[#eff3ff]', text: 'text-[#1e3a8a]', dot: 'bg-[#1e3a8a]' },
@@ -34,8 +32,8 @@ export function Sidebar() {
   })
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
   const RoleIcon = role.icon
-  const { data } = useApi(() => isIndependent ? Promise.resolve(0) : notificationsApi.unreadCount(), [isIndependent])
-  const unreadCount = data ?? 0
+  // Aucun compteur backend : les notifications seront alimentées par Appwrite Messaging lorsque le push sera actif.
+  const unreadCount = 0
 
   return (
     <aside className="flex min-h-screen w-[240px] shrink-0 flex-col border-r border-[#e5e7eb] bg-white sticky top-0 self-start shadow-sm sidebar-gradient">
@@ -208,8 +206,8 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const { logout } = useAuth()
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
   const RoleIcon = role.icon
-  const { data } = useApi(() => isIndependent ? Promise.resolve(0) : notificationsApi.unreadCount(), [isIndependent])
-  const unreadCount = data ?? 0
+  // Aucun compteur backend : les notifications seront alimentées par Appwrite Messaging lorsque le push sera actif.
+  const unreadCount = 0
 
   return (
     <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm px-4 sm:px-6 shadow-sm">

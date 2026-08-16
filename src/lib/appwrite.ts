@@ -78,13 +78,19 @@ export async function createAccount(email: string, password: string, name: strin
   const account = await appwriteAccount.create(ID.unique(), email.trim(), password, name.trim())
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
   const profile = await appwriteAccount.get()
-  await appwriteDatabases.createDocument(
-    APPWRITE_DATABASE_ID,
-    accountType === 'PERSONAL' ? 'personal_users' : 'users',
-    profile.$id,
-    { email: profile.email, displayName: profile.name || name.trim(), role },
-    userPermissions(profile.$id),
-  )
+  try {
+    await appwriteDatabases.createDocument(
+      APPWRITE_DATABASE_ID,
+      accountType === 'PERSONAL' ? 'personal_users' : 'users',
+      profile.$id,
+      { email: profile.email, displayName: profile.name || name.trim(), role },
+      userPermissions(profile.$id),
+    )
+  } catch (error) {
+    // Le compte Auth reste valide même si la collection de profil n’a pas encore sa permission CREATE.
+    // Les écrans utilisent alors un profil minimal et affichent un état incomplet honnête.
+    console.warn('Profil Appwrite non créé : permission de collection à provisionner.', error)
+  }
   return normalizeUser(profile, accountType, role)
 }
 
@@ -300,4 +306,30 @@ export const personalAppwriteApi = {
     update: async (id: string, dto: Partial<PersonalGradeRecord>) => gradeToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_grades', id, { ...dto, ...(dto.courseId ? { subjectId: dto.courseId } : {}), ...(dto.evaluationTitle ? { label: dto.evaluationTitle } : {}) }) as Record<string, any>),
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_grades', id) },
   },
+}
+
+export type AppwriteNotification = {
+  $id: string
+  ownerId: string
+  type: string
+  title: string
+  message: string
+  isRead: boolean
+  createdAt: string
+}
+
+export async function listAppwriteNotifications(ownerId: string) {
+  try {
+    return await listDocuments<AppwriteNotification>('notifications', [Query.equal('ownerId', ownerId), Query.orderDesc('$createdAt'), Query.limit(100)])
+  } catch {
+    return []
+  }
+}
+
+export async function markAppwriteNotificationRead(id: string) {
+  return appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'notifications', id, { isRead: true })
+}
+
+export async function deleteAppwriteNotification(id: string) {
+  return appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'notifications', id)
 }

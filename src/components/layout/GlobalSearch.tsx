@@ -2,7 +2,11 @@ import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, BookOpen, ClipboardList, Building2, X, ArrowRight, CornerDownLeft, Sparkles, Filter } from 'lucide-react'
 import { useUserRole } from '../../utils/userRole'
-import { coursesApi, assignmentsApi, classroomsApi, personalApi, Course, Assignment, Classroom, PersonalCourse, PersonalAssignment } from '../../lib/api'
+import { personalAppwriteApi, type PersonalCourseRecord, type PersonalAssignmentRecord } from '../../lib/appwrite'
+
+type Course = PersonalCourseRecord & { name: string; type?: string; teachingUnit?: { name?: string }; teacher?: { firstName?: string; lastName?: string }; classroom?: { name?: string } }
+type Assignment = PersonalAssignmentRecord & { code?: string; status?: string; due?: string }
+type Classroom = { id: string; name: string; building?: string; type?: string; capacity?: number; isAvailable?: boolean }
 import { cn } from '../../utils/cn'
 
 type CategoryFilter = 'all' | 'courses' | 'assignments' | 'classrooms'
@@ -27,15 +31,14 @@ function UniversityGlobalSearch() {
     const fetchData = async () => {
       setLoading(true)
       try {
-        const [cList, aList, clList] = await Promise.all([
-          coursesApi.list().catch(() => []),
-          assignmentsApi.mine().catch(() => []),
-          classroomsApi.list().catch(() => [])
+        const [cList, aList] = await Promise.all([
+          personalAppwriteApi.courses.list().catch(() => []),
+          personalAppwriteApi.assignments.list().catch(() => []),
         ])
         if (isMounted) {
-          setCourses(cList ?? [])
+          setCourses((cList ?? []).map(course => ({ ...course, name: course.title })))
           setAssignments(aList ?? [])
-          setClassrooms(clList ?? [])
+          setClassrooms([])
         }
       } catch (err) {
         console.error('Search data fetch error:', err)
@@ -267,7 +270,7 @@ function UniversityGlobalSearch() {
           {totalResults === 0 && trimmed ? (
             <div className="py-8 text-center">
               <p className="text-sm font-semibold text-[#374151]">Aucun résultat trouvé pour "{query}"</p>
-              <p className="text-xs text-[#6b7280] mt-1">Essayez avec le code d'un cours (ex: INFO101), le nom d'un devoir ou une salle (ex: Amphi 500).</p>
+              <p className="text-xs text-[#6b7280] mt-1">Essayez avec le code d’un cours ou le nom d’un devoir enregistré dans votre espace Appwrite.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -446,8 +449,8 @@ function PersonalGlobalSearch() {
   const { language } = useUserRole()
   const [query, setQuery] = useState('')
   const [isOpen, setIsOpen] = useState(false)
-  const [courses, setCourses] = useState<PersonalCourse[]>([])
-  const [assignments, setAssignments] = useState<PersonalAssignment[]>([])
+  const [courses, setCourses] = useState<PersonalCourseRecord[]>([])
+  const [assignments, setAssignments] = useState<PersonalAssignmentRecord[]>([])
   const [loading, setLoading] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -455,7 +458,7 @@ function PersonalGlobalSearch() {
   useEffect(() => {
     let mounted = true
     setLoading(true)
-    Promise.all([personalApi.courses.list(), personalApi.assignments.list()])
+    Promise.all([personalAppwriteApi.courses.list(), personalAppwriteApi.assignments.list()])
       .then(([courseData, assignmentData]) => {
         if (!mounted) return
         setCourses(courseData ?? [])
