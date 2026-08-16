@@ -75,11 +75,10 @@ const userPermissions = (userId: string) => [
 ]
 
 export async function createAccount(email: string, password: string, name: string, accountType: UniFlowAccountType, role: UniFlowRole) {
-  const account = await appwriteAccount.create(ID.unique(), email.trim(), password, name.trim())
-  // Appwrite interdit plusieurs sessions simultanées dans ce flux client :
-  // fermer une session résiduelle permet de terminer une inscription depuis
-  // une page conservée ouverte ou après un changement de compte.
+  // Appwrite peut refuser la séquence Auth si le navigateur possède encore
+  // une session active. La fermeture doit précéder account.create, pas suivre.
   try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
+  const account = await appwriteAccount.create(ID.unique(), email.trim(), password, name.trim())
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
   const profile = await appwriteAccount.get()
   // L’inscription ne dépend pas d’une collection de profil optionnelle :
