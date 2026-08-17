@@ -3,7 +3,7 @@
  * Handles Offline Caching, Push Notifications, and Background Sync
  * ============================================================================ */
 
-const CACHE_NAME = 'uniflow-pwa-cache-v3'
+const CACHE_NAME = 'uniflow-pwa-cache-v4'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -49,8 +49,13 @@ self.addEventListener('fetch', (event) => {
   // Appwrite/API requests must always reach the network; never cache user data.
   if (event.request.url.includes('/api/') || event.request.url.includes('appwrite.io') || event.request.url.includes('api-uniflow')) return
 
+  const isAppShellRequest = event.request.mode === 'navigate' || ['script', 'style'].includes(event.request.destination)
+  const networkRequest = isAppShellRequest
+    ? new Request(event.request, { cache: 'no-store' })
+    : event.request
+
   event.respondWith(
-    fetch(event.request)
+    fetch(networkRequest)
       .then((networkResponse) => {
         if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
           const responseToCache = networkResponse.clone()

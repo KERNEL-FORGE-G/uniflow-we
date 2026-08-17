@@ -29,7 +29,8 @@ class PushNotificationService {
 
     try {
       const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+        scope: '/',
+        updateViaCache: 'none',
       })
 
       this.swRegistration = registration
