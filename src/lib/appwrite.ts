@@ -124,19 +124,51 @@ export async function listDocuments<T>(collectionId: string, queries: string[] =
 }
 
 export async function listPersonalSubjects(ownerId: string) {
-  return listDocuments<PersonalSubject>('personal_subjects', [Query.equal('ownerId', ownerId), Query.orderDesc('$createdAt')])
+  return listPersonalCollection<PersonalSubject>('subjects', ownerId, 'personal_subjects', [Query.equal('ownerId', ownerId), Query.orderDesc('$createdAt')])
 }
 
 export async function listPersonalTasks(ownerId: string) {
-  return listDocuments<PersonalTask>('personal_tasks', [Query.equal('ownerId', ownerId), Query.orderDesc('$createdAt')])
+  return listPersonalCollection<PersonalTask>('tasks', ownerId, 'personal_tasks', [Query.equal('ownerId', ownerId), Query.orderDesc('$createdAt')])
 }
 
 export async function listPersonalSchedules(ownerId: string) {
-  return listDocuments<PersonalSchedule>('personal_schedules', [Query.equal('ownerId', ownerId), Query.orderAsc('startsAt')])
+  return listPersonalCollection<PersonalSchedule>('schedules', ownerId, 'personal_schedules', [Query.equal('ownerId', ownerId), Query.orderAsc('startsAt')])
 }
 
 export async function listPersonalGrades(ownerId: string) {
-  return listDocuments<PersonalGrade>('personal_grades', [Query.equal('ownerId', ownerId), Query.orderDesc('$createdAt')])
+  return listPersonalCollection<PersonalGrade>('grades', ownerId, 'personal_grades', [Query.equal('ownerId', ownerId), Query.orderDesc('$createdAt')])
+}
+
+type PersonalCacheKind = 'subjects' | 'tasks' | 'schedules' | 'grades'
+
+function personalCacheKey(ownerId: string, kind: PersonalCacheKind) {
+  return `uniflow:personal-cache:v1:${ownerId}:${kind}`
+}
+
+function readPersonalCache<T>(ownerId: string, kind: PersonalCacheKind): T[] | null {
+  try {
+    const raw = localStorage.getItem(personalCacheKey(ownerId, kind))
+    const parsed = raw ? JSON.parse(raw) : null
+    return Array.isArray(parsed) ? parsed as T[] : null
+  } catch {
+    return null
+  }
+}
+
+function writePersonalCache<T>(ownerId: string, kind: PersonalCacheKind, values: T[]) {
+  try { localStorage.setItem(personalCacheKey(ownerId, kind), JSON.stringify(values)) } catch { /* local storage unavailable */ }
+}
+
+async function listPersonalCollection<T>(kind: PersonalCacheKind, ownerId: string, collectionId: string, queries: string[]) {
+  try {
+    const documents = await listDocuments<T>(collectionId, queries)
+    writePersonalCache(ownerId, kind, documents)
+    return documents
+  } catch (error) {
+    const cached = readPersonalCache<T>(ownerId, kind)
+    if (!navigator.onLine && cached) return cached
+    throw error
+  }
 }
 
 export async function createPersonalSubject(ownerId: string, data: Omit<PersonalSubject, '$id' | 'ownerId'>) {
