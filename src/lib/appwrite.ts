@@ -275,7 +275,16 @@ function taskToUi(doc: Record<string, any>): PersonalAssignmentRecord {
   return { id: doc.$id, courseId: doc.courseId || '', title: doc.title || '', dueDate: doc.dueDate || '', description: doc.description || '', priority: doc.priority || '', status: doc.status || '' }
 }
 function gradeToUi(doc: Record<string, any>): PersonalGradeRecord {
-  return { id: doc.$id, courseId: doc.courseId || doc.subjectId || '', evaluationTitle: doc.evaluationTitle || doc.label || '', score: Number(doc.score || 0), maxScore: Number(doc.maxScore || 20), coefficient: Number(doc.coefficient || 1) }
+  return { id: doc.$id, courseId: doc.courseId || doc.subjectId || '', evaluationTitle: doc.evaluationTitle || doc.label || doc.title || '', score: Number(doc.score || 0), maxScore: Number(doc.maxScore || 20), coefficient: Number(doc.coefficient || 1) }
+}
+
+function taskPayload(ownerId: string, dto: Partial<PersonalAssignmentRecord>) {
+  return { ownerId, title: String(dto.title || '').trim(), courseId: String(dto.courseId || ''), dueDate: dto.dueDate ? new Date(dto.dueDate).toISOString() : '', description: String(dto.description || ''), priority: String(dto.priority || 'MEDIUM'), status: String(dto.status || 'TODO') }
+}
+
+function gradePayload(ownerId: string, dto: Partial<PersonalGradeRecord>) {
+  const evaluationTitle = String(dto.evaluationTitle || '').trim()
+  return { ownerId, title: evaluationTitle, subjectId: String(dto.courseId || ''), courseId: String(dto.courseId || ''), label: evaluationTitle, evaluationTitle, score: String(dto.score ?? 0), maxScore: String(dto.maxScore ?? 20), coefficient: String(dto.coefficient ?? 1) }
 }
 
 function schedulePayload(ownerId: string, dto: Partial<PersonalScheduleRecord>) {
@@ -325,20 +334,20 @@ export const personalAppwriteApi = {
     list: async () => (await listPersonalTasks(storedOwnerId())).map(taskToUi),
     create: async (dto: Omit<PersonalAssignmentRecord, 'id'>) => {
       const ownerId = storedOwnerId()
-      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), { ownerId, ...dto })
+      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), taskPayload(ownerId, dto))
       return taskToUi(doc as Record<string, any>)
     },
-    update: async (id: string, dto: Partial<PersonalAssignmentRecord>) => taskToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_tasks', id, dto) as Record<string, any>),
+    update: async (id: string, dto: Partial<PersonalAssignmentRecord>) => taskToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_tasks', id, taskPayload(storedOwnerId(), dto)) as Record<string, any>),
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_tasks', id) },
   },
   grades: {
     list: async () => (await listPersonalGrades(storedOwnerId())).map(gradeToUi),
     create: async (dto: Omit<PersonalGradeRecord, 'id'>) => {
       const ownerId = storedOwnerId()
-      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), { ownerId, subjectId: dto.courseId, courseId: dto.courseId, label: dto.evaluationTitle, evaluationTitle: dto.evaluationTitle, score: String(dto.score), maxScore: String(dto.maxScore), coefficient: String(dto.coefficient) })
+      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), gradePayload(ownerId, dto))
       return gradeToUi(doc as Record<string, any>)
     },
-    update: async (id: string, dto: Partial<PersonalGradeRecord>) => gradeToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_grades', id, { ...dto, ...(dto.courseId ? { subjectId: dto.courseId } : {}), ...(dto.evaluationTitle ? { label: dto.evaluationTitle } : {}) }) as Record<string, any>),
+    update: async (id: string, dto: Partial<PersonalGradeRecord>) => gradeToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_grades', id, gradePayload(storedOwnerId(), dto)) as Record<string, any>),
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_grades', id) },
   },
 }
