@@ -29,6 +29,18 @@ export function IdleTimer() {
     setAuthUser(null)
   }
 
+  // Une nouvelle session Appwrite peut être restaurée dans le même arbre React
+  // après une expiration précédente. Le point de départ doit alors être remis à
+  // zéro, sinon le minuteur conserve l’heure du premier montage et déconnecte
+  // immédiatement le nouvel utilisateur.
+  useEffect(() => {
+    if (isLoggedIn) {
+      lastActivityRef.current = Date.now()
+      setShowWarning(false)
+      setShowAutoLogoutToast(false)
+    }
+  }, [isLoggedIn])
+
   useEffect(() => {
     if (!isAuthenticatedRoute || !isLoggedIn) {
       setShowWarning(false)
