@@ -101,8 +101,37 @@ function PersonalAwareRoute({ kind, children }: { kind: 'profile' | 'settings' |
 }
 
 function AccountHomePage() {
-  const isIndependent = getAccountType() === 'PERSONAL'
+  const { currentUser, isSessionReady } = useUserRole()
+  if (!isSessionReady) return <PageLoader />
+  const isIndependent = currentUser.accountType === 'PERSONAL'
   return isIndependent ? <IndependentWorkspacePage /> : <DashboardPage />
+}
+
+/**
+ * Les comptes indépendants utilisent la même source Appwrite que la gestion
+ * personnelle. Cette garde attend l’hydratation de session avant de décider de
+ * la vue, au lieu de s’appuyer sur une valeur localStorage potentiellement
+ * absente pendant le premier rendu.
+ */
+function PersonalLearningRoute({
+  tab,
+  children,
+}: {
+  tab: 'courses' | 'schedule' | 'assignments' | 'grades'
+  children: React.ReactNode
+}) {
+  const { currentUser, isSessionReady } = useUserRole()
+  if (!isSessionReady) return <PageLoader />
+
+  return (
+    <AuthenticatedRoute>
+      <StudentApp>
+        {currentUser.accountType === 'PERSONAL'
+          ? <IndependentWorkspacePage initialTab={tab} />
+          : children}
+      </StudentApp>
+    </AuthenticatedRoute>
+  )
 }
 
 export default function App() {
@@ -156,10 +185,10 @@ export default function App() {
           <Route path="/app/accueil-compact" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage /> : <DashboardCompactPage />}</StudentApp>} />
 
           {/* Partie 2 — Cours, Profil, Emploi du temps */}
-          <Route path="/app/cours" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="courses" /> : <CoursesPage />}</StudentApp>} />
-          <Route path="/app/cours/:courseId" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="courses" /> : <CourseDetailPage />}</StudentApp>} />
+          <Route path="/app/cours" element={<PersonalLearningRoute tab="courses"><CoursesPage /></PersonalLearningRoute>} />
+          <Route path="/app/cours/:courseId" element={<PersonalLearningRoute tab="courses"><CourseDetailPage /></PersonalLearningRoute>} />
           <Route path="/app/profil" element={<StudentApp><PersonalAwareRoute kind="profile"><ProfilePage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/emploi-du-temps" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="schedule" /> : <SchedulePage />}</StudentApp>} />
+          <Route path="/app/emploi-du-temps" element={<PersonalLearningRoute tab="schedule"><SchedulePage /></PersonalLearningRoute>} />
 
           {/* Partie 3 — Présences, Visioconf, Notifications */}
           <Route path="/app/presences" element={<StudentApp><PersonalAwareRoute kind="attendance"><AttendancePage /></PersonalAwareRoute></StudentApp>} />
@@ -170,8 +199,8 @@ export default function App() {
           <Route path="/app/notifications" element={<StudentApp><PersonalAwareRoute kind="notifications"><NotificationsPage /></PersonalAwareRoute></StudentApp>} />
 
           {/* Partie 4 — Devoirs, Notes, Messagerie */}
-          <Route path="/app/devoirs" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="assignments" /> : <AssignmentsPage />}</StudentApp>} />
-          <Route path="/app/notes" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage initialTab="grades" /> : <GradesPage />}</StudentApp>} />
+          <Route path="/app/devoirs" element={<PersonalLearningRoute tab="assignments"><AssignmentsPage /></PersonalLearningRoute>} />
+          <Route path="/app/notes" element={<PersonalLearningRoute tab="grades"><GradesPage /></PersonalLearningRoute>} />
           <Route path="/app/messages" element={<StudentApp><PersonalAwareRoute kind="messages"><MessagingPage /></PersonalAwareRoute></StudentApp>} />
 
           {/* Partie 5 — Délégué & Promotion */}
