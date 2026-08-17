@@ -1,0 +1,59 @@
+import type { UniFlowUser } from './appwrite'
+
+const DATABASE_NAME = 'uniflow-auth'
+const STORE_NAME = 'session'
+const SESSION_KEY = 'current'
+
+export type PersistedSession = {
+  user: UniFlowUser
+  persistedAt: number
+}
+
+function databaseAvailable() {
+  return typeof window !== 'undefined' && 'indexedDB' in window
+}
+
+function openDatabase(): Promise<IDBDatabase | null> {
+  if (!databaseAvailable()) return Promise.resolve(null)
+
+  return new Promise((resolve) => {
+    const request = window.indexedDB.open(DATABASE_NAME, 1)
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(STORE_NAME)) {
+        request.result.createObjectStore(STORE_NAME)
+      }
+    }
+    request.onsuccess = () => resolve(request.result)
+    request.onerror = () => resolve(null)
+  })
+}
+
+async function runTransaction<T>(mode: IDBTransactionMode, callback: (store: IDBObjectStore) => IDBRequest<T>): Promise<T | null> {
+  const database = await openDatabase()
+  if (!database) return null
+
+  return new Promise((resolve) => {
+    const transaction = database.transaction(STORE_NAME, mode)
+    const request = callback(transaction.objectStore(STORE_NAME))
+    request.onsuccess = () => resolve(request.result ?? null)
+    request.onerror = () => resolve(null)
+    transaction.oncomplete = () => database.close()
+    transaction.onerror = () => database.close()
+  })
+}
+
+/**
+ * Conserve uniquement un instantané de profil non sensible. Les cookies/session
+ * Appwrite restent la seule preuve d’authentification et sont validés au démarrage.
+ */
+export async function persistSessionSnapshot(user: UniFlowUser) {
+  await runTransaction('readwrite', (store) => store.put({ user, persistedAt: Date.now() } satisfies PersistedSession, SESSION_KEY))
+}
+
+export async function readSessionSnapshot(): Promise<PersistedSession | null> {
+  return runTransaction<PersistedSession>('readonly', (store) => store.get(SESSION_KEY))
+}
+
+export async function clearSessionSnapshot() {
+  await runTransaction('readwrite', (store) => store.delete(SESSION_KEY))
+}

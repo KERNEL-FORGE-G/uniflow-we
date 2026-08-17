@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { clearTokens, getToken } from '../lib/api'
+import { clearTokens } from '../lib/api'
+import { logoutAccount } from '../lib/appwrite'
+import { clearSessionSnapshot } from '../lib/sessionPersistence'
 import { useUserRole } from '../utils/userRole'
 import { LogOut, ShieldAlert } from 'lucide-react'
 
@@ -10,7 +12,7 @@ const WARNING_THRESHOLD_MS = 28 * 60 * 1000 // Show warning at 28 minutes (2 min
 export function IdleTimer() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { setAuthUser } = useUserRole()
+  const { setAuthUser, authUser, isSessionReady } = useUserRole()
   const lastActivityRef = useRef<number>(Date.now())
   const [showWarning, setShowWarning] = useState<boolean>(false)
   const [showAutoLogoutToast, setShowAutoLogoutToast] = useState<boolean>(false)
@@ -18,7 +20,14 @@ export function IdleTimer() {
 
   // Only activate idle timer when user is on authenticated routes (/app/* or /admin/*)
   const isAuthenticatedRoute = location.pathname.startsWith('/app') || location.pathname.startsWith('/admin')
-  const isLoggedIn = Boolean(getToken() || localStorage.getItem('uniflow_user'))
+  const isLoggedIn = isSessionReady && Boolean(authUser)
+
+  const clearPersistentSession = () => {
+    clearTokens()
+    void logoutAccount()
+    void clearSessionSnapshot()
+    setAuthUser(null)
+  }
 
   useEffect(() => {
     if (!isAuthenticatedRoute || !isLoggedIn) {
@@ -46,8 +55,7 @@ export function IdleTimer() {
 
       if (elapsed >= IDLE_TIMEOUT_MS) {
         // Auto-logout user after 30 minutes of inactivity
-        clearTokens()
-        setAuthUser(null)
+        clearPersistentSession()
         setShowWarning(false)
         setShowAutoLogoutToast(true)
         navigate('/login', { replace: true, state: { reason: 'idle_timeout' } })
@@ -74,8 +82,7 @@ export function IdleTimer() {
   }
 
   const handleLogoutNow = () => {
-    clearTokens()
-    setAuthUser(null)
+    clearPersistentSession()
     setShowWarning(false)
     navigate('/login', { replace: true })
   }

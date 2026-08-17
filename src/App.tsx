@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect } from 'react'
 import SEOHead from './components/SEOHead'
 import { AppLayout } from './components/layout/AppLayout'
 import { AdminLayout } from './components/layout/AdminLayout'
-import { RoleProvider } from './utils/userRole'
+import { RoleProvider, useUserRole } from './utils/userRole'
 import { IdleTimer } from './components/IdleTimer'
 import { GlobalNetworkToast } from './components/GlobalNetworkToast'
 import { Skeleton } from './components/ui/Skeleton'
@@ -84,12 +84,24 @@ function StudentApp({ children }: { children: React.ReactNode }) {
   return <AppLayout>{children}</AppLayout>
 }
 
+function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
+  const { authUser, isSessionReady } = useUserRole()
+  if (!isSessionReady) return <PageLoader />
+  return authUser ? <>{children}</> : <Navigate to="/login" replace />
+}
+
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const { authUser, isSessionReady } = useUserRole()
+  if (!isSessionReady) return <PageLoader />
+  return authUser ? <Navigate to={authUser.role === 'ADMIN' ? '/admin' : '/app'} replace /> : <>{children}</>
+}
+
 function PersonalAwareRoute({ kind, children }: { kind: 'profile' | 'settings' | 'messages' | 'library' | 'attendance' | 'notifications' | 'video' | 'classrooms' | 'help'; children: React.ReactNode }) {
   return getAccountType() === 'PERSONAL' ? <PersonalAccountPage kind={kind} /> : <>{children}</>
 }
 
 function AccountHomePage() {
-  const isIndependent = Boolean(getToken()) && getAccountType() === 'PERSONAL'
+  const isIndependent = getAccountType() === 'PERSONAL'
   return isIndependent ? <IndependentWorkspacePage /> : <DashboardPage />
 }
 
@@ -132,15 +144,15 @@ export default function App() {
           <Route path="/subscribe/:planId" element={<SubscriptionFlowPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/presentation" element={<PresentationPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+          <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
           <Route path="/sentinelle" element={<SentinellePage />} />
           <Route path="/forum" element={<ForumPage />} />
           <Route path="/teams" element={<TeamsPage />} />
 
           {/* Partie 1 — Dashboard */}
-          <Route path="/app" element={<StudentApp><AccountHomePage /></StudentApp>} />
-          <Route path="/app/independent" element={<StudentApp><IndependentWorkspacePage /></StudentApp>} />
+          <Route path="/app" element={<AuthenticatedRoute><StudentApp><AccountHomePage /></StudentApp></AuthenticatedRoute>} />
+          <Route path="/app/independent" element={<AuthenticatedRoute><StudentApp><IndependentWorkspacePage /></StudentApp></AuthenticatedRoute>} />
           <Route path="/app/accueil-compact" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage /> : <DashboardCompactPage />}</StudentApp>} />
 
           {/* Partie 2 — Cours, Profil, Emploi du temps */}
