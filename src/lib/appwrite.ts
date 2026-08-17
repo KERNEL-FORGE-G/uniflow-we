@@ -1,4 +1,5 @@
-import { Account, Client, Databases, ID, Permission, Query, Role, type Models } from 'appwrite'
+import { Account, Client, Databases, ID, Models, Permission, Query, Role } from 'appwrite'
+import { readSessionSnapshot } from './sessionPersistence'
 
 const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://nyc.cloud.appwrite.io/v1').replace(/\/+$/, '')
 const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a80ed6d002ccb5cec52')
@@ -262,15 +263,12 @@ export type PersonalGradeRecord = {
   coefficient: number
 }
 
-function storedOwnerId() {
-  try {
-    const raw = localStorage.getItem('uniflow_user')
-    const user = raw ? JSON.parse(raw) as { id?: string } : null
-    if (!user?.id) throw new Error('Session Appwrite absente. Connectez-vous avant de gérer vos données personnelles.')
-    return user.id
-  } catch (error) {
-    throw error instanceof Error ? error : new Error('Session Appwrite absente.')
-  }
+async function storedOwnerId() {
+  const snapshot = await readSessionSnapshot()
+  const current = await getCurrentAccount(snapshot?.user.accountType)
+  if (current?.id) return current.id
+  if (!navigator.onLine && snapshot?.user.id) return snapshot.user.id
+  throw new Error('Session Appwrite absente. Connectez-vous avant de gérer vos données personnelles.')
 }
 
 function ownerPermissions(ownerId: string) {
@@ -340,9 +338,9 @@ function schedulePayload(ownerId: string, dto: Partial<PersonalScheduleRecord>) 
 
 export const personalAppwriteApi = {
   courses: {
-    list: async () => (await listPersonalSubjects(storedOwnerId())).map(subjectToCourse),
+    list: async () => (await listPersonalSubjects(await storedOwnerId())).map(subjectToCourse),
     create: async (dto: Omit<PersonalCourseRecord, 'id' | 'createdAt'>) => {
-      const ownerId = storedOwnerId()
+      const ownerId = await storedOwnerId()
       const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_subjects', ID.unique(), { ownerId, name: dto.title, code: dto.code, title: dto.title, instructor: dto.instructor || '', credits: dto.credits || 0, colorHex: dto.colorHex || '#0d9488', classroom: dto.classroom || '', description: dto.description || '' })
       return subjectToCourse(doc as Record<string, any>)
     },
@@ -353,37 +351,37 @@ export const personalAppwriteApi = {
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_subjects', id) },
   },
   schedules: {
-    list: async () => (await listPersonalSchedules(storedOwnerId())).map(scheduleToUi),
+    list: async () => (await listPersonalSchedules(await storedOwnerId())).map(scheduleToUi),
     create: async (dto: Omit<PersonalScheduleRecord, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => {
-      const ownerId = storedOwnerId()
+      const ownerId = await storedOwnerId()
       const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), schedulePayload(ownerId, dto))
       return scheduleToUi(doc as Record<string, any>)
     },
     update: async (id: string, dto: Partial<PersonalScheduleRecord>) => {
-      const ownerId = storedOwnerId()
+      const ownerId = await storedOwnerId()
       const doc = await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_schedules', id, schedulePayload(ownerId, dto))
       return scheduleToUi(doc as Record<string, any>)
     },
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_schedules', id) },
   },
   assignments: {
-    list: async () => (await listPersonalTasks(storedOwnerId())).map(taskToUi),
+    list: async () => (await listPersonalTasks(await storedOwnerId())).map(taskToUi),
     create: async (dto: Omit<PersonalAssignmentRecord, 'id'>) => {
-      const ownerId = storedOwnerId()
+      const ownerId = await storedOwnerId()
       const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), taskPayload(ownerId, dto))
       return taskToUi(doc as Record<string, any>)
     },
-    update: async (id: string, dto: Partial<PersonalAssignmentRecord>) => taskToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_tasks', id, taskPayload(storedOwnerId(), dto)) as Record<string, any>),
+    update: async (id: string, dto: Partial<PersonalAssignmentRecord>) => taskToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_tasks', id, taskPayload(await storedOwnerId(), dto)) as Record<string, any>),
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_tasks', id) },
   },
   grades: {
-    list: async () => (await listPersonalGrades(storedOwnerId())).map(gradeToUi),
+    list: async () => (await listPersonalGrades(await storedOwnerId())).map(gradeToUi),
     create: async (dto: Omit<PersonalGradeRecord, 'id'>) => {
-      const ownerId = storedOwnerId()
+      const ownerId = await storedOwnerId()
       const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), gradePayload(ownerId, dto))
       return gradeToUi(doc as Record<string, any>)
     },
-    update: async (id: string, dto: Partial<PersonalGradeRecord>) => gradeToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_grades', id, gradePayload(storedOwnerId(), dto)) as Record<string, any>),
+    update: async (id: string, dto: Partial<PersonalGradeRecord>) => gradeToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_grades', id, gradePayload(await storedOwnerId(), dto)) as Record<string, any>),
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_grades', id) },
   },
 }
