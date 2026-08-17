@@ -288,7 +288,7 @@ function taskPayload(ownerId: string, dto: Partial<PersonalAssignmentRecord>) {
 
 function gradePayload(ownerId: string, dto: Partial<PersonalGradeRecord>) {
   const evaluationTitle = String(dto.evaluationTitle || '').trim()
-  return { ownerId, title: evaluationTitle, subjectId: String(dto.courseId || ''), courseId: String(dto.courseId || ''), label: evaluationTitle, evaluationTitle, score: String(dto.score ?? 0), maxScore: String(dto.maxScore ?? 20), coefficient: String(dto.coefficient ?? 1) }
+  return { ownerId, subjectId: String(dto.courseId || ''), courseId: String(dto.courseId || ''), label: evaluationTitle, evaluationTitle, score: String(dto.score ?? 0), maxScore: String(dto.maxScore ?? 20), coefficient: String(dto.coefficient ?? 1) }
 }
 
 function schedulePayload(ownerId: string, dto: Partial<PersonalScheduleRecord>) {
