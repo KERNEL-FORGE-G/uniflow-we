@@ -115,9 +115,11 @@ function AccountHomePage() {
  */
 function PersonalLearningRoute({
   tab,
+  scheduleOnly = false,
   children,
 }: {
   tab: 'courses' | 'schedule' | 'assignments' | 'grades'
+  scheduleOnly?: boolean
   children: React.ReactNode
 }) {
   const { currentUser, isSessionReady } = useUserRole()
@@ -127,7 +129,7 @@ function PersonalLearningRoute({
     <AuthenticatedRoute>
       <StudentApp>
         {currentUser.accountType === 'PERSONAL'
-          ? <IndependentWorkspacePage initialTab={tab} />
+          ? <IndependentWorkspacePage initialTab={tab} scheduleOnly={scheduleOnly} />
           : children}
       </StudentApp>
     </AuthenticatedRoute>
@@ -188,7 +190,7 @@ export default function App() {
           <Route path="/app/cours" element={<PersonalLearningRoute tab="courses"><CoursesPage /></PersonalLearningRoute>} />
           <Route path="/app/cours/:courseId" element={<PersonalLearningRoute tab="courses"><CourseDetailPage /></PersonalLearningRoute>} />
           <Route path="/app/profil" element={<StudentApp><PersonalAwareRoute kind="profile"><ProfilePage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/emploi-du-temps" element={<PersonalLearningRoute tab="schedule"><SchedulePage /></PersonalLearningRoute>} />
+          <Route path="/app/emploi-du-temps" element={<PersonalLearningRoute tab="schedule" scheduleOnly><SchedulePage /></PersonalLearningRoute>} />
 
           {/* Partie 3 — Présences, Visioconf, Notifications */}
           <Route path="/app/presences" element={<StudentApp><PersonalAwareRoute kind="attendance"><AttendancePage /></PersonalAwareRoute></StudentApp>} />

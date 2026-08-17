@@ -56,7 +56,7 @@ function isOverdue(task: PersonalAssignment): boolean {
   return Boolean(task.dueDate && task.status !== 'DONE' && task.status !== 'CANCELLED' && new Date(task.dueDate).getTime() < Date.now())
 }
 
-export default function IndependentWorkspacePage({ initialTab }: { initialTab?: Tab }) {
+export default function IndependentWorkspacePage({ initialTab, scheduleOnly = false }: { initialTab?: Tab; scheduleOnly?: boolean }) {
   const [tab, setTab] = useState<Tab>(initialTab ?? 'courses')
   const [courses, setCourses] = useState<PersonalCourse[]>([])
   const [schedules, setSchedules] = useState<PersonalSchedule[]>([])
@@ -278,6 +278,13 @@ export default function IndependentWorkspacePage({ initialTab }: { initialTab?: 
 
   if (loading) return <LoadingState />
 
+  // La route « Emploi du temps » est une consultation dédiée : elle ne rend
+  // volontairement ni formulaire, ni indicateur, ni panneau de gestion.
+  // Les opérations CRUD restent accessibles depuis Gestion personnelle.
+  if (scheduleOnly) {
+    return <div className="mx-auto max-w-[1500px]"><WeeklyScheduleGrid schedules={schedules} courses={courses} /></div>
+  }
+
   return (
     <div className="mx-auto max-w-[1500px] space-y-6 pb-12">
       <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#0f766e] via-[#0d9488] to-[#1e3a8a] p-6 text-white shadow-xl sm:p-8">
@@ -317,7 +324,7 @@ function timeToMinutes(value: string) {
   return (Number.isFinite(hours) ? hours : SCHEDULE_GRID_START_HOUR) * 60 + (Number.isFinite(minutes) ? minutes : 0)
 }
 
-function WeeklyScheduleGrid({ schedules, courses, onEdit, onDelete }: { schedules: PersonalSchedule[]; courses: PersonalCourse[]; onEdit: (item: PersonalSchedule) => void; onDelete: (item: PersonalSchedule) => void }) {
+function WeeklyScheduleGrid({ schedules, courses, onEdit, onDelete }: { schedules: PersonalSchedule[]; courses: PersonalCourse[]; onEdit?: (item: PersonalSchedule) => void; onDelete?: (item: PersonalSchedule) => void }) {
   const startMinutes = SCHEDULE_GRID_START_HOUR * 60
   const endMinutes = SCHEDULE_GRID_END_HOUR * 60
   const pixelsPerMinute = SCHEDULE_GRID_ROW_HEIGHT / 60
@@ -357,7 +364,7 @@ function WeeklyScheduleGrid({ schedules, courses, onEdit, onDelete }: { schedule
                       <article key={item.id} className="absolute left-1 right-1 overflow-hidden rounded-lg border border-white/70 p-2 text-white shadow-sm" style={{ top, height, backgroundColor: color }}>
                         <div className="flex items-start justify-between gap-1">
                           <div className="min-w-0"><p className="truncate text-[10px] font-black">{item.courseTitle ?? course?.title ?? 'Matière supprimée'}</p><p className="mt-0.5 text-[9px] font-semibold text-white/85">{item.startTime}–{item.endTime}</p></div>
-                          <div className="shrink-0 [&_button]:p-1 [&_button]:text-white/80 [&_button]:hover:bg-white/15 [&_button]:hover:text-white"><CardActions onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} /></div>
+                          {onEdit && onDelete && <div className="shrink-0 [&_button]:p-1 [&_button]:text-white/80 [&_button]:hover:bg-white/15 [&_button]:hover:text-white"><CardActions onEdit={() => onEdit(item)} onDelete={() => onDelete(item)} /></div>}
                         </div>
                         {height >= 76 && <p className="mt-1 truncate text-[9px] text-white/85">{item.type || 'Créneau'}{item.classroom ? ` · ${item.classroom}` : ''}</p>}
                       </article>
