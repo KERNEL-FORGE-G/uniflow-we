@@ -112,6 +112,11 @@ export default function IndependentWorkspacePage({ initialTab }: { initialTab?: 
   }
 
   useEffect(() => { void loadData() }, [])
+  useEffect(() => {
+    const refreshFromAppwrite = () => { void loadData() }
+    window.addEventListener('uniflow:network-restored', refreshFromAppwrite)
+    return () => window.removeEventListener('uniflow:network-restored', refreshFromAppwrite)
+  }, [])
   useEffect(() => { if (initialTab) setTab(initialTab) }, [initialTab])
 
   const closeForms = () => {
