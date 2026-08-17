@@ -100,8 +100,18 @@ export default function IndependentWorkspacePage({ initialTab }: { initialTab?: 
         personalApi.assignments.list(),
         personalApi.grades.list(),
       ])
-      setCourses(courseData ?? [])
-      setSchedules(scheduleData ?? [])
+      const resolvedCourses = courseData ?? []
+      const coursesById = new Map(resolvedCourses.map(course => [course.id, course]))
+      const resolvedSchedules = (scheduleData ?? []).map(schedule => {
+        const course = coursesById.get(schedule.courseId)
+        return {
+          ...schedule,
+          courseTitle: schedule.courseTitle ?? course?.title,
+          courseCode: schedule.courseCode ?? course?.code,
+        }
+      })
+      setCourses(resolvedCourses)
+      setSchedules(resolvedSchedules)
       setAssignments(assignmentData ?? [])
       setGrades(gradeData ?? [])
     } catch (err) {
@@ -188,7 +198,12 @@ export default function IndependentWorkspacePage({ initialTab }: { initialTab?: 
         setSchedules(previous => previous.map(item => item.id === editingSchedule.id ? updated : item))
       } else {
         const created = await personalApi.schedules.create(scheduleForm)
-        setSchedules(previous => [created, ...previous])
+        const course = courseById.get(created.courseId)
+        setSchedules(previous => [{
+          ...created,
+          courseTitle: created.courseTitle ?? course?.title,
+          courseCode: created.courseCode ?? course?.code,
+        }, ...previous])
       }
     }, editingSchedule ? 'Créneau mis à jour.' : 'Créneau ajouté à l’emploi du temps.')
   }
