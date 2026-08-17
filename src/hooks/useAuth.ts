@@ -1,6 +1,8 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowRole, type UniFlowUser } from '@/lib/appwrite'
+import { clearSessionSnapshot, persistSessionSnapshot } from '@/lib/sessionPersistence'
+import { setAccountType, type BackendUser } from '@/lib/api'
 import { useUserRole } from '@/utils/userRole'
 import type { Role } from '@/utils/userRole'
 
@@ -46,18 +48,20 @@ function normalizeRole(role: string): UniFlowRole {
   return 'STUDENT'
 }
 
-function persistUser(user: UniFlowUser) {
-  localStorage.setItem('uniflow_account_type', user.accountType)
-  localStorage.setItem('uniflow_user', JSON.stringify(user))
+async function persistUser(user: UniFlowUser) {
+  // Seules les métadonnées de profil vont dans IndexedDB. Appwrite reste la
+  // source de vérité pour le cookie ou la session effective.
+  setAccountType(user.accountType)
+  await persistSessionSnapshot(user)
 }
 
-function persistAccountType(user: UniFlowUser) {
-  localStorage.setItem('uniflow_account_type', user.accountType)
+function toBackendUser(user: UniFlowUser): BackendUser {
+  return { id: user.id, email: user.email, role: user.role, fullName: user.name, accountType: user.accountType }
 }
 
 export function useAuth() {
   const navigate = useNavigate()
-  const { setCurrentRole, setAuthUser } = useUserRole()
+  const { setCurrentRole, setAuthUser, authUser } = useUserRole()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -66,9 +70,8 @@ export function useAuth() {
     setError(null)
     try {
       const user = await loginAccount(payload.email, payload.password, payload.accountType)
-      persistUser(user)
-      persistAccountType(user)
-      setAuthUser(user)
+      await persistUser(user)
+      setAuthUser(toBackendUser(user))
       setCurrentRole(mapRole(user.role))
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
       navigate(user.role === 'ADMIN' ? '/admin' : '/app')
@@ -93,9 +96,8 @@ export function useAuth() {
         payload.accountType,
         normalizeRole(payload.role),
       )
-      persistUser(user)
-      persistAccountType(user)
-      setAuthUser(user)
+      await persistUser(user)
+      setAuthUser(toBackendUser(user))
       setCurrentRole(mapRole(user.role))
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
       navigate('/app')
@@ -115,6 +117,7 @@ export function useAuth() {
     localStorage.removeItem('uniflow_user')
     localStorage.removeItem('uniflow_access_token')
     localStorage.removeItem('uniflow_refresh_token')
+    await clearSessionSnapshot()
     setAuthUser(null)
     setCurrentRole('student')
     try { window.dispatchEvent(new CustomEvent('uniflow:session-expired')) } catch {}
@@ -122,13 +125,13 @@ export function useAuth() {
   }, [navigate, setAuthUser, setCurrentRole])
 
   const getCurrentUser = useCallback((): UniFlowUser | null => {
-    try {
-      const raw = localStorage.getItem('uniflow_user')
-      return raw ? JSON.parse(raw) as UniFlowUser : null
-    } catch { return null }
-  }, [])
+    if (!authUser) return null
+    const accountType = authUser.accountType === 'PERSONAL' || authUser.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
+    const role = authUser.role === 'ADMIN' || authUser.role === 'DELEGATE' || authUser.role === 'TEACHER' ? authUser.role : 'STUDENT'
+    return { id: authUser.id, email: authUser.email, name: authUser.fullName || authUser.email, accountType, role }
+  }, [authUser])
 
-  const isAuthenticated = useCallback(() => Boolean(localStorage.getItem('uniflow_user')), [])
+  const isAuthenticated = useCallback(() => Boolean(authUser), [authUser])
 
   return { login, register, logout, getCurrentUser, isAuthenticated, loading, error, setError }
 }

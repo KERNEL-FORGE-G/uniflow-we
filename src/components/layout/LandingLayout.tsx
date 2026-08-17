@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
+import { useUserRole } from '../../utils/userRole'
 
 const navLinks = [
   { to: '/about',        label: 'À propos' },
@@ -15,6 +16,8 @@ const navLinks = [
 export function LandingNavbar() {
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
+  const { currentUser, isSessionReady } = useUserRole()
+  const isConnected = isSessionReady && currentUser.email !== '—'
 
   return (
     <nav className="sticky top-0 z-50 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm">
@@ -59,17 +62,12 @@ export function LandingNavbar() {
 
         {/* CTA */}
         <div className="hidden items-center gap-2 md:flex">
-          <Link
-            to="/login"
-            className="rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors"
-          >
-            Se connecter
-          </Link>
+          {isConnected ? <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">Connecté</span> : <Link to="/login" className="rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">Se connecter</Link>}
           <Link
             to="/app"
             className="inline-flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors"
           >
-            Démo gratuite <ArrowRight className="h-3.5 w-3.5" />
+            {isConnected ? 'Mon espace' : 'Démo gratuite'} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -96,13 +94,10 @@ export function LandingNavbar() {
             </Link>
           ))}
           <div className="flex gap-2 pt-3 border-t border-[#e5e7eb]">
-            <Link to="/login" onClick={() => setOpen(false)}
-              className="flex-1 rounded-lg border border-[#e5e7eb] py-2 text-center text-sm font-medium text-[#374151]">
-              Se connecter
-            </Link>
+            {isConnected ? <span className="flex-1 rounded-lg border border-emerald-200 bg-emerald-50 py-2 text-center text-sm font-semibold text-emerald-700">Connecté</span> : <Link to="/login" onClick={() => setOpen(false)} className="flex-1 rounded-lg border border-[#e5e7eb] py-2 text-center text-sm font-medium text-[#374151]">Se connecter</Link>}
             <Link to="/app" onClick={() => setOpen(false)}
               className="flex-1 rounded-lg bg-[#1e3a8a] py-2 text-center text-sm font-semibold text-white">
-              Démo
+              {isConnected ? 'Mon espace' : 'Démo'}
             </Link>
           </div>
         </div>

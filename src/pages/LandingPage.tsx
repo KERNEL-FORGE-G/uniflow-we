@@ -16,6 +16,7 @@ import { Card } from '../components/ui/Card'
 import { Button } from '../components/ui/Button'
 import { fadeInUp, staggerContainer, float } from '../utils/animations'
 import { cn } from '../utils/cn'
+import { useUserRole } from '../utils/userRole'
 
 const landingImg = 'https://i.imgur.com/35YpEbS.png'
 
@@ -96,6 +97,8 @@ const faqs = [
 type RoleTab = 'etudiant' | 'delegue' | 'enseignant' | 'admin'
 
 export default function LandingPage() {
+  const { currentUser, isSessionReady } = useUserRole()
+  const isConnected = isSessionReady && currentUser.email !== '—'
   // Les statistiques de campus nécessitent une session universitaire. La page publique
   // n’appelle donc aucun endpoint protégé et n’invente aucune métrique.
   const stats: Array<{ icon: typeof Users; value: string; label: string; color: string }> = []
@@ -185,7 +188,7 @@ export default function LandingPage() {
               >
                 <Link to="/app">
                   <Button size="lg" className="gap-2.5 text-base px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold border-b-4 border-blue-950 shadow-xl shadow-blue-600/25 active:translate-y-0.5 transition-all rounded-2xl">
-                    Accéder à l'application <ArrowRight className="h-5 w-5" />
+                    {isConnected ? 'Reprendre mon espace' : "Accéder à l'application"} <ArrowRight className="h-5 w-5" />
                   </Button>
                 </Link>
                 <Link to="/presentation">
@@ -790,4 +793,3 @@ export default function LandingPage() {
     </div>
   )
 }
-

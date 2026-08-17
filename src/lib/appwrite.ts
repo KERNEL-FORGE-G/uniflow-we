@@ -104,10 +104,10 @@ export async function loginAccount(email: string, password: string, accountType:
   return normalizeUser(profile, accountType, role)
 }
 
-export async function getCurrentAccount(): Promise<UniFlowUser | null> {
+export async function getCurrentAccount(accountType?: UniFlowAccountType): Promise<UniFlowUser | null> {
   try {
     const profile = await appwriteAccount.get()
-    const rawType = localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
+    const rawType = accountType ?? (localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY')
     return normalizeUser(profile, rawType, rawType === 'PERSONAL' ? 'STUDENT' : 'STUDENT')
   } catch {
     return null
