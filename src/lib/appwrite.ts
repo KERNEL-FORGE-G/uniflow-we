@@ -69,6 +69,50 @@ export interface PersonalGrade {
   score: string
 }
 
+type UniFlowPreferences = {
+  uniflowAccountType?: unknown
+  accountType?: unknown
+}
+
+function asAccountType(value: unknown): UniFlowAccountType | null {
+  return value === 'PERSONAL' || value === 'UNIVERSITY' ? value : null
+}
+
+/**
+ * Le type de compte ne doit pas dépendre uniquement de localStorage : une
+ * ancienne session pouvait y conserver « UNIVERSITY » tandis que les données
+ * personnelles étaient bien stockées dans Appwrite. Les préférences Appwrite
+ * sont prioritaires, puis une présence de données personnelles sert de repli
+ * sûr pour les comptes historiques.
+ */
+async function resolveAccountType(profile: Models.User<Models.Preferences>, hintedType?: UniFlowAccountType): Promise<UniFlowAccountType> {
+  const preferences = profile.prefs as UniFlowPreferences
+  const preferenceType = asAccountType(preferences.uniflowAccountType) ?? asAccountType(preferences.accountType)
+  if (preferenceType) return preferenceType
+  if (hintedType === 'PERSONAL') return 'PERSONAL'
+
+  try {
+    const [subjects, schedules] = await Promise.all([
+      appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'personal_subjects', [Query.equal('ownerId', profile.$id), Query.limit(1)]),
+      appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'personal_schedules', [Query.equal('ownerId', profile.$id), Query.limit(1)]),
+    ])
+    if (subjects.total > 0 || schedules.total > 0) return 'PERSONAL'
+  } catch {
+    // Une collection temporairement indisponible ne bloque jamais la session.
+  }
+
+  return hintedType ?? 'UNIVERSITY'
+}
+
+async function persistAccountTypePreference(accountType: UniFlowAccountType) {
+  try {
+    const profile = await appwriteAccount.get()
+    await appwriteAccount.updatePrefs({ ...profile.prefs, uniflowAccountType: accountType })
+  } catch {
+    // La préférence optimise les sessions futures ; la connexion reste valide si sa mise à jour échoue.
+  }
+}
+
 const userPermissions = (userId: string) => [
   Permission.read(Role.user(userId)),
   Permission.update(Role.user(userId)),
@@ -81,6 +125,7 @@ export async function createAccount(email: string, password: string, name: strin
   try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
   const account = await appwriteAccount.create(ID.unique(), email.trim(), password, name.trim())
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
+  await persistAccountTypePreference(accountType)
   const profile = await appwriteAccount.get()
   // L’inscription ne dépend pas d’une collection de profil optionnelle :
   // le compte Auth est la source de vérité immédiate. Le profil sera créé par
@@ -94,22 +139,26 @@ export async function loginAccount(email: string, password: string, accountType:
   try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
   const profile = await appwriteAccount.get()
-  const collectionId = accountType === 'PERSONAL' ? 'personal_users' : 'users'
-  let role: UniFlowRole = accountType === 'PERSONAL' ? 'STUDENT' : 'STUDENT'
+  const resolvedAccountType = await resolveAccountType(profile, accountType)
+  if (resolvedAccountType !== accountType) await persistAccountTypePreference(resolvedAccountType)
+  const collectionId = resolvedAccountType === 'PERSONAL' ? 'personal_users' : 'users'
+  let role: UniFlowRole = 'STUDENT'
   try {
     const doc = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, collectionId, profile.$id)
-    role = normalizeRole((doc as { role?: string }).role, accountType)
+    role = normalizeRole((doc as { role?: string }).role, resolvedAccountType)
   } catch {
     // Le profil peut ne pas encore exister : l’interface reste authentifiée et affiche un état incomplet honnête.
   }
-  return normalizeUser(profile, accountType, role)
+  return normalizeUser(profile, resolvedAccountType, role)
 }
 
 export async function getCurrentAccount(accountType?: UniFlowAccountType): Promise<UniFlowUser | null> {
   try {
     const profile = await appwriteAccount.get()
-    const rawType = accountType ?? (localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY')
-    return normalizeUser(profile, rawType, rawType === 'PERSONAL' ? 'STUDENT' : 'STUDENT')
+    const hintedType = accountType ?? (localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY')
+    const resolvedAccountType = await resolveAccountType(profile, hintedType)
+    if (resolvedAccountType !== hintedType) await persistAccountTypePreference(resolvedAccountType)
+    return normalizeUser(profile, resolvedAccountType, 'STUDENT')
   } catch {
     return null
   }
