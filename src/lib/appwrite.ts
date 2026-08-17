@@ -250,14 +250,47 @@ function ownerPermissions(ownerId: string) {
 function subjectToCourse(doc: Record<string, any>): PersonalCourseRecord {
   return { id: doc.$id, code: doc.code || '', title: doc.title || doc.name || '', instructor: doc.instructor || '', credits: typeof doc.credits === 'number' ? doc.credits : undefined, colorHex: doc.colorHex || '#0d9488', classroom: doc.classroom || '', description: doc.description || '', createdAt: doc.$createdAt }
 }
+const SCHEDULE_META_PREFIX = '[UNIFLOW_SCHEDULE]'
+
+type StoredScheduleMeta = { courseId: string; dayOfWeek: string; startTime: string; endTime: string; classroom: string; type: string }
+
+function decodeScheduleMeta(title: string): StoredScheduleMeta | null {
+  if (!title.startsWith(SCHEDULE_META_PREFIX)) return null
+  try { return JSON.parse(title.slice(SCHEDULE_META_PREFIX.length).trim()) as StoredScheduleMeta } catch { return null }
+}
+
 function scheduleToUi(doc: Record<string, any>): PersonalScheduleRecord {
-  return { id: doc.$id, courseId: doc.courseId || '', dayOfWeek: doc.dayOfWeek || '', startTime: doc.startTime || '', endTime: doc.endTime || '', classroom: doc.classroom || '', type: doc.type || '' }
+  const meta = decodeScheduleMeta(String(doc.title || ''))
+  return {
+    id: doc.$id,
+    courseId: meta?.courseId || doc.courseId || '',
+    dayOfWeek: meta?.dayOfWeek || doc.dayOfWeek || '',
+    startTime: meta?.startTime || (doc.startsAt ? new Date(doc.startsAt).toTimeString().slice(0, 5) : ''),
+    endTime: meta?.endTime || (doc.endsAt ? new Date(doc.endsAt).toTimeString().slice(0, 5) : ''),
+    classroom: meta?.classroom || doc.classroom || '',
+    type: meta?.type || doc.type || '',
+  }
 }
 function taskToUi(doc: Record<string, any>): PersonalAssignmentRecord {
   return { id: doc.$id, courseId: doc.courseId || '', title: doc.title || '', dueDate: doc.dueDate || '', description: doc.description || '', priority: doc.priority || '', status: doc.status || '' }
 }
 function gradeToUi(doc: Record<string, any>): PersonalGradeRecord {
   return { id: doc.$id, courseId: doc.courseId || doc.subjectId || '', evaluationTitle: doc.evaluationTitle || doc.label || '', score: Number(doc.score || 0), maxScore: Number(doc.maxScore || 20), coefficient: Number(doc.coefficient || 1) }
+}
+
+function schedulePayload(ownerId: string, dto: Partial<PersonalScheduleRecord>) {
+  const startTime = dto.startTime || '00:00'
+  const endTime = dto.endTime || startTime
+  const dayOfWeek = dto.dayOfWeek || 'LUNDI'
+  const dayIndex = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI', 'DIMANCHE'].indexOf(dayOfWeek)
+  const now = new Date()
+  const mondayOffset = (now.getDay() + 6) % 7
+  const target = new Date(now)
+  target.setDate(now.getDate() - mondayOffset + Math.max(dayIndex, 0))
+  const date = target.toISOString().slice(0, 10)
+  const meta: StoredScheduleMeta = { courseId: dto.courseId || '', dayOfWeek, startTime, endTime, classroom: dto.classroom || '', type: dto.type || '' }
+  const toIso = (time: string) => new Date(`${date}T${time}:00`).toISOString()
+  return { ownerId, title: `${SCHEDULE_META_PREFIX} ${JSON.stringify(meta)}`, startsAt: toIso(startTime), endsAt: toIso(endTime) }
 }
 
 export const personalAppwriteApi = {
@@ -278,10 +311,14 @@ export const personalAppwriteApi = {
     list: async () => (await listPersonalSchedules(storedOwnerId())).map(scheduleToUi),
     create: async (dto: Omit<PersonalScheduleRecord, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => {
       const ownerId = storedOwnerId()
-      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), { ownerId, ...dto })
+      const doc = await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), schedulePayload(ownerId, dto))
       return scheduleToUi(doc as Record<string, any>)
     },
-    update: async (id: string, dto: Partial<PersonalScheduleRecord>) => scheduleToUi(await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_schedules', id, dto) as Record<string, any>),
+    update: async (id: string, dto: Partial<PersonalScheduleRecord>) => {
+      const ownerId = storedOwnerId()
+      const doc = await appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'personal_schedules', id, schedulePayload(ownerId, dto))
+      return scheduleToUi(doc as Record<string, any>)
+    },
     delete: async (id: string) => { await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'personal_schedules', id) },
   },
   assignments: {
