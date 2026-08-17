@@ -3,7 +3,9 @@
  * Handles Offline Caching, Push Notifications, and Background Sync
  * ============================================================================ */
 
-const CACHE_NAME = 'uniflow-pwa-cache-v4'
+// Bump à chaque changement du shell d’authentification afin d’éviter qu’une
+// ancienne version conserve des règles de session obsolètes dans le navigateur.
+const CACHE_NAME = 'uniflow-pwa-cache-v5'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
