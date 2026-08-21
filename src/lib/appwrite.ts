@@ -5,10 +5,25 @@ const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://185-1
 const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a885ccc000ddfbb3bb9')
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
 export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets')
+const APPWRITE_TIMEOUT_MS = 12_000
 
 export const appwriteClient = new Client().setEndpoint(endpoint).setProject(projectId)
 export const appwriteAccount = new Account(appwriteClient)
 export const appwriteDatabases = new Databases(appwriteClient)
+
+async function awaitAppwrite<T>(promise: Promise<T>, operation: string): Promise<T> {
+  let timeout: ReturnType<typeof setTimeout> | undefined
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeout = setTimeout(() => reject(new Error(`Appwrite KERNEL FORGE ne répond pas pour ${operation}. Vérifiez l’endpoint configuré puis réessayez.`)), APPWRITE_TIMEOUT_MS)
+      }),
+    ])
+  } finally {
+    if (timeout) clearTimeout(timeout)
+  }
+}
 
 export type UniFlowAccountType = 'UNIVERSITY' | 'PERSONAL'
 export type UniFlowRole = 'STUDENT' | 'DELEGATE' | 'TEACHER' | 'ADMIN'
@@ -102,7 +117,7 @@ function asAccountType(value: unknown): UniFlowAccountType | null {
  */
 async function resolveAccountType(profile: Models.User<Models.Preferences>, hintedType?: UniFlowAccountType): Promise<UniFlowAccountType> {
   try {
-    const document = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id) as unknown as UniFlowProfileDocument
+    const document = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil utilisateur') as unknown as UniFlowProfileDocument
     const documentType = asAccountType(document.accountType)
     if (documentType) return documentType
     if (document.university) return 'UNIVERSITY'
@@ -117,8 +132,8 @@ async function resolveAccountType(profile: Models.User<Models.Preferences>, hint
 
   try {
     const [subjects, schedules] = await Promise.all([
-      appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'personal_subjects', [Query.equal('ownerId', profile.$id), Query.limit(1)]),
-      appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'personal_schedules', [Query.equal('ownerId', profile.$id), Query.limit(1)]),
+      awaitAppwrite(appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'personal_subjects', [Query.equal('ownerId', profile.$id), Query.limit(1)]), 'la lecture des matières personnelles'),
+      awaitAppwrite(appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'personal_schedules', [Query.equal('ownerId', profile.$id), Query.limit(1)]), 'la lecture des créneaux personnels'),
     ])
     if (subjects.total > 0 || schedules.total > 0) return 'PERSONAL'
   } catch {
@@ -130,8 +145,8 @@ async function resolveAccountType(profile: Models.User<Models.Preferences>, hint
 
 async function persistAccountTypePreference(accountType: UniFlowAccountType) {
   try {
-    const profile = await appwriteAccount.get()
-    await appwriteAccount.updatePrefs({ ...profile.prefs, uniflowAccountType: accountType })
+    const profile = await awaitAppwrite(appwriteAccount.get(), 'la lecture de session')
+    await awaitAppwrite(appwriteAccount.updatePrefs({ ...profile.prefs, uniflowAccountType: accountType }), 'la mise à jour du profil')
   } catch {
     // La préférence optimise les sessions futures ; la connexion reste valide si sa mise à jour échoue.
   }
@@ -147,10 +162,10 @@ export async function createAccount(email: string, password: string, name: strin
   // Appwrite peut refuser la séquence Auth si le navigateur possède encore
   // une session active. La fermeture doit précéder account.create, pas suivre.
   try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
-  const account = await appwriteAccount.create(ID.unique(), email.trim(), password, name.trim())
-  await appwriteAccount.createEmailPasswordSession(email.trim(), password)
+  const account = await awaitAppwrite(appwriteAccount.create(ID.unique(), email.trim(), password, name.trim()), 'la création du compte')
+  await awaitAppwrite(appwriteAccount.createEmailPasswordSession(email.trim(), password), 'l’ouverture de session')
   await persistAccountTypePreference(accountType)
-  const profile = await appwriteAccount.get()
+  const profile = await awaitAppwrite(appwriteAccount.get(), 'la lecture du compte créé')
   const userProfile: Required<Pick<UniFlowProfileDocument, 'accountType' | 'role'>> & UniFlowProfileInput & { email: string; name: string } = {
     email: profile.email,
     name: profile.name,
@@ -161,7 +176,7 @@ export async function createAccount(email: string, password: string, name: strin
     ...(accountType === 'UNIVERSITY' && profileInput.level ? { level: profileInput.level } : {}),
     country: profileInput.country || 'Cameroun',
   }
-  await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'users', profile.$id, userProfile, userPermissions(profile.$id))
+  await awaitAppwrite(appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'users', profile.$id, userProfile, userPermissions(profile.$id)), 'la création du profil UniFlow')
   return normalizeUser(profile, accountType, role, userProfile)
 }
 
@@ -169,14 +184,14 @@ export async function loginAccount(email: string, password: string, accountType:
   // Un client Appwrite ne peut conserver qu’une session email active dans ce flux.
   // Fermer la session courante permet de changer de compte sans erreur 401/409.
   try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
-  await appwriteAccount.createEmailPasswordSession(email.trim(), password)
-  const profile = await appwriteAccount.get()
+  await awaitAppwrite(appwriteAccount.createEmailPasswordSession(email.trim(), password), 'l’ouverture de session')
+  const profile = await awaitAppwrite(appwriteAccount.get(), 'la lecture du compte')
   const resolvedAccountType = await resolveAccountType(profile, accountType)
   if (resolvedAccountType !== accountType) await persistAccountTypePreference(resolvedAccountType)
   let role: UniFlowRole = 'STUDENT'
   let userProfile: UniFlowProfileDocument | undefined
   try {
-    const doc = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id) as unknown as UniFlowProfileDocument
+    const doc = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil UniFlow') as unknown as UniFlowProfileDocument
     role = normalizeRole((doc as { role?: string }).role, resolvedAccountType)
     userProfile = doc
   } catch {
@@ -187,14 +202,14 @@ export async function loginAccount(email: string, password: string, accountType:
 
 export async function getCurrentAccount(accountType?: UniFlowAccountType): Promise<UniFlowUser | null> {
   try {
-    const profile = await appwriteAccount.get()
+    const profile = await awaitAppwrite(appwriteAccount.get(), 'la restauration de session')
     const hintedType = accountType ?? (localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY')
     const resolvedAccountType = await resolveAccountType(profile, hintedType)
     if (resolvedAccountType !== hintedType) await persistAccountTypePreference(resolvedAccountType)
     let role: UniFlowRole = 'STUDENT'
     let userProfile: UniFlowProfileDocument | undefined
     try {
-      userProfile = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id) as unknown as UniFlowProfileDocument
+      userProfile = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil UniFlow') as unknown as UniFlowProfileDocument
       role = normalizeRole(userProfile.role, resolvedAccountType)
     } catch {
       // L’authentification Appwrite reste utilisable pendant la création ou la restauration du profil.
@@ -210,7 +225,7 @@ export async function logoutAccount() {
 }
 
 export async function listDocuments<T>(collectionId: string, queries: string[] = []) {
-  const result = await appwriteDatabases.listDocuments<Models.Document>(APPWRITE_DATABASE_ID, collectionId, queries)
+  const result = await awaitAppwrite(appwriteDatabases.listDocuments<Models.Document>(APPWRITE_DATABASE_ID, collectionId, queries), `la lecture de ${collectionId}`)
   return result.documents as unknown as T[]
 }
 
