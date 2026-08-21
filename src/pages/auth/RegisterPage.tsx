@@ -37,6 +37,12 @@ const benefits = [
 
 type BackendRole = 'ETUDIANT' | 'DELEGUE' | 'ENSEIGNANT'
 
+const ICT4D_LEVELS: AcademicLevel[] = [
+  { id: 'L1', name: 'Licence 1', programName: 'ICT4D' },
+  { id: 'L2', name: 'Licence 2', programName: 'ICT4D' },
+  { id: 'L3', name: 'Licence 3', programName: 'ICT4D' },
+]
+
 const roleMap: Record<string, BackendRole> = {
   student: 'ETUDIANT',
   teacher: 'ENSEIGNANT',
@@ -55,8 +61,8 @@ export default function RegisterPage() {
     password: '', 
     confirm: '', 
     role: 'student', 
-    levelId: '', 
-    specialtyId: '',
+    levelId: 'L1', 
+    specialtyId: 'ICT4D',
     matricule: '',
   })
   const [levels, setLevels] = useState<AcademicLevel[]>([])
@@ -71,9 +77,9 @@ export default function RegisterPage() {
   useEffect(() => {
     setAcademicLoading(false)
     setAcademicError(null)
-    setLevels([])
-    setSpecialties([])
-    setForm(f => ({ ...f, levelId: '', specialtyId: '', matricule: accountType === 'PERSONAL' ? '' : f.matricule }))
+    setLevels(ICT4D_LEVELS)
+    setSpecialties(ICT4D_LEVELS.map((level) => ({ id: 'ICT4D', name: 'ICT4D', levelId: level.id })))
+    setForm(f => ({ ...f, levelId: accountType === 'UNIVERSITY' ? (f.levelId || 'L1') : '', specialtyId: accountType === 'UNIVERSITY' ? 'ICT4D' : '', matricule: accountType === 'PERSONAL' ? '' : f.matricule }))
   }, [accountType])
 
   const handleNext = (e: React.FormEvent) => {
@@ -106,6 +112,9 @@ export default function RegisterPage() {
         matricule: form.matricule || undefined,
         levelId: form.levelId || undefined,
         specialtyId: form.specialtyId || undefined,
+        university: accountType === 'UNIVERSITY' ? 'Université de Yaoundé I' : undefined,
+        program: accountType === 'UNIVERSITY' ? 'ICT4D' : undefined,
+        level: accountType === 'UNIVERSITY' ? (form.levelId as 'L1' | 'L2' | 'L3') : undefined,
       })
     } catch {
       // L’erreur est affichée par useAuth ; aucune inscription locale n’est créée.
@@ -315,7 +324,7 @@ export default function RegisterPage() {
                   <div className="p-3 bg-teal-50/80 rounded-xl border border-teal-200 text-xs text-[#0d9488] flex items-center gap-2">
                     <Building2 className="h-4 w-4 shrink-0" />
                     <div className="leading-tight">
-                      <span>Destination : <strong>Appwrite Cloud</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
+                      <span>Destination : <strong>Appwrite KERNEL FORGE</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
                     </div>
                   </div>
 
@@ -455,7 +464,7 @@ export default function RegisterPage() {
 
                       {/* Academic info */}
                       <div>
-                        <label className="block text-sm font-bold text-[#374151] mb-2">Filière d'études</label>
+                        <label className="block text-sm font-bold text-[#374151] mb-2">Niveau d'études — ICT4D</label>
                         <div className="relative">
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
                             <BookOpen className="h-5 w-5" />
@@ -467,12 +476,7 @@ export default function RegisterPage() {
                           ) : (
                             <select
                               value={form.levelId}
-                              onChange={e => {
-                                const selectedLevelId = e.target.value
-                                const firstSpecialty = specialties.find(s => s.levelId === selectedLevelId)
-                                set('levelId', selectedLevelId)
-                                set('specialtyId', firstSpecialty?.id ?? '')
-                              }}
+                              onChange={e => set('levelId', e.target.value)}
                               className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
                             >
                               {levels.map(level => (
@@ -486,7 +490,7 @@ export default function RegisterPage() {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-bold text-[#374151] mb-2">Spécialité</label>
+                        <label className="block text-sm font-bold text-[#374151] mb-2">Filière</label>
                         <div className="relative">
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
                             <GraduationCap className="h-5 w-5" />
@@ -496,20 +500,11 @@ export default function RegisterPage() {
                               Chargement des spécialités...
                             </div>
                           ) : (
-                            <select
-                              value={form.specialtyId}
-                              onChange={e => set('specialtyId', e.target.value)}
-                              className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
-                            >
-                              {(specialties.filter(s => s.levelId === form.levelId).length > 0
-                                ? specialties.filter(s => s.levelId === form.levelId)
-                                : specialties
-                              ).map(s => (
-                                <option key={s.id} value={s.id}>
-                                  {s.name}
-                                </option>
-                              ))}
-                            </select>
+                            <input
+                              value="ICT4D"
+                              readOnly
+                              className="w-full rounded-xl border-2 border-slate-200 bg-slate-100 pl-12 pr-4 py-3 text-sm font-medium text-slate-700 outline-none"
+                            />
                           )}
                         </div>
                       </div>

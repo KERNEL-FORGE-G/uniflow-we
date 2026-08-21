@@ -1,10 +1,10 @@
 import { Account, Client, Databases, ID, Models, Permission, Query, Role } from 'appwrite'
 import { readSessionSnapshot } from './sessionPersistence'
 
-const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://nyc.cloud.appwrite.io/v1').replace(/\/+$/, '')
-const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a80ed6d002ccb5cec52')
+const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://185-181-10-106.eu-fr-cloud-xip.com/v1').replace(/\/+$/, '')
+const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a885ccc000ddfbb3bb9')
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
-export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'avatars')
+export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets')
 
 export const appwriteClient = new Client().setEndpoint(endpoint).setProject(projectId)
 export const appwriteAccount = new Account(appwriteClient)
@@ -20,6 +20,21 @@ export interface UniFlowUser {
   accountType: UniFlowAccountType
   role: UniFlowRole
   university?: string
+  program?: string
+  level?: 'L1' | 'L2' | 'L3'
+  country?: string
+}
+
+export type UniFlowProfileInput = {
+  university?: string
+  program?: string
+  level?: 'L1' | 'L2' | 'L3'
+  country?: string
+}
+
+type UniFlowProfileDocument = UniFlowProfileInput & {
+  accountType?: UniFlowAccountType
+  role?: UniFlowRole
 }
 
 export interface ForumPost {
@@ -86,6 +101,15 @@ function asAccountType(value: unknown): UniFlowAccountType | null {
  * sûr pour les comptes historiques.
  */
 async function resolveAccountType(profile: Models.User<Models.Preferences>, hintedType?: UniFlowAccountType): Promise<UniFlowAccountType> {
+  try {
+    const document = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id) as unknown as UniFlowProfileDocument
+    const documentType = asAccountType(document.accountType)
+    if (documentType) return documentType
+    if (document.university) return 'UNIVERSITY'
+  } catch {
+    // Un profil absent ne bloque pas l’identification par les préférences ou les données personnelles.
+  }
+
   const preferences = profile.prefs as UniFlowPreferences
   const preferenceType = asAccountType(preferences.uniflowAccountType) ?? asAccountType(preferences.accountType)
   if (preferenceType) return preferenceType
@@ -119,7 +143,7 @@ const userPermissions = (userId: string) => [
   Permission.delete(Role.user(userId)),
 ]
 
-export async function createAccount(email: string, password: string, name: string, accountType: UniFlowAccountType, role: UniFlowRole) {
+export async function createAccount(email: string, password: string, name: string, accountType: UniFlowAccountType, role: UniFlowRole, profileInput: UniFlowProfileInput = {}) {
   // Appwrite peut refuser la séquence Auth si le navigateur possède encore
   // une session active. La fermeture doit précéder account.create, pas suivre.
   try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
@@ -127,10 +151,18 @@ export async function createAccount(email: string, password: string, name: strin
   await appwriteAccount.createEmailPasswordSession(email.trim(), password)
   await persistAccountTypePreference(accountType)
   const profile = await appwriteAccount.get()
-  // L’inscription ne dépend pas d’une collection de profil optionnelle :
-  // le compte Auth est la source de vérité immédiate. Le profil sera créé par
-  // le flux de paramètres dès que la collection est provisionnée avec CREATE.
-  return normalizeUser(profile, accountType, role)
+  const userProfile: Required<Pick<UniFlowProfileDocument, 'accountType' | 'role'>> & UniFlowProfileInput & { email: string; name: string } = {
+    email: profile.email,
+    name: profile.name,
+    accountType,
+    role,
+    university: accountType === 'UNIVERSITY' ? (profileInput.university || 'Université de Yaoundé I') : '',
+    program: accountType === 'UNIVERSITY' ? (profileInput.program || 'ICT4D') : '',
+    ...(accountType === 'UNIVERSITY' && profileInput.level ? { level: profileInput.level } : {}),
+    country: profileInput.country || 'Cameroun',
+  }
+  await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'users', profile.$id, userProfile, userPermissions(profile.$id))
+  return normalizeUser(profile, accountType, role, userProfile)
 }
 
 export async function loginAccount(email: string, password: string, accountType: UniFlowAccountType) {
@@ -141,15 +173,16 @@ export async function loginAccount(email: string, password: string, accountType:
   const profile = await appwriteAccount.get()
   const resolvedAccountType = await resolveAccountType(profile, accountType)
   if (resolvedAccountType !== accountType) await persistAccountTypePreference(resolvedAccountType)
-  const collectionId = resolvedAccountType === 'PERSONAL' ? 'personal_users' : 'users'
   let role: UniFlowRole = 'STUDENT'
+  let userProfile: UniFlowProfileDocument | undefined
   try {
-    const doc = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, collectionId, profile.$id)
+    const doc = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id) as unknown as UniFlowProfileDocument
     role = normalizeRole((doc as { role?: string }).role, resolvedAccountType)
+    userProfile = doc
   } catch {
     // Le profil peut ne pas encore exister : l’interface reste authentifiée et affiche un état incomplet honnête.
   }
-  return normalizeUser(profile, resolvedAccountType, role)
+  return normalizeUser(profile, resolvedAccountType, role, userProfile)
 }
 
 export async function getCurrentAccount(accountType?: UniFlowAccountType): Promise<UniFlowUser | null> {
@@ -158,7 +191,15 @@ export async function getCurrentAccount(accountType?: UniFlowAccountType): Promi
     const hintedType = accountType ?? (localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY')
     const resolvedAccountType = await resolveAccountType(profile, hintedType)
     if (resolvedAccountType !== hintedType) await persistAccountTypePreference(resolvedAccountType)
-    return normalizeUser(profile, resolvedAccountType, 'STUDENT')
+    let role: UniFlowRole = 'STUDENT'
+    let userProfile: UniFlowProfileDocument | undefined
+    try {
+      userProfile = await appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id) as unknown as UniFlowProfileDocument
+      role = normalizeRole(userProfile.role, resolvedAccountType)
+    } catch {
+      // L’authentification Appwrite reste utilisable pendant la création ou la restauration du profil.
+    }
+    return normalizeUser(profile, resolvedAccountType, role, userProfile)
   } catch {
     return null
   }
@@ -264,8 +305,18 @@ function normalizeRole(value: string | undefined, accountType: UniFlowAccountTyp
   return accountType === 'PERSONAL' ? 'STUDENT' : 'STUDENT'
 }
 
-function normalizeUser(profile: Models.User<Models.Preferences>, accountType: UniFlowAccountType, role: UniFlowRole): UniFlowUser {
-  return { id: profile.$id, email: profile.email, name: profile.name, accountType, role }
+function normalizeUser(profile: Models.User<Models.Preferences>, accountType: UniFlowAccountType, role: UniFlowRole, userProfile?: UniFlowProfileDocument): UniFlowUser {
+  return {
+    id: profile.$id,
+    email: profile.email,
+    name: profile.name,
+    accountType,
+    role,
+    university: userProfile?.university || undefined,
+    program: userProfile?.program || undefined,
+    level: userProfile?.level,
+    country: userProfile?.country || undefined,
+  }
 }
 
 export type PersonalCourseRecord = {

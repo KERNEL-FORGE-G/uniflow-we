@@ -24,6 +24,9 @@ export interface RegisterPayload {
   matricule?: string
   levelId?: string
   specialtyId?: string
+  university?: string
+  program?: string
+  level?: 'L1' | 'L2' | 'L3'
 }
 
 function mapRole(role: string): Role {
@@ -95,6 +98,12 @@ export function useAuth() {
         `${payload.firstName.trim()} ${payload.lastName.trim()}`,
         payload.accountType,
         normalizeRole(payload.role),
+        {
+          university: payload.university,
+          program: payload.program,
+          level: payload.level,
+          country: payload.countryCode === 'CM' || !payload.countryCode ? 'Cameroun' : payload.countryCode,
+        },
       )
       await persistUser(user)
       setAuthUser(toBackendUser(user))
