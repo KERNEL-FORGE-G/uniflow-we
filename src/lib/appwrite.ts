@@ -11,6 +11,14 @@ export const appwriteClient = new Client().setEndpoint(endpoint).setProject(proj
 export const appwriteAccount = new Account(appwriteClient)
 export const appwriteDatabases = new Databases(appwriteClient)
 
+function normalizeAppwriteFailure(error: unknown, operation: string): Error {
+  const message = error instanceof Error ? error.message : String(error || '')
+  if (/failed to fetch|networkerror|err_cert_authority_invalid|certificate/i.test(message)) {
+    return new Error(`La connexion sécurisée à Appwrite KERNEL FORGE a été refusée pendant ${operation}. Le certificat TLS du domaine Appwrite doit être reconnu par le navigateur avant de pouvoir lire ou enregistrer des données.`)
+  }
+  return error instanceof Error ? error : new Error(`Appwrite KERNEL FORGE a échoué pendant ${operation}.`)
+}
+
 async function awaitAppwrite<T>(promise: Promise<T>, operation: string): Promise<T> {
   let timeout: ReturnType<typeof setTimeout> | undefined
   try {
@@ -20,6 +28,8 @@ async function awaitAppwrite<T>(promise: Promise<T>, operation: string): Promise
         timeout = setTimeout(() => reject(new Error(`Appwrite KERNEL FORGE ne répond pas pour ${operation}. Vérifiez l’endpoint configuré puis réessayez.`)), APPWRITE_TIMEOUT_MS)
       }),
     ])
+  } catch (error) {
+    throw normalizeAppwriteFailure(error, operation)
   } finally {
     if (timeout) clearTimeout(timeout)
   }
@@ -278,19 +288,19 @@ async function listPersonalCollection<T>(kind: PersonalCacheKind, ownerId: strin
 }
 
 export async function createPersonalSubject(ownerId: string, data: Omit<PersonalSubject, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_subjects', ID.unique(), { ownerId, ...data })
+  return awaitAppwrite(appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_subjects', ID.unique(), { ownerId, ...data }), 'la création de la matière personnelle')
 }
 
 export async function createPersonalTask(ownerId: string, data: Omit<PersonalTask, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), { ownerId, ...data })
+  return awaitAppwrite(appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_tasks', ID.unique(), { ownerId, ...data }), 'la création de la tâche personnelle')
 }
 
 export async function createPersonalSchedule(ownerId: string, data: Omit<PersonalSchedule, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), { ownerId, ...data })
+  return awaitAppwrite(appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_schedules', ID.unique(), { ownerId, ...data }), 'la création du créneau personnel')
 }
 
 export async function createPersonalGrade(ownerId: string, data: Omit<PersonalGrade, '$id' | 'ownerId'>) {
-  return appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), { ownerId, ...data })
+  return awaitAppwrite(appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'personal_grades', ID.unique(), { ownerId, ...data }), 'la création de la note personnelle')
 }
 
 export async function listForumPosts() {
