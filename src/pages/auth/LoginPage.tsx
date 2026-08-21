@@ -244,7 +244,7 @@ export default function LoginPage() {
               <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-xs text-[#1e3a8a] flex items-center gap-2">
                 <Building2 className="h-4 w-4 shrink-0 text-[#1e3a8a]" />
                 <div className="leading-tight">
-                  <span>Source : <strong>Appwrite Cloud</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
+                  <span>Source : <strong>Appwrite KERNEL FORGE</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
                 </div>
               </div>
 
