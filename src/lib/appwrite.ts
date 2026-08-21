@@ -161,7 +161,7 @@ const userPermissions = (userId: string) => [
 export async function createAccount(email: string, password: string, name: string, accountType: UniFlowAccountType, role: UniFlowRole, profileInput: UniFlowProfileInput = {}) {
   // Appwrite peut refuser la séquence Auth si le navigateur possède encore
   // une session active. La fermeture doit précéder account.create, pas suivre.
-  try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
+  try { await awaitAppwrite(appwriteAccount.deleteSession('current'), 'la fermeture de session précédente') } catch { /* aucune session précédente ou service temporairement indisponible */ }
   const account = await awaitAppwrite(appwriteAccount.create(ID.unique(), email.trim(), password, name.trim()), 'la création du compte')
   await awaitAppwrite(appwriteAccount.createEmailPasswordSession(email.trim(), password), 'l’ouverture de session')
   await persistAccountTypePreference(accountType)
@@ -183,7 +183,7 @@ export async function createAccount(email: string, password: string, name: strin
 export async function loginAccount(email: string, password: string, accountType: UniFlowAccountType) {
   // Un client Appwrite ne peut conserver qu’une session email active dans ce flux.
   // Fermer la session courante permet de changer de compte sans erreur 401/409.
-  try { await appwriteAccount.deleteSession('current') } catch { /* aucune session précédente */ }
+  try { await awaitAppwrite(appwriteAccount.deleteSession('current'), 'la fermeture de session précédente') } catch { /* aucune session précédente ou service temporairement indisponible */ }
   await awaitAppwrite(appwriteAccount.createEmailPasswordSession(email.trim(), password), 'l’ouverture de session')
   const profile = await awaitAppwrite(appwriteAccount.get(), 'la lecture du compte')
   const resolvedAccountType = await resolveAccountType(profile, accountType)
@@ -221,7 +221,7 @@ export async function getCurrentAccount(accountType?: UniFlowAccountType): Promi
 }
 
 export async function logoutAccount() {
-  try { await appwriteAccount.deleteSession('current') } catch { /* already logged out */ }
+  try { await awaitAppwrite(appwriteAccount.deleteSession('current'), 'la fermeture de session') } catch { /* already logged out */ }
 }
 
 export async function listDocuments<T>(collectionId: string, queries: string[] = []) {
