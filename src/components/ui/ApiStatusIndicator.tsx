@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Wifi, WifiOff, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react'
-import { apiClient, BASE_URL } from '../../lib/api'
+import { appwriteAccount } from '../../lib/appwrite'
 import { cn } from '../../utils/cn'
 
 export type ApiStatus = 'checking' | 'connected' | 'offline' | 'error'
@@ -28,8 +28,9 @@ export const ApiStatusIndicator: React.FC<ApiStatusIndicatorProps> = ({
     setIsRefreshing(true)
     const startTime = performance.now()
     try {
-      // Ping GET / on backend endpoint
-      await apiClient.get('/', { timeout: 5000 })
+      // Appwrite est l’unique source réseau : account.get() vérifie le VPS
+      // avec la session active, ou produit une réponse Appwrite explicite.
+      await appwriteAccount.get()
       const endTime = performance.now()
       const duration = Math.round(endTime - startTime)
 
@@ -103,10 +104,10 @@ export const ApiStatusIndicator: React.FC<ApiStatusIndicatorProps> = ({
   }
 
   const getStatusText = () => {
-    if (isRefreshing || status === 'checking') return 'Vérification...'
-    if (status === 'connected') return 'API Connectée'
-    if (status === 'offline') return 'API Hors ligne'
-    return 'Erreur API'
+    if (isRefreshing || status === 'checking') return 'Vérification Appwrite...'
+    if (status === 'connected') return 'Appwrite connecté'
+    if (status === 'offline') return 'Appwrite hors ligne'
+    return 'Erreur Appwrite'
   }
 
   const getBadgeStyle = () => {

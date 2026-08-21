@@ -1,253 +1,68 @@
-import axios, { type AxiosInstance, type InternalAxiosRequestConfig, type AxiosError } from 'axios'
-import { playSuccessSound, playErrorSound } from '../utils/sound'
-import { personalAppwriteApi } from './appwrite'
+import {
+  appwriteAccount,
+  getCurrentAccount,
+  listAppwriteNotifications,
+  markAppwriteNotificationRead,
+  deleteAppwriteNotification,
+  personalAppwriteApi,
+} from './appwrite'
 
 /**
- * Client API UniFlow avec Axios, Moteur Réseau & Intercepteurs d'Authentification
- * Support Multi-Backend :
- *   • Backend 1 (Université) : VITE_UNIVERSITY_API_URL
- *   • Backend 2 (Personnel / SaaS Indépendant) : VITE_PERSONAL_API_URL
+ * Adaptateur de compatibilité UniFlow.
+ *
+ * L’application ne communique plus avec les deux API NestJS historiques. Les
+ * lectures et écritures personnelles passent directement par le SDK Appwrite,
+ * configuré dans `appwrite.ts` avec le seul endpoint autorisé du VPS. Les
+ * fonctionnalités dont la collection Appwrite n’est pas encore provisionnée
+ * retournent un état explicite et n’émettent jamais de requête HTTP de repli.
  */
+export const APPWRITE_VPS_ENDPOINT = String(
+  import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://185-181-10-106.eu-fr-cloud-xip.com/v1',
+).replace(/\/+$/, '')
 
-const sanitizeUrl = (u?: string) => (u ? u.trim().replace(/\/+$/, '') : '')
-const configuredTimeout = Number(import.meta.env.VITE_API_TIMEOUT_MS)
-const API_REQUEST_TIMEOUT_MS = Number.isFinite(configuredTimeout) && configuredTimeout >= 1000
-  ? configuredTimeout
-  : 15000
+// Alias de compatibilité : aucun de ces exports ne désigne un backend legacy.
+export const UNIVERSITY_API_URL = APPWRITE_VPS_ENDPOINT
+export const PERSONAL_API_URL = APPWRITE_VPS_ENDPOINT
+export const BASE_URL = APPWRITE_VPS_ENDPOINT
 
-export const UNIVERSITY_API_URL = sanitizeUrl(
-  (import.meta.env.VITE_UNIVERSITY_API_URL as string) ??
-  (import.meta.env.VITE_API_URL as string) ??
-  'https://api-uniflow.kernelforge.codes'
-)
-export const PERSONAL_API_URL = sanitizeUrl(
-  (import.meta.env.VITE_PERSONAL_API_URL as string) ?? ''
-)
+export type AccountType = 'UNIVERSITY' | 'PERSONAL'
 
-export function getAccountType(): 'UNIVERSITY' | 'PERSONAL' {
+export function getAccountType(): AccountType {
   try {
-    const explicit = localStorage.getItem('uniflow_account_type')
-    if (explicit === 'PERSONAL' || explicit === 'UNIVERSITY') {
-      return explicit
-    }
-    const rawUser = localStorage.getItem('uniflow_user')
-    if (rawUser) {
-      const parsed = JSON.parse(rawUser)
-      if (parsed.accountType === 'PERSONAL' || parsed.isIndependent) {
-        return 'PERSONAL'
-      }
-    }
-  } catch (e) {
-    // default to UNIVERSITY
+    return localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
+  } catch {
+    return 'UNIVERSITY'
   }
-  return 'UNIVERSITY'
 }
 
-export function setAccountType(type: 'UNIVERSITY' | 'PERSONAL'): void {
-  localStorage.setItem('uniflow_account_type', type)
+export function setAccountType(type: AccountType): void {
+  try { localStorage.setItem('uniflow_account_type', type) } catch { /* stockage indisponible */ }
 }
 
 export function getActiveApiUrl(): string {
-  const raw = getAccountType() === 'PERSONAL' ? PERSONAL_API_URL : UNIVERSITY_API_URL
-  return sanitizeUrl(raw)
+  return APPWRITE_VPS_ENDPOINT
 }
 
-export const BASE_URL = getActiveApiUrl()
-
-// ─── Tokens ──────────────────────────────────────────────────────────────────
-
-export const getToken = () => localStorage.getItem('uniflow_access_token')
-export const getRefreshToken = () => localStorage.getItem('uniflow_refresh_token')
-export const setTokens = (a: string, r: string) => {
-  localStorage.setItem('uniflow_access_token', a)
-  localStorage.setItem('uniflow_refresh_token', r)
+// Jetons legacy conservés uniquement pour purger les anciennes sessions du navigateur.
+export const getToken = () => {
+  try { return localStorage.getItem('uniflow_access_token') } catch { return null }
+}
+export const getRefreshToken = () => {
+  try { return localStorage.getItem('uniflow_refresh_token') } catch { return null }
+}
+export const setTokens = (accessToken: string, refreshToken: string) => {
+  try {
+    localStorage.setItem('uniflow_access_token', accessToken)
+    localStorage.setItem('uniflow_refresh_token', refreshToken)
+  } catch { /* stockage indisponible */ }
 }
 export const clearTokens = () => {
-  localStorage.removeItem('uniflow_access_token')
-  localStorage.removeItem('uniflow_refresh_token')
-  localStorage.removeItem('uniflow_user')
-}
-
-// ─── Axios Instance Configuration & Interceptors ──────────────────────────────
-
-export const apiClient: AxiosInstance = axios.create({
-  baseURL: BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-})
-
-export const axiosInstance = apiClient
-
-const MONITORED_ENDPOINTS = ['/stats/overview', '/students', '/courses', '/teachers']
-
-function isMonitoredPath(url?: string): boolean {
-  if (!url) return false
-  return MONITORED_ENDPOINTS.some((ep) => url.includes(ep))
-}
-
-// Intercepteur de requête : Ajout automatique du jeton d'authentification s'il existe + Journalisation
-apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
-    config.baseURL = getActiveApiUrl()
-    const token = getToken()
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
-    }
-
-    const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`
-    const hasToken = Boolean(token)
-
-    if (isMonitoredPath(config.url)) {
-      console.info(`[Axios Diagnostic Request] ${config.method?.toUpperCase()} ${fullUrl} | Token Attached: ${hasToken}`)
-    } else {
-      console.debug(`[Axios Request] ${config.method?.toUpperCase()} ${fullUrl}`)
-    }
-
-    return config
-  },
-  (error) => {
-    console.error('[Axios Request Error]', error)
-    return Promise.reject(error)
-  }
-)
-
-const RECENT_NETWORK_ERRORS = new Map<string, number>()
-
-export function dispatchNetworkErrorEvent(url: string, rawMessage?: string) {
-  const now = Date.now()
-  const cleanUrl = url || 'API'
-  const lastTime = RECENT_NETWORK_ERRORS.get(cleanUrl) || 0
-
-  // Ne pas spammer d'événements pour la même URL sous 5 secondes
-  if (now - lastTime < 5000) return
-  RECENT_NETWORK_ERRORS.set(cleanUrl, now)
-
-  if (RECENT_NETWORK_ERRORS.size > 30) {
-    for (const [k, v] of RECENT_NETWORK_ERRORS.entries()) {
-      if (now - v > 10000) RECENT_NETWORK_ERRORS.delete(k)
-    }
-  }
-
   try {
-    window.dispatchEvent(
-      new CustomEvent('uniflow:network-error', {
-        detail: {
-          url: cleanUrl,
-          message: rawMessage || 'Échec de connexion réseau ou blocage CORS/Timeout',
-          timestamp: now,
-        },
-      })
-    )
-  } catch {}
+    localStorage.removeItem('uniflow_access_token')
+    localStorage.removeItem('uniflow_refresh_token')
+    localStorage.removeItem('uniflow_user')
+  } catch { /* stockage indisponible */ }
 }
-
-// Intercepteur de réponse : Rafraîchissement automatique du jeton si expirée (401) + Diagnostic 401
-apiClient.interceptors.response.use(
-  (response) => {
-    if (isMonitoredPath(response.config.url)) {
-      console.info(`[Axios Diagnostic Response ${response.status}] ${response.config.url}`)
-    }
-    return response
-  },
-  async (error: AxiosError) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
-    const url = originalRequest?.url || ''
-    const status = error.response?.status
-    const token = getToken()
-
-    if (status === 401) {
-      console.warn(`[Axios 401 Unauthorized] Endpoint: ${url} | Token Present: ${Boolean(token)} | Message: ${error.message}`)
-
-      if (originalRequest && !originalRequest._retry) {
-        originalRequest._retry = true
-        console.info(`[Axios 401 Retry] Attempting token refresh for ${url}...`)
-        const refreshed = await doRefresh()
-        if (refreshed) {
-          const newToken = getToken()
-          if (newToken && originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newToken}`
-          }
-          console.info(`[Axios 401 Retry Success] Retrying ${url} with new token.`)
-          return apiClient(originalRequest)
-        } else {
-          console.error(`[Axios 401 Retry Failed] Token refresh failed for ${url}. Clearing tokens.`)
-          clearTokens()
-          try {
-            window.dispatchEvent(new CustomEvent('uniflow:session-expired'))
-          } catch {}
-        }
-      }
-    } else if (error.response) {
-      console.warn(`[Axios Error ${status}] ${url}:`, error.response.data)
-    } else {
-      console.warn(`[Axios Network Info] ${url}:`, error.message)
-      dispatchNetworkErrorEvent(url, error.message)
-    }
-
-    return Promise.reject(error)
-  }
-)
-
-/**
- * Wrapper centralisé de requête Axios avec gestion du temps d'exécution, journalisation détaillée
- * et fallback gracieux pour le diagnostic des erreurs 401.
- */
-export async function executeAxiosRequest<T = any>(config: {
-  url: string
-  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
-  data?: any
-  params?: any
-  headers?: Record<string, string>
-}): Promise<T> {
-  const startTime = Date.now()
-  const method = config.method ?? 'GET'
-  const isMonitored = isMonitoredPath(config.url)
-
-  if (isMonitored) {
-    console.group(`[Axios Wrapper] Executing ${method} ${config.url}`)
-    console.info('Config:', config)
-  }
-
-  try {
-    const response = await apiClient.request<T>({
-      url: config.url,
-      method,
-      data: config.data,
-      params: config.params,
-      headers: config.headers,
-    })
-
-    const duration = Date.now() - startTime
-    if (method !== 'GET') {
-      playSuccessSound()
-    }
-    if (isMonitored) {
-      console.info(`[Axios Wrapper Success] ${method} ${config.url} (${duration}ms)`)
-      console.groupEnd()
-    }
-
-    return response.data
-  } catch (err: any) {
-    const duration = Date.now() - startTime
-    const status = err?.response?.status ?? 500
-    const errorMessage = err?.response?.data?.message || err?.message || 'Erreur réseau/serveur'
-
-    playErrorSound()
-
-    console.error(`[Axios Wrapper Error ${status}] ${method} ${config.url} (${duration}ms):`, errorMessage)
-
-    if (isMonitored) {
-      console.groupEnd()
-    }
-
-    throw new ApiError(status, errorMessage, err?.response?.data)
-  }
-}
-
-export const axiosRequestWrapper = executeAxiosRequest
-
-// ─── ApiError ────────────────────────────────────────────────────────────────
 
 export class ApiError extends Error {
   constructor(public status: number, message: string, public body?: unknown) {
@@ -256,189 +71,59 @@ export class ApiError extends Error {
   }
 }
 
-// ─── Core fetch connecting strictly to the Real Backend ──────────────────────────
-
-async function req<T>(path: string, init: RequestInit = {}, retry = true, triedApiPrefix = false, baseOverride?: string): Promise<T> {
-  const accountType = getAccountType()
-  const token = getToken()
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(init.headers as Record<string, string> ?? {}),
-  }
-  const cleanBase = (baseOverride ?? getActiveApiUrl()).replace(/\/+$/, '')
-  const cleanPath = path.startsWith('/') ? path : `/${path}`
-  // Les endpoints métier sont désormais canoniques à la racine.
-  // Les appels explicites `/api/*` et `/api/v1/*` restent transmis aux alias backend.
-  const requestPath = cleanPath
-  if (!cleanBase) {
-    throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
-  }
-  const url = `${cleanBase}${requestPath}`
-
-  const controller = new AbortController()
-  const timeoutId = window.setTimeout(() => controller.abort(), API_REQUEST_TIMEOUT_MS)
-
+export function dispatchNetworkErrorEvent(url: string, rawMessage?: string) {
   try {
-    const res = await fetch(url, { ...init, headers, signal: controller.signal })
-
-    if (res.status === 401 && retry) {
-      if (cleanPath.startsWith('/auth/login') || cleanPath.startsWith('/auth/register') || cleanPath.startsWith('/auth/refresh')) {
-        let msg = 'Identifiants invalides ou non autorisé'
-        try {
-          const b = await res.json()
-          msg = b?.message || msg
-        } catch {}
-        throw new ApiError(401, msg)
-      }
-
-      const ok = await doRefresh(baseOverride)
-      if (ok) return req<T>(cleanPath, init, false, false, baseOverride)
-
-      if (token) {
-        clearTokens()
-        try {
-          window.dispatchEvent(new CustomEvent('uniflow:session-expired'))
-        } catch {}
-      }
-      throw new ApiError(401, 'Session expirée')
-    }
-
-    if (!res.ok) {
-      let body: any = null
-      let msg = `Erreur API HTTP ${res.status}`
-      try {
-        body = await res.json()
-        const backendMessage = body?.message || body?.error?.message || body?.error?.error
-        if (backendMessage) msg = backendMessage
-      } catch {}
-
-      if (res.status === 404) {
-        const isPersonalBackend = baseOverride !== undefined || getAccountType() === 'PERSONAL'
-        const backendKind = isPersonalBackend ? 'personnel' : 'universitaire'
-        const variableName = isPersonalBackend ? 'PERSONAL' : 'UNIVERSITY'
-        msg = `Route ${cleanPath} introuvable sur le backend ${backendKind} configuré (${cleanBase}). Vérifiez que le service expose cette route et que VITE_${variableName}_API_URL pointe vers la bonne version.`
-      }
-
-      throw new ApiError(res.status, msg, body)
-    }
-
-    if (res.status === 204) return null as T
-    const data = await res.json()
-    return data
-  } catch (err) {
-    if (err instanceof ApiError) throw err
-
-    dispatchNetworkErrorEvent(cleanPath, err instanceof Error ? err.message : undefined)
-
-    const message = err instanceof DOMException && err.name === 'AbortError'
-      ? `Le serveur ne répond pas après ${Math.round(API_REQUEST_TIMEOUT_MS / 1000)} secondes.`
-      : err instanceof Error ? err.message : 'Erreur de connexion au serveur backend'
-    throw new ApiError(500, message)
-  } finally {
-    window.clearTimeout(timeoutId)
-  }
+    window.dispatchEvent(new CustomEvent('uniflow:network-error', {
+      detail: {
+        url,
+        message: rawMessage || 'La requête Appwrite a échoué.',
+        timestamp: Date.now(),
+      },
+    }))
+  } catch { /* environnement sans DOM */ }
 }
 
-let _refreshPromise: Promise<boolean> | null = null
-
-async function doRefresh(baseOverride?: string): Promise<boolean> {
-  if (_refreshPromise) return _refreshPromise
-
-  _refreshPromise = (async () => {
-    const r = getRefreshToken()
-    if (!r) return false
-    try {
-      const activeBase = (baseOverride ?? getActiveApiUrl()).replace(/\/+$/, '')
-      const refreshPath = '/auth/refresh'
-      const res = await fetch(`${activeBase}${refreshPath}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refreshToken: r }),
-      })
-      if (!res.ok) {
-        clearTokens()
-        return false
-      }
-      const d = await res.json()
-      const data = d.data ?? d
-      if (!data.accessToken || !data.refreshToken) return false
-      setTokens(data.accessToken, data.refreshToken)
-      try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
-      return true
-    } catch (e) {
-      return false
-    }
-  })()
-
-  try {
-    return await _refreshPromise
-  } finally {
-    _refreshPromise = null
-  }
+function unavailable<T>(feature: string): Promise<T> {
+  return Promise.reject(new ApiError(
+    501,
+    `${feature} n’est pas encore provisionné dans Appwrite KERNEL FORGE. Aucune requête vers un backend alternatif n’a été effectuée.`,
+  ))
 }
 
-// ─── HTTP helpers ─────────────────────────────────────────────────────────────
-
+/** Les helpers legacy restent des garde-fous sans transport HTTP. */
+export async function executeAxiosRequest<T = unknown>(_config: unknown): Promise<T> {
+  return unavailable<T>('Cette route historique')
+}
+export const axiosRequestWrapper = executeAxiosRequest
+export const apiClient = { request: executeAxiosRequest }
+export const axiosInstance = apiClient
 export const api = {
-  get:    <T>(p: string)              => req<T>(p),
-  post:   <T>(p: string, b?: unknown) => req<T>(p, { method: 'POST',   body: JSON.stringify(b) }),
-  patch:  <T>(p: string, b?: unknown) => req<T>(p, { method: 'PATCH',  body: JSON.stringify(b) }),
-  put:    <T>(p: string, b?: unknown) => req<T>(p, { method: 'PUT',    body: JSON.stringify(b) }),
-  delete: <T>(p: string)              => req<T>(p, { method: 'DELETE' }),
+  get: <T>(_path: string) => unavailable<T>('Cette route historique'),
+  post: <T>(_path: string, _body?: unknown) => unavailable<T>('Cette route historique'),
+  patch: <T>(_path: string, _body?: unknown) => unavailable<T>('Cette route historique'),
+  put: <T>(_path: string, _body?: unknown) => unavailable<T>('Cette route historique'),
+  delete: <T>(_path: string) => unavailable<T>('Cette route historique'),
 }
-
-/**
- * Client explicite du backend personnel. Les écrans indépendants ne doivent
- * pas dépendre de `uniflow_account_type` pour choisir leur serveur : un état
- * local absent ou périmé ne doit jamais envoyer `/personal/*` au backend
- * universitaire.
- */
-const personalApiClient = {
-  get:    <T>(p: string)              => req<T>(p, {}, true, false, PERSONAL_API_URL),
-  post:   <T>(p: string, b?: unknown) => req<T>(p, { method: 'POST', body: JSON.stringify(b) }, true, false, PERSONAL_API_URL),
-  put:    <T>(p: string, b?: unknown) => req<T>(p, { method: 'PUT', body: JSON.stringify(b) }, true, false, PERSONAL_API_URL),
-  patch:  <T>(p: string, b?: unknown) => req<T>(p, { method: 'PATCH', body: JSON.stringify(b) }, true, false, PERSONAL_API_URL),
-  delete: <T>(p: string)              => req<T>(p, { method: 'DELETE' }, true, false, PERSONAL_API_URL),
-}
-
-// ─── Unwrap (TransformInterceptor → { data: T }) ──────────────────────────────
-
-function u<T>(r: { data?: T } | T): T {
-  return (r as { data?: T }).data !== undefined ? (r as { data: T }).data : r as T
-}
-
-// =============================================================================
-// AUTH
-// =============================================================================
 
 export interface LoginDto {
   email: string
   password: string
-  accountType?: 'UNIVERSITY' | 'PERSONAL'
+  accountType?: AccountType
   universityCode?: string
 }
-
 export interface RegisterDto {
   email: string
   password: string
   firstName: string
   lastName: string
   role: 'ETUDIANT' | 'ENSEIGNANT' | 'DELEGUE' | 'ADMIN' | 'INDEPENDENT_STUDENT' | 'INDEPENDENT_TEACHER'
-  accountType?: 'UNIVERSITY' | 'PERSONAL'
+  accountType?: AccountType
   universityCode?: string
   matricule?: string
   countryCode?: string
   levelId?: string
   specialtyId?: string
 }
-
-export interface AuthResult {
-  accessToken: string
-  refreshToken: string
-  user: BackendUser
-}
-
 export interface BackendUser {
   id: string
   email: string
@@ -454,90 +139,48 @@ export interface BackendUser {
   student?: StudentProfile
   teacher?: TeacherProfile
 }
+export interface AuthResult { accessToken: string; refreshToken: string; user: BackendUser }
 interface StudentProfile { firstName: string; lastName: string; matricule?: string; level?: string; specialty?: string }
-
-type RawAuthResponse = {
-  accessToken?: string
-  refreshToken?: string
-  user?: BackendUser
-  tokens?: { accessToken?: string; refreshToken?: string }
-}
-
-function normalizeAuthResult(raw: RawAuthResponse | AuthResult): AuthResult {
-  const value = raw as RawAuthResponse
-  const accessToken = value.accessToken ?? value.tokens?.accessToken
-  const refreshToken = value.refreshToken ?? value.tokens?.refreshToken
-  if (!accessToken || !refreshToken || !value.user) {
-    throw new ApiError(502, 'Réponse d’authentification backend incomplète.')
-  }
-  return { accessToken, refreshToken, user: value.user }
-}
 interface TeacherProfile { firstName: string; lastName: string }
 
-export interface AcademicLevel {
-  id: string
-  name: string
-  programName: string
+function toBackendUser(user: Awaited<ReturnType<typeof getCurrentAccount>>): BackendUser {
+  if (!user) throw new ApiError(401, 'Session Appwrite absente.')
+  const [firstName = '', ...lastName] = user.name.trim().split(/\s+/)
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    firstName,
+    lastName: lastName.join(' '),
+    fullName: user.name,
+    accountType: user.accountType,
+    accountCategory: user.accountType,
+    countryCode: user.country === 'Cameroun' ? 'CM' : user.country,
+    universityCode: user.accountType === 'UNIVERSITY' ? 'UY1' : undefined,
+  }
 }
-export interface SpecialtyOption {
-  id: string
-  name: string
-  levelId: string
-}
+
+export interface AcademicLevel { id: string; name: string; programName: string }
+export interface SpecialtyOption { id: string; name: string; levelId: string }
+const academicLevels: AcademicLevel[] = ['L1', 'L2', 'L3'].map((name) => ({ id: name, name, programName: 'ICT4D' }))
+const academicSpecialties: SpecialtyOption[] = academicLevels.map((level) => ({ id: `ICT4D-${level.id}`, name: 'ICT4D', levelId: level.id }))
 
 export const authApi = {
-  login: async (dto: LoginDto): Promise<AuthResult> => {
-    const accType = dto.accountType || 'UNIVERSITY'
-    setAccountType(accType)
-    const res = normalizeAuthResult(u(await api.post<RawAuthResponse>('/auth/login', {
-      email: dto.email,
-      password: dto.password,
-    })))
-    res.user = {
-      ...res.user,
-      accountType: res.user.accountType ?? res.user.accountCategory ?? accType,
-      universityCode: res.user.universityCode ?? (accType === 'UNIVERSITY' ? (dto.universityCode || 'UY1') : undefined),
-    }
-    localStorage.setItem('uniflow_user', JSON.stringify(res.user))
-    return res
+  login: async (_dto: LoginDto): Promise<AuthResult> => unavailable<AuthResult>('La connexion legacy'),
+  register: async (_dto: RegisterDto): Promise<AuthResult> => unavailable<AuthResult>('L’inscription legacy'),
+  me: async () => toBackendUser(await getCurrentAccount()),
+  academicOptions: async () => ({ levels: academicLevels, specialties: academicSpecialties }),
+  specialties: async (levelId?: string) => academicSpecialties.filter((item) => !levelId || item.levelId === levelId),
+  logout: () => clearTokens(),
+  updateProfile: async (dto: Partial<StudentProfile & TeacherProfile & { email: string; phone?: string; address?: string; firstName?: string; lastName?: string; countryCode?: string; preferredCurrency?: string }>) => {
+    const current = await getCurrentAccount()
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+    const firstName = dto.firstName?.trim()
+    const lastName = dto.lastName?.trim()
+    if (firstName || lastName) await appwriteAccount.updateName([firstName || current.name.split(' ')[0] || '', lastName || current.name.split(' ').slice(1).join(' ')].filter(Boolean).join(' '))
+    return toBackendUser(await getCurrentAccount(current.accountType))
   },
-
-  register: async (dto: RegisterDto): Promise<AuthResult> => {
-    const accType = dto.accountType || 'UNIVERSITY'
-    setAccountType(accType)
-    const backendDto = accType === 'PERSONAL'
-      ? {
-          email: dto.email,
-          password: dto.password,
-          fullName: `${dto.firstName} ${dto.lastName}`.trim(),
-          role: dto.role === 'INDEPENDENT_TEACHER' ? 'TEACHER' : 'STUDENT',
-          accountCategory: 'PERSONAL',
-          countryCode: dto.countryCode || 'CM',
-        }
-      : (() => {
-          const { accountType: _accountType, universityCode: _universityCode, matricule: _matricule, ...universityDto } = dto
-          return universityDto
-        })()
-    const res = normalizeAuthResult(u(await api.post<RawAuthResponse>('/auth/register', backendDto)))
-    res.user = {
-      ...res.user,
-      accountType: res.user.accountType ?? res.user.accountCategory ?? accType,
-      universityCode: res.user.universityCode ?? (accType === 'UNIVERSITY' ? (dto.universityCode || 'UY1') : undefined),
-    }
-    localStorage.setItem('uniflow_user', JSON.stringify(res.user))
-    return res
-  },
-  me:       async ()                 => u(await api.get<{ data: BackendUser }>('/auth/me')),
-  academicOptions: async () => u(await api.get<{ data: { levels: AcademicLevel[]; specialties: SpecialtyOption[] } }>('/auth/academic-options')),
-  specialties: async (levelId?: string) => u(await api.get<{ data: SpecialtyOption[] }>(`/auth/specialties${levelId ? `?levelId=${encodeURIComponent(levelId)}` : ''}`)),
-  logout:   ()                       => clearTokens(),
-  updateProfile: async (dto: Partial<StudentProfile & TeacherProfile & { email: string; phone?: string; address?: string; firstName?: string; lastName?: string; countryCode?: string; preferredCurrency?: string }>) =>
-    u(await api.patch<{ data: BackendUser }>('/auth/me', dto))
 }
-
-// =============================================================================
-// COURSES
-// =============================================================================
 
 export interface Course {
   id: string; name: string; code: string; description?: string
@@ -546,621 +189,244 @@ export interface Course {
   teacher?: { id: string; firstName: string; lastName: string }
   classroom?: { id: string; name: string; building: string }
 }
+export interface PersonalCourse { id: string; code: string; title: string; instructor?: string; credits?: number; colorHex?: string; classroom?: string; description?: string; createdAt?: string }
+export interface PersonalSchedule { id: string; courseId: string; courseTitle?: string; courseCode?: string; dayOfWeek: string; startTime: string; endTime: string; classroom?: string; colorHex?: string; type?: string }
+export interface PersonalAssignment { id: string; courseId: string; title: string; dueDate: string; description?: string; priority?: string; status?: string }
+export interface PersonalGrade { id: string; courseId: string; evaluationTitle: string; score: number; maxScore: number; coefficient: number }
+
+function asCourse(course: PersonalCourse): Course {
+  const instructor = course.instructor?.trim()
+  return {
+    id: course.id,
+    name: course.title,
+    code: course.code,
+    description: course.description,
+    type: 'CM',
+    credits: course.credits ?? 0,
+    hours: 0,
+    teacher: instructor ? { id: '', firstName: instructor, lastName: '' } : undefined,
+    classroom: course.classroom ? { id: '', name: course.classroom, building: '' } : undefined,
+  }
+}
+async function personalCourses(): Promise<Course[]> {
+  if (getAccountType() !== 'PERSONAL') return []
+  return (await personalAppwriteApi.courses.list()).map(asCourse)
+}
 
 export const coursesApi = {
-  list:   async ()          => u(await api.get<{ data: Course[] }>('/courses')),
-  mine: async () => {
-    if (getAccountType() === 'PERSONAL') {
-      const personalCourses = await personalAppwriteApi.courses.list()
-      return personalCourses.map((course) => ({
-        id: course.id,
-        name: course.title,
-        code: course.code,
-        description: course.description,
-        type: 'CM' as const,
-        credits: course.credits ?? 0,
-        hours: 0,
-        teacher: course.instructor ? { id: '', firstName: course.instructor, lastName: '' } : undefined,
-        classroom: course.classroom ? { id: '', name: course.classroom, building: '' } : undefined,
-      }))
-    }
-    // Le catalogue universitaire Appwrite n’est pas encore provisionné dans ce client.
-    // Retourner un état vide évite toute communication runtime avec l’ancien backend.
-    return []
+  list: personalCourses,
+  mine: personalCourses,
+  getOne: async (id: string) => {
+    const course = (await personalCourses()).find((item) => item.id === id)
+    if (!course) throw new ApiError(404, 'Cours introuvable dans les données Appwrite disponibles.')
+    return course
   },
-  getOne: async (id: string) => u(await api.get<{ data: Course }>(`/courses/${id}`)),
-  create: async (dto: Partial<Course> & { teachingUnitId?: string; teacherId?: string; classroomId?: string }) => u(await api.post<{ data: Course }>('/courses', dto)),
-  update: async (id: string, dto: Partial<Course>) => u(await api.patch<{ data: Course }>(`/courses/${id}`, dto)),
-  delete: async (id: string) => u(await api.delete<void>(`/courses/${id}`)),
-}
-
-export interface PersonalCourse {
-  id: string
-  code: string
-  title: string
-  instructor?: string
-  credits?: number
-  colorHex?: string
-  classroom?: string
-  description?: string
-  createdAt?: string
-}
-
-export interface PersonalSchedule {
-  id: string
-  courseId: string
-  courseTitle?: string
-  courseCode?: string
-  dayOfWeek: string
-  startTime: string
-  endTime: string
-  classroom?: string
-  colorHex?: string
-  type?: string
-}
-
-export interface PersonalAssignment {
-  id: string
-  courseId: string
-  title: string
-  dueDate: string
-  description?: string
-  priority?: string
-  status?: string
-}
-
-export interface PersonalGrade {
-  id: string
-  courseId: string
-  evaluationTitle: string
-  score: number
-  maxScore: number
-  coefficient: number
-}
-
-const personalDayToApi: Record<string, string> = {
-  MONDAY: 'LUNDI', TUESDAY: 'MARDI', WEDNESDAY: 'MERCREDI', THURSDAY: 'JEUDI',
-  FRIDAY: 'VENDREDI', SATURDAY: 'SAMEDI', SUNDAY: 'DIMANCHE',
-}
-
-const toPersonalCourseDto = (dto: Partial<PersonalCourse>) => ({
-  code: dto.code,
-  name: dto.title,
-  ...(dto.instructor?.trim() ? { instructorName: dto.instructor.trim() } : {}),
-  ...(typeof dto.credits === 'number' && dto.credits > 0 ? { credits: dto.credits } : {}),
-  ...(dto.colorHex?.trim() ? { colorHex: dto.colorHex.trim() } : {}),
-  ...(dto.classroom?.trim() ? { semesterLabel: dto.classroom.trim() } : {}),
-})
-
-const toPersonalScheduleDto = (dto: Partial<PersonalSchedule>) => ({
-  subjectId: dto.courseId,
-  dayOfWeek: personalDayToApi[dto.dayOfWeek || ''] || dto.dayOfWeek,
-  startTime: dto.startTime,
-  endTime: dto.endTime,
-  classroomLocation: dto.classroom || undefined,
-  notes: dto.type || undefined,
-})
-
-const toPersonalTaskDto = (dto: Partial<PersonalAssignment>) => ({
-  subjectId: dto.courseId || undefined,
-  title: dto.title,
-  dueDate: dto.dueDate || undefined,
-  description: dto.description || undefined,
-  priority: dto.priority || undefined,
-  status: dto.status || undefined,
-})
-
-export const personalApi = {
-  courses: {
-    list: async () => u(await personalApiClient.get<{ data: PersonalCourse[] }>('/personal/subjects')),
-    create: async (dto: Omit<PersonalCourse, 'id' | 'createdAt'>) => u(await personalApiClient.post<{ data: PersonalCourse }>('/personal/subjects', toPersonalCourseDto(dto))),
-    update: async (id: string, dto: Partial<PersonalCourse>) => u(await personalApiClient.put<{ data: PersonalCourse }>(`/personal/subjects/${id}`, toPersonalCourseDto(dto))),
-    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/subjects/${id}`)),
+  create: async (dto: Partial<Course> & { teachingUnitId?: string; teacherId?: string; classroomId?: string }) => {
+    if (getAccountType() !== 'PERSONAL') return unavailable<Course>('Les cours universitaires')
+    return asCourse(await personalAppwriteApi.courses.create({ code: dto.code || '', title: dto.name || '', description: dto.description, instructor: dto.teacher?.firstName, credits: dto.credits, classroom: dto.classroom?.name }))
   },
-  schedules: {
-    list: async () => u(await personalApiClient.get<{ data: PersonalSchedule[] }>('/personal/schedules')),
-    create: async (dto: Omit<PersonalSchedule, 'id' | 'courseTitle' | 'courseCode' | 'colorHex'>) => u(await personalApiClient.post<{ data: PersonalSchedule }>('/personal/schedules', toPersonalScheduleDto(dto))),
-    update: async (id: string, dto: Partial<PersonalSchedule>) => u(await personalApiClient.put<{ data: PersonalSchedule }>(`/personal/schedules/${id}`, toPersonalScheduleDto(dto))),
-    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/schedules/${id}`)),
+  update: async (id: string, dto: Partial<Course>) => {
+    if (getAccountType() !== 'PERSONAL') return unavailable<Course>('Les cours universitaires')
+    return asCourse(await personalAppwriteApi.courses.update(id, { code: dto.code, title: dto.name, description: dto.description, instructor: dto.teacher?.firstName, credits: dto.credits, classroom: dto.classroom?.name }))
   },
-  assignments: {
-    list: async () => u(await personalApiClient.get<{ data: PersonalAssignment[] }>('/personal/tasks')),
-    create: async (dto: Omit<PersonalAssignment, 'id'>) => u(await personalApiClient.post<{ data: PersonalAssignment }>('/personal/tasks', toPersonalTaskDto(dto))),
-    update: async (id: string, dto: Partial<PersonalAssignment>) => u(await personalApiClient.put<{ data: PersonalAssignment }>(`/personal/tasks/${id}`, toPersonalTaskDto(dto))),
-    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/tasks/${id}`)),
-  },
-  grades: {
-    list: async () => u(await personalApiClient.get<{ data: PersonalGrade[] }>('/personal/grades')),
-    create: async (dto: Omit<PersonalGrade, 'id'>) => u(await personalApiClient.post<{ data: PersonalGrade }>('/personal/grades', { ...dto, subjectId: dto.courseId })),
-    update: async (id: string, dto: Partial<PersonalGrade>) => u(await personalApiClient.put<{ data: PersonalGrade }>(`/personal/grades/${id}`, { ...dto, ...(dto.courseId ? { subjectId: dto.courseId } : {}) })),
-    delete: async (id: string) => u(await personalApiClient.delete<void>(`/personal/grades/${id}`)),
+  delete: async (id: string) => {
+    if (getAccountType() !== 'PERSONAL') return unavailable<void>('Les cours universitaires')
+    return personalAppwriteApi.courses.delete(id)
   },
 }
 
-// =============================================================================
-// SCHEDULES
-// =============================================================================
+export const personalApi = personalAppwriteApi
 
 export interface Schedule {
-  id: string; dayOfWeek: string; startTime: string; endTime: string
-  semesterId: string
-  course: { id: string; name: string; code: string; type: string
-            teacher: { firstName: string; lastName: string }
-            classroom: { name: string; building: string } }
+  id: string; dayOfWeek: string; startTime: string; endTime: string; semesterId: string
+  course: { id: string; name: string; code: string; type: string; teacher: { firstName: string; lastName: string }; classroom: { name: string; building: string } }
 }
-
+async function personalSchedules(): Promise<Schedule[]> {
+  if (getAccountType() !== 'PERSONAL') return []
+  const [schedules, courses] = await Promise.all([personalAppwriteApi.schedules.list(), personalAppwriteApi.courses.list()])
+  const byId = new Map(courses.map((course) => [course.id, course]))
+  return schedules.map((item) => {
+    const course = byId.get(item.courseId)
+    return {
+      id: item.id,
+      dayOfWeek: item.dayOfWeek,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      semesterId: '',
+      course: { id: item.courseId, name: course?.title || item.courseTitle || '', code: course?.code || item.courseCode || '', type: item.type || '', teacher: { firstName: '', lastName: '' }, classroom: { name: item.classroom || '', building: '' } },
+    }
+  })
+}
 export const schedulesApi = {
-  list: async () => u(await api.get<{ data: Schedule[] }>('/schedules')),
-  mine: async () => {
-    if (getAccountType() === 'PERSONAL') {
-      return (await personalAppwriteApi.schedules.list()).map((item) => ({
-        id: item.id,
-        dayOfWeek: item.dayOfWeek,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        semesterId: '',
-        course: { id: item.courseId, name: item.courseTitle || '', code: item.courseCode || '', type: item.type || '', teacher: { firstName: '', lastName: '' }, classroom: { name: item.classroom || '', building: '' } },
-      }))
-    }
-    return []
+  list: personalSchedules,
+  mine: personalSchedules,
+  create: async (dto: Partial<Schedule>) => {
+    if (getAccountType() !== 'PERSONAL') return unavailable<Schedule>('Les créneaux universitaires')
+    const created = await personalAppwriteApi.schedules.create({ courseId: dto.course?.id || '', dayOfWeek: dto.dayOfWeek || 'LUNDI', startTime: dto.startTime || '00:00', endTime: dto.endTime || dto.startTime || '00:00', classroom: dto.course?.classroom?.name, type: dto.course?.type })
+    return (await personalSchedules()).find((item) => item.id === created.id) as Schedule
   },
-  create: async (dto: Partial<Schedule>) => u(await api.post<{ data: Schedule }>('/schedules', dto)),
 }
 
-// =============================================================================
-// STUDENTS
-// =============================================================================
-
-export interface Student {
-  id: string; firstName: string; lastName: string; matricule: string
-  status: string
-  level?: { name: string; program?: { name: string } }
-  specialty?: { name: string }
-  user?: { email: string }
-}
-
+export interface Student { id: string; firstName: string; lastName: string; matricule: string; status: string; level?: { name: string; program?: { name: string } }; specialty?: { name: string }; user?: { email: string } }
+export interface Teacher { id: string; firstName: string; lastName: string; user?: { email: string }; courses?: Course[] }
+const universityCollectionUnavailable = <T>(feature: string) => unavailable<T>(feature)
 export const studentsApi = {
-  list:   async ()           => u(await api.get<{ data: Student[] }>('/students')),
-  getOne: async (id: string) => u(await api.get<{ data: Student }>(`/students/${id}`)),
-  create: async (dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string }) => u(await api.post<{ data: Student }>('/students', dto)),
-  update: async (id: string, dto: Partial<Student>) => u(await api.patch<{ data: Student }>(`/students/${id}`, dto)),
-  delete: async (id: string) => u(await api.delete<void>(`/students/${id}`)),
+  list: async (): Promise<Student[]> => [],
+  getOne: async (_id: string) => universityCollectionUnavailable<Student>('Les étudiants'),
+  create: async (_dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string }) => universityCollectionUnavailable<Student>('Les étudiants'),
+  update: async (_id: string, _dto: Partial<Student>) => universityCollectionUnavailable<Student>('Les étudiants'),
+  delete: async (_id: string) => universityCollectionUnavailable<void>('Les étudiants'),
 }
-
-// =============================================================================
-// TEACHERS
-// =============================================================================
-
-export interface Teacher {
-  id: string; firstName: string; lastName: string
-  user?: { email: string }
-  courses?: Course[]
-}
-
 export const teachersApi = {
-  list:   async ()           => u(await api.get<{ data: Teacher[] }>('/teachers')),
-  getOne: async (id: string) => u(await api.get<{ data: Teacher }>(`/teachers/${id}`)),
-  create: async (dto: Partial<Teacher> & { userId?: string; email?: string }) => u(await api.post<{ data: Teacher }>('/teachers', dto)),
-  update: async (id: string, dto: Partial<Teacher>) => u(await api.patch<{ data: Teacher }>(`/teachers/${id}`, dto)),
-  delete: async (id: string) => u(await api.delete<void>(`/teachers/${id}`)),
+  list: async (): Promise<Teacher[]> => [],
+  getOne: async (_id: string) => universityCollectionUnavailable<Teacher>('Les enseignants'),
+  create: async (_dto: Partial<Teacher> & { userId?: string; email?: string }) => universityCollectionUnavailable<Teacher>('Les enseignants'),
+  update: async (_id: string, _dto: Partial<Teacher>) => universityCollectionUnavailable<Teacher>('Les enseignants'),
+  delete: async (_id: string) => universityCollectionUnavailable<void>('Les enseignants'),
 }
 
-// =============================================================================
-// ATTENDANCE
-// =============================================================================
-
-export interface AttendanceSession {
-  id: string; date: string; courseId: string
-  course?: { name: string; code: string }
-  records: AttendanceRecord[]
-}
-export interface AttendanceRecord {
-  id: string; status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'
-  studentId: string
-  student?: { firstName: string; lastName: string; matricule: string }
-}
-
+export interface AttendanceSession { id: string; date: string; courseId: string; course?: { name: string; code: string }; records: AttendanceRecord[] }
+export interface AttendanceRecord { id: string; status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'; studentId: string; student?: { firstName: string; lastName: string; matricule: string } }
 export const attendanceApi = {
-  // Les présences universitaires seront affichées uniquement lorsqu’une collection
-  // Appwrite dédiée sera provisionnée. Ne jamais appeler l’ancien backend ici.
   listSessions: async (): Promise<AttendanceSession[]> => [],
-
-  createSession: async (dto: { courseId: string; date: string }) =>
-    u(await api.post<{ data: AttendanceSession }>('/attendance/sessions', dto)),
-
-  getSession: async (id: string) =>
-    u(await api.get<{ data: AttendanceSession }>(`/attendance/sessions/${id}`)),
-
+  createSession: async (_dto: { courseId: string; date: string }) => unavailable<AttendanceSession>('Les présences'),
+  getSession: async (_id: string) => unavailable<AttendanceSession>('Les présences'),
   byCourse: async (_courseId: string): Promise<AttendanceSession[]> => [],
-
-  mark: async (sessionId: string, dto: { studentId: string; status: string }) =>
-    u(await api.patch<{ data: AttendanceRecord }>(`/attendance/sessions/${sessionId}/mark`, dto)),
-
-  scan: async (dto: { qrCode: string }) =>
-    u(await api.post<{ data: AttendanceRecord }>('/attendance/scan', dto)),
+  mark: async (_sessionId: string, _dto: { studentId: string; status: string }) => unavailable<AttendanceRecord>('Les présences'),
+  scan: async (_dto: { qrCode: string }) => unavailable<AttendanceRecord>('Les présences'),
 }
 
-// =============================================================================
-// CLASSROOMS
-// =============================================================================
-
-export interface Classroom {
-  id: string; name: string; building: string; floor?: number
-  capacity: number; type: string; isAvailable: boolean
-  equipment?: string[]
-}
-
+export interface Classroom { id: string; name: string; building: string; floor?: number; capacity: number; type: string; isAvailable: boolean; equipment?: string[] }
 export const classroomsApi = {
-  list:   async ()           => u(await api.get<{ data: Classroom[] }>('/classrooms')),
-  getOne: async (id: string) => u(await api.get<{ data: Classroom }>(`/classrooms/${id}`)),
-  create: async (dto: Partial<Classroom>) => u(await api.post<{ data: Classroom }>('/classrooms', dto)),
-  update: async (id: string, dto: Partial<Classroom>) => u(await api.patch<{ data: Classroom }>(`/classrooms/${id}`, dto)),
-  delete: async (id: string) => u(await api.delete<void>(`/classrooms/${id}`)),
+  list: async (): Promise<Classroom[]> => [],
+  getOne: async (_id: string) => unavailable<Classroom>('Les salles'),
+  create: async (_dto: Partial<Classroom>) => unavailable<Classroom>('Les salles'),
+  update: async (_id: string, _dto: Partial<Classroom>) => unavailable<Classroom>('Les salles'),
+  delete: async (_id: string) => unavailable<void>('Les salles'),
 }
 
-// =============================================================================
-// NOTIFICATIONS
-// =============================================================================
-
-export interface Notification {
-  id: string; title: string; message: string; type: string
-  isRead: boolean; createdAt: string
+export interface Notification { id: string; title: string; message: string; type: string; isRead: boolean; createdAt: string }
+async function appwriteNotifications(): Promise<Notification[]> {
+  const current = await getCurrentAccount()
+  if (!current) return []
+  const rows = await listAppwriteNotifications(current.id)
+  return rows.map((row) => ({ id: row.$id, title: row.title, message: row.message, type: row.type, isRead: row.isRead, createdAt: row.createdAt || '' }))
 }
-
 export const notificationsApi = {
-  list: async () => u(await api.get<{ data: Notification[] }>('/notifications')),
-  unreadCount: async () => {
-    const res = u(await api.get<{ data: { unreadCount: number } | number }>('/notifications/unread-count'))
-    return typeof res === 'number' ? res : res?.unreadCount ?? 0
+  list: appwriteNotifications,
+  unreadCount: async () => (await appwriteNotifications()).filter((item) => !item.isRead).length,
+  markRead: async (id: string) => {
+    await markAppwriteNotificationRead(id)
+    return (await appwriteNotifications()).find((item) => item.id === id) as Notification
   },
-  markRead: async (id: string) => u(await api.patch<{ data: Notification }>(`/notifications/${id}/read`)),
-  delete: async (id: string) => u(await api.delete<void>(`/notifications/${id}`)),
+  delete: (id: string) => deleteAppwriteNotification(id),
 }
 
-// =============================================================================
-// ASSIGNMENTS (DEVOIRS)
-// =============================================================================
-
-export interface Assignment {
-  id: string; title: string; code: string; due: string
-  progress: number; status: 'À rendre' | 'En retard' | 'Soumis' | 'Noté'
-  grade?: string; description?: string; feedback?: string
-  submittedAt?: string; submittedFile?: string; submissionNote?: string
+export interface Assignment { id: string; title: string; code: string; due: string; progress: number; status: 'À rendre' | 'En retard' | 'Soumis' | 'Noté'; grade?: string; description?: string; feedback?: string; submittedAt?: string; submittedFile?: string; submissionNote?: string }
+function asAssignment(item: PersonalAssignment): Assignment {
+  const status = item.status === 'Soumis' || item.status === 'Noté' || item.status === 'En retard' ? item.status : 'À rendre'
+  return { id: item.id, title: item.title, code: item.courseId, due: item.dueDate, progress: status === 'Soumis' || status === 'Noté' ? 100 : 0, status, description: item.description }
 }
-
+async function personalAssignments(): Promise<Assignment[]> {
+  if (getAccountType() !== 'PERSONAL') return []
+  return (await personalAppwriteApi.assignments.list()).map(asAssignment)
+}
 export const assignmentsApi = {
-  list: async () => assignmentsApi.mine(),
-  mine: async () => {
-    if (getAccountType() === 'PERSONAL') {
-      return (await personalAppwriteApi.assignments.list()).map((item) => ({
-        id: item.id,
-        title: item.title,
-        code: item.courseId,
-        due: item.dueDate,
-        progress: item.status === 'Soumis' || item.status === 'Noté' ? 100 : 0,
-        status: (item.status === 'Soumis' || item.status === 'Noté' || item.status === 'En retard' ? item.status : 'À rendre') as Assignment['status'],
-        description: item.description,
-      }))
-    }
-    return []
-  },
+  list: personalAssignments,
+  mine: personalAssignments,
   create: async (dto: Partial<Assignment>) => {
-    if (getAccountType() !== 'PERSONAL') throw new Error('Les devoirs universitaires Appwrite ne sont pas encore provisionnés.')
-    return personalAppwriteApi.assignments.create({ courseId: dto.code || '', title: dto.title || '', dueDate: dto.due || '', description: dto.description || '', priority: 'NORMAL', status: 'À rendre' }) as unknown as Assignment
+    if (getAccountType() !== 'PERSONAL') return unavailable<Assignment>('Les devoirs universitaires')
+    return asAssignment(await personalAppwriteApi.assignments.create({ courseId: dto.code || '', title: dto.title || '', dueDate: dto.due || '', description: dto.description || '', priority: 'MEDIUM', status: dto.status || 'TODO' }))
   },
   update: async (id: string, dto: Partial<Assignment>) => {
-    if (getAccountType() !== 'PERSONAL') throw new Error('Les devoirs universitaires Appwrite ne sont pas encore provisionnés.')
-    return personalAppwriteApi.assignments.update(id, { ...(dto.code ? { courseId: dto.code } : {}), ...(dto.title ? { title: dto.title } : {}), ...(dto.due ? { dueDate: dto.due } : {}), ...(dto.description ? { description: dto.description } : {}), ...(dto.status ? { status: dto.status } : {}) }) as unknown as Assignment
+    if (getAccountType() !== 'PERSONAL') return unavailable<Assignment>('Les devoirs universitaires')
+    return asAssignment(await personalAppwriteApi.assignments.update(id, { ...(dto.code ? { courseId: dto.code } : {}), ...(dto.title ? { title: dto.title } : {}), ...(dto.due ? { dueDate: dto.due } : {}), ...(dto.description ? { description: dto.description } : {}), ...(dto.status ? { status: dto.status } : {}) }))
   },
   submit: async (id: string, _fileInfo?: string) => assignmentsApi.update(id, { status: 'Soumis' }),
   delete: async (id: string) => {
-    if (getAccountType() !== 'PERSONAL') throw new Error('Les devoirs universitaires Appwrite ne sont pas encore provisionnés.')
+    if (getAccountType() !== 'PERSONAL') return unavailable<void>('Les devoirs universitaires')
     return personalAppwriteApi.assignments.delete(id)
   },
 }
 
-// =============================================================================
-// GRADES (NOTES)
-// =============================================================================
-
-export interface Grade {
-  id: string; ue: string; code: string; title: string
-  type: string; coef: number; grade: number; classAvg: number; rank: number; maxRank: number
+export interface Grade { id: string; ue: string; code: string; title: string; type: string; coef: number; grade: number; classAvg: number; rank: number; maxRank: number }
+async function personalGrades(): Promise<Grade[]> {
+  if (getAccountType() !== 'PERSONAL') return []
+  return (await personalAppwriteApi.grades.list()).map((item) => ({ id: item.id, ue: '', code: item.courseId, title: item.evaluationTitle, type: '', coef: item.coefficient, grade: item.score, classAvg: 0, rank: 0, maxRank: 0 }))
 }
-
 export const gradesApi = {
-  mine: async () => u(await api.get<{ data: Grade[] }>('/grades')),
-  create: async (dto: Partial<Grade>) => u(await api.post<{ data: Grade }>('/grades', dto)),
-}
-
-// =============================================================================
-// MESSAGING (MESSAGERIE)
-// =============================================================================
-
-export interface ChatMessage {
-  id: string; from: 'me' | 'them'; text: string; time: string; file?: string
-}
-export interface ChatConversation {
-  id: string; name: string; role: string; email: string; online: boolean; time: string; preview: string; unread: number; messages: ChatMessage[]
-}
-
-export const messagingApi = {
-  conversations: async () => u(await api.get<{ data: ChatConversation[] }>('/messages')),
-  sendMessage: async (convId: string, text: string, file?: string) => u(await api.post<{ data: ChatConversation }>('/messages', { convId, text, file })),
-}
-
-// =============================================================================
-// LIBRARY (BIBLIOTHÈQUE)
-// =============================================================================
-
-export interface LibraryResource {
-  id: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string
-}
-
-export const libraryApi = {
-  list: async () => u(await api.get<{ data: LibraryResource[] }>('/library')),
-  upload: async (dto: Partial<LibraryResource>) => u(await api.post<{ data: LibraryResource }>('/library', dto)),
-}
-
-// =============================================================================
-// UE
-// =============================================================================
-
-export interface UE {
-  id: string; name: string; code: string; credits: number
-  courses?: Course[]
-}
-
-export const ueApi = {
-  list:      async ()              => u(await api.get<{ data: UE[] }>('/ue')),
-  byLevel:   async (id: string)    => u(await api.get<{ data: UE[] }>(`/ue/by-level/${id}`)),
-  bySemester:async (id: string)    => u(await api.get<{ data: UE[] }>(`/ue/by-semester/${id}`)),
-  getOne:    async (id: string)    => u(await api.get<{ data: UE }>(`/ue/${id}`)),
-  create:    async (dto: Partial<UE> & { levelId?: string; semesterId?: string }) => u(await api.post<{ data: UE }>('/ue', dto)),
-  update:    async (id: string, dto: Partial<UE>) => u(await api.patch<{ data: UE }>(`/ue/${id}`, dto)),
-  delete:    async (id: string) => u(await api.delete<void>(`/ue/${id}`)),
-}
-
-// =============================================================================
-// AUDIT LOGS
-// =============================================================================
-
-export interface AuditLog {
-  id: string
-  userId?: string
-  userRole?: string
-  action: string
-  resource: string
-  resourceId?: string
-  ipAddress?: string
-  userAgent?: string
-  statusCode?: number
-  details?: any
-  createdAt: string
-}
-
-export const auditLogsApi = {
-  list: async (page = 1, limit = 50, resource?: string) => {
-    const params = new URLSearchParams({ page: String(page), limit: String(limit) })
-    if (resource) params.set('resource', resource)
-    return u(await api.get<{ data: AuditLog[] }>(`/audit-logs?${params.toString()}`))
+  mine: personalGrades,
+  create: async (dto: Partial<Grade>) => {
+    if (getAccountType() !== 'PERSONAL') return unavailable<Grade>('Les notes universitaires')
+    const created = await personalAppwriteApi.grades.create({ courseId: dto.code || '', evaluationTitle: dto.title || '', score: dto.grade || 0, maxScore: 20, coefficient: dto.coef || 1 })
+    return { id: created.id, ue: '', code: created.courseId, title: created.evaluationTitle, type: '', coef: created.coefficient, grade: created.score, classAvg: 0, rank: 0, maxRank: 0 }
   },
-  getOne: async (id: string) => u(await api.get<{ data: AuditLog }>(`/audit-logs/${id}`)),
 }
 
-// =============================================================================
-// USERS ADMIN
-// =============================================================================
+export interface ChatMessage { id: string; from: 'me' | 'them'; text: string; time: string; file?: string }
+export interface ChatConversation { id: string; name: string; role: string; email: string; online: boolean; time: string; preview: string; unread: number; messages: ChatMessage[] }
+export const messagingApi = { conversations: async (): Promise<ChatConversation[]> => [], sendMessage: async (_convId: string, _text: string, _file?: string) => unavailable<ChatConversation>('La messagerie') }
 
-export const usersApi = {
-  listAll: async () => {
-    const [students, teachers] = await Promise.all([
-      studentsApi.list(),
-      teachersApi.list()
-    ])
-    return [...students.map(s => ({ ...s, type: 'student' })), ...teachers.map(t => ({ ...t, type: 'teacher' }))]
-  }
+export interface LibraryResource { id: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string }
+export const libraryApi = { list: async (): Promise<LibraryResource[]> => [], upload: async (_dto: Partial<LibraryResource>) => unavailable<LibraryResource>('La bibliothèque') }
+
+export interface UE { id: string; name: string; code: string; credits: number; courses?: Course[] }
+export const ueApi = {
+  list: async (): Promise<UE[]> => [],
+  byLevel: async (_id: string): Promise<UE[]> => [],
+  bySemester: async (_id: string): Promise<UE[]> => [],
+  getOne: async (_id: string) => unavailable<UE>('Les unités d’enseignement'),
+  create: async (_dto: Partial<UE> & { levelId?: string; semesterId?: string }) => unavailable<UE>('Les unités d’enseignement'),
+  update: async (_id: string, _dto: Partial<UE>) => unavailable<UE>('Les unités d’enseignement'),
+  delete: async (_id: string) => unavailable<void>('Les unités d’enseignement'),
 }
 
-export interface OverviewStats {
-  studentCount: number
-  teacherCount: number
-  courseCount: number
-  satisfactionRate: number
-  supportAvailability: string
-  assignmentCount?: number
-  gradeCount?: number
-  averageGrade?: number | null
-  attendanceRate?: number | null
-}
+export interface AuditLog { id: string; userId?: string; userRole?: string; action: string; resource: string; resourceId?: string; ipAddress?: string; userAgent?: string; statusCode?: number; details?: unknown; createdAt: string }
+export const auditLogsApi = { list: async (_page = 1, _limit = 50, _resource?: string): Promise<AuditLog[]> => [], getOne: async (_id: string) => unavailable<AuditLog>('Le journal d’audit') }
+export const usersApi = { listAll: async () => [] as Array<Student & { type: string } | Teacher & { type: string }> }
 
+export interface OverviewStats { studentCount: number; teacherCount: number; courseCount: number; satisfactionRate: number; supportAvailability: string; assignmentCount?: number; gradeCount?: number; averageGrade?: number | null; attendanceRate?: number | null }
 export const statsApi = {
-  overview: async (): Promise<OverviewStats> =>
-    u(await api.get<{ data: OverviewStats }>('/stats/overview')),
+  overview: async (): Promise<OverviewStats> => {
+    if (getAccountType() !== 'PERSONAL') return { studentCount: 0, teacherCount: 0, courseCount: 0, satisfactionRate: 0, supportAvailability: 'Données universitaires non provisionnées dans Appwrite', assignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null }
+    const [courses, assignments, grades] = await Promise.all([personalAppwriteApi.courses.list(), personalAppwriteApi.assignments.list(), personalAppwriteApi.grades.list()])
+    const averageGrade = grades.length ? grades.reduce((sum, item) => sum + (item.score / Math.max(item.maxScore, 1)) * 20, 0) / grades.length : null
+    return { studentCount: 0, teacherCount: 0, courseCount: courses.length, satisfactionRate: 0, supportAvailability: 'Appwrite KERNEL FORGE', assignmentCount: assignments.length, gradeCount: grades.length, averageGrade, attendanceRate: null }
+  },
 }
-
-// =============================================================================
-// VIDEO CONFERENCE
-// =============================================================================
 
 export interface VideoRoom { roomName: string; token: string; serverUrl: string }
-
-export const videoApi = {
-  create: async (dto: { courseId?: string; roomName?: string }) =>
-    u(await api.post<{ data: VideoRoom }>('/videoconference/rooms', dto)),
-}
-
-// =============================================================================
-// ENROLLMENTS
-// =============================================================================
-
-export interface Enrollment {
-  id: string; status: string; teachingUnitId: string
-  teachingUnit?: { name: string; code: string; credits: number }
-}
-
+export const videoApi = { create: async (_dto: { courseId?: string; roomName?: string }) => unavailable<VideoRoom>('La visioconférence') }
+export interface Enrollment { id: string; status: string; teachingUnitId: string; teachingUnit?: { name: string; code: string; credits: number } }
 export const enrollmentsApi = {
-  mine: async () => u(await api.get<{ data: Enrollment[] }>('/enrollments/my')),
-  list: async () => u(await api.get<{ data: Enrollment[] }>('/enrollments')),
-  byStudent: async (studentId: string) => u(await api.get<{ data: Enrollment[] }>(`/enrollments/by-student/${studentId}`)),
-  byUe: async (ueId: string) => u(await api.get<{ data: Enrollment[] }>(`/enrollments/by-ue/${ueId}`)),
-  create: async (dto: { studentId: string; teachingUnitId: string }) => u(await api.post<{ data: Enrollment }>('/enrollments', dto)),
-  updateStatus: async (id: string, status: string) => u(await api.patch<{ data: Enrollment }>(`/enrollments/${id}/status`, { status })),
+  mine: async (): Promise<Enrollment[]> => [], list: async (): Promise<Enrollment[]> => [], byStudent: async (_studentId: string): Promise<Enrollment[]> => [], byUe: async (_ueId: string): Promise<Enrollment[]> => [],
+  create: async (_dto: { studentId: string; teachingUnitId: string }) => unavailable<Enrollment>('Les inscriptions pédagogiques'),
+  updateStatus: async (_id: string, _status: string) => unavailable<Enrollment>('Les inscriptions pédagogiques'),
 }
+export const filesApi = { upload: async (_formData: FormData) => unavailable<unknown>('Le dépôt de fichiers') }
 
-// =============================================================================
-// FILE UPLOAD
-// =============================================================================
-
-export const filesApi = {
-  upload: async (formData: FormData) => {
-    const token = getToken()
-    const activeBase = getActiveApiUrl().replace(/\/+$/, '')
-    const res = await fetch(`${activeBase}/files`, {
-      method: 'POST',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      body: formData,
-    })
-    if (!res.ok) throw new ApiError(res.status, 'Upload échoué')
-    return u(await res.json())
+export interface UserSettings { notifications?: Record<string, boolean>; privacy?: Record<string, boolean>; advanced?: Record<string, boolean>; language?: string }
+export const settingsApi = {
+  get: async (): Promise<UserSettings> => {
+    const profile = await appwriteAccount.get()
+    return (profile.prefs?.uniflowSettings as UserSettings | undefined) || {}
+  },
+  update: async (settings: UserSettings): Promise<UserSettings> => {
+    const profile = await appwriteAccount.get()
+    await appwriteAccount.updatePrefs({ ...profile.prefs, uniflowSettings: settings })
+    return settings
   },
 }
+export interface SupportTicket { id?: string; message: string; category?: string; status?: string }
+export const supportApi = { faqs: async (): Promise<Array<{ q: string; a: string; cat: string }>> => [], sendTicket: async (_ticket: SupportTicket) => unavailable<SupportTicket>('Le support') }
 
-// =============================================================================
-// SETTINGS & HELP/SUPPORT
-// =============================================================================
-
-export interface UserSettings {
-  notifications?: Record<string, boolean>
-  privacy?: Record<string, boolean>
-  advanced?: Record<string, boolean>
-  language?: string
-}
-
-export const settingsApi = {
-  get: async () => u(await api.get<{ data: UserSettings }>('/settings')),
-  update: async (settings: UserSettings) => u(await api.post<{ data: UserSettings }>('/settings', settings)),
-}
-
-export interface SupportTicket {
-  id?: string
-  message: string
-  category?: string
-  status?: string
-}
-
-export const supportApi = {
-  faqs: async () => u(await api.get<{ data: { q: string; a: string; cat: string }[] }>('/faq')),
-  sendTicket: async (ticket: SupportTicket) => u(await api.post<{ data: SupportTicket }>('/support/tickets', ticket)),
-}
-
-// ─── API ABONNEMENTS ET COMPTES INDÉPENDANTS (BACKEND 2 VERCEL) ───────────────
-
-export interface SubscriptionPlan {
-  id: string
-  code: string
-  name: string
-  category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION'
-  countryCode?: string
-  currency?: string
-  priceMonthlyAmount: number
-  priceAnnuallyAmount: number
-  priceMonthly: string
-  priceAnnually: string
-  period: string
-  badge?: string
-  highlight?: boolean
-  description: string
-  btnText: string
-  btnVariant?: string
-  providers: string[]
-  features: string[]
-  status?: 'ACTIVE' | 'INACTIVE'
-}
-
-export interface PricingInfo {
-  countryCode: string
-  currency: 'XAF' | 'EUR' | 'USD'
-  amount: number
-  formattedPrice: string
-  billingInterval: string
-  providers: string[]
-}
-
-export interface SubscriptionStatus {
-  status: 'NONE' | 'PENDING' | 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'
-  planCode?: string | null
-  countryCode?: string | null
-  currency?: string | null
-  monthlyAmount?: number | null
-  currentPeriodEnd?: string | null
-  isAutoRenew: boolean
-}
-
-export interface CheckoutResult {
-  transactionId?: string
-  paymentUrl?: string
-  status?: string
-  message?: string
-}
-
-export type CheckoutPayload = {
-  planId?: string
-  planCode: string
-  countryCode: string
-  paymentProvider?: string
-  phoneNumber?: string
-  billingInterval?: 'MONTHLY' | 'ANNUALLY'
-  billingCycle: 'monthly' | 'annually'
-  email?: string
-  fullName?: string
-}
-
+export interface SubscriptionPlan { id: string; code: string; name: string; category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION'; countryCode?: string; currency?: string; priceMonthlyAmount: number; priceAnnuallyAmount: number; priceMonthly: string; priceAnnually: string; period: string; badge?: string; highlight?: boolean; description: string; btnText: string; btnVariant?: string; providers: string[]; features: string[]; status?: 'ACTIVE' | 'INACTIVE' }
+export interface PricingInfo { countryCode: string; currency: 'XAF' | 'EUR' | 'USD'; amount: number; formattedPrice: string; billingInterval: string; providers: string[] }
+export interface SubscriptionStatus { status: 'NONE' | 'PENDING' | 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'; planCode?: string | null; countryCode?: string | null; currency?: string | null; monthlyAmount?: number | null; currentPeriodEnd?: string | null; isAutoRenew: boolean }
+export interface CheckoutResult { transactionId?: string; paymentUrl?: string; status?: string; message?: string }
+export type CheckoutPayload = { planId?: string; planCode: string; countryCode: string; paymentProvider?: string; phoneNumber?: string; billingInterval?: 'MONTHLY' | 'ANNUALLY'; billingCycle: 'monthly' | 'annually'; email?: string; fullName?: string }
+const subscriptionsUnavailable = <T>() => unavailable<T>('Les abonnements et paiements')
 export const subscriptionApi = {
-  getPlans: async (): Promise<SubscriptionPlan[]> =>
-    u(await api.get<SubscriptionPlan[]>('/subscription/plans')),
-  getPlanById: async (idOrCode: string): Promise<SubscriptionPlan | null> =>
-    u(await api.get<SubscriptionPlan | null>(`/subscription/plans/${idOrCode}`)),
-  getPricing: async (countryCode = 'CM'): Promise<PricingInfo> =>
-    u(await api.get<PricingInfo>(`/subscription/pricing?countryCode=${encodeURIComponent(countryCode)}`)),
-  getStatus: async (): Promise<SubscriptionStatus> =>
-    u(await api.get<SubscriptionStatus>('/subscription/status')),
-  createCheckout: async (payload: CheckoutPayload) =>
-    u(await api.post<CheckoutResult>('/subscription/checkout', payload)),
+  getPlans: () => subscriptionsUnavailable<SubscriptionPlan[]>(), getPlanById: (_id: string) => subscriptionsUnavailable<SubscriptionPlan | null>(), getPricing: (_countryCode = 'CM') => subscriptionsUnavailable<PricingInfo>(), getStatus: () => subscriptionsUnavailable<SubscriptionStatus>(), createCheckout: (_payload: CheckoutPayload) => subscriptionsUnavailable<CheckoutResult>(),
 }
-
-async function personalRequest<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const base = PERSONAL_API_URL.replace(/\/+$/, '')
-  if (!base) throw new ApiError(503, 'Le backend personnel n’est pas configuré pour cet environnement.')
-  const cleanPath = path.startsWith('/') ? path : `/${path}`
-  const requestPath = cleanPath.startsWith('/api/') ? cleanPath : `/api/v1${cleanPath}`
-  const token = getToken()
-  const response = await fetch(`${base}${requestPath}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.headers ?? {}),
-    },
-  })
-  if (!response.ok) {
-    let body: { message?: string } | null = null
-    try { body = await response.json() } catch {}
-    const message = response.status === 404
-      ? `Route ${requestPath} introuvable sur le backend personnel configuré (${base}). Vérifiez que le service expose cette route.`
-      : body?.message || `Erreur du backend personnel HTTP ${response.status}`
-    throw new ApiError(response.status, message, body)
-  }
-  if (response.status === 204) return null as T
-  return u(await response.json())
-}
-
-export const personalSubscriptionApi = {
-  getPlans: async (): Promise<SubscriptionPlan[]> => personalRequest<SubscriptionPlan[]>('/subscription/plans'),
-  getPlanById: async (idOrCode: string): Promise<SubscriptionPlan | null> => personalRequest<SubscriptionPlan | null>(`/subscription/plans/${encodeURIComponent(idOrCode)}`),
-  getPricing: async (countryCode = 'CM'): Promise<PricingInfo> => personalRequest<PricingInfo>(`/subscription/pricing?countryCode=${encodeURIComponent(countryCode)}`),
-  getStatus: async (): Promise<SubscriptionStatus> => personalRequest<SubscriptionStatus>('/subscription/status'),
-  createCheckout: async (payload: CheckoutPayload): Promise<CheckoutResult> => personalRequest<CheckoutResult>('/subscription/checkout', { method: 'POST', body: JSON.stringify(payload) }),
-}
-
-
+export const personalSubscriptionApi = subscriptionApi
