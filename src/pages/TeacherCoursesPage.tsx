@@ -148,7 +148,7 @@ export default function TeacherCoursesPage() {
                 </div>
                 <div className="flex justify-between text-xs text-[#6b7280]">
                   <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> 0 étudiants</span>
-                  <span className="font-semibold text-indigo-600">L2 Info</span>
+                  <span className="font-semibold text-indigo-600">ICT4D · L1</span>
                 </div>
               </div>
             </div>

@@ -39,8 +39,6 @@ type BackendRole = 'ETUDIANT' | 'DELEGUE' | 'ENSEIGNANT'
 
 const ICT4D_LEVELS: AcademicLevel[] = [
   { id: 'L1', name: 'Licence 1', programName: 'ICT4D' },
-  { id: 'L2', name: 'Licence 2', programName: 'ICT4D' },
-  { id: 'L3', name: 'Licence 3', programName: 'ICT4D' },
 ]
 
 const roleMap: Record<string, BackendRole> = {
@@ -79,7 +77,7 @@ export default function RegisterPage() {
     setAcademicError(null)
     setLevels(ICT4D_LEVELS)
     setSpecialties(ICT4D_LEVELS.map((level) => ({ id: 'ICT4D', name: 'ICT4D', levelId: level.id })))
-    setForm(f => ({ ...f, levelId: accountType === 'UNIVERSITY' ? (f.levelId || 'L1') : '', specialtyId: accountType === 'UNIVERSITY' ? 'ICT4D' : '', matricule: accountType === 'PERSONAL' ? '' : f.matricule }))
+    setForm(f => ({ ...f, levelId: accountType === 'UNIVERSITY' ? 'L1' : '', specialtyId: accountType === 'UNIVERSITY' ? 'ICT4D' : '', matricule: accountType === 'PERSONAL' ? '' : f.matricule }))
   }, [accountType])
 
   const handleNext = (e: React.FormEvent) => {
@@ -114,7 +112,7 @@ export default function RegisterPage() {
         specialtyId: form.specialtyId || undefined,
         university: accountType === 'UNIVERSITY' ? 'Université de Yaoundé I' : undefined,
         program: accountType === 'UNIVERSITY' ? 'ICT4D' : undefined,
-        level: accountType === 'UNIVERSITY' ? (form.levelId as 'L1' | 'L2' | 'L3') : undefined,
+        level: accountType === 'UNIVERSITY' ? 'L1' : undefined,
       })
     } catch {
       // L’erreur est affichée par useAuth ; aucune inscription locale n’est créée.
@@ -469,23 +467,11 @@ export default function RegisterPage() {
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
                             <BookOpen className="h-5 w-5" />
                           </div>
-                          {academicLoading ? (
-                            <div className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium text-slate-500">
-                              Chargement des filières...
-                            </div>
-                          ) : (
-                            <select
-                              value={form.levelId}
-                              onChange={e => set('levelId', e.target.value)}
-                              className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
-                            >
-                              {levels.map(level => (
-                                <option key={level.id} value={level.id}>
-                                  {level.programName ? `${level.programName} - ` : ''}{level.name}
-                                </option>
-                              ))}
-                            </select>
-                          )}
+                          <input
+                            value="ICT4D · Licence 1 (L1)"
+                            readOnly
+                            className="w-full rounded-xl border-2 border-slate-200 bg-slate-100 pl-12 pr-4 py-3 text-sm font-medium text-slate-700 outline-none"
+                          />
                         </div>
                       </div>
 

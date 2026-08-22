@@ -112,7 +112,7 @@ const schemas = [
       enumeration('role', ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN'], false, 'STUDENT'),
       string('university', 255, false, ''),
       string('program', 100, false, ''),
-      enumeration('level', ['L1', 'L2', 'L3'], false),
+      enumeration('level', ['L1'], false),
       string('country', 100, false, 'Cameroun'),
     ],
     indexes: [

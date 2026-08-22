@@ -136,10 +136,6 @@ export default function UEPage() {
               className="rounded-lg border border-[#d1d5db] px-3 py-2 text-sm focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20">
               <option value="all">Tous niveaux</option>
               <option value="L1">L1</option>
-              <option value="L2">L2</option>
-              <option value="L3">L3</option>
-              <option value="M1">M1</option>
-              <option value="M2">M2</option>
             </select>
             <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
               className="rounded-lg border border-[#d1d5db] px-3 py-2 text-sm focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20">

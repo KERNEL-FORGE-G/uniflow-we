@@ -276,7 +276,7 @@ export default function DashboardPage() {
             <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h2 className="text-sm font-bold text-[#111827]">Évolution des moyennes — Algorithmique L2</h2>
+                  <h2 className="text-sm font-bold text-[#111827]">Évolution des moyennes — ICT4D L1</h2>
                   <p className="text-xs text-[#6b7280] mt-0.5">Progression des étudiants</p>
                 </div>
                 <button onClick={() => navigate('/app/mes-cours-enseignant')} className="text-xs font-semibold text-[#0d9488] hover:underline">

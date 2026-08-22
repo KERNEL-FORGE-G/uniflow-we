@@ -21,7 +21,7 @@ interface Candidacy {
 
 export default function PromotionPage() {
   const { currentUser, currentRole: role, setCurrentRole: setRole } = useUserRole()
-  const userLevel = currentUser.level || 'L3'
+  const userLevel = currentUser.level || 'L1'
 
   const [availableUEs, setAvailableUEs] = useState<{ code: string; name: string }[]>([])
   const [candidacies] = useState<Candidacy[]>([])
