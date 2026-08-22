@@ -3,7 +3,7 @@ import { BookOpen, ClipboardList, Clock, TrendingUp, UserCheck, Calendar, Bell, 
 import { useUserRole } from '../utils/userRole'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, AreaChart, Area } from 'recharts'
 import { useEffect, useState } from 'react'
-import { personalAppwriteApi } from '../lib/appwrite'
+import { assignmentsApi, coursesApi, gradesApi } from '../lib/api'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 
@@ -63,8 +63,8 @@ export default function DashboardPage() {
     setOverviewLoading(true)
     setOverviewError(null)
     try {
-      const [courses, assignments, grades] = await Promise.all([personalAppwriteApi.courses.list(), personalAppwriteApi.assignments.list(), personalAppwriteApi.grades.list()])
-      const gradeAverage = grades.length ? grades.reduce((sum, grade) => sum + (Number(grade.score) / Math.max(Number(grade.maxScore), 1)) * 20, 0) / grades.length : null
+      const [courses, assignments, grades] = await Promise.all([coursesApi.mine(), assignmentsApi.mine(), gradesApi.mine()])
+      const gradeAverage = grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade), 0) / grades.length : null
       setOverview({ courseCount: courses.length, assignmentCount: assignments.length, gradeCount: grades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: null, studentCount: 0 })
     } catch (err) {
       setOverviewError(err instanceof Error ? err.message : 'Impossible de charger les données Appwrite du dashboard.')
