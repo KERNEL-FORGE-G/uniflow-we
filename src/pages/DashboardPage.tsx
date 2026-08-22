@@ -19,7 +19,7 @@ const teacherGradeData: GradePoint[] = []
 const calDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 
 export default function DashboardPage() {
-  const { currentRole, currentUser, language, authUser } = useUserRole()
+  const { currentRole, currentUser, language, authUser, isSessionReady } = useUserRole()
   const navigate = useNavigate()
   const firstName = currentUser.name.split(' ')[0]
 
@@ -74,7 +74,9 @@ export default function DashboardPage() {
     }
   }
 
-  useEffect(() => { void refetchOverview() }, [authUser?.id])
+  useEffect(() => {
+    if (isSessionReady && authUser?.id) void refetchOverview()
+  }, [authUser?.id, isSessionReady])
   const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 
   const studentStats = [
