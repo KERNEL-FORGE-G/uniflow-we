@@ -53,14 +53,14 @@ export interface UniFlowUser {
   role: UniFlowRole
   university?: string
   program?: string
-  level?: 'L1' | 'L2' | 'L3'
+  level?: 'L1'
   country?: string
 }
 
 export type UniFlowProfileInput = {
   university?: string
   program?: string
-  level?: 'L1' | 'L2' | 'L3'
+  level?: 'L1'
   country?: string
 }
 
@@ -244,6 +244,58 @@ export async function logoutAccount() {
 export async function listDocuments<T>(collectionId: string, queries: string[] = []) {
   const result = await awaitAppwrite(appwriteDatabases.listDocuments<Models.Document>(APPWRITE_DATABASE_ID, collectionId, queries), `la lecture de ${collectionId}`)
   return result.documents as unknown as T[]
+}
+
+export interface AcademicCourseDocument {
+  $id: string
+  code: string
+  name: string
+  description?: string
+  university: string
+  program: string
+  level: 'L1'
+  teacherId?: string
+  teacherName?: string
+  credits?: number
+  hours?: number
+  classroom?: string
+  type?: string
+}
+
+export interface AcademicScheduleDocument {
+  $id: string
+  courseId: string
+  courseCode: string
+  dayOfWeek: string
+  startTime: string
+  endTime: string
+  classroom: string
+  type?: string
+}
+
+export interface AcademicLibraryDocument {
+  $id: string
+  title: string
+  courseId: string
+  course: string
+  type: string
+  category: string
+  size?: string
+  description?: string
+  fileId?: string
+  publishedAt: string
+}
+
+export const academicAppwriteApi = {
+  courses: {
+    list: () => listDocuments<AcademicCourseDocument>('academic_courses', [Query.orderAsc('code')]),
+  },
+  schedules: {
+    list: () => listDocuments<AcademicScheduleDocument>('academic_schedules', [Query.orderAsc('dayOfWeek'), Query.orderAsc('startTime')]),
+  },
+  library: {
+    list: () => listDocuments<AcademicLibraryDocument>('academic_library', [Query.orderDesc('publishedAt'), Query.limit(200)]),
+  },
 }
 
 export async function listPersonalSubjects(ownerId: string) {

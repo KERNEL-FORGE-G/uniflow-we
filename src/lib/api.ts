@@ -1,5 +1,6 @@
 import {
   appwriteAccount,
+  academicAppwriteApi,
   getCurrentAccount,
   listAppwriteNotifications,
   markAppwriteNotificationRead,
@@ -160,7 +161,7 @@ function toBackendUser(user: Awaited<ReturnType<typeof getCurrentAccount>>): Bac
 
 export interface AcademicLevel { id: string; name: string; programName: string }
 export interface SpecialtyOption { id: string; name: string; levelId: string }
-const academicLevels: AcademicLevel[] = ['L1', 'L2', 'L3'].map((name) => ({ id: name, name, programName: 'ICT4D' }))
+const academicLevels: AcademicLevel[] = [{ id: 'L1', name: 'Licence 1', programName: 'ICT4D' }]
 const academicSpecialties: SpecialtyOption[] = academicLevels.map((level) => ({ id: `ICT4D-${level.id}`, name: 'ICT4D', levelId: level.id }))
 
 export const authApi = {
@@ -211,11 +212,39 @@ async function personalCourses(): Promise<Course[]> {
   return (await personalAppwriteApi.courses.list()).map(asCourse)
 }
 
+function asAcademicCourse(course: import('./appwrite').AcademicCourseDocument): Course {
+  const [firstName = '', ...lastName] = (course.teacherName || '').trim().split(/\s+/)
+  return {
+    id: course.$id,
+    code: course.code,
+    name: course.name,
+    description: course.description || '',
+    type: (course.type || 'CM') as Course['type'],
+    credits: course.credits || 0,
+    hours: course.hours || 0,
+    teacher: course.teacherName ? { id: course.teacherId || '', firstName, lastName: lastName.join(' ') } : undefined,
+    classroom: course.classroom ? { id: '', name: course.classroom, building: '' } : undefined,
+  }
+}
+
+async function universityCourses(): Promise<Course[]> {
+  const current = await getCurrentAccount('UNIVERSITY')
+  if (!current) return []
+  const courses = await academicAppwriteApi.courses.list()
+  return courses
+    .filter((course) => current.role !== 'TEACHER' || course.teacherId === current.id)
+    .map(asAcademicCourse)
+}
+
+async function visibleCourses(): Promise<Course[]> {
+  return getAccountType() === 'PERSONAL' ? personalCourses() : universityCourses()
+}
+
 export const coursesApi = {
-  list: personalCourses,
-  mine: personalCourses,
+  list: visibleCourses,
+  mine: visibleCourses,
   getOne: async (id: string) => {
-    const course = (await personalCourses()).find((item) => item.id === id)
+    const course = (await visibleCourses()).find((item) => item.id === id)
     if (!course) throw new ApiError(404, 'Cours introuvable dans les données Appwrite disponibles.')
     return course
   },
@@ -255,9 +284,36 @@ async function personalSchedules(): Promise<Schedule[]> {
     }
   })
 }
+async function universitySchedules(): Promise<Schedule[]> {
+  const [schedules, courses] = await Promise.all([academicAppwriteApi.schedules.list(), universityCourses()])
+  const byId = new Map(courses.map((course) => [course.id, course]))
+  return schedules
+    .filter((item) => byId.has(item.courseId))
+    .map((item) => {
+      const course = byId.get(item.courseId)!
+      return {
+        id: item.$id,
+        dayOfWeek: item.dayOfWeek,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        semesterId: 'ICT4D-L1',
+        course: {
+          id: course.id,
+          name: course.name,
+          code: course.code,
+          type: item.type || course.type,
+          teacher: course.teacher || { firstName: '', lastName: '' },
+          classroom: { name: item.classroom || course.classroom?.name || '', building: '' },
+        },
+      }
+    })
+}
+async function visibleSchedules(): Promise<Schedule[]> {
+  return getAccountType() === 'PERSONAL' ? personalSchedules() : universitySchedules()
+}
 export const schedulesApi = {
-  list: personalSchedules,
-  mine: personalSchedules,
+  list: visibleSchedules,
+  mine: visibleSchedules,
   create: async (dto: Partial<Schedule>) => {
     if (getAccountType() !== 'PERSONAL') return unavailable<Schedule>('Les créneaux universitaires')
     const created = await personalAppwriteApi.schedules.create({ courseId: dto.course?.id || '', dayOfWeek: dto.dayOfWeek || 'LUNDI', startTime: dto.startTime || '00:00', endTime: dto.endTime || dto.startTime || '00:00', classroom: dto.course?.classroom?.name, type: dto.course?.type })
@@ -366,7 +422,22 @@ export interface ChatConversation { id: string; name: string; role: string; emai
 export const messagingApi = { conversations: async (): Promise<ChatConversation[]> => [], sendMessage: async (_convId: string, _text: string, _file?: string) => unavailable<ChatConversation>('La messagerie') }
 
 export interface LibraryResource { id: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string }
-export const libraryApi = { list: async (): Promise<LibraryResource[]> => [], upload: async (_dto: Partial<LibraryResource>) => unavailable<LibraryResource>('La bibliothèque') }
+export const libraryApi = {
+  list: async (): Promise<LibraryResource[]> => {
+    if (getAccountType() === 'PERSONAL') return []
+    const resources = await academicAppwriteApi.library.list()
+    return resources.map((resource) => ({
+      id: resource.$id,
+      title: resource.title,
+      course: resource.course,
+      type: resource.type,
+      size: resource.size || '',
+      date: resource.publishedAt,
+      category: resource.category,
+    }))
+  },
+  upload: async (_dto: Partial<LibraryResource>) => unavailable<LibraryResource>('La bibliothèque universitaire'),
+}
 
 export interface UE { id: string; name: string; code: string; credits: number; courses?: Course[] }
 export const ueApi = {

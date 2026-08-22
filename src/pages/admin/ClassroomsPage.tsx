@@ -44,7 +44,7 @@ const initialReservations: Reservation[] = [
     building: 'Bâtiment B',
     requestedBy: 'Lucas Dubois (Délégué)',
     role: 'Délégué',
-    purpose: 'Réunion étudiants L2 Info',
+    purpose: 'Réunion étudiants ICT4D L1',
     date: '2026-05-23',
     startTime: '16:00',
     endTime: '18:00',
@@ -414,4 +414,3 @@ export default function ClassroomsPage() {
     </div>
   )
 }
-

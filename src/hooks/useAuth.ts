@@ -26,7 +26,7 @@ export interface RegisterPayload {
   specialtyId?: string
   university?: string
   program?: string
-  level?: 'L1' | 'L2' | 'L3'
+  level?: 'L1'
 }
 
 function mapRole(role: string): Role {
