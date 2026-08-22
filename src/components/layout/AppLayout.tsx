@@ -10,8 +10,10 @@ import { Avatar } from '../ui/Avatar'
 import { Footer } from './Footer'
 import { GlobalSearch } from './GlobalSearch'
 import { cn } from '../../utils/cn'
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
+
+const CompanionAssistant = lazy(() => import('../CompanionAssistant').then((module) => ({ default: module.CompanionAssistant })))
 
 const roleConfig = {
   student:  { badge: 'Étudiant',    icon: GraduationCap, gradient: 'from-[#1e3a8a] to-[#2d4fa8]', bg: 'bg-[#eff3ff]', text: 'text-[#1e3a8a]', dot: 'bg-[#1e3a8a]' },
@@ -302,6 +304,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
         <Footer />
       </div>
+      <Suspense fallback={null}><CompanionAssistant /></Suspense>
     </div>
   )
 }
