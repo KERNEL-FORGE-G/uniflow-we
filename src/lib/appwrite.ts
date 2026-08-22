@@ -1,10 +1,14 @@
 import { Account, Client, Databases, ID, Models, Permission, Query, Role } from 'appwrite'
 import { readSessionSnapshot } from './sessionPersistence'
 
-// L’instance Appwrite UniFlow est explicitement servie par le VPS demandé.
-// Ne pas relire VITE_APPWRITE_ENDPOINT ici : une valeur historique Vercel ne
-// doit jamais réintroduire le domaine xip.com dans le bundle de production.
-const endpoint = 'https://185.181.10.106/v1'
+// L’instance Appwrite UniFlow est servie par le domaine TLS certifié du VPS.
+// Une valeur Vercel historique (IP brute ou xip.com) ne peut jamais remplacer
+// le domaine certifié tant que les environnements n’ont pas été mis à jour.
+const CERTIFIED_APPWRITE_ENDPOINT = 'https://appwrite.kernelforge.codes/v1'
+const configuredEndpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || '').replace(/\/+$/, '')
+const endpoint = /185\.181\.10\.106|eu-fr-cloud-xip\.com/i.test(configuredEndpoint)
+  ? CERTIFIED_APPWRITE_ENDPOINT
+  : (configuredEndpoint || CERTIFIED_APPWRITE_ENDPOINT)
 const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a885ccc000ddfbb3bb9')
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
 export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets')
