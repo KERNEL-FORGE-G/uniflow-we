@@ -10,6 +10,8 @@ const endpoint = /185\.181\.10\.106|eu-fr-cloud-xip\.com/i.test(configuredEndpoi
   ? CERTIFIED_APPWRITE_ENDPOINT
   : (configuredEndpoint || CERTIFIED_APPWRITE_ENDPOINT)
 const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a885ccc000ddfbb3bb9')
+export const APPWRITE_ENDPOINT = endpoint
+export const APPWRITE_PROJECT_ID = projectId
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
 export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets')
 const APPWRITE_TIMEOUT_MS = 12_000
@@ -286,15 +288,26 @@ export interface AcademicLibraryDocument {
   publishedAt: string
 }
 
+async function listAcademicDocuments<T>(collectionId: string, limit = 25) {
+  const response = await fetch(`${endpoint}/databases/${APPWRITE_DATABASE_ID}/collections/${collectionId}/documents?limit=${limit}`, {
+    credentials: 'include',
+    headers: { 'X-Appwrite-Project': projectId },
+  })
+  const text = await response.text()
+  const payload = text ? JSON.parse(text) : {}
+  if (!response.ok) throw normalizeAppwriteFailure(new Error(payload.message || `Erreur Appwrite ${response.status}`), `la lecture de ${collectionId}`)
+  return (payload.documents || []) as T[]
+}
+
 export const academicAppwriteApi = {
   courses: {
-    list: () => listDocuments<AcademicCourseDocument>('academic_courses', [Query.orderAsc('code')]),
+    list: () => listAcademicDocuments<AcademicCourseDocument>('academic_courses'),
   },
   schedules: {
-    list: () => listDocuments<AcademicScheduleDocument>('academic_schedules', [Query.orderAsc('dayOfWeek'), Query.orderAsc('startTime')]),
+    list: () => listAcademicDocuments<AcademicScheduleDocument>('academic_schedules'),
   },
   library: {
-    list: () => listDocuments<AcademicLibraryDocument>('academic_library', [Query.orderDesc('publishedAt'), Query.limit(200)]),
+    list: () => listAcademicDocuments<AcademicLibraryDocument>('academic_library', 200),
   },
 }
 
