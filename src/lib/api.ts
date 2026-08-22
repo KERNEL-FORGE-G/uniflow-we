@@ -16,9 +16,7 @@ import {
  * fonctionnalités dont la collection Appwrite n’est pas encore provisionnée
  * retournent un état explicite et n’émettent jamais de requête HTTP de repli.
  */
-export const APPWRITE_VPS_ENDPOINT = String(
-  import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://185-181-10-106.eu-fr-cloud-xip.com/v1',
-).replace(/\/+$/, '')
+export const APPWRITE_VPS_ENDPOINT = 'https://185.181.10.106/v1'
 
 // Alias de compatibilité : aucun de ces exports ne désigne un backend legacy.
 export const UNIVERSITY_API_URL = APPWRITE_VPS_ENDPOINT

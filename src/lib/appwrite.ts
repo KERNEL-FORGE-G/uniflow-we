@@ -1,7 +1,10 @@
 import { Account, Client, Databases, ID, Models, Permission, Query, Role } from 'appwrite'
 import { readSessionSnapshot } from './sessionPersistence'
 
-const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://185-181-10-106.eu-fr-cloud-xip.com/v1').replace(/\/+$/, '')
+// L’instance Appwrite UniFlow est explicitement servie par le VPS demandé.
+// Ne pas relire VITE_APPWRITE_ENDPOINT ici : une valeur historique Vercel ne
+// doit jamais réintroduire le domaine xip.com dans le bundle de production.
+const endpoint = 'https://185.181.10.106/v1'
 const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a885ccc000ddfbb3bb9')
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
 export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets')

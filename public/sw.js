@@ -5,7 +5,7 @@
 
 // Bump à chaque changement du shell d’authentification afin d’éviter qu’une
 // ancienne version conserve des règles de session obsolètes dans le navigateur.
-const CACHE_NAME = 'uniflow-pwa-cache-v6'
+const CACHE_NAME = 'uniflow-pwa-cache-v7'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
     event.request.url.includes('/api/') ||
     event.request.url.includes('appwrite.io') ||
     event.request.url.includes('api-uniflow') ||
-    event.request.url.includes('185-181-10-106.eu-fr-cloud-xip.com')
+    event.request.url.includes('185.181.10.106')
   ) return
 
   const isAppShellRequest = event.request.mode === 'navigate' || ['script', 'style'].includes(event.request.destination)
