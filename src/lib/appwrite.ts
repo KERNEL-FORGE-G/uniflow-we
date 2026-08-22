@@ -288,26 +288,15 @@ export interface AcademicLibraryDocument {
   publishedAt: string
 }
 
-async function listAcademicDocuments<T>(collectionId: string, limit = 25) {
-  const response = await fetch(`${endpoint}/databases/${APPWRITE_DATABASE_ID}/collections/${collectionId}/documents?limit=${limit}`, {
-    credentials: 'include',
-    headers: { 'X-Appwrite-Project': projectId },
-  })
-  const text = await response.text()
-  const payload = text ? JSON.parse(text) : {}
-  if (!response.ok) throw normalizeAppwriteFailure(new Error(payload.message || `Erreur Appwrite ${response.status}`), `la lecture de ${collectionId}`)
-  return (payload.documents || []) as T[]
-}
-
 export const academicAppwriteApi = {
   courses: {
-    list: () => listAcademicDocuments<AcademicCourseDocument>('academic_courses'),
+    list: () => listDocuments<AcademicCourseDocument>('academic_courses'),
   },
   schedules: {
-    list: () => listAcademicDocuments<AcademicScheduleDocument>('academic_schedules'),
+    list: () => listDocuments<AcademicScheduleDocument>('academic_schedules'),
   },
   library: {
-    list: () => listAcademicDocuments<AcademicLibraryDocument>('academic_library', 200),
+    list: () => listDocuments<AcademicLibraryDocument>('academic_library', [Query.limit(200)]),
   },
 }
 
