@@ -12,11 +12,11 @@ import {
  *
  * L’application ne communique plus avec les deux API NestJS historiques. Les
  * lectures et écritures personnelles passent directement par le SDK Appwrite,
- * configuré dans `appwrite.ts` avec le seul endpoint autorisé du VPS. Les
+ * configuré dans `appwrite.ts` avec le seul domaine Appwrite certifié. Les
  * fonctionnalités dont la collection Appwrite n’est pas encore provisionnée
  * retournent un état explicite et n’émettent jamais de requête HTTP de repli.
  */
-export const APPWRITE_VPS_ENDPOINT = 'https://185.181.10.106/v1'
+export const APPWRITE_VPS_ENDPOINT = 'https://appwrite.kernelforge.codes/v1'
 
 // Alias de compatibilité : aucun de ces exports ne désigne un backend legacy.
 export const UNIVERSITY_API_URL = APPWRITE_VPS_ENDPOINT
