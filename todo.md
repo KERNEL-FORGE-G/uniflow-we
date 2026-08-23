@@ -12,3 +12,13 @@
 - [x] Relier les listes d’apprenants inscrits aux interfaces d’évaluation des enseignants avec contrôle d’affectation de cours.
 - [x] Calculer les moyennes et états de notes uniquement à partir des évaluations Appwrite réelles, avec valeurs explicites quand aucune note n’existe.
 - [x] Exécuter les tests de création de compte, présence, saisie de notes et vérification production avant publication.
+- [x] Mesurer les temps de réponse, erreurs et comportements idempotents de la Function de présence sous charge Appwrite contrôlée.
+- [x] Créer et exécuter une suite E2E automatisée couvrant le parcours UY1 : inscription, inscriptions, appel, notes et relevé.
+- [ ] Produire une présentation synthétique du cycle ICT4D destinée à l’équipe pédagogique à partir des résultats mesurés.
+- [x] Auditer les collections, permissions et composants de messagerie afin d’identifier les données actuellement absentes ou simulées.
+- [x] Implémenter les conversations et messages universitaires réels dans Appwrite, avec lecture, envoi et autorisations par utilisateur.
+- [ ] Valider depuis l’interface de production un échange réel entre comptes universitaires, puis documenter le résultat.
+- [x] Auditer les plans, statuts et écrans d’abonnement Appwrite afin d’identifier les actions indisponibles ou simulées.
+- [x] Enregistrer une demande d’abonnement Appwrite avec référence unique, statut en attente et lien WhatsApp prérempli vers le numéro fourni.
+- [x] Ajouter le contrôle administratif manuel qui confirme ou rejette une demande après vérification externe de la preuve de paiement.
+- [ ] Tester le parcours de demande depuis l’interface sans confirmer automatiquement de paiement, puis documenter sa limite de validation manuelle.

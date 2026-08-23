@@ -30,7 +30,7 @@ export default function SubscriptionFlowPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Payment state
-  const [paymentProvider, setPaymentProvider] = useState<string>('MTN_MOMO')
+  const [paymentProvider, setPaymentProvider] = useState<string>('WHATSAPP')
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [transactionResult, setTransactionResult] = useState<CheckoutResult | null>(null)
 
@@ -46,10 +46,10 @@ export default function SubscriptionFlowPage() {
         const match = fetchedPlans.find(p => p.code === targetCode || p.id === targetCode)
         if (match) {
           setSelectedPlan(match)
-          setPaymentProvider(match.providers?.[0] || '')
+          setPaymentProvider('WHATSAPP')
         } else if (fetchedPlans.length > 0) {
           setSelectedPlan(fetchedPlans[0])
-          setPaymentProvider(fetchedPlans[0].providers?.[0] || '')
+          setPaymentProvider('WHATSAPP')
         }
       } catch (err) {
         const message = err instanceof ApiError ? err.message : 'Les offres personnelles ne sont pas disponibles.'
@@ -79,16 +79,8 @@ export default function SubscriptionFlowPage() {
 
   const handleProcessPayment = async () => {
     if (!selectedPlan) return
-    if (!includedAccess && !paymentProvider) {
-      setPaymentError('Aucun moyen de paiement actif n’est fourni par cette formule.')
-      return
-    }
     if (!includedAccess && (!fullName.trim() || !email.trim())) {
       setPaymentError('Le nom complet et l’adresse email sont obligatoires.')
-      return
-    }
-    if (!includedAccess && (paymentProvider === 'MTN_MOMO' || paymentProvider === 'ORANGE_MONEY') && !phoneNumber.trim()) {
-      setPaymentError('Le numéro Mobile Money est obligatoire pour ce moyen de paiement.')
       return
     }
     setIsSubmitting(true)
@@ -97,7 +89,7 @@ export default function SubscriptionFlowPage() {
       const res = await personalSubscriptionApi.createCheckout({
         planCode: selectedPlan.code || selectedPlan.id,
         countryCode: selectedPlan.countryCode || 'CM',
-        paymentProvider: includedAccess ? undefined : paymentProvider,
+        paymentProvider: includedAccess ? undefined : 'WHATSAPP',
         phoneNumber: phoneNumber.trim() || undefined,
         billingCycle: billingCycle.toLowerCase() as 'monthly' | 'annually',
         email: email.trim(),
@@ -296,7 +288,7 @@ export default function SubscriptionFlowPage() {
                         return (
                           <div
                             key={p.id}
-                            onClick={() => { setSelectedPlan(p); setPaymentProvider(p.providers?.[0] || ''); setPaymentError(null) }}
+                            onClick={() => { setSelectedPlan(p); setPaymentProvider('WHATSAPP'); setPaymentError(null) }}
                             className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                               isSelected
                                 ? 'bg-blue-50/70 dark:bg-blue-950/40 border-[#1e3a8a] dark:border-blue-500 shadow-sm'
@@ -507,142 +499,19 @@ export default function SubscriptionFlowPage() {
                       Étape 3 sur 4
                     </span>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white">Sélection du Mode de Paiement</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{includedAccess ? 'Cet accès académique est déjà inclus et ne requiert aucun paiement.' : 'Sélectionnez un moyen de paiement réellement configuré pour cette formule Appwrite.'}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{includedAccess ? 'Cet accès académique est déjà inclus et ne requiert aucun paiement.' : 'La demande est enregistrée dans Appwrite puis ouvre WhatsApp avec une référence. Aucun paiement n’est validé automatiquement.'}</p>
                   </div>
 
                   {paymentError && <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300">{paymentError}</div>}
 
-                  {/* Payment Options */}
-                  <div className="space-y-4 mb-8">
-                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Moyen de Règlement Sécurisé :
-                    </label>
-
-                    {selectedPlan.providers?.length ? <div className="grid sm:grid-cols-2 gap-3">
-                      {selectedPlan.providers?.includes('MTN_MOMO') && <>
-                      {/* MTN MoMo */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentProvider('MTN_MOMO')}
-                        className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
-                          paymentProvider === 'MTN_MOMO'
-                            ? 'bg-amber-500/10 border-amber-500 text-amber-900 dark:text-amber-200 shadow-sm'
-                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Smartphone className="h-6 w-6 text-amber-600 shrink-0" />
-                          <div>
-                            <span className="font-bold text-xs sm:text-sm block">MTN Mobile Money</span>
-                            <span className="text-[11px] text-slate-500">Cameroun & CEMAC</span>
-                          </div>
-                        </div>
-                        <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'MTN_MOMO' ? 'bg-amber-500 border-amber-500' : 'border-slate-400'}`} />
-                      </button>
-                      </>}
-
-                      {selectedPlan.providers?.includes('ORANGE_MONEY') && <>
-                      {/* Orange Money */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentProvider('ORANGE_MONEY')}
-                        className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
-                          paymentProvider === 'ORANGE_MONEY'
-                            ? 'bg-orange-500/10 border-orange-500 text-orange-900 dark:text-orange-200 shadow-sm'
-                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Smartphone className="h-6 w-6 text-orange-600 shrink-0" />
-                          <div>
-                            <span className="font-bold text-xs sm:text-sm block">Orange Money</span>
-                            <span className="text-[11px] text-slate-500">Paiement Mobile Afrique</span>
-                          </div>
-                        </div>
-                        <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'ORANGE_MONEY' ? 'bg-orange-500 border-orange-500' : 'border-slate-400'}`} />
-                      </button>
-                      </>}
-
-                      {selectedPlan.providers?.includes('NOTCHPAY') && <>
-                      {/* NotchPay */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentProvider('NOTCHPAY')}
-                        className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
-                          paymentProvider === 'NOTCHPAY'
-                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-900 dark:text-emerald-200 shadow-sm'
-                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <Zap className="h-6 w-6 text-emerald-600 shrink-0" />
-                          <div>
-                            <span className="font-bold text-xs sm:text-sm block">NotchPay Express</span>
-                            <span className="text-[11px] text-slate-500">Aggrégateur multi-canaux</span>
-                          </div>
-                        </div>
-                        <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'NOTCHPAY' ? 'bg-emerald-500 border-emerald-500' : 'border-slate-400'}`} />
-                      </button>
-                      </>}
-
-                      {selectedPlan.providers?.includes('STRIPE') && <>
-                      {/* Stripe / Card */}
-                      <button
-                        type="button"
-                        onClick={() => setPaymentProvider('STRIPE')}
-                        className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between cursor-pointer ${
-                          paymentProvider === 'STRIPE'
-                            ? 'bg-blue-500/10 border-blue-500 text-blue-900 dark:text-blue-200 shadow-sm'
-                            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <CreditCard className="h-6 w-6 text-blue-600 shrink-0" />
-                          <div>
-                            <span className="font-bold text-xs sm:text-sm block">Carte Bancaire / Stripe</span>
-                            <span className="text-[11px] text-slate-500">Visa, Mastercard, Apple Pay</span>
-                          </div>
-                        </div>
-                        <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'STRIPE' ? 'bg-blue-500 border-blue-500' : 'border-slate-400'}`} />
-                      </button>
-                      </>}
-                    </div> : <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800">{includedAccess ? 'Accès académique inclus : aucune transaction ni donnée de paiement ne sont nécessaires.' : 'Aucun moyen de paiement n’est configuré pour cette formule dans Appwrite.'}</p>}
+                  <div className="mb-8 rounded-2xl border border-[#1e3a8a]/20 bg-blue-50 p-5 text-sm text-slate-700 dark:bg-slate-900">
+                    {includedAccess ? <p className="font-semibold text-emerald-800">Accès académique inclus : aucune transaction ni donnée de paiement ne sont nécessaires.</p> : <><p className="font-bold text-[#1e3a8a]">WhatsApp — confirmation manuelle</p><p className="mt-2">UniFlow va créer une demande Appwrite avec une référence unique, puis ouvrir WhatsApp vers le +237 657 635 644. Joignez votre preuve de paiement à ce message. Votre accès restera <strong>en attente</strong> jusqu’à la confirmation manuelle d’un administrateur.</p></>}
                   </div>
-
-                  {/* Payment Details Input */}
-                  {(paymentProvider === 'MTN_MOMO' || paymentProvider === 'ORANGE_MONEY') && (
-                    <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/60 mb-8 space-y-3">
-                      <label className="block text-xs font-bold text-amber-900 dark:text-amber-300">
-                        Numéro de Téléphone Mobile Money à Débiter :
-                      </label>
-                      <input
-                        type="tel"
-                        value={phoneNumber}
-                        onChange={(e) => setPhoneNumber(e.target.value)}
-                        placeholder="Ex: 670000000 ou 690000000"
-                        className="w-full rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm focus:outline-none"
-                      />
-                      <p className="text-[11px] text-amber-700 dark:text-amber-400">
-                        La validation et les instructions de confirmation sont fournies par le prestataire de paiement configuré dans Appwrite.
-                      </p>
-                    </div>
-                  )}
-
-                  {paymentProvider === 'STRIPE' && (
-                    <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800/60 mb-8 space-y-3">
-                      <label className="block text-xs font-bold text-blue-900 dark:text-blue-300">
-                        Paiement par carte via le prestataire configuré
-                      </label>
-                      <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Les données de carte sont saisies uniquement sur la page sécurisée du prestataire si un lien de paiement Appwrite est disponible.
-                      </p>
-                    </div>
-                  )}
 
                   {/* Guarantee banner */}
                   <div className="flex items-center gap-2 text-xs text-slate-500 mb-8 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span>Le statut affiché après cette étape provient exclusivement des documents de souscription Appwrite et d’un prestataire configuré, lorsqu’il existe.</span>
+                    <span>Le clic ne débite aucun compte et n’active aucun abonnement. Seule la confirmation administrative après vérification de preuve met à jour le statut Appwrite.</span>
                   </div>
 
                   {/* Actions */}
@@ -658,19 +527,19 @@ export default function SubscriptionFlowPage() {
 
                     <button
                       type="button"
-                      disabled={isSubmitting || (!paymentProvider && !includedAccess)}
+                      disabled={isSubmitting}
                       onClick={handleProcessPayment}
                       className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] hover:opacity-95 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 cursor-pointer"
                     >
                       {isSubmitting ? (
                         <>
                           <RefreshCw className="h-4 w-4 animate-spin" />
-                          <span>Validation en cours...</span>
+                          <span>Création de la demande...</span>
                         </>
                       ) : (
                         <>
                           <Lock className="h-4 w-4" />
-                          <span>{includedAccess ? 'Activer l’accès inclus' : `Valider et payer ${finalPrice.toLocaleString()} ${getCurrencyLabel()}`}</span>
+                          <span>{includedAccess ? 'Activer l’accès inclus' : `Créer la demande WhatsApp — ${finalPrice.toLocaleString()} ${getCurrencyLabel()}`}</span>
                         </>
                       )}
                     </button>
@@ -696,7 +565,7 @@ export default function SubscriptionFlowPage() {
 
                   <h2 className="mb-2 text-3xl font-black text-slate-900 dark:text-white">{paymentConfirmed ? 'Votre abonnement est actif' : 'Votre paiement doit encore être confirmé'}</h2>
                   <p className="mx-auto mb-8 max-w-md text-sm text-slate-600 dark:text-slate-300">
-                    {includedAccess ? 'Votre accès universitaire est déjà actif dans Appwrite. Aucune transaction de paiement n’a été créée.' : paymentConfirmed ? 'Le statut de souscription Appwrite confirme l’activation de votre abonnement.' : 'Un prestataire de paiement configuré dans Appwrite doit encore confirmer la transaction. Consultez ensuite votre statut depuis votre espace.'}
+                    {includedAccess ? 'Votre accès universitaire est déjà actif dans Appwrite. Aucune transaction de paiement n’a été créée.' : paymentConfirmed ? 'Le statut de souscription Appwrite confirme l’activation de votre abonnement.' : 'Votre demande est persistée dans Appwrite. Transmettez la preuve de paiement dans WhatsApp avec la référence affichée ; un administrateur devra ensuite la confirmer.'}
                   </p>
 
                   <div className="mx-auto mb-8 max-w-md space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
@@ -706,7 +575,7 @@ export default function SubscriptionFlowPage() {
                     <div className="flex justify-between gap-4"><span className="text-slate-500">Montant :</span><span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span></div>
                   </div>
 
-                  {transactionResult?.paymentUrl && !paymentConfirmed && <a href={transactionResult.paymentUrl} target="_blank" rel="noreferrer" className="mb-6 inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md">Poursuivre le paiement sécurisé <ArrowRight className="h-4 w-4" /></a>}
+                  {transactionResult?.paymentUrl && !paymentConfirmed && <a href={transactionResult.paymentUrl} target="_blank" rel="noreferrer" className="mb-6 inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md">Ouvrir WhatsApp avec ma référence <ArrowRight className="h-4 w-4" /></a>}
 
                   <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                     <Link

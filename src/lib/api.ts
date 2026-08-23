@@ -5,6 +5,8 @@ import {
   executeAcademicGradesAction,
   executeAttendanceSecureAction,
   executeAdminDirectoryAction,
+  executeMessagingAction,
+  executeSubscriptionPaymentAction,
   getCurrentAccount,
   listDocuments,
   listAppwriteNotifications,
@@ -797,7 +799,27 @@ export const gradesApi = {
 
 export interface ChatMessage { id: string; from: 'me' | 'them'; text: string; time: string; file?: string }
 export interface ChatConversation { id: string; name: string; role: string; email: string; online: boolean; time: string; preview: string; unread: number; messages: ChatMessage[] }
-export const messagingApi = { conversations: async (): Promise<ChatConversation[]> => [], sendMessage: async (_convId: string, _text: string, _file?: string) => unavailable<ChatConversation>('La messagerie') }
+const asChatTime = (value: string) => {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+const asChatConversation = (conversation: Awaited<ReturnType<typeof executeMessagingAction>>['conversation']): ChatConversation => {
+  if (!conversation) throw new ApiError(500, 'La messagerie Appwrite a renvoyé une conversation incomplète.')
+  return {
+    ...conversation,
+    time: asChatTime(conversation.time),
+    messages: conversation.messages.map((message) => ({ ...message, time: asChatTime(message.time) })),
+  }
+}
+export const messagingApi = {
+  conversations: async (): Promise<ChatConversation[]> => {
+    if (getAccountType() !== 'UNIVERSITY') return []
+    const response = await executeMessagingAction({ action: 'list' })
+    return (response.conversations || []).map((conversation) => asChatConversation(conversation))
+  },
+  openByEmail: async (email: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', email })).conversation),
+  sendMessage: async (convId: string, text: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'send', conversationId: convId, text })).conversation),
+}
 
 export interface LibraryResource { id: string; courseId: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string }
 export const libraryApi = {
@@ -976,8 +998,9 @@ export const supportApi = { faqs: async (): Promise<Array<{ q: string; a: string
 export interface SubscriptionPlan { id: string; code: string; name: string; category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION' | 'ACADEMIC'; countryCode?: string; currency?: string; priceMonthlyAmount: number; priceAnnuallyAmount: number; priceMonthly: string; priceAnnually: string; period: string; badge?: string; highlight?: boolean; description: string; btnText: string; btnVariant?: string; providers: string[]; features: string[]; status?: 'ACTIVE' | 'INACTIVE' }
 export interface PricingInfo { countryCode: string; currency: 'XAF' | 'EUR' | 'USD'; amount: number; formattedPrice: string; billingInterval: string; providers: string[] }
 export interface SubscriptionStatus { status: 'NONE' | 'PENDING' | 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'; planCode?: string | null; countryCode?: string | null; currency?: string | null; monthlyAmount?: number | null; currentPeriodEnd?: string | null; isAutoRenew: boolean }
-export interface CheckoutResult { transactionId?: string; paymentUrl?: string; status?: string; message?: string }
+export interface CheckoutResult { transactionId?: string; paymentUrl?: string; status?: string; message?: string; requestedAt?: string }
 export type CheckoutPayload = { planId?: string; planCode: string; countryCode: string; paymentProvider?: string; phoneNumber?: string; billingInterval?: 'MONTHLY' | 'ANNUALLY'; billingCycle: 'monthly' | 'annually'; email?: string; fullName?: string }
+export interface SubscriptionPaymentRequest { id: string; userId: string; reference: string; planCode: string; planName: string; billingCycle: 'MONTHLY' | 'ANNUALLY'; amount: number; currency: 'XAF' | 'EUR' | 'USD'; fullName: string; email: string; phoneNumber: string; status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED'; requestedAt: string; processedAt?: string | null; processedBy?: string | null; adminNote?: string; whatsappUrl?: string }
 
 function subscriptionProviders(value?: string): string[] {
   try {
@@ -1021,7 +1044,12 @@ async function appwriteSubscriptionStatus(): Promise<SubscriptionStatus> {
   const current = await getCurrentAccount()
   if (!current) throw new ApiError(401, 'Connectez-vous pour consulter votre statut de souscription.')
   const row = await academicAppwriteApi.subscriptions.getStatus(current.id)
-  if (!row) return { status: 'NONE', isAutoRenew: false }
+  if (!row) {
+    const requests = await executeSubscriptionPaymentAction({ action: 'list' })
+    const pending = requests.requests?.find((request) => request.status === 'PENDING')
+    if (pending) return { status: 'PENDING', planCode: pending.planCode, countryCode: 'CM', currency: pending.currency, monthlyAmount: pending.amount, currentPeriodEnd: null, isAutoRenew: false }
+    return { status: 'NONE', isAutoRenew: false }
+  }
   return {
     status: row.status,
     planCode: row.planCode || null,
@@ -1046,7 +1074,23 @@ export const subscriptionApi = {
     const plan = await subscriptionApi.getPlanById(payload.planCode)
     if (!plan) throw new ApiError(404, 'La formule demandée n’existe pas dans Appwrite.')
     if (plan.priceMonthlyAmount === 0) return { status: 'ACTIVE', message: 'L’accès académique gratuit est déjà inclus dans cette formule Appwrite.' }
-    throw new ApiError(501, 'Aucun prestataire de paiement n’est configuré dans Appwrite pour cette formule. Aucune transaction n’a été initiée.')
+    const result = await executeSubscriptionPaymentAction({
+      action: 'create',
+      planCode: plan.code,
+      billingCycle: payload.billingCycle === 'annually' ? 'ANNUALLY' : 'MONTHLY',
+      fullName: payload.fullName || '',
+      email: payload.email || '',
+      phoneNumber: payload.phoneNumber || '',
+    })
+    if (!result.request) throw new ApiError(502, 'Appwrite n’a pas retourné de référence de demande de paiement.')
+    return { transactionId: result.request.reference, paymentUrl: result.request.whatsappUrl, status: result.request.status, message: result.idempotent ? 'Votre demande de paiement en attente a été retrouvée.' : 'Votre demande a été enregistrée. Envoyez la preuve de paiement sur WhatsApp avec cette référence.', requestedAt: result.request.requestedAt }
+  },
+  listPaymentRequests: async (): Promise<SubscriptionPaymentRequest[]> => (await executeSubscriptionPaymentAction({ action: 'list' })).requests || [],
+  listPaymentRequestsForAdmin: async (status?: SubscriptionPaymentRequest['status']): Promise<SubscriptionPaymentRequest[]> => (await executeSubscriptionPaymentAction({ action: 'admin-list', status })).requests || [],
+  reviewPaymentRequest: async (requestId: string, decision: 'CONFIRMED' | 'REJECTED', adminNote = ''): Promise<SubscriptionPaymentRequest> => {
+    const result = await executeSubscriptionPaymentAction({ action: 'review', requestId, decision, adminNote })
+    if (!result.request) throw new ApiError(502, 'Appwrite n’a pas retourné la demande traitée.')
+    return result.request
   },
 }
 export const personalSubscriptionApi = subscriptionApi

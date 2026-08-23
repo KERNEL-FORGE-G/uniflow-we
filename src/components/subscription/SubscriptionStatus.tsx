@@ -48,6 +48,22 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   }
 
   if (!status) return null
+  if (status.status === 'PENDING') {
+    return (
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm dark:border-amber-800 dark:bg-amber-950/30">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200"><Clock className="h-4 w-4" /><h3 className="text-sm font-bold">Demande de paiement en attente</h3></div>
+            <p className="mt-1 text-xs text-amber-900/80 dark:text-amber-100/80">Votre demande {status.planCode ? `pour ${status.planCode}` : ''} est enregistrée dans Appwrite. L’accès sera activé uniquement après vérification manuelle de votre preuve de paiement.</p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button onClick={fetchStatus} className="rounded-xl bg-white/70 p-2.5 text-amber-700 hover:bg-white" title="Actualiser le statut"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
+            <button onClick={() => navigate('/subscribe')} className="rounded-xl bg-amber-700 px-3 py-2.5 text-xs font-bold text-white hover:bg-amber-800">Voir la demande</button>
+          </div>
+        </div>
+      </div>
+    )
+  }
   if (status.status === 'NONE' || !status.currency || status.monthlyAmount == null) {
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
