@@ -6,4 +6,4 @@
 - [x] Vérifier les parcours d’administration des comptes, de présence QR, de planning et de notifications avec les données Appwrite réelles.
 - [x] Corriger les écarts fonctionnels prioritaires identifiés pendant l’audit.
 - [x] Exécuter TypeScript, lint, build et contrôles de production avant publication sur main.
-- [ ] Documenter et publier les améliorations validées.
+- [x] Documenter et publier les améliorations validées.
