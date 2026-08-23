@@ -47,13 +47,15 @@ async function awaitAppwrite<T>(promise: Promise<T>, operation: string): Promise
 }
 
 export type AttendanceSecureRequest = {
-  action: 'issue' | 'revoke' | 'scan' | 'audit'
+  action: 'issue' | 'revoke' | 'scan' | 'audit' | 'roll'
   sessionId?: string
   courseId?: string
   token?: string
   origin?: { latitude: number; longitude: number; accuracy: number }
   position?: { latitude: number; longitude: number; accuracy: number }
   radiusMeters?: number
+  date?: string
+  rows?: Array<{ studentId: string; status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE' }>
 }
 
 export type AttendanceSecureResponse = {
@@ -63,6 +65,7 @@ export type AttendanceSecureResponse = {
   token?: string
   sessionId?: string
   courseId?: string
+  date?: string
   expiresAt?: string
   radiusMeters?: number
   recordId?: string
@@ -76,6 +79,9 @@ export type AttendanceSecureResponse = {
   duplicates?: Record<string, number>
   orphaned?: Record<string, number>
   invalidRecords?: number
+  action?: string
+  created?: number
+  updated?: number
 }
 
 export async function executeAttendanceSecureAction(payload: AttendanceSecureRequest): Promise<AttendanceSecureResponse> {
@@ -147,6 +153,86 @@ export async function executeAdminDirectoryAction(payload: AdminDirectoryRequest
   return response
 }
 
+export type AcademicRegistrationResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: 'provision'
+  directoryCreated?: boolean
+  enrollmentsCreated?: number
+  totalCourses?: number
+}
+
+export const APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID || 'academic_registration')
+
+export async function provisionAcademicRegistration(matricule?: string): Promise<AcademicRegistrationResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID, JSON.stringify({ action: 'provision', matricule: matricule || '' }), false),
+    'le raccordement académique de l’inscription',
+  )
+  let response: AcademicRegistrationResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as AcademicRegistrationResponse } catch {
+    throw new Error('La Function Appwrite de raccordement académique a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'Le raccordement académique Appwrite a été refusé.')
+  }
+  return response
+}
+
+export type AcademicGradeMutation = {
+  action: 'roster' | 'upsert' | 'delete'
+  courseId: string
+  studentId?: string
+  gradeId?: string
+  evaluationTitle?: string
+  type?: string
+  score?: number
+  maxScore?: number
+  coefficient?: number
+}
+
+export type AcademicGradeEntry = {
+  id: string
+  studentId: string
+  courseId: string
+  courseCode: string
+  evaluationTitle: string
+  type: string
+  score: number
+  maxScore: number
+  coefficient: number
+}
+
+export type AcademicGradeRoster = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: 'roster' | 'upsert' | 'delete'
+  course?: { id: string; code: string; name: string }
+  students?: Array<{ userId: string; name: string; matricule: string; role: 'STUDENT' | 'DELEGATE' }>
+  grades?: AcademicGradeEntry[]
+  grade?: AcademicGradeEntry
+  gradeId?: string
+}
+
+export const APPWRITE_ACADEMIC_GRADES_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ACADEMIC_GRADES_FUNCTION_ID || 'academic_grades')
+
+export async function executeAcademicGradesAction(payload: AcademicGradeMutation): Promise<AcademicGradeRoster> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_ACADEMIC_GRADES_FUNCTION_ID, JSON.stringify(payload), false),
+    'la gestion sécurisée des notes',
+  )
+  let response: AcademicGradeRoster
+  try { response = JSON.parse(execution.responseBody || '{}') as AcademicGradeRoster } catch {
+    throw new Error('La Function Appwrite de notes a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La Function Appwrite a refusé la gestion des notes.')
+  }
+  return response
+}
+
 export type UniFlowAccountType = 'UNIVERSITY' | 'PERSONAL'
 export type UniFlowRole = 'STUDENT' | 'DELEGATE' | 'TEACHER' | 'ADMIN'
 
@@ -166,6 +252,7 @@ export type UniFlowProfileInput = {
   university?: string
   program?: string
   level?: 'L1'
+  matricule?: string
   country?: string
 }
 
@@ -288,18 +375,27 @@ export async function createAccount(email: string, password: string, name: strin
   await awaitAppwrite(appwriteAccount.createEmailPasswordSession(email.trim(), password), 'l’ouverture de session')
   await persistAccountTypePreference(accountType)
   const profile = await awaitAppwrite(appwriteAccount.get(), 'la lecture du compte créé')
+  const effectiveRole: UniFlowRole = accountType === 'UNIVERSITY' ? 'STUDENT' : role
   const userProfile: Required<Pick<UniFlowProfileDocument, 'accountType' | 'role'>> & UniFlowProfileInput & { email: string; name: string } = {
     email: profile.email,
     name: profile.name,
     accountType,
-    role,
+    role: effectiveRole,
     university: accountType === 'UNIVERSITY' ? (profileInput.university || 'Université de Yaoundé I') : '',
     program: accountType === 'UNIVERSITY' ? (profileInput.program || 'ICT4D') : '',
     ...(accountType === 'UNIVERSITY' && profileInput.level ? { level: profileInput.level } : {}),
     country: profileInput.country || 'Cameroun',
   }
   await awaitAppwrite(appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'users', profile.$id, userProfile, userPermissions(profile.$id)), 'la création du profil UniFlow')
-  return normalizeUser(profile, accountType, role, userProfile)
+  if (accountType === 'UNIVERSITY') {
+    try {
+      await provisionAcademicRegistration(profileInput.matricule)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Le raccordement académique a échoué.'
+      throw new Error(`Compte créé, mais ${message} Connectez-vous puis relancez l’inscription universitaire depuis cette session.`)
+    }
+  }
+  return normalizeUser(profile, accountType, effectiveRole, userProfile)
 }
 
 export async function loginAccount(email: string, password: string, accountType: UniFlowAccountType) {

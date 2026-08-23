@@ -1,5 +1,5 @@
 import { Client, Databases, ID, Permission, Query, Role } from 'node-appwrite'
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 
 const DATABASE_ID = 'uniflow'
 const TOKEN_LIFETIME_MS = 15 * 60 * 1000
@@ -39,6 +39,10 @@ function positionFrom(payload) {
 
 function tokenValue() {
   return `${Date.now().toString(36)}-${randomUUID().replaceAll('-', '')}`
+}
+
+function deterministicId(prefix, value) {
+  return `${prefix}_${createHash('sha256').update(value).digest('hex').slice(0, 24)}`
 }
 
 function duplicateCount(documents, keyOf) {
@@ -105,6 +109,59 @@ export default async ({ req, res, log, error }) => {
       }
       const issueCount = Object.values(report.duplicates).reduce((sum, value) => sum + value, 0) + Object.values(report.orphaned).reduce((sum, value) => sum + value, 0) + report.invalidRecords
       return json(res, { ok: true, ...report, healthy: issueCount === 0 })
+    }
+
+    if (body.action === 'roll') {
+      if (!['DELEGATE', 'TEACHER', 'ADMIN'].includes(profile.role)) return json(res, { ok: false, code: 'ROLE_DENIED', message: 'Seul un délégué, enseignant ou administrateur peut enregistrer un appel.' }, 403)
+      const courseId = requireValue(body.courseId, 'courseId')
+      const date = requireValue(body.date, 'date')
+      const dateKey = new Date(date).toISOString().slice(0, 10)
+      if (Number.isNaN(new Date(date).getTime())) return json(res, { ok: false, code: 'DATE_INVALID', message: 'Date de séance invalide.' }, 400)
+      const courses = await databases.listDocuments(DATABASE_ID, 'academic_courses', [Query.equal('$id', courseId), Query.limit(1)])
+      const course = courses.documents[0]
+      if (!course || course.university !== 'Université de Yaoundé I' || course.program !== 'ICT4D' || course.level !== 'L1') return json(res, { ok: false, code: 'COURSE_INVALID', message: 'Cours académique invalide.' }, 404)
+      if (profile.role === 'TEACHER' && course.teacherId !== userId) return json(res, { ok: false, code: 'COURSE_ASSIGNMENT_DENIED', message: 'Cet enseignant n’est pas affecté à ce cours.' }, 403)
+      const rows = Array.isArray(body.rows) ? body.rows : []
+      if (rows.some((row) => !row || typeof row.studentId !== 'string' || !['PRESENT', 'ABSENT', 'RETARD', 'JUSTIFIE'].includes(row.status))) return json(res, { ok: false, code: 'ROLL_INVALID', message: 'La liste d’appel contient un statut ou un apprenant invalide.' }, 400)
+      const studentIds = [...new Set(rows.map((row) => row.studentId))]
+      if (studentIds.length !== rows.length) return json(res, { ok: false, code: 'ROLL_DUPLICATE', message: 'Un apprenant ne peut apparaître qu’une seule fois dans le même appel.' }, 400)
+      const enrollments = await databases.listDocuments(DATABASE_ID, 'academic_enrollments', [Query.equal('courseId', courseId), Query.limit(200)])
+      const activeStudentIds = new Set(enrollments.documents.filter((entry) => entry.status !== 'INACTIVE').map((entry) => entry.studentId))
+      if (studentIds.some((studentId) => !activeStudentIds.has(studentId))) return json(res, { ok: false, code: 'ENROLLMENT_REQUIRED', message: 'La liste d’appel contient un apprenant qui n’est pas inscrit à ce cours.' }, 403)
+      const sessions = await databases.listDocuments(DATABASE_ID, 'attendance_sessions', [Query.equal('courseId', courseId), Query.limit(200)])
+      let session = sessions.documents.find((entry) => String(entry.date).slice(0, 10) === dateKey)
+      if (!session) {
+        const sessionId = deterministicId('ses', `${courseId}:${dateKey}`)
+        try {
+          session = await databases.createDocument(DATABASE_ID, 'attendance_sessions', sessionId, { courseId, date: new Date(date).toISOString(), createdBy: userId }, [Permission.read(Role.users()), Permission.update(Role.user(userId)), Permission.delete(Role.user(userId))])
+        } catch (creationError) {
+          if (Number(creationError?.code) !== 409) throw creationError
+          session = await databases.getDocument(DATABASE_ID, 'attendance_sessions', sessionId)
+        }
+      }
+      const records = await databases.listDocuments(DATABASE_ID, 'attendance_records', [Query.equal('sessionId', session.$id), Query.limit(200)])
+      const byStudentId = new Map(records.documents.map((record) => [record.studentId, record]))
+      let created = 0
+      let updated = 0
+      for (const row of rows) {
+        const existing = byStudentId.get(row.studentId)
+        if (existing?.status === row.status) continue
+        if (existing) {
+          await databases.updateDocument(DATABASE_ID, 'attendance_records', existing.$id, { status: row.status, verificationMethod: 'MANUAL', proximityStatus: 'NOT_REQUIRED', verifiedAt: new Date().toISOString() })
+          updated += 1
+          continue
+        }
+        const recordId = deterministicId('att', `${session.$id}:${row.studentId}`)
+        try {
+          await databases.createDocument(DATABASE_ID, 'attendance_records', recordId, { sessionId: session.$id, courseId, studentId: row.studentId, status: row.status, verificationMethod: 'MANUAL', proximityStatus: 'NOT_REQUIRED', proximityDistanceMeters: -1, locationAccuracyMeters: -1, verifiedAt: new Date().toISOString() }, [Permission.read(Role.users()), Permission.update(Role.user(userId)), Permission.delete(Role.user(userId))])
+          created += 1
+        } catch (creationError) {
+          if (Number(creationError?.code) !== 409) throw creationError
+          await databases.updateDocument(DATABASE_ID, 'attendance_records', recordId, { status: row.status, verificationMethod: 'MANUAL', proximityStatus: 'NOT_REQUIRED', verifiedAt: new Date().toISOString() })
+          updated += 1
+        }
+      }
+      return json(res, { ok: true, action: 'roll', sessionId: session.$id, courseId, date: session.date, created, updated })
     }
 
     if (body.action === 'issue') {

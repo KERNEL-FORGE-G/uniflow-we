@@ -102,6 +102,7 @@ export function useAuth() {
           university: payload.university,
           program: payload.program,
           level: payload.level,
+          matricule: payload.matricule,
           country: payload.countryCode === 'CM' || !payload.countryCode ? 'Cameroun' : payload.countryCode,
         },
       )

@@ -2,6 +2,7 @@ import {
   appwriteAccount,
   academicAppwriteApi,
   type AdminDirectoryEntry,
+  executeAcademicGradesAction,
   executeAttendanceSecureAction,
   executeAdminDirectoryAction,
   getCurrentAccount,
@@ -436,6 +437,16 @@ async function refreshTeacherForAdmin(id: string) {
 
 export const studentsApi = {
   list: async (): Promise<Student[]> => (await academicDirectory()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asStudent),
+  listForCourse: async (courseId: string): Promise<Student[]> => {
+    const [directory, enrollments] = await Promise.all([academicDirectory(), academicAppwriteApi.enrollments.list()])
+    const enrolledStudentIds = new Set(enrollments
+      .filter((enrollment) => enrollment.courseId === courseId && enrollment.status !== 'INACTIVE')
+      .map((enrollment) => enrollment.studentId))
+    return directory
+      .filter((entry) => enrolledStudentIds.has(entry.userId))
+      .filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE')
+      .map(asStudent)
+  },
   listForAdmin: async (): Promise<Student[]> => (await adminDirectoryEntries()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asAdminStudent),
   getOne: async (id: string) => refreshStudent(id),
   create: async (dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string; password?: string; role?: 'STUDENT' | 'DELEGATE' }) => {
@@ -537,19 +548,17 @@ export const attendanceApi = {
     const current = await getCurrentAccount('UNIVERSITY')
     if (!current) throw new ApiError(401, 'Session Appwrite absente.')
 
-    const [courseRows, directoryRows] = await Promise.all([
-      academicAppwriteApi.courses.list(),
-      academicAppwriteApi.directory.list(),
-    ])
+    const courseRows = await academicAppwriteApi.courses.list()
     const courses = courseRows
       .filter((row) => row.university === 'Université de Yaoundé I' && row.program === 'ICT4D' && row.level === 'L1')
       .filter((row) => current.role !== 'TEACHER' || row.teacherId === current.id)
       .map(asAcademicCourse)
-    const students = directoryRows
-      .filter((row) => row.university === 'Université de Yaoundé I' && row.program === 'ICT4D' && row.level === 'L1')
-      .filter((row) => row.role === 'STUDENT' || row.role === 'DELEGATE')
-      .map(asStudent)
-    return { courses, students }
+    return { courses, students: [] }
+  },
+  roster: async (courseId: string): Promise<Student[]> => {
+    const { courses } = await attendanceApi.bootstrap()
+    if (!courses.some((course) => course.id === courseId)) throw new ApiError(403, 'Ce cours n’est pas disponible pour votre rôle Appwrite.')
+    return studentsApi.listForCourse(courseId)
   },
   listSessions: appwriteAttendanceSessions,
   createSession: async (dto: { courseId: string; date: string }) => {
@@ -604,37 +613,9 @@ export const attendanceApi = {
     }))
   },
   saveTodayRoll: async (dto: { courseId: string; date: string; rows: Array<{ studentId: string; status: AttendanceRecord['status'] }> }) => {
-    const current = await getCurrentAccount('UNIVERSITY')
-    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
-    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut enregistrer une présence.')
-
-    const [courseRows, sessionRows, recordRows] = await Promise.all([
-      academicAppwriteApi.courses.list(),
-      academicAppwriteApi.attendance.sessions(),
-      academicAppwriteApi.attendance.records(),
-    ])
-    const course = courseRows.find((row) => row.$id === dto.courseId)
-    if (!course || (current.role === 'TEACHER' && course.teacherId !== current.id)) {
-      throw new ApiError(403, 'Ce cours n’est pas disponible pour votre rôle Appwrite.')
-    }
-
-    const dateKey = new Date(dto.date).toISOString().slice(0, 10)
-    let session = sessionRows.find((row) => row.courseId === dto.courseId && row.date.slice(0, 10) === dateKey)
-    if (!session) {
-      session = await academicAppwriteApi.attendance.createSession({ courseId: dto.courseId, date: new Date(dto.date).toISOString(), createdBy: current.id })
-    }
-
-    const byStudentId = new Map(recordRows
-      .filter((record) => record.sessionId === session!.$id)
-      .map((record) => [record.studentId, record]))
-    await Promise.all(dto.rows.map(async (row) => {
-      const existing = byStudentId.get(row.studentId)
-      if (existing?.status === row.status) return existing
-      if (existing) return academicAppwriteApi.attendance.updateRecord(existing.$id, row.status)
-      return academicAppwriteApi.attendance.createRecord({ sessionId: session!.$id, courseId: dto.courseId, studentId: row.studentId, status: row.status }, current.id)
-    }))
-
-    return { id: session.$id, courseId: session.courseId, date: session.date }
+    const response = await executeAttendanceSecureAction({ action: 'roll', courseId: dto.courseId, date: dto.date, rows: dto.rows })
+    if (!response.sessionId || !response.courseId || !response.date) throw new ApiError(502, 'La Function Appwrite n’a pas retourné la séance de présence.')
+    return { id: response.sessionId, courseId: response.courseId, date: response.date }
   },
   openQrSession: async (dto: { courseId: string; date?: string; origin: { latitude: number; longitude: number; accuracy: number }; radiusMeters?: number }) => {
     const current = await getCurrentAccount('UNIVERSITY')
@@ -761,10 +742,10 @@ export const assignmentsApi = {
   },
 }
 
-export interface Grade { id: string; ue: string; code: string; title: string; type: string; coef: number; grade: number; classAvg: number; rank: number; maxRank: number }
+export interface Grade { id: string; studentId?: string; ue: string; code: string; title: string; type: string; coef: number; grade: number; maxScore: number; classAvg: number; rank: number; maxRank: number }
 async function personalGrades(): Promise<Grade[]> {
   if (getAccountType() !== 'PERSONAL') return []
-  return (await personalAppwriteApi.grades.list()).map((item) => ({ id: item.id, ue: '', code: item.courseId, title: item.evaluationTitle, type: '', coef: item.coefficient, grade: item.score, classAvg: 0, rank: 0, maxRank: 0 }))
+  return (await personalAppwriteApi.grades.list()).map((item) => ({ id: item.id, ue: '', code: item.courseId, title: item.evaluationTitle, type: '', coef: item.coefficient, grade: item.score, maxScore: item.maxScore, classAvg: 0, rank: 0, maxRank: 0 }))
 }
 async function universityGrades(): Promise<Grade[]> {
   const current = await getCurrentAccount('UNIVERSITY')
@@ -775,12 +756,14 @@ async function universityGrades(): Promise<Grade[]> {
     .filter((item) => current.role === 'TEACHER' ? allowedCourseIds.has(item.courseId) : item.studentId === current.id)
     .map((item) => ({
       id: item.$id,
+      studentId: item.studentId,
       ue: 'ICT4D L1',
       code: item.courseCode,
       title: item.evaluationTitle,
       type: item.type || 'CC',
       coef: item.coefficient || 1,
       grade: Number(item.score),
+      maxScore: Number(item.maxScore || 20),
       classAvg: 0,
       rank: 0,
       maxRank: 0,
@@ -788,10 +771,27 @@ async function universityGrades(): Promise<Grade[]> {
 }
 export const gradesApi = {
   mine: async () => getAccountType() === 'PERSONAL' ? personalGrades() : universityGrades(),
+  roster: async (courseId: string) => {
+    if (getAccountType() !== 'UNIVERSITY') return unavailable<{ students: Array<{ id: string; name: string; matricule: string }>; grades: Grade[] }>('Les évaluations universitaires')
+    const response = await executeAcademicGradesAction({ action: 'roster', courseId })
+    return {
+      students: (response.students || []).map((student) => ({ id: student.userId, name: student.name, matricule: student.matricule })),
+      grades: (response.grades || []).map((item) => ({ id: item.id, studentId: item.studentId, ue: 'ICT4D L1', code: item.courseCode, title: item.evaluationTitle, type: item.type, coef: item.coefficient, grade: item.score, maxScore: item.maxScore, classAvg: 0, rank: 0, maxRank: 0 })),
+    }
+  },
+  upsertUniversity: async (dto: { courseId: string; studentId: string; evaluationTitle: string; type: string; score: number; maxScore: number; coefficient: number }) => {
+    const response = await executeAcademicGradesAction({ action: 'upsert', ...dto })
+    const item = response.grade
+    if (!item) throw new ApiError(502, 'La Function Appwrite n’a pas retourné la note enregistrée.')
+    return { id: item.id, studentId: item.studentId, ue: 'ICT4D L1', code: item.courseCode, title: item.evaluationTitle, type: item.type, coef: item.coefficient, grade: item.score, maxScore: item.maxScore, classAvg: 0, rank: 0, maxRank: 0 } as Grade
+  },
+  deleteUniversity: async (dto: { courseId: string; studentId: string; gradeId: string }) => {
+    await executeAcademicGradesAction({ action: 'delete', ...dto })
+  },
   create: async (dto: Partial<Grade>) => {
     if (getAccountType() !== 'PERSONAL') return unavailable<Grade>('Les notes universitaires')
     const created = await personalAppwriteApi.grades.create({ courseId: dto.code || '', evaluationTitle: dto.title || '', score: dto.grade || 0, maxScore: 20, coefficient: dto.coef || 1 })
-    return { id: created.id, ue: '', code: created.courseId, title: created.evaluationTitle, type: '', coef: created.coefficient, grade: created.score, classAvg: 0, rank: 0, maxRank: 0 }
+    return { id: created.id, ue: '', code: created.courseId, title: created.evaluationTitle, type: '', coef: created.coefficient, grade: created.score, maxScore: created.maxScore, classAvg: 0, rank: 0, maxRank: 0 }
   },
 }
 

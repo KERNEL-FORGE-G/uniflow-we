@@ -55,3 +55,11 @@ La page `#/admin/enseignants` de production affiche désormais « Appwrite · CR
 ## Répertoire administratif sécurisé — complément
 
 La Function `admin_directory` expose désormais une action `list` réservée à un administrateur UY1 / ICT4D / L1. Elle joint les profils et le répertoire uniquement côté serveur afin de transmettre les emails réels aux pages Étudiants et Enseignants sans étendre les permissions de lecture du navigateur. La version production affiche les quatre apprenants existants et leurs contacts Appwrite réels. Les requêtes de répertoire sont dédupliquées en mémoire pendant 60 secondes et le cache est invalidé après toute création, mise à jour ou suppression.
+
+## Cycle académique : écarts confirmés avant correction
+
+L’inscription universitaire crée actuellement le compte Auth Appwrite et son document `users`, mais elle ne crée pas l’entrée correspondante dans `academic_directory`, ni les lignes `academic_enrollments` attendues pour les dix cours ICT4D / L1. Un apprenant nouvellement inscrit ne peut donc pas être traité de manière fiable par les interfaces académiques, malgré une session valide.
+
+La liste d’appel charge encore tous les apprenants du répertoire UY1 / ICT4D / L1, sans filtrage par inscription au cours. Les opérations de présence existantes évitent déjà la plupart des doublons côté client, mais la liste de participants et la validation de l’inscription au cours doivent devenir des règles serveur vérifiables.
+
+Les écrans de notes lisent `academic_grades`, mais aucun chemin universitaire sécurisé n’expose aujourd’hui la création ou la mise à jour d’une note par l’enseignant. La moyenne affichée est une moyenne arithmétique et ignore `maxScore` et `coefficient`. Le prochain correctif doit créer un chemin serveur contrôlé par l’affectation enseignant–cours, imposer l’inscription de l’apprenant, et appliquer la formule pondérée normalisée sur 20.
