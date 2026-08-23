@@ -691,18 +691,18 @@ export default function SubscriptionFlowPage() {
                   </div>
 
                   <span className={`mb-3 inline-block rounded-full px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider ${paymentConfirmed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300'}`}>
-                    {paymentConfirmed ? 'Paiement confirmé' : 'Paiement en attente de confirmation'}
+                    {paymentConfirmed ? (includedAccess ? 'Accès académique inclus' : 'Paiement confirmé') : 'Paiement en attente de confirmation'}
                   </span>
 
                   <h2 className="mb-2 text-3xl font-black text-slate-900 dark:text-white">{paymentConfirmed ? 'Votre abonnement est actif' : 'Votre paiement doit encore être confirmé'}</h2>
                   <p className="mx-auto mb-8 max-w-md text-sm text-slate-600 dark:text-slate-300">
-                    {paymentConfirmed ? 'Le backend a confirmé la transaction et l’activation de votre abonnement.' : 'Le backend a initialisé la transaction. Suivez le lien de paiement ou validez la demande Mobile Money, puis consultez le statut depuis votre espace.'}
+                    {includedAccess ? 'Votre accès universitaire est déjà actif dans Appwrite. Aucune transaction de paiement n’a été créée.' : paymentConfirmed ? 'Le statut de souscription Appwrite confirme l’activation de votre abonnement.' : 'Un prestataire de paiement configuré dans Appwrite doit encore confirmer la transaction. Consultez ensuite votre statut depuis votre espace.'}
                   </p>
 
                   <div className="mx-auto mb-8 max-w-md space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
                     {transactionResult?.transactionId && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Référence transaction :</span><span className="font-mono font-bold text-slate-900 dark:text-white">{transactionResult.transactionId}</span></div>}
                     <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Formule :</span><span className="font-bold text-slate-900 dark:text-white">{selectedPlan?.name}</span></div>
-                    <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Statut backend :</span><span className="font-bold text-slate-900 dark:text-white">{transactionResult?.status || 'PENDING'}</span></div>
+                    <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Statut Appwrite :</span><span className="font-bold text-slate-900 dark:text-white">{transactionResult?.status || 'PENDING'}</span></div>
                     <div className="flex justify-between gap-4"><span className="text-slate-500">Montant :</span><span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span></div>
                   </div>
 
