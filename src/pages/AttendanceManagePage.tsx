@@ -76,7 +76,7 @@ export default function AttendanceManagePage() {
   const handleSave = async () => {
     if (!course) return
     if (isOfflineMode) {
-      alert('La validation des présences nécessite une connexion au backend. Désactivez le mode hors ligne puis réessayez.')
+      alert('La validation des présences nécessite une connexion à Appwrite. Désactivez le mode hors ligne puis réessayez.')
       return
     }
     setSaving(true)
@@ -163,8 +163,8 @@ export default function AttendanceManagePage() {
         <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800">
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5 animate-bounce" />
           <div className="flex-1">
-            <p className="font-semibold text-sm">Réseau Local Universitaire Actif</p>
-            <p className="text-xs mt-0.5">Mode Offline-First : les présences sont stockées en SQLite local et synchronisées au retour de connexion.</p>
+            <p className="font-semibold text-sm">Mode hors ligne</p>
+            <p className="text-xs mt-0.5">La consultation reste limitée aux données déjà chargées. La création et la validation des présences exigent une connexion Appwrite.</p>
           </div>
           {pending > 0 && (
             <button onClick={() => setPending(0)}
@@ -176,7 +176,7 @@ export default function AttendanceManagePage() {
       ) : (
         <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800">
           <Wifi className="h-5 w-5 text-emerald-500 shrink-0" />
-          <p className="text-sm font-medium">Mode Connecté — Synchronisation delta-sync active (~1.2 Ko/sync)</p>
+          <p className="text-sm font-medium">Mode connecté — les présences sont lues et enregistrées directement dans Appwrite.</p>
         </div>
       )}
 
@@ -184,7 +184,7 @@ export default function AttendanceManagePage() {
       {saved && (
         <div className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-          {isOfflineMode ? 'Rapport enregistré localement (Outbox SQLite).' : 'Rapport synchronisé avec les serveurs UniFlow !'}
+          {isOfflineMode ? 'Aucune écriture n’a été effectuée hors ligne.' : 'Présences enregistrées dans Appwrite.'}
         </div>
       )}
 
@@ -305,7 +305,7 @@ export default function AttendanceManagePage() {
                 </table>
                 <div className="px-5 py-4 border-t border-[#f3f4f6] bg-[#f9fafb] flex items-center justify-between gap-4">
                   <p className="text-xs text-[#9ca3af] flex items-center gap-1.5">
-                    <HelpCircle className="h-4 w-4" /> Les absents recevront une notification push/SMS.
+                    <HelpCircle className="h-4 w-4" /> Les absences sont persistées dans Appwrite ; les notifications distantes exigent un fournisseur FCM configuré.
                   </p>
                   <button onClick={handleSave} disabled={saving}
                     className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-50">
@@ -348,7 +348,7 @@ export default function AttendanceManagePage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-bold text-[#111827]">QR Code d'appel</span>
+              <span className="text-sm font-bold text-[#111827]">Jeton QR de présence</span>
               <button onClick={() => setShowQR(false)} className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]"><X className="h-5 w-5" /></button>
             </div>
             <p className="text-xs text-[#6b7280] mb-4">{course.code} · {course.classroom?.name || 'Salle N/A'} · {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}</p>
@@ -356,12 +356,12 @@ export default function AttendanceManagePage() {
               <QrCode className="h-44 w-44 text-[#1e3a8a]" />
             </div>
             <p className="mt-4 rounded-lg bg-[#fef3c7] border border-[#fde68a] px-3 py-2 text-xs font-semibold text-[#92400e] flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 shrink-0" /> QR permanent
+              <Clock className="h-3.5 w-3.5 shrink-0" /> Format de jeton Appwrite à provisionner : aucun émargement n’est simulé.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button onClick={() => setShowQR(false)} className="rounded-lg border border-[#e5e7eb] py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">Fermer</button>
-              <button className="rounded-lg bg-[#1e3a8a] py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] flex items-center justify-center gap-1.5">
-                <Download className="h-4 w-4" /> Télécharger
+              <button disabled className="rounded-lg bg-slate-200 py-2 text-sm font-semibold text-slate-500 flex items-center justify-center gap-1.5 cursor-not-allowed">
+                <Download className="h-4 w-4" /> À configurer
               </button>
             </div>
           </div>
@@ -370,4 +370,3 @@ export default function AttendanceManagePage() {
     </div>
   )
 }
-

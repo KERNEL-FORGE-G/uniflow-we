@@ -331,6 +331,25 @@ export interface AcademicAttendanceRecordDocument {
   status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'
 }
 
+export interface AcademicDirectoryDocument {
+  $id: string
+  userId: string
+  name: string
+  role: UniFlowRole
+  university: string
+  program: string
+  level: 'L1'
+  matricule?: string
+  status?: string
+}
+
+export interface AcademicEnrollmentDocument {
+  $id: string
+  studentId: string
+  courseId: string
+  status?: string
+}
+
 export interface SubscriptionPlanDocument {
   $id: string
   code: string
@@ -379,6 +398,38 @@ export const academicAppwriteApi = {
   attendance: {
     sessions: () => listDocuments<AcademicAttendanceSessionDocument>('attendance_sessions', [Query.limit(200)]),
     records: () => listDocuments<AcademicAttendanceRecordDocument>('attendance_records', [Query.limit(200)]),
+    createSession: async (data: { courseId: string; date: string; createdBy: string }) => {
+      const document = await awaitAppwrite(
+        appwriteDatabases.createDocument(
+          APPWRITE_DATABASE_ID,
+          'attendance_sessions',
+          ID.unique(),
+          data,
+          [Permission.read(Role.users()), Permission.update(Role.user(data.createdBy)), Permission.delete(Role.user(data.createdBy))],
+        ),
+        'la création de la séance de présence',
+      )
+      return document as unknown as AcademicAttendanceSessionDocument
+    },
+    createRecord: async (data: Omit<AcademicAttendanceRecordDocument, '$id'>, actorId: string) => {
+      const document = await awaitAppwrite(
+        appwriteDatabases.createDocument(
+          APPWRITE_DATABASE_ID,
+          'attendance_records',
+          ID.unique(),
+          data,
+          [Permission.read(Role.users()), Permission.update(Role.user(actorId)), Permission.delete(Role.user(actorId))],
+        ),
+        'l’enregistrement de la présence',
+      )
+      return document as unknown as AcademicAttendanceRecordDocument
+    },
+  },
+  directory: {
+    list: () => listDocuments<AcademicDirectoryDocument>('academic_directory', [Query.limit(200)]),
+  },
+  enrollments: {
+    list: () => listDocuments<AcademicEnrollmentDocument>('academic_enrollments', [Query.limit(200)]),
   },
   subscriptions: {
     listPlans: () => listDocuments<SubscriptionPlanDocument>('subscription_plans', [Query.equal('status', 'ACTIVE')]),

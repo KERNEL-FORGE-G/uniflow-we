@@ -2,6 +2,7 @@ import {
   appwriteAccount,
   academicAppwriteApi,
   getCurrentAccount,
+  listDocuments,
   listAppwriteNotifications,
   markAppwriteNotificationRead,
   deleteAppwriteNotification,
@@ -323,17 +324,56 @@ export const schedulesApi = {
 
 export interface Student { id: string; firstName: string; lastName: string; matricule: string; status: string; level?: { name: string; program?: { name: string } }; specialty?: { name: string }; user?: { email: string } }
 export interface Teacher { id: string; firstName: string; lastName: string; user?: { email: string }; courses?: Course[] }
+
+function directoryName(name: string) {
+  const [firstName = '', ...lastName] = name.trim().split(/\s+/)
+  return { firstName, lastName: lastName.join(' ') }
+}
+
+async function academicDirectory() {
+  const current = await getCurrentAccount('UNIVERSITY')
+  if (!current) return []
+  return (await academicAppwriteApi.directory.list())
+    .filter((entry) => entry.university === 'Université de Yaoundé I' && entry.program === 'ICT4D' && entry.level === 'L1')
+}
+
+function asStudent(entry: import('./appwrite').AcademicDirectoryDocument): Student {
+  const { firstName, lastName } = directoryName(entry.name)
+  return {
+    id: entry.userId,
+    firstName,
+    lastName,
+    matricule: entry.matricule || 'Non renseigné',
+    status: entry.role === 'DELEGATE' ? 'delegate' : (entry.status || 'ACTIVE'),
+    level: { name: entry.level, program: { name: entry.program } },
+    specialty: { name: entry.program },
+  }
+}
+
+function asTeacher(entry: import('./appwrite').AcademicDirectoryDocument): Teacher {
+  const { firstName, lastName } = directoryName(entry.name)
+  return { id: entry.userId, firstName, lastName }
+}
+
 const universityCollectionUnavailable = <T>(feature: string) => unavailable<T>(feature)
 export const studentsApi = {
-  list: async (): Promise<Student[]> => [],
-  getOne: async (_id: string) => universityCollectionUnavailable<Student>('Les étudiants'),
+  list: async (): Promise<Student[]> => (await academicDirectory()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asStudent),
+  getOne: async (id: string) => {
+    const student = (await studentsApi.list()).find((entry) => entry.id === id)
+    if (!student) throw new ApiError(404, 'Étudiant introuvable dans le répertoire Appwrite.')
+    return student
+  },
   create: async (_dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string }) => universityCollectionUnavailable<Student>('Les étudiants'),
   update: async (_id: string, _dto: Partial<Student>) => universityCollectionUnavailable<Student>('Les étudiants'),
   delete: async (_id: string) => universityCollectionUnavailable<void>('Les étudiants'),
 }
 export const teachersApi = {
-  list: async (): Promise<Teacher[]> => [],
-  getOne: async (_id: string) => universityCollectionUnavailable<Teacher>('Les enseignants'),
+  list: async (): Promise<Teacher[]> => (await academicDirectory()).filter((entry) => entry.role === 'TEACHER').map(asTeacher),
+  getOne: async (id: string) => {
+    const teacher = (await teachersApi.list()).find((entry) => entry.id === id)
+    if (!teacher) throw new ApiError(404, 'Enseignant introuvable dans le répertoire Appwrite.')
+    return teacher
+  },
   create: async (_dto: Partial<Teacher> & { userId?: string; email?: string }) => universityCollectionUnavailable<Teacher>('Les enseignants'),
   update: async (_id: string, _dto: Partial<Teacher>) => universityCollectionUnavailable<Teacher>('Les enseignants'),
   delete: async (_id: string) => universityCollectionUnavailable<void>('Les enseignants'),
@@ -341,12 +381,72 @@ export const teachersApi = {
 
 export interface AttendanceSession { id: string; date: string; courseId: string; course?: { name: string; code: string }; records: AttendanceRecord[] }
 export interface AttendanceRecord { id: string; status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'; studentId: string; student?: { firstName: string; lastName: string; matricule: string } }
+
+async function appwriteAttendanceSessions(): Promise<AttendanceSession[]> {
+  const current = await getCurrentAccount('UNIVERSITY')
+  if (!current) return []
+  const [sessions, records, courses, directory] = await Promise.all([
+    academicAppwriteApi.attendance.sessions(),
+    academicAppwriteApi.attendance.records(),
+    universityCourses(),
+    academicDirectory(),
+  ])
+  const coursesById = new Map(courses.map((course) => [course.id, course]))
+  const studentsById = new Map(directory.filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map((entry) => [entry.userId, asStudent(entry)]))
+  const isStudentView = current.role === 'STUDENT' || current.role === 'DELEGATE'
+
+  return sessions
+    .filter((session) => coursesById.has(session.courseId))
+    .map((session) => {
+      const course = coursesById.get(session.courseId)!
+      const sessionRecords = records
+        .filter((record) => record.sessionId === session.$id && (!isStudentView || record.studentId === current.id))
+        .map((record) => {
+          const student = studentsById.get(record.studentId)
+          return {
+            id: record.$id,
+            status: record.status,
+            studentId: record.studentId,
+            student: student ? { firstName: student.firstName, lastName: student.lastName, matricule: student.matricule } : undefined,
+          }
+        })
+      return { id: session.$id, date: session.date, courseId: session.courseId, course: { name: course.name, code: course.code }, records: sessionRecords }
+    })
+    .sort((a, b) => b.date.localeCompare(a.date))
+}
+
 export const attendanceApi = {
-  listSessions: async (): Promise<AttendanceSession[]> => [],
-  createSession: async (_dto: { courseId: string; date: string }) => unavailable<AttendanceSession>('Les présences'),
-  getSession: async (_id: string) => unavailable<AttendanceSession>('Les présences'),
-  byCourse: async (_courseId: string): Promise<AttendanceSession[]> => [],
-  mark: async (_sessionId: string, _dto: { studentId: string; status: string }) => unavailable<AttendanceRecord>('Les présences'),
+  listSessions: appwriteAttendanceSessions,
+  createSession: async (dto: { courseId: string; date: string }) => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut créer une séance de présence.')
+    const course = (await universityCourses()).find((entry) => entry.id === dto.courseId)
+    if (!course) throw new ApiError(403, 'Ce cours n’est pas disponible pour votre rôle Appwrite.')
+    const dateKey = new Date(dto.date).toISOString().slice(0, 10)
+    const existing = (await appwriteAttendanceSessions()).find((entry) => entry.courseId === dto.courseId && entry.date.slice(0, 10) === dateKey)
+    if (existing) return existing
+    const created = await academicAppwriteApi.attendance.createSession({ courseId: dto.courseId, date: new Date(dto.date).toISOString(), createdBy: current.id })
+    return { id: created.$id, date: created.date, courseId: created.courseId, course: { name: course.name, code: course.code }, records: [] }
+  },
+  getSession: async (id: string) => {
+    const session = (await appwriteAttendanceSessions()).find((entry) => entry.id === id)
+    if (!session) throw new ApiError(404, 'Séance de présence introuvable dans Appwrite.')
+    return session
+  },
+  byCourse: async (courseId: string): Promise<AttendanceSession[]> => (await appwriteAttendanceSessions()).filter((entry) => entry.courseId === courseId),
+  mark: async (sessionId: string, dto: { studentId: string; status: string }) => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut enregistrer une présence.')
+    if (!['PRESENT', 'ABSENT', 'RETARD', 'JUSTIFIE'].includes(dto.status)) throw new ApiError(400, 'Statut de présence Appwrite invalide.')
+    const session = await attendanceApi.getSession(sessionId)
+    const student = await studentsApi.getOne(dto.studentId)
+    const existing = session.records.find((record) => record.studentId === dto.studentId)
+    if (existing) return existing
+    const created = await academicAppwriteApi.attendance.createRecord({ sessionId, courseId: session.courseId, studentId: dto.studentId, status: dto.status as AttendanceRecord['status'] }, current.id)
+    return { id: created.$id, studentId: created.studentId, status: created.status, student: { firstName: student.firstName, lastName: student.lastName, matricule: student.matricule } }
+  },
   scan: async (_dto: { qrCode: string }) => unavailable<AttendanceRecord>('Les présences'),
 }
 
@@ -494,12 +594,57 @@ export const ueApi = {
 
 export interface AuditLog { id: string; userId?: string; userRole?: string; action: string; resource: string; resourceId?: string; ipAddress?: string; userAgent?: string; statusCode?: number; details?: unknown; createdAt: string }
 export const auditLogsApi = { list: async (_page = 1, _limit = 50, _resource?: string): Promise<AuditLog[]> => [], getOne: async (_id: string) => unavailable<AuditLog>('Le journal d’audit') }
-export const usersApi = { listAll: async () => [] as Array<Student & { type: string } | Teacher & { type: string }> }
+export const usersApi = {
+  listAll: async (): Promise<Array<Student & { type: 'student' } | Teacher & { type: 'teacher' }>> => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current || current.role !== 'ADMIN') throw new ApiError(403, 'La consultation du répertoire complet est réservée au rôle administrateur Appwrite.')
+    const [directory, profiles] = await Promise.all([
+      academicDirectory(),
+      listDocuments<{ $id: string; email?: string }>('users'),
+    ])
+    const emailById = new Map(profiles.map((profile) => [profile.$id, profile.email || '']))
+    const users: Array<Student & { type: 'student' } | Teacher & { type: 'teacher' }> = []
+    for (const entry of directory) {
+      if (entry.role === 'ADMIN') continue
+      if (entry.role === 'TEACHER') {
+        users.push({ ...asTeacher(entry), user: { email: emailById.get(entry.userId) || '' }, type: 'teacher' })
+      } else {
+        users.push({ ...asStudent(entry), user: { email: emailById.get(entry.userId) || '' }, type: 'student' })
+      }
+    }
+    return users
+  },
+}
 
 export interface OverviewStats { studentCount: number; teacherCount: number; courseCount: number; satisfactionRate: number; supportAvailability: string; assignmentCount?: number; gradeCount?: number; averageGrade?: number | null; attendanceRate?: number | null }
 export const statsApi = {
   overview: async (): Promise<OverviewStats> => {
-    if (getAccountType() !== 'PERSONAL') return { studentCount: 0, teacherCount: 0, courseCount: 0, satisfactionRate: 0, supportAvailability: 'Données universitaires non provisionnées dans Appwrite', assignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null }
+    if (getAccountType() !== 'PERSONAL') {
+      const [directory, courses, assignments, grades, records] = await Promise.all([
+        academicDirectory(),
+        academicAppwriteApi.courses.list(),
+        academicAppwriteApi.assignments.list(),
+        academicAppwriteApi.grades.list(),
+        academicAppwriteApi.attendance.records(),
+      ])
+      const attendanceRate = records.length
+        ? Math.round((records.filter((record) => record.status === 'PRESENT' || record.status === 'RETARD').length / records.length) * 100)
+        : null
+      const averageGrade = grades.length
+        ? grades.reduce((sum, grade) => sum + (Number(grade.score) / Math.max(Number(grade.maxScore || 20), 1)) * 20, 0) / grades.length
+        : null
+      return {
+        studentCount: directory.filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').length,
+        teacherCount: directory.filter((entry) => entry.role === 'TEACHER').length,
+        courseCount: courses.length,
+        satisfactionRate: 0,
+        supportAvailability: 'Appwrite KERNEL FORGE',
+        assignmentCount: assignments.length,
+        gradeCount: grades.length,
+        averageGrade,
+        attendanceRate,
+      }
+    }
     const [courses, assignments, grades] = await Promise.all([personalAppwriteApi.courses.list(), personalAppwriteApi.assignments.list(), personalAppwriteApi.grades.list()])
     const averageGrade = grades.length ? grades.reduce((sum, item) => sum + (item.score / Math.max(item.maxScore, 1)) * 20, 0) / grades.length : null
     return { studentCount: 0, teacherCount: 0, courseCount: courses.length, satisfactionRate: 0, supportAvailability: 'Appwrite KERNEL FORGE', assignmentCount: assignments.length, gradeCount: grades.length, averageGrade, attendanceRate: null }
