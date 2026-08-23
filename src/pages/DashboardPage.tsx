@@ -81,17 +81,24 @@ export default function DashboardPage() {
     if (!isSessionReady || !authUser?.id) return
     let cancelled = false
     const loadAfterSession = async () => {
-      // Après une connexion, cookie et profil Appwrite peuvent devenir lisibles
-      // quelques instants après le premier rendu. Trois essais bornés évitent un
-      // tableau initial vide sans inventer de données ni exiger un clic manuel.
-      for (let attempt = 0; attempt < 3 && !cancelled; attempt += 1) {
+      // Lors d’une reprise à froid, Appwrite peut d’abord restaurer l’identité,
+      // puis les droits de lecture des collections. Les essais sont bornés et
+      // s’arrêtent dès qu’une donnée réelle est reçue.
+      const retryDelays = [0, 900, 2_100, 4_000]
+      for (let attempt = 0; attempt < retryDelays.length && !cancelled; attempt += 1) {
+        if (retryDelays[attempt] > 0) await new Promise((resolve) => window.setTimeout(resolve, retryDelays[attempt]))
+        if (cancelled) return
         const loaded = await refetchOverview()
         if (loaded && (loaded.courseCount > 0 || loaded.assignmentCount > 0 || loaded.gradeCount > 0)) return
-        if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 900))
       }
     }
+    const onSessionRestored = () => { void loadAfterSession() }
+    window.addEventListener('uniflow:session-restored', onSessionRestored)
     void loadAfterSession()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      window.removeEventListener('uniflow:session-restored', onSessionRestored)
+    }
   }, [authUser?.id, isSessionReady])
   const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 
