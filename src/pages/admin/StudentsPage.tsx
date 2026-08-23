@@ -149,10 +149,7 @@ export default function StudentsPage() {
           <h1 className="text-2xl font-bold text-[#111827]">Gestion des Étudiants</h1>
           <p className="text-sm text-[#6b7280] mt-0.5">Administration · UniFlow 2026</p>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvel Étudiant
-        </Button>
+        <span className="rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-2 text-xs font-bold text-[#1e3a8a]">Répertoire Appwrite · lecture</span>
       </div>
 
       {error && (
@@ -214,7 +211,7 @@ export default function StudentsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Contact</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Niveau / Filière</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Statut</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Source</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f3f4f6]">
@@ -242,18 +239,7 @@ export default function StudentsPage() {
                       {statusConfig[student.status]?.label || student.status}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center justify-end gap-2">
-                      <button onClick={() => handleOpenEdit(student)}
-                        className="rounded-lg p-1.5 hover:bg-[#eff3ff] text-[#6b7280] hover:text-[#1e3a8a] transition-colors">
-                        <Edit className="h-4 w-4" />
-                      </button>
-                      <button onClick={() => handleDelete(student.id)}
-                        className="rounded-lg p-1.5 hover:bg-red-50 text-[#6b7280] hover:text-red-600 transition-colors">
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </td>
+                  <td className="px-4 py-3 text-right text-xs font-semibold text-[#0d9488]">Appwrite</td>
                 </tr>
               ))}
             </tbody>
@@ -325,4 +311,3 @@ export default function StudentsPage() {
     </div>
   )
 }
-
