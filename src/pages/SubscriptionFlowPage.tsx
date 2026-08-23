@@ -125,6 +125,7 @@ export default function SubscriptionFlowPage() {
   const finalPrice = basePrice
   const checkoutStatus = transactionResult?.status?.toUpperCase()
   const paymentConfirmed = checkoutStatus === 'SUCCESS' || checkoutStatus === 'ACTIVE' || checkoutStatus === 'PAID'
+  const includedAccess = !!selectedPlan && selectedPlan.priceMonthlyAmount === 0 && selectedPlan.providers.length === 0
 
   const getCurrencyLabel = () => {
     if (!selectedPlan) return 'FCFA'
@@ -151,7 +152,7 @@ export default function SubscriptionFlowPage() {
         <div className="mx-auto max-w-xl px-6 py-24 text-center">
           <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
             <h1 className="text-2xl font-black">Souscription indisponible</h1>
-            <p className="mt-3 text-sm">{loadError || 'Aucune formule active n’a été renvoyée par le backend personnel.'}</p>
+            <p className="mt-3 text-sm">{loadError || 'Aucune formule active n’est encore enregistrée dans Appwrite.'}</p>
             <Link to="/pricing" className="mt-6 inline-flex rounded-xl bg-[#1e3a8a] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white">Retour aux tarifs</Link>
           </div>
         </div>
@@ -495,7 +496,7 @@ export default function SubscriptionFlowPage() {
                       Étape 3 sur 4
                     </span>
                     <h2 className="text-2xl font-black text-slate-900 dark:text-white">Sélection du Mode de Paiement</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sélectionnez l’un des moyens de paiement proposés par la formule active du backend.</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{includedAccess ? 'Cet accès académique est déjà inclus et ne requiert aucun paiement.' : 'Sélectionnez un moyen de paiement réellement configuré pour cette formule Appwrite.'}</p>
                   </div>
 
                   {paymentError && <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300">{paymentError}</div>}
@@ -594,7 +595,7 @@ export default function SubscriptionFlowPage() {
                         <span className={`h-4 w-4 rounded-full border-2 ${paymentProvider === 'STRIPE' ? 'bg-blue-500 border-blue-500' : 'border-slate-400'}`} />
                       </button>
                       </>}
-                    </div> : <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">Aucun moyen de paiement n’est configuré pour cette formule.</p>}
+                    </div> : <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-xs text-emerald-800">{includedAccess ? 'Accès académique inclus : aucune transaction ni donnée de paiement ne sont nécessaires.' : 'Aucun moyen de paiement n’est configuré pour cette formule dans Appwrite.'}</p>}
                   </div>
 
                   {/* Payment Details Input */}
@@ -630,7 +631,7 @@ export default function SubscriptionFlowPage() {
                   {/* Guarantee banner */}
                   <div className="flex items-center gap-2 text-xs text-slate-500 mb-8 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
                     <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
-                    <span>Le statut affiché après cette étape provient exclusivement de la réponse du backend et du prestataire de paiement.</span>
+                    <span>Le statut affiché après cette étape provient exclusivement des documents de souscription Appwrite et d’un prestataire configuré, lorsqu’il existe.</span>
                   </div>
 
                   {/* Actions */}
@@ -646,7 +647,7 @@ export default function SubscriptionFlowPage() {
 
                     <button
                       type="button"
-                      disabled={isSubmitting || !paymentProvider}
+                      disabled={isSubmitting || (!paymentProvider && !includedAccess)}
                       onClick={handleProcessPayment}
                       className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] hover:opacity-95 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 cursor-pointer"
                     >
@@ -658,7 +659,7 @@ export default function SubscriptionFlowPage() {
                       ) : (
                         <>
                           <Lock className="h-4 w-4" />
-                          <span>Valider et Payer {finalPrice.toLocaleString()} {getCurrencyLabel()}</span>
+                          <span>{includedAccess ? 'Activer l’accès inclus' : `Valider et payer ${finalPrice.toLocaleString()} ${getCurrencyLabel()}`}</span>
                         </>
                       )}
                     </button>

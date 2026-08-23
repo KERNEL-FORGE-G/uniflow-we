@@ -24,6 +24,7 @@ export const PushNotificationControl: React.FC<PushNotificationControlProps> = (
 }) => {
   const [permission, setPermission] = useState<NotificationPermission | 'unsupported'>('default')
   const [enabled, setEnabled] = useState<boolean>(false)
+  const [appwriteChannel, setAppwriteChannel] = useState(pushNotificationService.getAppwritePushState())
   const [loading, setLoading] = useState<boolean>(false)
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
 
@@ -35,6 +36,7 @@ export const PushNotificationControl: React.FC<PushNotificationControlProps> = (
     const perm = pushNotificationService.getPermissionState()
     setPermission(perm)
     setEnabled(pushNotificationService.isEnabled())
+    setAppwriteChannel(pushNotificationService.getAppwritePushState())
   }
 
   const handleToggle = async () => {
@@ -46,7 +48,9 @@ export const PushNotificationControl: React.FC<PushNotificationControlProps> = (
         if (granted) {
           setEnabled(true)
           setPermission('granted')
-          setStatusMessage('Notifications Push PWA activées avec succès !')
+          const appwriteResult = await pushNotificationService.registerAppwritePushTarget()
+          setAppwriteChannel(appwriteResult.state)
+          setStatusMessage(appwriteResult.state === 'registered' ? appwriteResult.message : `Notifications locales PWA activées. ${appwriteResult.message}`)
           // Trigger initial test
           await pushNotificationService.sendTestNotification()
         } else {
@@ -125,16 +129,12 @@ export const PushNotificationControl: React.FC<PushNotificationControlProps> = (
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-base font-extrabold text-[#111827]">
-                Service Notifications Push PWA
-              </h3>
+              <h3 className="text-base font-extrabold text-[#111827]">Notifications Web</h3>
               <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-[#1e3a8a] border border-[#1e3a8a]/20">
                 <Smartphone className="h-3 w-3" /> API ServiceWorker
               </span>
             </div>
-            <p className="text-xs text-[#6b7280] mt-0.5">
-              Recevez des alertes en temps réel sur votre appareil pour les nouveaux devoirs et annonces académiques.
-            </p>
+              <p className="text-xs text-[#6b7280] mt-0.5">Les alertes locales utilisent le Service Worker ; les envois distants Appwrite nécessitent un fournisseur FCM configuré.</p>
           </div>
         </div>
 
@@ -188,6 +188,10 @@ export const PushNotificationControl: React.FC<PushNotificationControlProps> = (
         </div>
       </div>
 
+      <div className={`rounded-xl border p-3 text-xs ${appwriteChannel === 'registered' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+        <span className="font-bold">Canal Appwrite : </span>{appwriteChannel === 'registered' ? 'cible push enregistrée pour cet appareil.' : appwriteChannel === 'not-configured' ? 'configuration FCM requise pour les notifications distantes.' : 'cible distante indisponible sur cet appareil.'}
+      </div>
+
       {statusMessage && (
         <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-xs font-semibold text-[#1e3a8a] flex items-center justify-between">
           <span>{statusMessage}</span>
@@ -208,7 +212,7 @@ export const PushNotificationControl: React.FC<PushNotificationControlProps> = (
             disabled={loading}
             className="flex items-center gap-1.5 rounded-xl border border-[#e5e7eb] bg-white px-3.5 py-2 text-xs font-bold text-[#374151] hover:bg-[#f9fafb] hover:border-[#1e3a8a] transition-all shadow-xs"
           >
-            <Send className="h-3.5 w-3.5 text-[#1e3a8a]" /> Test Général PWA
+            <Send className="h-3.5 w-3.5 text-[#1e3a8a]" /> Tester une alerte locale
           </button>
 
           <button
