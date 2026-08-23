@@ -1,6 +1,7 @@
 import {
   appwriteAccount,
   academicAppwriteApi,
+  type AdminDirectoryEntry,
   executeAttendanceSecureAction,
   executeAdminDirectoryAction,
   getCurrentAccount,
@@ -357,11 +358,52 @@ function asTeacher(entry: import('./appwrite').AcademicDirectoryDocument): Teach
   return { id: entry.userId, firstName, lastName }
 }
 
+function asAdminStudent(entry: AdminDirectoryEntry): Student {
+  const { firstName, lastName } = directoryName(entry.name)
+  return {
+    id: entry.userId,
+    firstName,
+    lastName,
+    matricule: entry.matricule || 'Non renseigné',
+    status: entry.role === 'DELEGATE' ? 'delegate' : entry.status,
+    level: { name: 'L1', program: { name: 'ICT4D' } },
+    specialty: { name: 'ICT4D' },
+    user: { email: entry.email },
+  }
+}
+
+function asAdminTeacher(entry: AdminDirectoryEntry): Teacher {
+  const { firstName, lastName } = directoryName(entry.name)
+  return { id: entry.userId, firstName, lastName, user: { email: entry.email } }
+}
+
 async function requireAdminDirectoryAccess() {
   const current = await getCurrentAccount('UNIVERSITY')
   if (!current) throw new ApiError(401, 'Session Appwrite absente.')
   if (current.role !== 'ADMIN') throw new ApiError(403, 'Seul un administrateur peut gérer les comptes universitaires.')
   return current
+}
+
+const ADMIN_DIRECTORY_CACHE_TTL_MS = 60_000
+let adminDirectoryCache: { entries: AdminDirectoryEntry[]; expiresAt: number } | null = null
+let adminDirectoryRequest: Promise<AdminDirectoryEntry[]> | null = null
+
+function invalidateAdminDirectoryCache() {
+  adminDirectoryCache = null
+}
+
+async function adminDirectoryEntries() {
+  await requireAdminDirectoryAccess()
+  if (adminDirectoryCache && adminDirectoryCache.expiresAt > Date.now()) return adminDirectoryCache.entries
+  if (adminDirectoryRequest) return adminDirectoryRequest
+  adminDirectoryRequest = executeAdminDirectoryAction({ action: 'list' })
+    .then((result) => {
+      const entries = result.entries || []
+      adminDirectoryCache = { entries, expiresAt: Date.now() + ADMIN_DIRECTORY_CACHE_TTL_MS }
+      return entries
+    })
+    .finally(() => { adminDirectoryRequest = null })
+  return adminDirectoryRequest
 }
 
 function fullName(firstName?: string, lastName?: string) {
@@ -374,31 +416,47 @@ async function refreshStudent(id: string) {
   return student
 }
 
+async function refreshStudentForAdmin(id: string) {
+  const student = (await studentsApi.listForAdmin()).find((entry) => entry.id === id)
+  if (!student) throw new ApiError(404, 'Étudiant introuvable après la synchronisation Appwrite.')
+  return student
+}
+
 async function refreshTeacher(id: string) {
   const teacher = (await teachersApi.list()).find((entry) => entry.id === id)
   if (!teacher) throw new ApiError(404, 'Enseignant introuvable après la synchronisation Appwrite.')
   return teacher
 }
 
+async function refreshTeacherForAdmin(id: string) {
+  const teacher = (await teachersApi.listForAdmin()).find((entry) => entry.id === id)
+  if (!teacher) throw new ApiError(404, 'Enseignant introuvable après la synchronisation Appwrite.')
+  return teacher
+}
+
 export const studentsApi = {
   list: async (): Promise<Student[]> => (await academicDirectory()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asStudent),
+  listForAdmin: async (): Promise<Student[]> => (await adminDirectoryEntries()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asAdminStudent),
   getOne: async (id: string) => refreshStudent(id),
   create: async (dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string; password?: string; role?: 'STUDENT' | 'DELEGATE' }) => {
     await requireAdminDirectoryAccess()
     if (!dto.email) throw new ApiError(400, 'Une adresse email est requise pour créer le compte étudiant.')
     if (!dto.password) throw new ApiError(400, 'Un mot de passe initial est requis pour créer le compte étudiant.')
     const result = await executeAdminDirectoryAction({ action: 'create', name: fullName(dto.firstName, dto.lastName), email: dto.email, password: dto.password, role: dto.role || 'STUDENT', matricule: dto.matricule, status: dto.status || 'ACTIVE' })
-    return refreshStudent(result.userId as string)
+    invalidateAdminDirectoryCache()
+    return refreshStudentForAdmin(result.userId as string)
   },
   update: async (id: string, dto: Partial<Student> & { email?: string; role?: 'STUDENT' | 'DELEGATE' }) => {
     await requireAdminDirectoryAccess()
-    const existing = await refreshStudent(id)
+    const existing = await refreshStudentForAdmin(id)
     const result = await executeAdminDirectoryAction({ action: 'update', userId: id, name: fullName(dto.firstName ?? existing.firstName, dto.lastName ?? existing.lastName), email: dto.email, role: dto.role || (existing.status === 'delegate' ? 'DELEGATE' : 'STUDENT'), matricule: dto.matricule ?? existing.matricule, status: dto.status || (existing.status === 'delegate' ? 'ACTIVE' : existing.status) })
-    return refreshStudent(result.userId as string)
+    invalidateAdminDirectoryCache()
+    return refreshStudentForAdmin(result.userId as string)
   },
   delete: async (id: string) => {
     await requireAdminDirectoryAccess()
     await executeAdminDirectoryAction({ action: 'delete', userId: id })
+    invalidateAdminDirectoryCache()
   },
 }
 export const teachersApi = {
@@ -408,23 +466,32 @@ export const teachersApi = {
       .filter((entry) => entry.role === 'TEACHER')
       .map((entry) => ({ ...asTeacher(entry), courses: courses.filter((course) => course.teacherId === entry.userId).map(asAcademicCourse) }))
   },
+  listForAdmin: async (): Promise<Teacher[]> => {
+    const [entries, courses] = await Promise.all([adminDirectoryEntries(), academicAppwriteApi.courses.list()])
+    return entries
+      .filter((entry) => entry.role === 'TEACHER')
+      .map((entry) => ({ ...asAdminTeacher(entry), courses: courses.filter((course) => course.teacherId === entry.userId).map(asAcademicCourse) }))
+  },
   getOne: async (id: string) => refreshTeacher(id),
   create: async (dto: Partial<Teacher> & { userId?: string; email?: string; password?: string }) => {
     await requireAdminDirectoryAccess()
     if (!dto.email) throw new ApiError(400, 'Une adresse email est requise pour créer le compte enseignant.')
     if (!dto.password) throw new ApiError(400, 'Un mot de passe initial est requis pour créer le compte enseignant.')
     const result = await executeAdminDirectoryAction({ action: 'create', name: fullName(dto.firstName, dto.lastName), email: dto.email, password: dto.password, role: 'TEACHER', matricule: '' })
-    return refreshTeacher(result.userId as string)
+    invalidateAdminDirectoryCache()
+    return refreshTeacherForAdmin(result.userId as string)
   },
   update: async (id: string, dto: Partial<Teacher> & { email?: string }) => {
     await requireAdminDirectoryAccess()
-    const existing = await refreshTeacher(id)
+    const existing = await refreshTeacherForAdmin(id)
     const result = await executeAdminDirectoryAction({ action: 'update', userId: id, name: fullName(dto.firstName ?? existing.firstName, dto.lastName ?? existing.lastName), email: dto.email, role: 'TEACHER' })
-    return refreshTeacher(result.userId as string)
+    invalidateAdminDirectoryCache()
+    return refreshTeacherForAdmin(result.userId as string)
   },
   delete: async (id: string) => {
     await requireAdminDirectoryAccess()
     await executeAdminDirectoryAction({ action: 'delete', userId: id })
+    invalidateAdminDirectoryCache()
   },
 }
 

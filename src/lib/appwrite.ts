@@ -94,7 +94,7 @@ export async function executeAttendanceSecureAction(payload: AttendanceSecureReq
 }
 
 export type AdminDirectoryRequest = {
-  action: 'create' | 'update' | 'delete'
+  action: 'create' | 'update' | 'delete' | 'list'
   userId?: string
   name?: string
   email?: string
@@ -103,6 +103,15 @@ export type AdminDirectoryRequest = {
   role?: UniFlowRole
   matricule?: string
   status?: string
+}
+
+export type AdminDirectoryEntry = {
+  userId: string
+  name: string
+  role: UniFlowRole
+  matricule: string
+  status: string
+  email: string
 }
 
 export type AdminDirectoryResponse = {
@@ -118,6 +127,7 @@ export type AdminDirectoryResponse = {
   role?: UniFlowRole
   status?: string
   collection?: string
+  entries?: AdminDirectoryEntry[]
 }
 
 export const APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID || 'admin_directory')
