@@ -568,13 +568,14 @@ export interface ChatMessage { id: string; from: 'me' | 'them'; text: string; ti
 export interface ChatConversation { id: string; name: string; role: string; email: string; online: boolean; time: string; preview: string; unread: number; messages: ChatMessage[] }
 export const messagingApi = { conversations: async (): Promise<ChatConversation[]> => [], sendMessage: async (_convId: string, _text: string, _file?: string) => unavailable<ChatConversation>('La messagerie') }
 
-export interface LibraryResource { id: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string }
+export interface LibraryResource { id: string; courseId: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string }
 export const libraryApi = {
   list: async (): Promise<LibraryResource[]> => {
     if (getAccountType() === 'PERSONAL') return []
     const resources = await academicAppwriteApi.library.list()
     return resources.map((resource) => ({
       id: resource.$id,
+      courseId: resource.courseId,
       title: resource.title,
       course: resource.course,
       type: resource.type,
