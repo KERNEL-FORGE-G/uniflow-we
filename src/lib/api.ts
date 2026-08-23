@@ -385,9 +385,31 @@ async function personalAssignments(): Promise<Assignment[]> {
   if (getAccountType() !== 'PERSONAL') return []
   return (await personalAppwriteApi.assignments.list()).map(asAssignment)
 }
+async function universityAssignments(): Promise<Assignment[]> {
+  const current = await getCurrentAccount('UNIVERSITY')
+  if (!current) return []
+  const [rows, courses] = await Promise.all([academicAppwriteApi.assignments.list(), universityCourses()])
+  const allowedCourseIds = new Set(courses.map((course) => course.id))
+  return rows
+    .filter((item) => current.role === 'TEACHER' ? allowedCourseIds.has(item.courseId) : item.studentId === current.id)
+    .map((item) => ({
+      id: item.$id,
+      title: item.title,
+      code: item.courseId,
+      due: item.dueDate,
+      progress: item.status === 'Soumis' || item.status === 'Noté' ? 100 : 0,
+      status: item.status === 'Soumis' || item.status === 'Noté' || item.status === 'En retard' ? item.status : 'À rendre',
+      grade: item.grade || undefined,
+      description: item.description || undefined,
+      feedback: item.feedback || undefined,
+      submittedAt: item.submittedAt || undefined,
+      submittedFile: item.submittedFile || undefined,
+      submissionNote: item.submissionNote || undefined,
+    }))
+}
 export const assignmentsApi = {
-  list: personalAssignments,
-  mine: personalAssignments,
+  list: async () => getAccountType() === 'PERSONAL' ? personalAssignments() : universityAssignments(),
+  mine: async () => getAccountType() === 'PERSONAL' ? personalAssignments() : universityAssignments(),
   create: async (dto: Partial<Assignment>) => {
     if (getAccountType() !== 'PERSONAL') return unavailable<Assignment>('Les devoirs universitaires')
     return asAssignment(await personalAppwriteApi.assignments.create({ courseId: dto.code || '', title: dto.title || '', dueDate: dto.due || '', description: dto.description || '', priority: 'MEDIUM', status: dto.status || 'TODO' }))
@@ -408,8 +430,28 @@ async function personalGrades(): Promise<Grade[]> {
   if (getAccountType() !== 'PERSONAL') return []
   return (await personalAppwriteApi.grades.list()).map((item) => ({ id: item.id, ue: '', code: item.courseId, title: item.evaluationTitle, type: '', coef: item.coefficient, grade: item.score, classAvg: 0, rank: 0, maxRank: 0 }))
 }
+async function universityGrades(): Promise<Grade[]> {
+  const current = await getCurrentAccount('UNIVERSITY')
+  if (!current) return []
+  const [rows, courses] = await Promise.all([academicAppwriteApi.grades.list(), universityCourses()])
+  const allowedCourseIds = new Set(courses.map((course) => course.id))
+  return rows
+    .filter((item) => current.role === 'TEACHER' ? allowedCourseIds.has(item.courseId) : item.studentId === current.id)
+    .map((item) => ({
+      id: item.$id,
+      ue: 'ICT4D L1',
+      code: item.courseCode,
+      title: item.evaluationTitle,
+      type: item.type || 'CC',
+      coef: item.coefficient || 1,
+      grade: Number(item.score),
+      classAvg: 0,
+      rank: 0,
+      maxRank: 0,
+    }))
+}
 export const gradesApi = {
-  mine: personalGrades,
+  mine: async () => getAccountType() === 'PERSONAL' ? personalGrades() : universityGrades(),
   create: async (dto: Partial<Grade>) => {
     if (getAccountType() !== 'PERSONAL') return unavailable<Grade>('Les notes universitaires')
     const created = await personalAppwriteApi.grades.create({ courseId: dto.code || '', evaluationTitle: dto.title || '', score: dto.grade || 0, maxScore: 20, coefficient: dto.coef || 1 })

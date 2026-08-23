@@ -75,7 +75,12 @@ export default function DashboardPage() {
   }
 
   useEffect(() => {
-    if (isSessionReady && authUser?.id) void refetchOverview()
+    if (!isSessionReady || !authUser?.id) return
+    void refetchOverview()
+    // Après une connexion, le cookie Appwrite et le profil peuvent se stabiliser
+    // juste après le premier rendu. Un second passage évite un compteur initial à zéro.
+    const retry = window.setTimeout(() => { void refetchOverview() }, 700)
+    return () => window.clearTimeout(retry)
   }, [authUser?.id, isSessionReady])
   const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 

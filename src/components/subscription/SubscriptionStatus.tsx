@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, ArrowRight } from 'lucide-react'
-import type { SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
+import { subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
 
 export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatusType | null>(null)
@@ -11,15 +11,23 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   const navigate = useNavigate()
 
   const fetchStatus = async () => {
-    // The Web client is Appwrite-only. Until an Appwrite subscription
-    // collection/provider is configured, do not call the retired API.
-    setLoading(false)
-    setStatus(null)
-    setStatusError('Le statut d’abonnement n’est pas encore disponible dans Appwrite.')
+    setLoading(true)
+    setStatusError(null)
+    try {
+      setStatus(await subscriptionApi.getStatus())
+    } catch (error) {
+      setStatus(null)
+      setStatusError(error instanceof Error ? error.message : 'Impossible de charger le statut depuis Appwrite.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
     void fetchStatus()
+    const retryAfterSession = () => { void fetchStatus() }
+    window.addEventListener('uniflow:session-restored', retryAfterSession)
+    return () => window.removeEventListener('uniflow:session-restored', retryAfterSession)
   }, [])
 
   if (!status && !loading) {

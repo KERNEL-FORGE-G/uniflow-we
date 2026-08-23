@@ -288,6 +288,49 @@ export interface AcademicLibraryDocument {
   publishedAt: string
 }
 
+export interface AcademicAssignmentDocument {
+  $id: string
+  courseId: string
+  courseCode: string
+  studentId: string
+  title: string
+  description?: string
+  dueDate: string
+  status?: string
+  grade?: string
+  feedback?: string
+  submittedAt?: string
+  submittedFile?: string
+  submissionNote?: string
+}
+
+export interface AcademicGradeDocument {
+  $id: string
+  studentId: string
+  courseId: string
+  courseCode: string
+  evaluationTitle: string
+  type?: string
+  score: number
+  maxScore?: number
+  coefficient?: number
+}
+
+export interface AcademicAttendanceSessionDocument {
+  $id: string
+  courseId: string
+  date: string
+  createdBy?: string
+}
+
+export interface AcademicAttendanceRecordDocument {
+  $id: string
+  sessionId: string
+  courseId: string
+  studentId: string
+  status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'
+}
+
 export interface SubscriptionPlanDocument {
   $id: string
   code: string
@@ -326,6 +369,16 @@ export const academicAppwriteApi = {
   },
   library: {
     list: () => listDocuments<AcademicLibraryDocument>('academic_library', [Query.limit(200)]),
+  },
+  assignments: {
+    list: () => listDocuments<AcademicAssignmentDocument>('academic_assignments', [Query.limit(200)]),
+  },
+  grades: {
+    list: () => listDocuments<AcademicGradeDocument>('academic_grades', [Query.limit(200)]),
+  },
+  attendance: {
+    sessions: () => listDocuments<AcademicAttendanceSessionDocument>('attendance_sessions', [Query.limit(200)]),
+    records: () => listDocuments<AcademicAttendanceRecordDocument>('attendance_records', [Query.limit(200)]),
   },
   subscriptions: {
     listPlans: () => listDocuments<SubscriptionPlanDocument>('subscription_plans', [Query.equal('status', 'ACTIVE')]),
