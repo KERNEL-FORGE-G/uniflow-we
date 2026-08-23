@@ -79,15 +79,15 @@ export default function SubscriptionFlowPage() {
 
   const handleProcessPayment = async () => {
     if (!selectedPlan) return
-    if (!paymentProvider) {
+    if (!includedAccess && !paymentProvider) {
       setPaymentError('Aucun moyen de paiement actif n’est fourni par cette formule.')
       return
     }
-    if (!fullName.trim() || !email.trim()) {
+    if (!includedAccess && (!fullName.trim() || !email.trim())) {
       setPaymentError('Le nom complet et l’adresse email sont obligatoires.')
       return
     }
-    if ((paymentProvider === 'MTN_MOMO' || paymentProvider === 'ORANGE_MONEY') && !phoneNumber.trim()) {
+    if (!includedAccess && (paymentProvider === 'MTN_MOMO' || paymentProvider === 'ORANGE_MONEY') && !phoneNumber.trim()) {
       setPaymentError('Le numéro Mobile Money est obligatoire pour ce moyen de paiement.')
       return
     }
@@ -97,7 +97,7 @@ export default function SubscriptionFlowPage() {
       const res = await personalSubscriptionApi.createCheckout({
         planCode: selectedPlan.code || selectedPlan.id,
         countryCode: selectedPlan.countryCode || 'CM',
-        paymentProvider,
+        paymentProvider: includedAccess ? undefined : paymentProvider,
         phoneNumber: phoneNumber.trim() || undefined,
         billingCycle: billingCycle.toLowerCase() as 'monthly' | 'annually',
         email: email.trim(),
@@ -126,6 +126,17 @@ export default function SubscriptionFlowPage() {
   const checkoutStatus = transactionResult?.status?.toUpperCase()
   const paymentConfirmed = checkoutStatus === 'SUCCESS' || checkoutStatus === 'ACTIVE' || checkoutStatus === 'PAID'
   const includedAccess = !!selectedPlan && selectedPlan.priceMonthlyAmount === 0 && selectedPlan.providers.length === 0
+
+  const continueFromPlan = () => {
+    if (!includedAccess) {
+      setCurrentStep(2)
+      return
+    }
+    // Le statut universitaire est déjà persistant dans Appwrite : aucun moyen
+    // de paiement, checkout ou document fictif n’est créé par ce parcours.
+    setTransactionResult({ status: 'ACTIVE', message: 'Votre accès académique Appwrite est déjà inclus et actif.' })
+    setCurrentStep(4)
+  }
 
   const getCurrencyLabel = () => {
     if (!selectedPlan) return 'FCFA'
@@ -368,10 +379,10 @@ export default function SubscriptionFlowPage() {
                   <div className="flex justify-end">
                     <button
                       type="button"
-                      onClick={() => setCurrentStep(2)}
+                      onClick={continueFromPlan}
                       className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
                     >
-                      <span>Continuer vers Informations</span>
+                      <span>{includedAccess ? 'Accéder à mon espace' : 'Continuer vers Informations'}</span>
                       <ArrowRight className="h-4 w-4" />
                     </button>
                   </div>
@@ -455,7 +466,7 @@ export default function SubscriptionFlowPage() {
                   </div>
 
                   <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
-                    Les éventuelles réductions sont validées par le backend lors du checkout. Aucun code promo local n’est appliqué par cette interface.
+                    Les éventuelles réductions et offres sont lues depuis Appwrite. Aucun code promo local n’est appliqué par cette interface.
                   </div>
 
                   {/* Actions */}
@@ -612,7 +623,7 @@ export default function SubscriptionFlowPage() {
                         className="w-full rounded-xl border border-amber-300 dark:border-amber-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm focus:outline-none"
                       />
                       <p className="text-[11px] text-amber-700 dark:text-amber-400">
-                        La validation et les instructions de confirmation sont fournies par le prestataire de paiement via le backend.
+                        La validation et les instructions de confirmation sont fournies par le prestataire de paiement configuré dans Appwrite.
                       </p>
                     </div>
                   )}
@@ -623,7 +634,7 @@ export default function SubscriptionFlowPage() {
                         Paiement par carte via le prestataire configuré
                       </label>
                       <p className="text-xs text-blue-700 dark:text-blue-300">
-                        Les données de carte sont saisies uniquement sur la page sécurisée du prestataire si un lien de paiement est renvoyé par le backend.
+                        Les données de carte sont saisies uniquement sur la page sécurisée du prestataire si un lien de paiement Appwrite est disponible.
                       </p>
                     </div>
                   )}
