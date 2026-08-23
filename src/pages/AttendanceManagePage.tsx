@@ -16,6 +16,21 @@ interface StudentRoll {
   status: RollStatus
 }
 
+type ProximityPosition = { latitude: number; longitude: number; accuracy: number }
+
+function requestProximityPosition(): Promise<ProximityPosition> {
+  if (!window.isSecureContext || !navigator.geolocation) {
+    return Promise.reject(new Error('La vérification de proximité nécessite HTTPS et la géolocalisation du navigateur.'))
+  }
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy }),
+      (positionError) => reject(new Error(positionError.code === positionError.PERMISSION_DENIED ? 'Vous devez autoriser la position pour émettre un QR de présence sécurisé.' : 'La position actuelle est indisponible. Réessayez depuis le lieu de la séance.')),
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 0 },
+    )
+  })
+}
+
 export default function AttendanceManagePage() {
   const { isOfflineMode, currentUser } = useUserRole()
   const [courses, setCourses] = useState<Course[]>([])
@@ -147,7 +162,8 @@ export default function AttendanceManagePage() {
     setQrLoading(true)
     setError(null)
     try {
-      const opened = await attendanceApi.openQrSession({ courseId: course.id })
+      const origin = await requestProximityPosition()
+      const opened = await attendanceApi.openQrSession({ courseId: course.id, origin })
       setQrSession({ payload: opened.payload, expiresAt: opened.expiresAt, sessionId: opened.sessionId })
       setShowQR(true)
     } catch (err) {

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { securityAuditApi, type SecurityAuditReport } from '../../lib/api'
 import { Shield, Lock, Eye, EyeOff, AlertTriangle, CheckCircle, Users, Key, Globe, RefreshCw, Save, Check, Trash2 } from 'lucide-react'
 
 interface Session {
@@ -21,6 +22,21 @@ export default function AdminSecurityPage() {
   const [alerts, setAlerts] = useState(securityAlerts)
   const [saved, setSaved] = useState(false)
   const [showKey, setShowKey] = useState(false)
+  const [audit, setAudit] = useState<SecurityAuditReport | null>(null)
+  const [auditLoading, setAuditLoading] = useState(false)
+  const [auditError, setAuditError] = useState<string | null>(null)
+
+  const runIntegrityAudit = async () => {
+    setAuditLoading(true)
+    setAuditError(null)
+    try {
+      setAudit(await securityAuditApi.run())
+    } catch (error) {
+      setAuditError(error instanceof Error ? error.message : 'Le contrôle Appwrite est indisponible.')
+    } finally {
+      setAuditLoading(false)
+    }
+  }
 
   const [rules, setRules] = useState({
     maxFailedLogins: '5',
@@ -69,6 +85,23 @@ export default function AdminSecurityPage() {
         <button onClick={handleSave} className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
           {saved ? <><Check className="h-4 w-4" /> Enregistré !</> : <><Save className="h-4 w-4" /> Enregistrer</>}
         </button>
+      </div>
+
+      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-bold text-[#111827]">Intégrité des données Appwrite</h2>
+            <p className="mt-1 text-xs text-[#6b7280]">Contrôle serveur des doublons, références orphelines et relevés incohérents.</p>
+          </div>
+          <button onClick={runIntegrityAudit} disabled={auditLoading} className="flex items-center gap-2 rounded-xl border border-[#dbe4f0] bg-[#f8fbff] px-4 py-2 text-xs font-bold text-[#1e3a8a] disabled:opacity-60">
+            <RefreshCw className={`h-4 w-4 ${auditLoading ? 'animate-spin' : ''}`} /> {auditLoading ? 'Contrôle…' : 'Lancer le contrôle'}
+          </button>
+        </div>
+        {auditError && <p className="mt-3 text-xs text-red-700" role="alert">{auditError}</p>}
+        {audit && <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${audit.healthy ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+          <div className="flex items-center gap-2 font-bold">{audit.healthy ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />} {audit.healthy ? 'Aucune incohérence détectée' : 'Incohérences à examiner'}</div>
+          <p className="mt-1 text-xs">Dernier contrôle : {audit.checkedAt ? new Date(audit.checkedAt).toLocaleString('fr-FR') : 'horodatage indisponible'} · {Object.values(audit.collections ?? {}).reduce((sum, value) => sum + value, 0)} enregistrements parcourus.</p>
+        </div>}
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">

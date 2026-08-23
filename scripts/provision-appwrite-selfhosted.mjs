@@ -206,8 +206,14 @@ const schemas = [
       string('message', 5000, true),
       boolean('isRead', false, false),
       datetime('createdAt', false),
+      string('courseId', 36, false, ''),
+      string('scheduleId', 36, false, ''),
+      string('eventKey', 160, false, ''),
     ],
-    indexes: [{ key: 'owner_notifications', type: 'key', attributes: ['ownerId'] }],
+    indexes: [
+      { key: 'owner_notifications', type: 'key', attributes: ['ownerId'] },
+      { key: 'notification_event_key', type: 'key', attributes: ['eventKey'] },
+    ],
   },
   {
     id: 'attendance_qr_tokens',
@@ -225,6 +231,31 @@ const schemas = [
       { key: 'attendance_qr_session', type: 'key', attributes: ['sessionId'] },
       { key: 'attendance_qr_expiry', type: 'key', attributes: ['expiresAt'] },
     ],
+  },
+  {
+    id: 'attendance_session_locations',
+    name: 'Géorepères de séance',
+    attributes: [
+      string('sessionId', 36, true),
+      string('latitude', 32, true),
+      string('longitude', 32, true),
+      integer('radiusMeters', true),
+      string('createdBy', 36, true),
+      datetime('createdAt', true),
+    ],
+    indexes: [{ key: 'session_location', type: 'unique', attributes: ['sessionId'] }],
+  },
+  {
+    id: 'attendance_records',
+    name: 'Relevés de présence',
+    attributes: [
+      enumeration('verificationMethod', ['MANUAL', 'QR_GEOFENCE'], false, 'MANUAL'),
+      enumeration('proximityStatus', ['NOT_REQUIRED', 'VERIFIED', 'DENIED', 'UNAVAILABLE'], false, 'NOT_REQUIRED'),
+      integer('proximityDistanceMeters', false, -1),
+      integer('locationAccuracyMeters', false, -1),
+      datetime('verifiedAt', false),
+    ],
+    indexes: [{ key: 'attendance_verification', type: 'key', attributes: ['verificationMethod'] }],
   },
 ];
 

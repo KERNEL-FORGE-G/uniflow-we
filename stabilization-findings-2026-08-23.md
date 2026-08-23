@@ -1,0 +1,42 @@
+# UniFlow — constats de stabilisation du 23 août 2026
+
+## Sources externes vérifiées
+
+- Production UniFlow : https://uniflow.kernelforge.codes/
+- API Appwrite certifiée : https://appwrite.kernelforge.codes/v1
+- Projet Appwrite : `6a885ccc000ddfbb3bb9`
+
+## Résultats Appwrite
+
+- Le compte `admin.uy1.ict4d@uniflow.test` correspond à l’utilisateur `demo_uy1_admin_01`.
+- Le document `academic_directory/directory_demo_uy1_admin_01` existe et porte `role=ADMIN`, `university=Université de Yaoundé I`, `program=ICT4D`, `level=L1`.
+- La Function `attendance_secure` renvoyait `PROFILE_REQUIRED` car son API key serveur n’était pas présente dans les variables de la Function. Après ajout de la variable protégée `APPWRITE_FUNCTION_API_KEY` et nouveau déploiement, l’audit admin est passé en HTTP 200.
+- Audit final : `healthy=true`, 10 cours, 40 inscriptions, 10 créneaux, 11 séances, 21 relevés, 1 jeton QR, 0 géorepère, 0 doublon, 0 orphelin, 0 relevé invalide.
+- Une séance QA en doublon (`6a8ac5ff0028c57f0eae`) et ses deux relevés (`6a8ac618003cbc532bd1`, `6a8ac6190025ee34efaa`) ont été supprimés après vérification de l’absence de QR/géorepère ; la séance QR `qrsessmt5t3b95` a été conservée.
+
+## Scénarios QR validés
+
+- Issue délégué : HTTP 200, jeton et expiration retournés.
+- Scan étudiant inscrit à la position autorisée : HTTP 200.
+- Rejeu du même scan : HTTP 200, `idempotent=true`, message « Présence déjà enregistrée. ».
+- Scan à environ 2,6 km : HTTP 403, `PROXIMITY_DENIED`, distance 2623 m.
+- Révocation par l’émetteur : HTTP 200.
+- Scan après révocation : HTTP 422, `TOKEN_INVALID`.
+
+## Production navigateur
+
+La page d’accueil et l’écran de connexion de https://uniflow.kernelforge.codes/ se chargent. La connexion admin a redirigé vers `#/admin`; le tableau de bord affichait les données Appwrite réelles (4 utilisateurs étudiants/délégués, 82 % de présence, 11 séances, filière ICT4D). La page `#/admin/securite` s’est chargée sans erreur console visible.
+
+## Code en cours
+
+- `functions/attendance-secure/src/main.js` normalise `user:` et utilise la clé serveur.
+- Nouvelle Function locale `functions/admin-directory/src/main.js` pour CRUD admin UY1/ICT4D/L1, avec garde-fou contre suppressions de comptes possédant des références académiques.
+- `src/lib/appwrite.ts` expose `executeAdminDirectoryAction`.
+- `src/lib/api.ts` branche `studentsApi` et `teachersApi` sur cette Function.
+- Les pages admin étudiants/enseignants demandent un mot de passe initial explicite au lieu d’un secret codé en dur.
+- La Function `admin_directory` a été créée dans Appwrite, mais l’ajout de sa variable `APPWRITE_FUNCTION_API_KEY` a expiré côté réseau et doit être vérifié/rejoué idempotemment avant déploiement et test CRUD.
+## CRUD administrateur et alertes
+
+La Function `admin_directory` a été créée avec exécution réservée aux utilisateurs authentifiés, clé serveur protégée et portée fixe UY1 / ICT4D / L1. Après correction de la signature `Users.create` et séparation des attributs `users`/`academic_directory`, un cycle create/update/delete éphémère a été exécuté en production ; aucun mot de passe n’a été retourné et la recherche des comptes QA n’a laissé que le compte QA VPS préexistant.
+
+La Function `notification_alerts` est maintenant déployée avec les événements Appwrite de présence et de planning. Un créneau personnel QA a déclenché une notification réelle dans `notifications` (`type=system`, `scheduleId=alertqa1787496794`, `eventKey` idempotente), puis le créneau et la notification ont été supprimés avec HTTP 204. Le canal est donc fonctionnel pour les notifications in-app Appwrite ; la livraison push distante reste conditionnée à la configuration FCM.

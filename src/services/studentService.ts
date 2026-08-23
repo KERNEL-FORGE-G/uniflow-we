@@ -8,6 +8,7 @@ export interface CreateStudentDto {
   levelId?: string
   specialtyId?: string
   email?: string
+  password?: string
   status?: string
 }
 

@@ -1,6 +1,8 @@
 import {
   appwriteAccount,
   academicAppwriteApi,
+  executeAttendanceSecureAction,
+  executeAdminDirectoryAction,
   getCurrentAccount,
   listDocuments,
   listAppwriteNotifications,
@@ -355,17 +357,49 @@ function asTeacher(entry: import('./appwrite').AcademicDirectoryDocument): Teach
   return { id: entry.userId, firstName, lastName }
 }
 
-const universityCollectionUnavailable = <T>(feature: string) => unavailable<T>(feature)
+async function requireAdminDirectoryAccess() {
+  const current = await getCurrentAccount('UNIVERSITY')
+  if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+  if (current.role !== 'ADMIN') throw new ApiError(403, 'Seul un administrateur peut gérer les comptes universitaires.')
+  return current
+}
+
+function fullName(firstName?: string, lastName?: string) {
+  return [firstName, lastName].map((value) => String(value || '').trim()).filter(Boolean).join(' ')
+}
+
+async function refreshStudent(id: string) {
+  const student = (await studentsApi.list()).find((entry) => entry.id === id)
+  if (!student) throw new ApiError(404, 'Étudiant introuvable après la synchronisation Appwrite.')
+  return student
+}
+
+async function refreshTeacher(id: string) {
+  const teacher = (await teachersApi.list()).find((entry) => entry.id === id)
+  if (!teacher) throw new ApiError(404, 'Enseignant introuvable après la synchronisation Appwrite.')
+  return teacher
+}
+
 export const studentsApi = {
   list: async (): Promise<Student[]> => (await academicDirectory()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asStudent),
-  getOne: async (id: string) => {
-    const student = (await studentsApi.list()).find((entry) => entry.id === id)
-    if (!student) throw new ApiError(404, 'Étudiant introuvable dans le répertoire Appwrite.')
-    return student
+  getOne: async (id: string) => refreshStudent(id),
+  create: async (dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string; password?: string; role?: 'STUDENT' | 'DELEGATE' }) => {
+    await requireAdminDirectoryAccess()
+    if (!dto.email) throw new ApiError(400, 'Une adresse email est requise pour créer le compte étudiant.')
+    if (!dto.password) throw new ApiError(400, 'Un mot de passe initial est requis pour créer le compte étudiant.')
+    const result = await executeAdminDirectoryAction({ action: 'create', name: fullName(dto.firstName, dto.lastName), email: dto.email, password: dto.password, role: dto.role || 'STUDENT', matricule: dto.matricule, status: dto.status || 'ACTIVE' })
+    return refreshStudent(result.userId as string)
   },
-  create: async (_dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string }) => universityCollectionUnavailable<Student>('Les étudiants'),
-  update: async (_id: string, _dto: Partial<Student>) => universityCollectionUnavailable<Student>('Les étudiants'),
-  delete: async (_id: string) => universityCollectionUnavailable<void>('Les étudiants'),
+  update: async (id: string, dto: Partial<Student> & { email?: string; role?: 'STUDENT' | 'DELEGATE' }) => {
+    await requireAdminDirectoryAccess()
+    const existing = await refreshStudent(id)
+    const result = await executeAdminDirectoryAction({ action: 'update', userId: id, name: fullName(dto.firstName ?? existing.firstName, dto.lastName ?? existing.lastName), email: dto.email, role: dto.role || (existing.status === 'delegate' ? 'DELEGATE' : 'STUDENT'), matricule: dto.matricule ?? existing.matricule, status: dto.status || (existing.status === 'delegate' ? 'ACTIVE' : existing.status) })
+    return refreshStudent(result.userId as string)
+  },
+  delete: async (id: string) => {
+    await requireAdminDirectoryAccess()
+    await executeAdminDirectoryAction({ action: 'delete', userId: id })
+  },
 }
 export const teachersApi = {
   list: async (): Promise<Teacher[]> => {
@@ -374,14 +408,24 @@ export const teachersApi = {
       .filter((entry) => entry.role === 'TEACHER')
       .map((entry) => ({ ...asTeacher(entry), courses: courses.filter((course) => course.teacherId === entry.userId).map(asAcademicCourse) }))
   },
-  getOne: async (id: string) => {
-    const teacher = (await teachersApi.list()).find((entry) => entry.id === id)
-    if (!teacher) throw new ApiError(404, 'Enseignant introuvable dans le répertoire Appwrite.')
-    return teacher
+  getOne: async (id: string) => refreshTeacher(id),
+  create: async (dto: Partial<Teacher> & { userId?: string; email?: string; password?: string }) => {
+    await requireAdminDirectoryAccess()
+    if (!dto.email) throw new ApiError(400, 'Une adresse email est requise pour créer le compte enseignant.')
+    if (!dto.password) throw new ApiError(400, 'Un mot de passe initial est requis pour créer le compte enseignant.')
+    const result = await executeAdminDirectoryAction({ action: 'create', name: fullName(dto.firstName, dto.lastName), email: dto.email, password: dto.password, role: 'TEACHER', matricule: '' })
+    return refreshTeacher(result.userId as string)
   },
-  create: async (_dto: Partial<Teacher> & { userId?: string; email?: string }) => universityCollectionUnavailable<Teacher>('Les enseignants'),
-  update: async (_id: string, _dto: Partial<Teacher>) => universityCollectionUnavailable<Teacher>('Les enseignants'),
-  delete: async (_id: string) => universityCollectionUnavailable<void>('Les enseignants'),
+  update: async (id: string, dto: Partial<Teacher> & { email?: string }) => {
+    await requireAdminDirectoryAccess()
+    const existing = await refreshTeacher(id)
+    const result = await executeAdminDirectoryAction({ action: 'update', userId: id, name: fullName(dto.firstName ?? existing.firstName, dto.lastName ?? existing.lastName), email: dto.email, role: 'TEACHER' })
+    return refreshTeacher(result.userId as string)
+  },
+  delete: async (id: string) => {
+    await requireAdminDirectoryAccess()
+    await executeAdminDirectoryAction({ action: 'delete', userId: id })
+  },
 }
 
 export interface AttendanceSession { id: string; date: string; createdAt?: string; createdBy?: string; courseId: string; course?: { name: string; code: string }; records: AttendanceRecord[] }
@@ -525,18 +569,15 @@ export const attendanceApi = {
 
     return { id: session.$id, courseId: session.courseId, date: session.date }
   },
-  openQrSession: async (dto: { courseId: string; date?: string }) => {
+  openQrSession: async (dto: { courseId: string; date?: string; origin: { latitude: number; longitude: number; accuracy: number }; radiusMeters?: number }) => {
     const current = await getCurrentAccount('UNIVERSITY')
     if (!current) throw new ApiError(401, 'Session Appwrite absente.')
     if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut générer un QR de présence.')
 
     const date = dto.date || new Date().toISOString()
     const session = await attendanceApi.createSession({ courseId: dto.courseId, date })
-    const token = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
-      ? crypto.randomUUID().replace(/-/g, '')
-      : `${Date.now()}${Math.random().toString(36).slice(2)}`
-    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
-    const qr = await academicAppwriteApi.attendance.createQrToken({ token, sessionId: session.id, courseId: session.courseId, createdBy: current.id, expiresAt, revoked: false }, current.id)
+    const qr = await executeAttendanceSecureAction({ action: 'issue', sessionId: session.id, courseId: session.courseId, origin: dto.origin, radiusMeters: dto.radiusMeters })
+    if (!qr.token || !qr.expiresAt) throw new ApiError(502, 'La Function Appwrite n’a pas retourné de jeton QR exploitable.')
     return {
       token: qr.token,
       sessionId: session.id,
@@ -545,7 +586,7 @@ export const attendanceApi = {
       payload: JSON.stringify({ type: 'uniflow-attendance', version: 1, token: qr.token }),
     }
   },
-  scan: async (dto: { qrCode: string }) => {
+  scan: async (dto: { qrCode: string; position: { latitude: number; longitude: number; accuracy: number } }) => {
     let payload: { type?: string; version?: number; token?: string }
     try { payload = JSON.parse(dto.qrCode) as { type?: string; version?: number; token?: string } } catch {
       throw new ApiError(400, 'Ce code QR UniFlow est illisible.')
@@ -558,25 +599,9 @@ export const attendanceApi = {
     if (!current) throw new ApiError(401, 'Session Appwrite absente.')
     if (current.role === 'TEACHER' || current.role === 'ADMIN') throw new ApiError(403, 'Utilisez un compte apprenant pour émarger avec ce QR.')
 
-    const [tokenRows, sessionRows, enrollmentRows, recordRows] = await Promise.all([
-      academicAppwriteApi.attendance.qrTokens(),
-      academicAppwriteApi.attendance.sessions(),
-      academicAppwriteApi.enrollments.list(),
-      academicAppwriteApi.attendance.records(),
-    ])
-    const token = tokenRows.find((row) => row.token === payload.token)
-    if (!token || token.revoked || new Date(token.expiresAt).getTime() <= Date.now()) {
-      throw new ApiError(410, 'Ce QR de présence a expiré ou a été révoqué.')
-    }
-    const session = sessionRows.find((row) => row.$id === token.sessionId && row.courseId === token.courseId)
-    if (!session) throw new ApiError(404, 'La séance associée à ce QR est introuvable.')
-    const enrollment = enrollmentRows.find((row) => row.courseId === token.courseId && row.studentId === current.id && row.status !== 'INACTIVE')
-    if (!enrollment) throw new ApiError(403, 'Votre compte n’est pas inscrit à ce cours.')
-
-    const existing = recordRows.find((row) => row.sessionId === session.$id && row.studentId === current.id)
-    if (existing) return { id: existing.$id, sessionId: session.$id, courseId: session.courseId, status: existing.status, alreadyRecorded: true }
-    const created = await academicAppwriteApi.attendance.createRecord({ sessionId: session.$id, courseId: session.courseId, studentId: current.id, status: 'PRESENT' }, current.id)
-    return { id: created.$id, sessionId: session.$id, courseId: session.courseId, status: created.status, alreadyRecorded: false }
+    const verified = await executeAttendanceSecureAction({ action: 'scan', token: payload.token, position: dto.position })
+    if (!verified.recordId || !verified.sessionId || !verified.courseId) throw new ApiError(502, 'La Function Appwrite n’a pas retourné le relevé de présence.')
+    return { id: verified.recordId, sessionId: verified.sessionId, courseId: verified.courseId, status: 'PRESENT' as const, alreadyRecorded: Boolean(verified.idempotent), distanceMeters: verified.distanceMeters, accuracyMeters: verified.accuracyMeters }
   },
 }
 
@@ -596,6 +621,20 @@ async function appwriteNotifications(): Promise<Notification[]> {
   const rows = await listAppwriteNotifications(current.id)
   return rows.map((row) => ({ id: row.$id, title: row.title, message: row.message, type: row.type, isRead: row.isRead, createdAt: row.createdAt || '' }))
 }
+export interface SecurityAuditReport {
+  ok: boolean
+  healthy?: boolean
+  checkedAt?: string
+  collections?: Record<string, number>
+  duplicates?: Record<string, number>
+  orphaned?: Record<string, number>
+  invalidRecords?: number
+}
+
+export const securityAuditApi = {
+  run: async (): Promise<SecurityAuditReport> => executeAttendanceSecureAction({ action: 'audit' }),
+}
+
 export const notificationsApi = {
   list: appwriteNotifications,
   unreadCount: async () => (await appwriteNotifications()).filter((item) => !item.isRead).length,

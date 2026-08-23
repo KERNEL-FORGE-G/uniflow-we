@@ -1,4 +1,4 @@
-import { Account, Client, Databases, ID, Models, Permission, Query, Role } from 'appwrite'
+import { Account, Client, Databases, Functions, ID, Models, Permission, Query, Role } from 'appwrite'
 import { readSessionSnapshot } from './sessionPersistence'
 
 // L’instance Appwrite UniFlow est servie par le domaine TLS certifié du VPS.
@@ -19,6 +19,8 @@ const APPWRITE_TIMEOUT_MS = 12_000
 export const appwriteClient = new Client().setEndpoint(endpoint).setProject(projectId)
 export const appwriteAccount = new Account(appwriteClient)
 export const appwriteDatabases = new Databases(appwriteClient)
+export const appwriteFunctions = new Functions(appwriteClient)
+export const APPWRITE_ATTENDANCE_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ATTENDANCE_FUNCTION_ID || 'attendance_secure')
 
 function normalizeAppwriteFailure(error: unknown, operation: string): Error {
   const message = error instanceof Error ? error.message : String(error || '')
@@ -42,6 +44,97 @@ async function awaitAppwrite<T>(promise: Promise<T>, operation: string): Promise
   } finally {
     if (timeout) clearTimeout(timeout)
   }
+}
+
+export type AttendanceSecureRequest = {
+  action: 'issue' | 'revoke' | 'scan' | 'audit'
+  sessionId?: string
+  courseId?: string
+  token?: string
+  origin?: { latitude: number; longitude: number; accuracy: number }
+  position?: { latitude: number; longitude: number; accuracy: number }
+  radiusMeters?: number
+}
+
+export type AttendanceSecureResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  token?: string
+  sessionId?: string
+  courseId?: string
+  expiresAt?: string
+  radiusMeters?: number
+  recordId?: string
+  idempotent?: boolean
+  distanceMeters?: number
+  accuracyMeters?: number
+  revoked?: boolean
+  healthy?: boolean
+  checkedAt?: string
+  collections?: Record<string, number>
+  duplicates?: Record<string, number>
+  orphaned?: Record<string, number>
+  invalidRecords?: number
+}
+
+export async function executeAttendanceSecureAction(payload: AttendanceSecureRequest): Promise<AttendanceSecureResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_ATTENDANCE_FUNCTION_ID, JSON.stringify(payload), false),
+    'le contrôle sécurisé de présence',
+  )
+  let response: AttendanceSecureResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as AttendanceSecureResponse } catch {
+    throw new Error('La Function Appwrite de présence a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La Function Appwrite a refusé le contrôle de présence.')
+  }
+  return response
+}
+
+export type AdminDirectoryRequest = {
+  action: 'create' | 'update' | 'delete'
+  userId?: string
+  name?: string
+  email?: string
+  currentEmail?: string
+  password?: string
+  role?: UniFlowRole
+  matricule?: string
+  status?: string
+}
+
+export type AdminDirectoryResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: string
+  userId?: string
+  directoryId?: string
+  profileId?: string
+  email?: string
+  name?: string
+  role?: UniFlowRole
+  status?: string
+  collection?: string
+}
+
+export const APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID || 'admin_directory')
+
+export async function executeAdminDirectoryAction(payload: AdminDirectoryRequest): Promise<AdminDirectoryResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID, JSON.stringify(payload), false),
+    'la gestion sécurisée des comptes',
+  )
+  let response: AdminDirectoryResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as AdminDirectoryResponse } catch {
+    throw new Error('La Function Appwrite de gestion des comptes a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La Function Appwrite a refusé la gestion du compte.')
+  }
+  return response
 }
 
 export type UniFlowAccountType = 'UNIVERSITY' | 'PERSONAL'

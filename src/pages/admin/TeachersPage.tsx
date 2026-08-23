@@ -20,6 +20,7 @@ export default function TeachersPage() {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
   })
 
   const loadTeachers = async () => {
@@ -44,6 +45,7 @@ export default function TeachersPage() {
       firstName: '',
       lastName: '',
       email: '',
+      password: '',
     })
     setShowModal(true)
   }
@@ -54,6 +56,7 @@ export default function TeachersPage() {
       firstName: teacher.firstName,
       lastName: teacher.lastName,
       email: teacher.user?.email || '',
+      password: '',
     })
     setShowModal(true)
   }
@@ -82,7 +85,8 @@ export default function TeachersPage() {
         const created = await teachersApi.create({
           firstName: form.firstName,
           lastName: form.lastName,
-          user: { email: form.email } as any
+          email: form.email,
+          password: form.password,
         })
         setTeachers(prev => [created, ...prev])
       }
@@ -236,11 +240,19 @@ export default function TeachersPage() {
                   className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]" />
               </div>
               {!editingTeacher && (
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Adresse E-mail</label>
-                  <input type="email" required value={form.email} onChange={e => setForm({...form, email: e.target.value})}
-                    className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]" />
-                </div>
+                <>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Adresse E-mail</label>
+                    <input type="email" required value={form.email} onChange={e => setForm({...form, email: e.target.value})}
+                      className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Mot de passe initial</label>
+                    <input type="password" required minLength={8} value={form.password} onChange={e => setForm({...form, password: e.target.value})}
+                      className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]" />
+                    <p className="mt-1 text-[11px] text-gray-500">Transmettez-le au titulaire puis demandez son changement.</p>
+                  </div>
+                </>
               )}
               <div className="flex gap-2 justify-end pt-3 border-t">
                 <button type="button" onClick={() => setShowModal(false)}

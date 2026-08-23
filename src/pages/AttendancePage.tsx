@@ -22,6 +22,21 @@ const courseGradients = [
   'from-purple-600 to-pink-700', 'from-amber-600 to-orange-700',
 ]
 
+type ProximityPosition = { latitude: number; longitude: number; accuracy: number }
+
+function requestProximityPosition(): Promise<ProximityPosition> {
+  if (!window.isSecureContext || !navigator.geolocation) {
+    return Promise.reject(new Error('La vérification de proximité nécessite HTTPS et la géolocalisation du navigateur.'))
+  }
+  return new Promise((resolve, reject) => {
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve({ latitude: position.coords.latitude, longitude: position.coords.longitude, accuracy: position.coords.accuracy }),
+      (positionError) => reject(new Error(positionError.code === positionError.PERMISSION_DENIED ? 'La position est requise pour cet émargement QR. Aucun relevé n’a été créé.' : 'La position actuelle est indisponible. Réessayez depuis le lieu de la séance.')),
+      { enableHighAccuracy: true, timeout: 12_000, maximumAge: 0 },
+    )
+  })
+}
+
 export default function AttendancePage() {
   const [showQR, setShowQR] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
@@ -56,8 +71,10 @@ export default function AttendancePage() {
     setQrSubmitting(true)
     setQrError(null)
     try {
-      const result = await attendanceApi.scan({ qrCode: value.trim() })
-      setQrStatus(result.alreadyRecorded ? 'Votre émargement était déjà enregistré pour cette séance.' : 'Émargement enregistré dans Appwrite.')
+      const position = await requestProximityPosition()
+      const result = await attendanceApi.scan({ qrCode: value.trim(), position })
+      const proximity = typeof result.distanceMeters === 'number' ? ` Proximité vérifiée à ${result.distanceMeters} m.` : ''
+      setQrStatus(result.alreadyRecorded ? `Votre émargement était déjà enregistré pour cette séance.${proximity}` : `Émargement sécurisé enregistré dans Appwrite.${proximity}`)
       setRefreshKey((key) => key + 1)
     } catch (err) {
       setQrError(err instanceof Error ? err.message : 'Impossible de valider ce QR UniFlow.')
@@ -146,7 +163,7 @@ export default function AttendancePage() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">Mes présences</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Suivi personnel par matière</p>
+          <p className="text-sm text-[#6b7280] mt-0.5">Suivi personnel par matière · le scan QR demande votre position uniquement pour vérifier la proximité</p>
         </div>
         <button onClick={() => { setQrStatus(null); setQrError(null); setQrValue(''); setShowQR(true) }}
           className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">

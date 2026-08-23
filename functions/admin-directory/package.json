@@ -1,0 +1,8 @@
+{
+  "name": "uniflow-admin-directory-function",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "node-appwrite": "^12.0.1"
+  }
+}
