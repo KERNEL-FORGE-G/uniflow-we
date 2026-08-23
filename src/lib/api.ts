@@ -491,6 +491,39 @@ export const attendanceApi = {
       return academicAppwriteApi.attendance.createRecord({ sessionId: session.id, courseId: session.courseId, studentId: row.studentId, status: row.status }, current.id)
     }))
   },
+  saveTodayRoll: async (dto: { courseId: string; date: string; rows: Array<{ studentId: string; status: AttendanceRecord['status'] }> }) => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut enregistrer une présence.')
+
+    const [courseRows, sessionRows, recordRows] = await Promise.all([
+      academicAppwriteApi.courses.list(),
+      academicAppwriteApi.attendance.sessions(),
+      academicAppwriteApi.attendance.records(),
+    ])
+    const course = courseRows.find((row) => row.$id === dto.courseId)
+    if (!course || (current.role === 'TEACHER' && course.teacherId !== current.id)) {
+      throw new ApiError(403, 'Ce cours n’est pas disponible pour votre rôle Appwrite.')
+    }
+
+    const dateKey = new Date(dto.date).toISOString().slice(0, 10)
+    let session = sessionRows.find((row) => row.courseId === dto.courseId && row.date.slice(0, 10) === dateKey)
+    if (!session) {
+      session = await academicAppwriteApi.attendance.createSession({ courseId: dto.courseId, date: new Date(dto.date).toISOString(), createdBy: current.id })
+    }
+
+    const byStudentId = new Map(recordRows
+      .filter((record) => record.sessionId === session!.$id)
+      .map((record) => [record.studentId, record]))
+    await Promise.all(dto.rows.map(async (row) => {
+      const existing = byStudentId.get(row.studentId)
+      if (existing?.status === row.status) return existing
+      if (existing) return academicAppwriteApi.attendance.updateRecord(existing.$id, row.status)
+      return academicAppwriteApi.attendance.createRecord({ sessionId: session!.$id, courseId: dto.courseId, studentId: row.studentId, status: row.status }, current.id)
+    }))
+
+    return { id: session.$id, courseId: session.courseId, date: session.date }
+  },
   scan: async (_dto: { qrCode: string }) => unavailable<AttendanceRecord>('Les présences'),
 }
 
