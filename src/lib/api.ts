@@ -421,6 +421,24 @@ async function appwriteAttendanceSessions(): Promise<AttendanceSession[]> {
 }
 
 export const attendanceApi = {
+  bootstrap: async (): Promise<{ courses: Course[]; students: Student[] }> => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+
+    const [courseRows, directoryRows] = await Promise.all([
+      academicAppwriteApi.courses.list(),
+      academicAppwriteApi.directory.list(),
+    ])
+    const courses = courseRows
+      .filter((row) => row.university === 'Université de Yaoundé I' && row.program === 'ICT4D' && row.level === 'L1')
+      .filter((row) => current.role !== 'TEACHER' || row.teacherId === current.id)
+      .map(asAcademicCourse)
+    const students = directoryRows
+      .filter((row) => row.university === 'Université de Yaoundé I' && row.program === 'ICT4D' && row.level === 'L1')
+      .filter((row) => row.role === 'STUDENT' || row.role === 'DELEGATE')
+      .map(asStudent)
+    return { courses, students }
+  },
   listSessions: appwriteAttendanceSessions,
   createSession: async (dto: { courseId: string; date: string }) => {
     const current = await getCurrentAccount('UNIVERSITY')

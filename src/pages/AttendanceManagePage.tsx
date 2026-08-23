@@ -4,7 +4,7 @@ import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
-import { coursesApi, studentsApi, attendanceApi, Course, Student } from '../lib/api'
+import { attendanceApi, Course, Student } from '../lib/api'
 
 type RollStatus = 'Présent' | 'Absent' | 'Late' | 'Excusé'
 
@@ -35,10 +35,7 @@ export default function AttendanceManagePage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [myCourses, studentList] = await Promise.all([
-          coursesApi.mine(),
-          studentsApi.list(),
-        ])
+        const { courses: myCourses, students: studentList } = await attendanceApi.bootstrap()
 
         setCourses(myCourses)
         if (myCourses.length > 0) {
