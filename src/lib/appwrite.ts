@@ -14,7 +14,10 @@ export const APPWRITE_ENDPOINT = endpoint
 export const APPWRITE_PROJECT_ID = projectId
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
 export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets')
-const APPWRITE_TIMEOUT_MS = 12_000
+// Les Functions Appwrite auto-hébergées peuvent nécessiter un démarrage à
+// froid supérieur à 12 secondes. Le délai client reste borné, mais couvre
+// l’inscription académique et les appels sécurisés sans faux échec partiel.
+const APPWRITE_TIMEOUT_MS = 35_000
 
 export const appwriteClient = new Client().setEndpoint(endpoint).setProject(projectId)
 export const appwriteAccount = new Account(appwriteClient)
