@@ -384,8 +384,8 @@ export const teachersApi = {
   delete: async (_id: string) => universityCollectionUnavailable<void>('Les enseignants'),
 }
 
-export interface AttendanceSession { id: string; date: string; courseId: string; course?: { name: string; code: string }; records: AttendanceRecord[] }
-export interface AttendanceRecord { id: string; status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'; studentId: string; student?: { firstName: string; lastName: string; matricule: string } }
+export interface AttendanceSession { id: string; date: string; createdAt?: string; createdBy?: string; courseId: string; course?: { name: string; code: string }; records: AttendanceRecord[] }
+export interface AttendanceRecord { id: string; createdAt?: string; status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'; studentId: string; student?: { firstName: string; lastName: string; matricule: string } }
 
 async function appwriteAttendanceSessions(): Promise<AttendanceSession[]> {
   const current = await getCurrentAccount('UNIVERSITY')
@@ -410,12 +410,13 @@ async function appwriteAttendanceSessions(): Promise<AttendanceSession[]> {
           const student = studentsById.get(record.studentId)
           return {
             id: record.$id,
+            createdAt: record.$createdAt,
             status: record.status,
             studentId: record.studentId,
             student: student ? { firstName: student.firstName, lastName: student.lastName, matricule: student.matricule } : undefined,
           }
         })
-      return { id: session.$id, date: session.date, courseId: session.courseId, course: { name: course.name, code: course.code }, records: sessionRecords }
+      return { id: session.$id, date: session.date, createdAt: session.$createdAt, createdBy: session.createdBy, courseId: session.courseId, course: { name: course.name, code: course.code }, records: sessionRecords }
     })
     .sort((a, b) => b.date.localeCompare(a.date))
 }
@@ -524,7 +525,59 @@ export const attendanceApi = {
 
     return { id: session.$id, courseId: session.courseId, date: session.date }
   },
-  scan: async (_dto: { qrCode: string }) => unavailable<AttendanceRecord>('Les présences'),
+  openQrSession: async (dto: { courseId: string; date?: string }) => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut générer un QR de présence.')
+
+    const date = dto.date || new Date().toISOString()
+    const session = await attendanceApi.createSession({ courseId: dto.courseId, date })
+    const token = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID().replace(/-/g, '')
+      : `${Date.now()}${Math.random().toString(36).slice(2)}`
+    const expiresAt = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+    const qr = await academicAppwriteApi.attendance.createQrToken({ token, sessionId: session.id, courseId: session.courseId, createdBy: current.id, expiresAt, revoked: false }, current.id)
+    return {
+      token: qr.token,
+      sessionId: session.id,
+      courseId: session.courseId,
+      expiresAt: qr.expiresAt,
+      payload: JSON.stringify({ type: 'uniflow-attendance', version: 1, token: qr.token }),
+    }
+  },
+  scan: async (dto: { qrCode: string }) => {
+    let payload: { type?: string; version?: number; token?: string }
+    try { payload = JSON.parse(dto.qrCode) as { type?: string; version?: number; token?: string } } catch {
+      throw new ApiError(400, 'Ce code QR UniFlow est illisible.')
+    }
+    if (payload.type !== 'uniflow-attendance' || payload.version !== 1 || !payload.token) {
+      throw new ApiError(400, 'Ce QR ne correspond pas à une séance UniFlow valide.')
+    }
+
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+    if (current.role === 'TEACHER' || current.role === 'ADMIN') throw new ApiError(403, 'Utilisez un compte apprenant pour émarger avec ce QR.')
+
+    const [tokenRows, sessionRows, enrollmentRows, recordRows] = await Promise.all([
+      academicAppwriteApi.attendance.qrTokens(),
+      academicAppwriteApi.attendance.sessions(),
+      academicAppwriteApi.enrollments.list(),
+      academicAppwriteApi.attendance.records(),
+    ])
+    const token = tokenRows.find((row) => row.token === payload.token)
+    if (!token || token.revoked || new Date(token.expiresAt).getTime() <= Date.now()) {
+      throw new ApiError(410, 'Ce QR de présence a expiré ou a été révoqué.')
+    }
+    const session = sessionRows.find((row) => row.$id === token.sessionId && row.courseId === token.courseId)
+    if (!session) throw new ApiError(404, 'La séance associée à ce QR est introuvable.')
+    const enrollment = enrollmentRows.find((row) => row.courseId === token.courseId && row.studentId === current.id && row.status !== 'INACTIVE')
+    if (!enrollment) throw new ApiError(403, 'Votre compte n’est pas inscrit à ce cours.')
+
+    const existing = recordRows.find((row) => row.sessionId === session.$id && row.studentId === current.id)
+    if (existing) return { id: existing.$id, sessionId: session.$id, courseId: session.courseId, status: existing.status, alreadyRecorded: true }
+    const created = await academicAppwriteApi.attendance.createRecord({ sessionId: session.$id, courseId: session.courseId, studentId: current.id, status: 'PRESENT' }, current.id)
+    return { id: created.$id, sessionId: session.$id, courseId: session.courseId, status: created.status, alreadyRecorded: false }
+  },
 }
 
 export interface Classroom { id: string; name: string; building: string; floor?: number; capacity: number; type: string; isAvailable: boolean; equipment?: string[] }

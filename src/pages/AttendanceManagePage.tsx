@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { QrCode, Download, UserCheck, RefreshCw, AlertTriangle, Wifi, FileSpreadsheet, Check, Clock, X, HelpCircle, Megaphone, User, CheckCircle2, Loader2 } from 'lucide-react'
+import { QRCodeSVG } from 'qrcode.react'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
@@ -21,6 +22,8 @@ export default function AttendanceManagePage() {
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [students, setStudents] = useState<StudentRoll[]>([])
   const [showQR, setShowQR] = useState(false)
+  const [qrSession, setQrSession] = useState<{ payload: string; expiresAt: string; sessionId: string } | null>(null)
+  const [qrLoading, setQrLoading] = useState(false)
   const [pending, setPending] = useState(0)
   const [saved, setSaved] = useState(false)
   const [activeTab, setActiveTab] = useState<'appel'|'annonces'>('appel')
@@ -139,6 +142,21 @@ export default function AttendanceManagePage() {
     }
   }
 
+  const handleGenerateQr = async () => {
+    if (!course || isOfflineMode) return
+    setQrLoading(true)
+    setError(null)
+    try {
+      const opened = await attendanceApi.openQrSession({ courseId: course.id })
+      setQrSession({ payload: opened.payload, expiresAt: opened.expiresAt, sessionId: opened.sessionId })
+      setShowQR(true)
+    } catch (err) {
+      setError(`Impossible de générer le QR Appwrite : ${err instanceof Error ? err.message : 'échec inconnu.'}`)
+    } finally {
+      setQrLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -161,9 +179,10 @@ export default function AttendanceManagePage() {
         </div>
         <div className="flex gap-2">
           {course && (
-            <button onClick={() => setShowQR(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a7167] transition-colors">
-              <QrCode className="h-4 w-4" /> Générer QR
+            <button onClick={handleGenerateQr} disabled={qrLoading || isOfflineMode}
+              className="flex items-center gap-1.5 rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a7167] transition-colors disabled:opacity-50">
+              {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
+              {qrLoading ? 'Création Appwrite…' : 'Générer QR'}
             </button>
           )}
           <button
@@ -370,24 +389,24 @@ export default function AttendanceManagePage() {
       )}
 
       {/* QR Modal */}
-      {showQR && course && (
+      {showQR && course && qrSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-bold text-[#111827]">Jeton QR de présence</span>
-              <button onClick={() => setShowQR(false)} className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]"><X className="h-5 w-5" /></button>
+              <button onClick={() => { setShowQR(false); setQrSession(null) }} className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]"><X className="h-5 w-5" /></button>
             </div>
             <p className="text-xs text-[#6b7280] mb-4">{course.code} · {course.classroom?.name || 'Salle N/A'} · {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}</p>
-            <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-xl border border-[#e5e7eb] bg-[#f9fafb]">
-              <QrCode className="h-44 w-44 text-[#1e3a8a]" />
+            <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-xl border border-[#e5e7eb] bg-white p-3">
+              <QRCodeSVG value={qrSession.payload} size={184} level="M" includeMargin aria-label="QR d’émargement UniFlow" />
             </div>
-            <p className="mt-4 rounded-lg bg-[#fef3c7] border border-[#fde68a] px-3 py-2 text-xs font-semibold text-[#92400e] flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 shrink-0" /> Format de jeton Appwrite à provisionner : aucun émargement n’est simulé.
+            <p className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-left text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
+              <Clock className="h-3.5 w-3.5 shrink-0" /> Jeton Appwrite actif jusqu’à {new Date(qrSession.expiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Un apprenant inscrit ne peut émarger qu’une fois.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <button onClick={() => setShowQR(false)} className="rounded-lg border border-[#e5e7eb] py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">Fermer</button>
-              <button disabled className="rounded-lg bg-slate-200 py-2 text-sm font-semibold text-slate-500 flex items-center justify-center gap-1.5 cursor-not-allowed">
-                <Download className="h-4 w-4" /> À configurer
+              <button onClick={() => { setShowQR(false); setQrSession(null) }} className="rounded-lg border border-[#e5e7eb] py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">Fermer</button>
+              <button onClick={() => navigator.clipboard?.writeText(qrSession.payload)} className="rounded-lg bg-[#1e3a8a] py-2 text-sm font-semibold text-white flex items-center justify-center gap-1.5 hover:bg-[#2d4fa8]">
+                <Download className="h-4 w-4" /> Copier le jeton
               </button>
             </div>
           </div>
