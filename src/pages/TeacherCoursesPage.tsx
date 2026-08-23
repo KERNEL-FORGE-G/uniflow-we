@@ -4,10 +4,29 @@ import { Plus, Users, Download, UploadCloud, Trash2, Save, Video, Check, Code2, 
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
-import { coursesApi, studentsApi, Course } from '../lib/api'
+import { coursesApi, gradesApi, Course } from '../lib/api'
 import type { LucideIcon } from 'lucide-react'
 
-const CC_W = 0.3, EXAM_W = 0.7
+const CC_COEFFICIENT = 3
+const EXAM_COEFFICIENT = 7
+
+type CourseLearner = {
+  id: string
+  name: string
+  matricule: string
+  cc?: number
+  exam?: number
+}
+
+function currentAverage(student: CourseLearner): number | null {
+  const entries = [
+    typeof student.cc === 'number' ? { score: student.cc, coefficient: CC_COEFFICIENT } : null,
+    typeof student.exam === 'number' ? { score: student.exam, coefficient: EXAM_COEFFICIENT } : null,
+  ].filter((entry): entry is { score: number; coefficient: number } => Boolean(entry))
+  if (!entries.length) return null
+  const totalCoefficient = entries.reduce((sum, entry) => sum + entry.coefficient, 0)
+  return Number((entries.reduce((sum, entry) => sum + entry.score * entry.coefficient, 0) / totalCoefficient).toFixed(2))
+}
 
 // Map course codes to icons (same as CoursesPage)
 const courseIconMap: Record<string, LucideIcon> = {
@@ -26,7 +45,7 @@ export default function TeacherCoursesPage() {
   const navigate = useNavigate()
   const [courses, setCourses] = useState<Course[]>([])
   const [selCode, setSelCode] = useState<string | null>(null)
-  const [students, setStudents] = useState<any[]>([]) 
+  const [students, setStudents] = useState<CourseLearner[]>([])
   const [resources, setResources] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState('')
@@ -34,6 +53,8 @@ export default function TeacherCoursesPage() {
   const [uploading, setUploading] = useState(false)
   const [uploadPct, setUploadPct] = useState(0)
   const [saved, setSaved] = useState(false)
+  const [gradeError, setGradeError] = useState<string | null>(null)
+  const [savingGrades, setSavingGrades] = useState(false)
   const [activeTab, setActiveTab] = useState<'contenu'|'participants'|'devoirs'|'notes'>('contenu')
 
   useEffect(() => {
@@ -45,22 +66,33 @@ export default function TeacherCoursesPage() {
 
   useEffect(() => {
     if (!selCode) return
-    // As mentioned, studentsApi.list() is used as fallback for students
-    studentsApi.list().then(setStudents)
-    // Resources remain local
+    let active = true
+    setGradeError(null)
+    gradesApi.roster(selCode)
+      .then(({ students: roster, grades }) => {
+        if (!active) return
+        const scoreOnTwenty = (grade: typeof grades[number]) => Number(((grade.grade / Math.max(grade.maxScore, 1)) * 20).toFixed(2))
+        setStudents(roster.map((student) => {
+          const studentGrades = grades.filter((grade) => grade.studentId === student.id)
+          const cc = studentGrades.find((grade) => grade.type === 'CC')
+          const exam = studentGrades.find((grade) => grade.type === 'EXAM')
+          return { ...student, cc: cc ? scoreOnTwenty(cc) : undefined, exam: exam ? scoreOnTwenty(exam) : undefined }
+        }))
+      })
+      .catch((error) => { if (active) { setStudents([]); setGradeError(error instanceof Error ? error.message : 'Impossible de charger les apprenants inscrits.') } })
+    return () => { active = false }
   }, [selCode])
 
   const course = courses.find(c => c.id === selCode)
 
-  const avg = students.length > 0 ? parseFloat((students.reduce((s: number, st: any) => s + (st.cc * CC_W + st.exam * EXAM_W), 0) / students.length).toFixed(2)) : 0
-  const passRate = students.length > 0 ? Math.round(students.filter(st => (st.cc * CC_W + st.exam * EXAM_W) >= 10).length / students.length * 100) : 0
+  const availableAverages = students.map(currentAverage).filter((value): value is number => value !== null)
+  const avg = availableAverages.length ? Number((availableAverages.reduce((sum, value) => sum + value, 0) / availableAverages.length).toFixed(2)) : null
+  const passRate = availableAverages.length ? Math.round((availableAverages.filter((value) => value >= 10).length / availableAverages.length) * 100) : null
 
-  const updateGrade = (id: string, field: 'cc'|'exam', val: number) => {
-    setStudents(prev => prev.map(s => s.id === id ? { ...s, [field]: Math.min(20, Math.max(0, val)) } : s))
+  const updateGrade = (id: string, field: 'cc'|'exam', val: string) => {
+    const value = val === '' ? undefined : Math.min(20, Math.max(0, Number(val)))
+    setStudents(prev => prev.map(s => s.id === id ? { ...s, [field]: Number.isFinite(value) ? value : undefined } : s))
   }
-
-  const toggleLock = (id: string) => setStudents(prev => prev.map(s => s.id === id ? { ...s, locked: !s.locked } : s))
-
 
   const handleUpload = (e: React.FormEvent) => {
     e.preventDefault()
@@ -79,9 +111,26 @@ export default function TeacherCoursesPage() {
     }), 220)
   }
 
-  const handleSaveGrades = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  const handleSaveGrades = async (studentIds = students.map((student) => student.id)) => {
+    if (!course) return
+    setSavingGrades(true)
+    setSaved(false)
+    setGradeError(null)
+    try {
+      const targetStudents = students.filter((student) => studentIds.includes(student.id))
+      await Promise.all(targetStudents.flatMap((student) => {
+        const writes: Promise<unknown>[] = []
+        if (typeof student.cc === 'number') writes.push(gradesApi.upsertUniversity({ courseId: course.id, studentId: student.id, evaluationTitle: 'Contrôle continu', type: 'CC', score: Math.round(student.cc), maxScore: 20, coefficient: CC_COEFFICIENT }))
+        if (typeof student.exam === 'number') writes.push(gradesApi.upsertUniversity({ courseId: course.id, studentId: student.id, evaluationTitle: 'Examen final', type: 'EXAM', score: Math.round(student.exam), maxScore: 20, coefficient: EXAM_COEFFICIENT }))
+        return writes
+      }))
+      setSaved(true)
+      setTimeout(() => setSaved(false), 3000)
+    } catch (error) {
+      setGradeError(error instanceof Error ? error.message : 'Enregistrement des notes impossible.')
+    } finally {
+      setSavingGrades(false)
+    }
   }
 
   const tabs = [
@@ -120,9 +169,10 @@ export default function TeacherCoursesPage() {
 
       {saved && (
         <div className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
-          <Check className="h-4 w-4 text-[#0d9488]" /> Grille sauvegardée — {students.filter(s => s.locked).length} notes figées publiées.
+          <Check className="h-4 w-4 text-[#0d9488]" /> Évaluations enregistrées dans Appwrite et visibles dans le relevé des apprenants.
         </div>
       )}
+      {gradeError && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{gradeError}</div>}
 
       {course && (
         <div className="grid gap-5 lg:grid-cols-3">
@@ -147,7 +197,7 @@ export default function TeacherCoursesPage() {
                   </div>
                 </div>
                 <div className="flex justify-between text-xs text-[#6b7280]">
-                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> 0 étudiants</span>
+                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {students.length} inscrits</span>
                   <span className="font-semibold text-indigo-600">ICT4D · L1</span>
                 </div>
               </div>
@@ -156,9 +206,9 @@ export default function TeacherCoursesPage() {
             {/* Quick stats */}
             <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm space-y-2">
               <h2 className="text-xs font-bold text-[#9ca3af] uppercase tracking-wider">Stats notes</h2>
-              <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Moyenne générale</span><span className="font-bold text-indigo-600">{avg}/20</span></div>
-              <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Taux de réussite</span><span className="font-bold text-[#059669]">{passRate}%</span></div>
-              <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Notes figées</span><span className="font-bold text-[#374151]">{students.filter(s => s.locked).length}/{students.length}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Moyenne générale</span><span className="font-bold text-indigo-600">{avg === null ? '—' : `${avg}/20`}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Taux de réussite</span><span className="font-bold text-[#059669]">{passRate === null ? '—' : `${passRate}%`}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Apprenants évalués</span><span className="font-bold text-[#374151]">{availableAverages.length}/{students.length}</span></div>
             </div>
 
             {/* Visio launcher */}
@@ -254,17 +304,17 @@ export default function TeacherCoursesPage() {
               </div>
               <div className="divide-y divide-[#f9fafb]">
                 {students.map(s => {
-                  const final = parseFloat((s.cc * CC_W + s.exam * EXAM_W).toFixed(2))
+                  const final = currentAverage(s)
                   return (
                     <div key={s.id} className="flex items-center gap-3 px-5 py-3.5 hover:bg-[#f9fafb]">
                       <Avatar name={s.name} size="sm" />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-[#111827] text-sm">{s.name}</p>
-                        <p className="text-xs text-[#9ca3af] font-mono">{s.id}</p>
+                        <p className="text-xs text-[#9ca3af] font-mono">{s.matricule || 'Matricule non renseigné'}</p>
                       </div>
                       <div className="text-right">
-                        <p className={`text-sm font-bold ${final >= 10 ? 'text-[#059669]' : 'text-[#dc2626]'}`}>{final}/20</p>
-                        <Badge variant={final >= 10 ? 'success' : 'danger'} className="text-[9px]">{final >= 10 ? 'Validé' : 'Échoué'}</Badge>
+                        <p className={`text-sm font-bold ${final === null ? 'text-slate-400' : final >= 10 ? 'text-[#059669]' : 'text-[#dc2626]'}`}>{final === null ? '—' : `${final}/20`}</p>
+                        <Badge variant={final === null ? 'warning' : final >= 10 ? 'success' : 'danger'} className="text-[9px]">{final === null ? 'En attente' : final >= 10 ? 'Validé' : 'À renforcer'}</Badge>
                       </div>
                     </div>
                   )
@@ -309,9 +359,9 @@ export default function TeacherCoursesPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge variant="primary">Pondération 30/70</Badge>
-                  <button onClick={handleSaveGrades}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-colors">
-                    <Save className="h-3.5 w-3.5" /> Enregistrer les notes
+                  <button onClick={() => void handleSaveGrades()} disabled={savingGrades || students.length === 0}
+                    className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
+                    <Save className="h-3.5 w-3.5" /> {savingGrades ? 'Enregistrement…' : 'Enregistrer les notes'}
                   </button>
                 </div>
               </div>
@@ -330,28 +380,28 @@ export default function TeacherCoursesPage() {
                   </thead>
                   <tbody className="divide-y divide-[#f3f4f6]">
                     {students.map(s => {
-                      const final = parseFloat((s.cc * CC_W + s.exam * EXAM_W).toFixed(2))
-                      const isValidated = final >= 10
+                      const final = currentAverage(s)
+                      const isValidated = final !== null && final >= 10
                       return (
                         <tr key={s.id} className="hover:bg-[#f9fafb]">
-                          <td className="px-5 py-3 font-mono font-medium text-[#374151]">{s.id}</td>
+                          <td className="px-5 py-3 font-mono font-medium text-[#374151]">{s.matricule || '—'}</td>
                           <td className="px-5 py-3 font-semibold text-[#111827]">{s.name}</td>
                           <td className="px-5 py-3 text-center">
-                            <input type="number" min="0" max="20" step="0.5" value={s.cc}
-                              onChange={e => updateGrade(s.id, 'cc', parseFloat(e.target.value) || 0)}
+                            <input type="number" min="0" max="20" step="1" value={s.cc ?? ''}
+                              onChange={e => updateGrade(s.id, 'cc', e.target.value)}
                               className="w-16 rounded border border-[#e5e7eb] px-2 py-1 text-center font-semibold text-[#111827] outline-none focus:border-[#1e3a8a]" />
                           </td>
                           <td className="px-5 py-3 text-center">
-                            <input type="number" min="0" max="20" step="0.5" value={s.exam}
-                              onChange={e => updateGrade(s.id, 'exam', parseFloat(e.target.value) || 0)}
+                            <input type="number" min="0" max="20" step="1" value={s.exam ?? ''}
+                              onChange={e => updateGrade(s.id, 'exam', e.target.value)}
                               className="w-16 rounded border border-[#e5e7eb] px-2 py-1 text-center font-semibold text-[#111827] outline-none focus:border-[#1e3a8a]" />
                           </td>
-                          <td className="px-5 py-3 text-center font-bold text-sm text-[#111827]">{final} / 20</td>
+                          <td className="px-5 py-3 text-center font-bold text-sm text-[#111827]">{final === null ? '—' : `${final} / 20`}</td>
                           <td className="px-5 py-3 text-center">
-                            <Badge variant={isValidated ? 'success' : 'danger'}>{isValidated ? 'Validé' : 'Échoué'}</Badge>
+                            <Badge variant={final === null ? 'warning' : isValidated ? 'success' : 'danger'}>{final === null ? 'En attente' : isValidated ? 'Validé' : 'À renforcer'}</Badge>
                           </td>
                           <td className="px-5 py-3 text-right">
-                            <button onClick={() => toggleLock(s.id)} className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#1e3a8a]" title="Mettre à jour">
+                            <button onClick={() => void handleSaveGrades([s.id])} disabled={savingGrades} className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#1e3a8a] disabled:opacity-50" title="Enregistrer cet apprenant">
                               <Save className="h-4 w-4" />
                             </button>
                           </td>
@@ -362,10 +412,10 @@ export default function TeacherCoursesPage() {
                 </table>
               </div>
               <div className="px-5 py-4 border-t border-[#f3f4f6] bg-[#f9fafb] flex items-center justify-between gap-4">
-                <p className="text-xs text-[#9ca3af] flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" /> Les notes figées sont immédiatement visibles par les étudiants.</p>
-                <button onClick={handleSaveGrades}
-                  className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors">
-                  <Save className="h-4 w-4" /> Enregistrer la grille
+                <p className="text-xs text-[#9ca3af] flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" /> Les évaluations enregistrées sont immédiatement visibles dans le relevé Appwrite des apprenants.</p>
+                <button onClick={() => void handleSaveGrades()} disabled={savingGrades || students.length === 0}
+                  className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors disabled:cursor-not-allowed disabled:opacity-60">
+                  <Save className="h-4 w-4" /> {savingGrades ? 'Enregistrement…' : 'Enregistrer la grille'}
                 </button>
               </div>
             </div>

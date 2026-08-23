@@ -10,7 +10,7 @@ function scoreValue(grade: GradeWithScale) {
 }
 
 function maxValue(grade: GradeWithScale) {
-  return 20
+  return Math.max(Number(grade.maxScore || 20), 1)
 }
 
 function gradeLabel(grade: GradeWithScale) {
@@ -50,11 +50,15 @@ export default function GradesPage() {
 
   const average = useMemo(() => {
     if (!grades.length) return null
-    const total = grades.reduce((sum, rawGrade) => {
+    const weighted = grades.reduce((accumulator, rawGrade) => {
       const grade = rawGrade as GradeWithScale
-      return sum + (scoreValue(grade) / maxValue(grade)) * 20
-    }, 0)
-    return (total / grades.length).toFixed(2)
+      const coefficient = Math.max(Number(grade.coef || 1), 1)
+      return {
+        score: accumulator.score + ((scoreValue(grade) / maxValue(grade)) * 20 * coefficient),
+        coefficient: accumulator.coefficient + coefficient,
+      }
+    }, { score: 0, coefficient: 0 })
+    return weighted.coefficient > 0 ? (weighted.score / weighted.coefficient).toFixed(2) : null
   }, [grades])
 
   const averagePercent = average ? Math.min(100, (Number(average) / 20) * 100) : 0
@@ -71,7 +75,7 @@ export default function GradesPage() {
       '',
       ...grades.map((rawGrade) => {
         const grade = rawGrade as GradeWithScale
-        return `${gradeLabel(grade)} — ${scoreValue(grade)}/${maxValue(grade)} — ${subjectLabel(grade)}`
+        return `${gradeLabel(grade)} — ${scoreValue(grade)}/${maxValue(grade)} — coefficient ${grade.coef} — ${subjectLabel(grade)}`
       }),
     ].join('\n')
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
@@ -151,7 +155,7 @@ export default function GradesPage() {
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-12 text-center dark:border-slate-700 dark:bg-slate-800/50">
                   <GraduationCap className="mx-auto mb-4 h-10 w-10 text-slate-300 dark:text-slate-600" />
                   <p className="font-bold text-slate-700 dark:text-slate-200">Aucune note enregistrée</p>
-                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Ajoutez une évaluation dans votre espace personnel pour la retrouver ici.</p>
+                  <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Aucune évaluation Appwrite n’a encore été enregistrée pour votre parcours. Votre enseignant pourra les saisir depuis son espace pédagogique.</p>
                 </motion.div>
               ) : (
                 <div className="grid gap-3 lg:grid-cols-2">
@@ -160,7 +164,7 @@ export default function GradesPage() {
                     const tone = scoreTone(percent)
                     return <motion.article key={grade.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-white hover:shadow-lg hover:shadow-teal-900/5 dark:border-slate-800 dark:bg-slate-800/50 dark:hover:bg-slate-800">
                       <div className="flex items-start justify-between gap-4">
-                        <div className="min-w-0"><p className="truncate font-bold text-slate-900 dark:text-white">{gradeLabel(grade)}</p><p className="mt-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400">Matière : {subjectLabel(grade)}</p></div>
+                        <div className="min-w-0"><p className="truncate font-bold text-slate-900 dark:text-white">{gradeLabel(grade)}</p><p className="mt-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400">Matière : {subjectLabel(grade)} · Coefficient {grade.coef}</p></div>
                         <div className="shrink-0 text-right"><p className={`text-2xl font-black ${tone.text}`}>{scoreValue(grade)}<span className="text-sm font-bold text-slate-400">/{maxValue(grade)}</span></p><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tone.badge}</p></div>
                       </div>
                       <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700"><motion.div initial={{ width: 0 }} animate={{ width: `${percent}%` }} transition={{ duration: 0.7, delay: index * 0.05 }} className={`h-full rounded-full bg-gradient-to-r ${tone.bar}`} /></div>

@@ -49,26 +49,17 @@ export default function AttendanceManagePage() {
 
   const announcements: Array<{ id: string; title: string; desc: string; time: string; type: string }> = []
 
-  // Load courses and student list
+  // Les cours sont chargés une fois ; la liste d’appel est ensuite résolue par
+  // inscription académique pour chaque cours sélectionné.
   useEffect(() => {
     async function loadData() {
       try {
-        const { courses: myCourses, students: studentList } = await attendanceApi.bootstrap()
+        const { courses: myCourses } = await attendanceApi.bootstrap()
 
         setCourses(myCourses)
         if (myCourses.length > 0) {
           setSelectedCode(myCourses[0].code)
         }
-
-        // Le relevé historique est chargé séparément : son délai ne doit jamais
-        // bloquer l’affichage des cours et de la liste d’appel.
-        const rolls: StudentRoll[] = studentList.map((s: Student) => ({
-          id: s.id,
-          name: `${s.firstName} ${s.lastName}`,
-          email: s.user?.email || '',
-          status: 'Présent'
-        }))
-        setStudents(rolls)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Impossible de charger les cours et les étudiants.')
       } finally {
@@ -80,8 +71,11 @@ export default function AttendanceManagePage() {
 
   useEffect(() => {
     const selectedCourse = courses.find((item) => item.code === selectedCode)
-    const selectedCourseId = selectedCourse?.id
-    if (!selectedCourseId || students.length === 0) return
+    if (!selectedCourse?.id) {
+      setStudents([])
+      return
+    }
+    const courseId: string = selectedCourse.id
 
     let mounted = true
     const statusFromAppwrite: Record<'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE', RollStatus> = {
@@ -91,15 +85,21 @@ export default function AttendanceManagePage() {
       JUSTIFIE: 'Excusé',
     }
 
-    async function loadPersistedStatuses() {
+    async function loadCourseRoster() {
       setAttendanceLoading(true)
       try {
         const todayKey = new Date().toISOString().slice(0, 10)
-        const todaySession = (await attendanceApi.byCourse(selectedCourseId!)).find((session) => session.date.slice(0, 10) === todayKey)
+        const [enrolledStudents, courseSessions] = await Promise.all([
+          attendanceApi.roster(courseId),
+          attendanceApi.byCourse(courseId),
+        ])
+        const todaySession = courseSessions.find((session) => session.date.slice(0, 10) === todayKey)
         if (!mounted) return
         const persistedStatuses = new Map(todaySession?.records.map((record) => [record.studentId, record.status]) ?? [])
-        setStudents((current) => current.map((student) => ({
-          ...student,
+        setStudents(enrolledStudents.map((student) => ({
+          id: student.id,
+          name: `${student.firstName} ${student.lastName}`.trim(),
+          email: student.user?.email || '',
           status: persistedStatuses.get(student.id)
             ? statusFromAppwrite[persistedStatuses.get(student.id) as keyof typeof statusFromAppwrite]
             : 'Présent',
@@ -111,9 +111,9 @@ export default function AttendanceManagePage() {
       }
     }
 
-    loadPersistedStatuses()
+    loadCourseRoster()
     return () => { mounted = false }
-  }, [courses, selectedCode, students.length])
+  }, [courses, selectedCode])
 
   const course = courses.find(c => c.code === selectedCode)
   const present  = students.filter(s => s.status === 'Présent').length

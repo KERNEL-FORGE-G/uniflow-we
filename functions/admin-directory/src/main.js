@@ -29,6 +29,10 @@ function permissions(userId) {
   return [Permission.read(Role.user(userId)), Permission.update(Role.user(userId)), Permission.delete(Role.user(userId))]
 }
 
+function academicPermissions(userId) {
+  return [Permission.read(Role.users()), Permission.update(Role.user(userId)), Permission.delete(Role.user(userId))]
+}
+
 function roleOf(value) {
   return ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN'].includes(value) ? value : null
 }
@@ -134,6 +138,17 @@ export default async ({ req, res, log, error }) => {
       try {
         await databases.createDocument(DATABASE_ID, PROFILE_COLLECTION, account.$id, profilePayload, permissions(account.$id))
         const directory = await databases.createDocument(DATABASE_ID, DIRECTORY_COLLECTION, `directory_${account.$id}`, directoryPayload, [Permission.read(Role.users()), ...permissions(account.$id).slice(1)])
+        if (payload.role === 'STUDENT' || payload.role === 'DELEGATE') {
+          const courses = await databases.listDocuments(DATABASE_ID, 'academic_courses', [Query.limit(100)])
+          const scopedCourses = courses.documents.filter((course) => course.university === UNIVERSITY && course.program === PROGRAM && course.level === LEVEL)
+          await Promise.all(scopedCourses.map((course) => databases.createDocument(
+            DATABASE_ID,
+            'academic_enrollments',
+            ID.unique(),
+            { studentId: account.$id, courseId: course.$id, status: 'ACTIVE' },
+            academicPermissions(account.$id),
+          )))
+        }
         return json(res, { ok: true, action: 'create', userId: account.$id, directoryId: directory.$id, email: payload.email, name: payload.name, role: payload.role })
       } catch (creationError) {
         try { await users.delete(account.$id) } catch { /* best effort rollback */ }
