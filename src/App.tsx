@@ -206,7 +206,7 @@ export default function App() {
           <Route path="/app/messages" element={<StudentApp><PersonalAwareRoute kind="messages"><MessagingPage /></PersonalAwareRoute></StudentApp>} />
 
           {/* Partie 5 — Délégué & Promotion */}
-          <Route path="/app/gestion-presences" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><AttendanceManagePage /></StudentApp>} />
+          <Route path="/app/gestion-presences" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <AuthenticatedRoute><StudentApp><AttendanceManagePage /></StudentApp></AuthenticatedRoute>} />
           <Route path="/app/promotion" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><PromotionPage /></StudentApp>} />
 
           {/* Partie 8 — Enseignant Spécifique */}

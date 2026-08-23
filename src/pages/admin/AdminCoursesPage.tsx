@@ -162,10 +162,7 @@ export default function AdminCoursesPage() {
           <h1 className="text-2xl font-bold text-[#111827]">Gestion des Cours</h1>
           <p className="text-sm text-[#6b7280] mt-0.5">Administration · Séances de cours 2026</p>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Nouveau Cours
-        </Button>
+        <span className="rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-2 text-xs font-bold text-[#1e3a8a]">Référentiel Appwrite · lecture</span>
       </div>
 
       {error && (
@@ -249,17 +246,7 @@ export default function AdminCoursesPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-2 pt-3 border-t border-[#f3f4f6]">
-              <button onClick={() => handleOpenEdit(course)}
-                className="flex-1 rounded-lg bg-[#eff3ff] hover:bg-[#1e3a8a] hover:text-white text-[#1e3a8a] py-2 px-3 text-sm font-medium transition-colors flex items-center justify-center gap-1.5">
-                <Edit className="h-4 w-4" />
-                Modifier
-              </button>
-              <button onClick={() => handleDelete(course.id)}
-                className="rounded-lg border border-[#e5e7eb] hover:bg-red-50 hover:border-red-200 p-2 text-[#6b7280] hover:text-red-600 transition-colors">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
+            <p className="border-t border-[#f3f4f6] pt-3 text-xs text-[#6b7280]">Cours lu depuis Appwrite. La gestion du référentiel est réservée aux opérations administratives sécurisées.</p>
           </div>
         ))}
       </div>
@@ -358,4 +345,3 @@ export default function AdminCoursesPage() {
     </div>
   )
 }
-
