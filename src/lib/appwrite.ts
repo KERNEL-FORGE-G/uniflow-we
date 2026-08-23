@@ -778,7 +778,7 @@ export const academicAppwriteApi = {
     list: () => listDocuments<AcademicEnrollmentDocument>('academic_enrollments', [Query.limit(200)]),
   },
   subscriptions: {
-    listPlans: () => listDocuments<SubscriptionPlanDocument>('subscription_plans', [Query.equal('status', 'ACTIVE')]),
+    listPlans: async () => (await listDocuments<SubscriptionPlanDocument>('subscription_plans')).filter((plan) => plan.status === 'ACTIVE'),
     getStatus: async (userId: string) => {
       const rows = await listDocuments<SubscriptionStatusDocument>('subscription_statuses', [Query.equal('userId', userId)])
       return rows[0] || null
