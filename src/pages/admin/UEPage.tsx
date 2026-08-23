@@ -1,249 +1,143 @@
-import { useEffect, useState } from 'react'
-import { BookMarked, Search, Download, Plus, Eye, Edit, Trash2, Users, Clock, FileText } from 'lucide-react'
-import { Badge } from '../../components/ui/Badge'
+import { useEffect, useMemo, useState } from 'react'
+import { BookMarked, CalendarClock, Download, FileText, Printer, Search, Users } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
-import { ueApi, type UE as BackendUE } from '../../lib/api'
+import { ueApi, type UE } from '../../lib/api'
 
-interface UE {
-  id: string
-  code: string
-  name: string
-  department: string
-  level: string
-  semester: string
-  credits: number
-  hours: number
-  teacher: string
-  studentsEnrolled: number
-  capacity: number
-  type: 'Cours Magistral' | 'Travaux Dirigés' | 'Travaux Pratiques' | 'Projet' | ''
-  status: 'active' | 'archived' | 'planned' | ''
+function csvCell(value: string | number) {
+  return `"${String(value).replace(/"/g, '""')}"`
 }
-
-const normalizeUE = (item: BackendUE): UE => ({
-  id: item.id,
-  code: item.code || '',
-  name: item.name || '',
-  department: '',
-  level: '',
-  semester: '',
-  credits: item.credits || 0,
-  hours: 0,
-  teacher: '',
-  studentsEnrolled: 0,
-  capacity: 0,
-  type: '',
-  status: '',
-})
 
 export default function UEPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterDept, setFilterDept] = useState<string>('all')
-  const [filterLevel, setFilterLevel] = useState<string>('all')
-  const [filterStatus, setFilterStatus] = useState<string>('all')
-  const [ues, setUes] = useState<UE[]>([])
+  const [units, setUnits] = useState<UE[]>([])
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
     ueApi.list()
-      .then(data => { if (mounted) setUes(data.map(normalizeUE)) })
-      .catch(error => { if (mounted) setLoadError(error instanceof Error ? error.message : 'Impossible de charger les UE.') })
+      .then((data) => { if (mounted) setUnits(data) })
+      .catch((error) => { if (mounted) setLoadError(error instanceof Error ? error.message : 'Impossible de charger le référentiel Appwrite.') })
       .finally(() => { if (mounted) setLoading(false) })
     return () => { mounted = false }
   }, [])
 
-  const filtered = ues.filter(ue => {
-    const matchSearch = ue.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       ue.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       ue.teacher.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchDept = filterDept === 'all' || ue.department === filterDept
-    const matchLevel = filterLevel === 'all' || ue.level === filterLevel
-    const matchStatus = filterStatus === 'all' || ue.status === filterStatus
-    return matchSearch && matchDept && matchLevel && matchStatus
-  })
+  const filtered = useMemo(() => {
+    const needle = searchTerm.trim().toLocaleLowerCase()
+    if (!needle) return units
+    return units.filter((unit) => [unit.code, unit.name, unit.teacherName, unit.type, unit.classroom]
+      .some((value) => value.toLocaleLowerCase().includes(needle)))
+  }, [searchTerm, units])
+
+  const totals = useMemo(() => ({
+    credits: units.reduce((sum, unit) => sum + unit.credits, 0),
+    enrollments: units.reduce((sum, unit) => sum + unit.enrollmentCount, 0),
+    schedules: units.reduce((sum, unit) => sum + unit.scheduleCount, 0),
+    scheduledHours: units.reduce((sum, unit) => sum + unit.scheduledHours, 0),
+  }), [units])
+
+  const exportCsv = () => {
+    const header = ['Code', 'Cours', 'Responsable', 'Type', 'Salle', 'Crédits', 'Heures déclarées', 'Créneaux', 'Heures planifiées', 'Inscriptions']
+    const rows = filtered.map((unit) => [
+      unit.code, unit.name, unit.teacherName, unit.type, unit.classroom, unit.credits, unit.hours,
+      unit.scheduleCount, unit.scheduledHours.toFixed(1), unit.enrollmentCount,
+    ].map(csvCell).join(','))
+    const blob = new Blob([`\uFEFF${header.map(csvCell).join(',')}\n${rows.join('\n')}`], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'uniflow-uy1-ict4d-l1-referentiel.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
 
   const stats = [
-    { label: 'Total UE', value: ues.length, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
-    { label: 'Actives', value: ues.filter(u => u.status === 'active').length, color: 'text-[#059669]', bg: 'bg-emerald-50' },
-    { label: 'Planifiées', value: ues.filter(u => u.status === 'planned').length, color: 'text-[#d97706]', bg: 'bg-amber-50' },
-    { label: 'Crédits totaux', value: ues.reduce((sum, u) => sum + u.credits, 0), color: 'text-[#7c3aed]', bg: 'bg-purple-50' },
+    { label: 'Cours référencés', value: units.length, icon: BookMarked, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
+    { label: 'Crédits déclarés', value: totals.credits, icon: FileText, color: 'text-[#7c3aed]', bg: 'bg-purple-50' },
+    { label: 'Créneaux publiés', value: totals.schedules, icon: CalendarClock, color: 'text-[#d97706]', bg: 'bg-amber-50' },
+    { label: 'Inscriptions relevées', value: totals.enrollments, icon: Users, color: 'text-[#059669]', bg: 'bg-emerald-50' },
   ]
-
-  const statusConfig = {
-    active: { label: 'Active', variant: 'success' as const },
-    planned: { label: 'Planifiée', variant: 'warning' as const },
-    archived: { label: 'Archivée', variant: 'neutral' as const },
-  }
-
-  const typeColors = {
-    'Cours Magistral': 'bg-[#eff3ff] text-[#1e3a8a]',
-    'Travaux Dirigés': 'bg-[#f0fdfa] text-[#0d9488]',
-    'Travaux Pratiques': 'bg-purple-50 text-[#7c3aed]',
-    'Projet': 'bg-amber-50 text-[#d97706]',
-  }
 
   return (
     <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Gestion des UE</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Administration · Unités d'Enseignement 2026</p>
+          <h1 className="text-2xl font-bold text-[#111827]">Référentiel pédagogique</h1>
+          <p className="mt-0.5 text-sm text-[#6b7280]">Université de Yaoundé I · ICT4D · L1 · Lecture Appwrite</p>
         </div>
-        <Button className="bg-[#1e3a8a] hover:bg-[#1e3a8a]/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Nouvelle UE
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={exportCsv} disabled={loading || filtered.length === 0}>
+            <Download className="mr-2 h-4 w-4" />
+            Exporter le référentiel
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => window.print()} disabled={loading}>
+            <Printer className="mr-2 h-4 w-4" />
+            Imprimer
+          </Button>
+        </div>
       </div>
 
-      {/* Stats */}
+      <div className="rounded-xl border border-[#c7d2fe] bg-[#eff3ff] px-4 py-3 text-sm text-[#1e3a8a]">
+        Les cours, créneaux et inscriptions ci-dessous proviennent des collections académiques Appwrite. Aucune collection d’unités d’enseignement ni flux de création sécurisé n’est provisionné : les actions de CRUD restent volontairement indisponibles.
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(s => (
-          <div key={s.label} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-            <div className={`inline-flex items-center justify-center rounded-lg p-2 ${s.bg} mb-3`}>
-              <BookMarked className={`h-5 w-5 ${s.color}`} />
+        {stats.map((stat) => {
+          const Icon = stat.icon
+          return (
+            <div key={stat.label} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+              <div className={`mb-3 inline-flex items-center justify-center rounded-lg p-2 ${stat.bg}`}><Icon className={`h-5 w-5 ${stat.color}`} /></div>
+              <p className="text-2xl font-bold text-[#111827]">{stat.value}</p>
+              <p className="mt-0.5 text-xs text-[#6b7280]">{stat.label}</p>
             </div>
-            <p className="text-2xl font-bold text-[#111827]">{s.value}</p>
-            <p className="text-xs text-[#6b7280] mt-0.5">{s.label}</p>
-          </div>
-        ))}
+          )
+        })}
       </div>
 
-      {/* Filters & Search */}
       <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
-            <input
-              type="text"
-              placeholder="Rechercher par nom, code, enseignant..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full rounded-lg border border-[#d1d5db] bg-white py-2 pl-10 pr-4 text-sm focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20"
-            />
-          </div>
-          <div className="flex gap-2">
-            <select value={filterDept} onChange={e => setFilterDept(e.target.value)}
-              className="rounded-lg border border-[#d1d5db] px-3 py-2 text-sm focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20">
-              <option value="all">Tous départements</option>
-              <option value="Informatique">Informatique</option>
-              <option value="Mathématiques">Mathématiques</option>
-              <option value="Économie">Économie</option>
-            </select>
-            <select value={filterLevel} onChange={e => setFilterLevel(e.target.value)}
-              className="rounded-lg border border-[#d1d5db] px-3 py-2 text-sm focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20">
-              <option value="all">Tous niveaux</option>
-              <option value="L1">L1</option>
-            </select>
-            <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}
-              className="rounded-lg border border-[#d1d5db] px-3 py-2 text-sm focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20">
-              <option value="all">Tous statuts</option>
-              <option value="active">Active</option>
-              <option value="planned">Planifiée</option>
-              <option value="archived">Archivée</option>
-            </select>
-            <Button variant="outline" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
+        <div className="relative max-w-xl">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+          <input
+            type="search"
+            placeholder="Rechercher un cours, un code, un responsable ou une salle..."
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            className="w-full rounded-lg border border-[#d1d5db] bg-white py-2 pl-10 pr-4 text-sm focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20"
+          />
         </div>
       </div>
 
-      {/* Table */}
-      <div className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
+      <div className="overflow-hidden rounded-xl border border-[#e5e7eb] bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-[#f9fafb] border-b border-[#e5e7eb]">
+          <table className="w-full min-w-[980px]">
+            <thead className="border-b border-[#e5e7eb] bg-[#f9fafb]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Code</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">UE</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Département</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Niveau</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Type</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Enseignant</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Crédits</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Heures</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Inscrits</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Statut</th>
-                <th className="px-4 py-3 text-right text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Actions</th>
+                {['Code', 'Cours', 'Responsable', 'Format', 'Crédits', 'Volume déclaré', 'Planning Appwrite', 'Inscriptions'].map((heading) => (
+                  <th key={heading} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-[#6b7280]">{heading}</th>
+                ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f3f4f6]">
-              {filtered.map(ue => {
-                const fillRate = ue.capacity > 0 ? (ue.studentsEnrolled / ue.capacity) * 100 : 0
-                return (
-                  <tr key={ue.id} className="hover:bg-[#f9fafb] transition-colors">
-                    <td className="px-4 py-3 text-sm font-mono font-medium text-[#1e3a8a]">{ue.code}</td>
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="text-sm font-medium text-[#111827]">{ue.name}</p>
-                        <p className="text-xs text-[#6b7280]">{ue.semester}</p>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#374151]">{ue.department}</td>
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center rounded-full bg-[#eff3ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e3a8a]">
-                        {ue.level}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                                              <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${typeColors[ue.type as keyof typeof typeColors] || 'bg-[#f3f4f6] text-[#6b7280]'}`}>
-
-                        {ue.type}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[#374151]">{ue.teacher}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <FileText className="h-4 w-4 text-[#7c3aed]" />
-                        <span className="text-sm font-semibold text-[#111827]">{ue.credits}</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4 text-[#d97706]" />
-                        <span className="text-sm text-[#374151]">{ue.hours}h</span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-[#6b7280]" />
-                        <span className="text-sm font-medium text-[#111827]">{ue.studentsEnrolled}/{ue.capacity}</span>
-                        <span className={`text-xs font-semibold ${fillRate >= 90 ? 'text-red-600' : fillRate >= 70 ? 'text-[#d97706]' : 'text-[#059669]'}`}>
-                          {fillRate.toFixed(0)}%
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={statusConfig[ue.status as keyof typeof statusConfig]?.variant || 'neutral'}>
-                        {statusConfig[ue.status as keyof typeof statusConfig]?.label || '—'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <button className="rounded-lg p-1.5 hover:bg-[#eff3ff] text-[#6b7280] hover:text-[#1e3a8a] transition-colors">
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button className="rounded-lg p-1.5 hover:bg-[#eff3ff] text-[#6b7280] hover:text-[#1e3a8a] transition-colors">
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button className="rounded-lg p-1.5 hover:bg-red-50 text-[#6b7280] hover:text-red-600 transition-colors">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
+              {filtered.map((unit) => (
+                <tr key={unit.id} className="hover:bg-[#f9fafb]">
+                  <td className="px-4 py-3 font-mono text-sm font-semibold text-[#1e3a8a]">{unit.code}</td>
+                  <td className="px-4 py-3"><p className="text-sm font-medium text-[#111827]">{unit.name}</p><p className="mt-0.5 text-xs text-[#6b7280]">ICT4D · L1</p></td>
+                  <td className="px-4 py-3 text-sm text-[#374151]">{unit.teacherName}</td>
+                  <td className="px-4 py-3"><span className="inline-flex rounded-full bg-[#eff3ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e3a8a]">{unit.type}</span></td>
+                  <td className="px-4 py-3 text-sm font-semibold text-[#111827]">{unit.credits}</td>
+                  <td className="px-4 py-3 text-sm text-[#374151]">{unit.hours > 0 ? `${unit.hours} h` : 'Non renseigné'}</td>
+                  <td className="px-4 py-3"><p className="text-sm font-medium text-[#111827]">{unit.scheduleCount} créneau(x)</p><p className="mt-0.5 text-xs text-[#6b7280]">{unit.scheduledHours > 0 ? `${unit.scheduledHours.toFixed(1)} h planifiée(s) · ${unit.classroom}` : 'Aucun créneau enregistré'}</p></td>
+                  <td className="px-4 py-3 text-sm font-semibold text-[#111827]">{unit.enrollmentCount}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
-        {loading && <div className="py-12 text-center"><p className="text-sm text-[#6b7280]">Chargement des UE…</p></div>}
-        {!loading && filtered.length === 0 && <div className="py-12 text-center"><p className="text-sm text-[#9ca3af]">{loadError || 'Aucune UE fournie par le backend.'}</p></div>}
+        {loading && <div className="py-12 text-center text-sm text-[#6b7280]">Chargement du référentiel Appwrite…</div>}
+        {!loading && filtered.length === 0 && <div className="py-12 text-center text-sm text-[#6b7280]">{loadError || 'Aucun cours ICT4D L1 ne correspond à la recherche.'}</div>}
       </div>
+
+      {!loading && units.length > 0 && <p className="text-xs text-[#6b7280]">{totals.scheduledHours.toFixed(1)} heure(s) planifiée(s) calculée(s) depuis {totals.schedules} créneau(x) Appwrite.</p>}
     </div>
   )
 }
