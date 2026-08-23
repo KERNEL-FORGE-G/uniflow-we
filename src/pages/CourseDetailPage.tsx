@@ -52,7 +52,7 @@ export default function CourseDetailPage() {
     Promise.all([coursesApi.getOne(courseId), libraryApi.list(), schedulesApi.list()])
       .then(([loadedCourse, resources, schedules]) => {
         setCourse(mapToUiCourse(loadedCourse))
-        const related = (resources as LibraryResource[]).filter((resource) => resource.course === loadedCourse.code)
+        const related = (resources as LibraryResource[]).filter((resource) => resource.courseId === loadedCourse.id)
         setDocuments(related
           .filter((resource) => !/vidéo|video/i.test(resource.type))
           .map((resource) => ({ id: resource.id, name: resource.title, type: resource.type, size: resource.size, date: resource.date })))
