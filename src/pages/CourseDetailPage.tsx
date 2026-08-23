@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, BookOpen, FileText, Video, Users, Clock, Calendar, Download, Play, Eye, CheckCircle, Film, Loader2 } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
-import { Course, coursesApi } from '../lib/api'
+import { Course, coursesApi, libraryApi, schedulesApi, type LibraryResource, type Schedule } from '../lib/api'
 
 type Tab = 'infos' | 'documents' | 'videos' | 'visio' | 'syllabus'
 
@@ -11,9 +11,6 @@ type CourseDocument = { id: string; name: string; type: string; size?: string; d
 type CourseVideo = { id: string; title: string; duration?: string; date?: string; views?: number }
 type SyllabusItem = { week: number; title: string; topics: string[]; completed?: boolean }
 
-// Les contenus pédagogiques doivent provenir d’un endpoint backend dédié.
-const documents: CourseDocument[] = []
-const videos: CourseVideo[] = []
 const syllabus: SyllabusItem[] = []
 
 interface UiCourse {
@@ -44,13 +41,26 @@ export default function CourseDetailPage() {
   const { courseId } = useParams()
   const [activeTab, setActiveTab] = useState<Tab>('infos')
   const [course, setCourse] = useState<UiCourse | null>(null)
+  const [documents, setDocuments] = useState<CourseDocument[]>([])
+  const [videos, setVideos] = useState<CourseVideo[]>([])
+  const [nextSchedule, setNextSchedule] = useState<Schedule | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!courseId) return
-    coursesApi.getOne(courseId)
-      .then(c => setCourse(mapToUiCourse(c)))
+    Promise.all([coursesApi.getOne(courseId), libraryApi.list(), schedulesApi.list()])
+      .then(([loadedCourse, resources, schedules]) => {
+        setCourse(mapToUiCourse(loadedCourse))
+        const related = (resources as LibraryResource[]).filter((resource) => resource.course === loadedCourse.code)
+        setDocuments(related
+          .filter((resource) => !/vidéo|video/i.test(resource.type))
+          .map((resource) => ({ id: resource.id, name: resource.title, type: resource.type, size: resource.size, date: resource.date })))
+        setVideos(related
+          .filter((resource) => /vidéo|video/i.test(resource.type))
+          .map((resource) => ({ id: resource.id, title: resource.title, date: resource.date })))
+        setNextSchedule((schedules as Schedule[]).find((schedule) => schedule.course.id === loadedCourse.id) || null)
+      })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
   }, [courseId])
@@ -125,23 +135,21 @@ export default function CourseDetailPage() {
             <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
               <h2 className="text-lg font-bold text-[#111827] mb-4">Description du cours</h2>
               <p className="text-sm text-[#6b7280] leading-relaxed mb-4">
-                Ce cours introduit les concepts fondamentaux de l'algorithmique et des structures de données. 
-                Vous apprendrez à concevoir, analyser et implémenter des algorithmes efficaces pour résoudre 
-                des problèmes computationnels.
+                {course.description || 'La description de ce cours n’est pas encore renseignée dans Appwrite.'}
               </p>
               <h3 className="text-sm font-bold text-[#111827] mb-2">Objectifs pédagogiques</h3>
               <ul className="space-y-2 text-sm text-[#6b7280]">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />
-                  Comprendre les principes de base de la complexité algorithmique
+                  Ressources et créneaux proposés par le parcours ICT4D L1 dans Appwrite
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />
-                  Maîtriser les structures de données classiques (tableaux, listes, arbres)
+                  Supports pédagogiques disponibles depuis la bibliothèque universitaire
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />
-                  Implémenter des algorithmes de tri et de recherche efficaces
+                  Évaluations et présences consultables depuis les parcours associés
                 </li>
               </ul>
             </div>
@@ -181,16 +189,16 @@ export default function CourseDetailPage() {
               <h3 className="text-sm font-bold text-[#111827] mb-3">Prochaine session</h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-[#6b7280]">Date</span>
-                  <span className="font-semibold text-[#111827]">Lundi 29 janv.</span>
+                  <span className="text-[#6b7280]">Jour</span>
+                  <span className="font-semibold text-[#111827]">{nextSchedule?.dayOfWeek || 'Non planifié'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6b7280]">Horaire</span>
-                  <span className="font-semibold text-[#111827]">08:00 - 10:00</span>
+                  <span className="font-semibold text-[#111827]">{nextSchedule ? `${nextSchedule.startTime} – ${nextSchedule.endTime}` : '—'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#6b7280]">Salle</span>
-                  <span className="font-semibold text-[#111827]">A204</span>
+                  <span className="font-semibold text-[#111827]">{nextSchedule?.course.classroom.name || '—'}</span>
                 </div>
               </div>
             </div>
@@ -218,15 +226,15 @@ export default function CourseDetailPage() {
                       <span>•</span>
                       <span>{doc.date}</span>
                       <span>•</span>
-                      <span>{doc.downloads} téléchargements</span>
+                      <span>Source Appwrite</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="rounded-lg p-2 text-[#6b7280] hover:bg-[#f3f4f6] transition-colors">
+                  <button disabled title="Aperçu non provisionné" className="rounded-lg p-2 text-slate-300 cursor-not-allowed">
                     <Eye className="h-4 w-4" />
                   </button>
-                  <button className="rounded-lg bg-[#1e3a8a] p-2 text-white hover:bg-[#2d4fa8] transition-colors">
+                  <button disabled title="Fichier non associé dans le bucket Appwrite" className="rounded-lg bg-slate-200 p-2 text-slate-500 cursor-not-allowed">
                     <Download className="h-4 w-4" />
                   </button>
                 </div>
@@ -256,7 +264,7 @@ export default function CourseDetailPage() {
                   <h3 className="font-semibold text-sm text-[#111827] mb-1 line-clamp-2">{video.title}</h3>
                   <div className="flex items-center justify-between text-xs text-[#6b7280]">
                     <span>{video.date}</span>
-                    <span>{video.views} vues</span>
+                    <span>Source Appwrite</span>
                   </div>
                 </div>
               </div>
