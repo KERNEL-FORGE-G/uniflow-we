@@ -398,7 +398,7 @@ async function appwriteAttendanceSessions(): Promise<AttendanceSession[]> {
   ])
   const coursesById = new Map(courses.map((course) => [course.id, course]))
   const studentsById = new Map(directory.filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map((entry) => [entry.userId, asStudent(entry)]))
-  const isStudentView = current.role === 'STUDENT' || current.role === 'DELEGATE'
+  const isStudentView = current.role === 'STUDENT'
 
   return sessions
     .filter((session) => coursesById.has(session.courseId))
@@ -448,7 +448,11 @@ export const attendanceApi = {
     const session = await attendanceApi.getSession(sessionId)
     const student = await studentsApi.getOne(dto.studentId)
     const existing = session.records.find((record) => record.studentId === dto.studentId)
-    if (existing) return existing
+    if (existing) {
+      if (existing.status === dto.status) return existing
+      const updated = await academicAppwriteApi.attendance.updateRecord(existing.id, dto.status as AttendanceRecord['status'])
+      return { ...existing, status: updated.status }
+    }
     const created = await academicAppwriteApi.attendance.createRecord({ sessionId, courseId: session.courseId, studentId: dto.studentId, status: dto.status as AttendanceRecord['status'] }, current.id)
     return { id: created.$id, studentId: created.studentId, status: created.status, student: { firstName: student.firstName, lastName: student.lastName, matricule: student.matricule } }
   },

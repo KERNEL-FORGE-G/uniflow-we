@@ -44,12 +44,24 @@ export default function AttendanceManagePage() {
           setSelectedCode(myCourses[0].code)
         }
 
-        // Format student rolls
+        const todayKey = new Date().toISOString().slice(0, 10)
+        const todaySession = myCourses[0]
+          ? (await attendanceApi.byCourse(myCourses[0].id)).find((session) => session.date.slice(0, 10) === todayKey)
+          : undefined
+        const persistedStatuses = new Map(todaySession?.records.map((record) => [record.studentId, record.status]) ?? [])
+        const statusFromAppwrite: Record<'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE', RollStatus> = {
+          PRESENT: 'Présent',
+          ABSENT: 'Absent',
+          RETARD: 'Late',
+          JUSTIFIE: 'Excusé',
+        }
+
+        // Format student rolls with the persisted state for today when it exists.
         const rolls: StudentRoll[] = studentList.map((s: Student) => ({
           id: s.id,
           name: `${s.firstName} ${s.lastName}`,
           email: s.user?.email || '',
-          status: 'Présent' as RollStatus
+          status: persistedStatuses.get(s.id) ? statusFromAppwrite[persistedStatuses.get(s.id) as keyof typeof statusFromAppwrite] : 'Présent' as RollStatus
         }))
         setStudents(rolls)
       } catch (err) {

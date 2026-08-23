@@ -424,6 +424,18 @@ export const academicAppwriteApi = {
       )
       return document as unknown as AcademicAttendanceRecordDocument
     },
+    updateRecord: async (recordId: string, status: AcademicAttendanceRecordDocument['status']) => {
+      const document = await awaitAppwrite(
+        appwriteDatabases.updateDocument(
+          APPWRITE_DATABASE_ID,
+          'attendance_records',
+          recordId,
+          { status },
+        ),
+        'la mise à jour de la présence',
+      )
+      return document as unknown as AcademicAttendanceRecordDocument
+    },
   },
   directory: {
     list: () => listDocuments<AcademicDirectoryDocument>('academic_directory', [Query.limit(200)]),

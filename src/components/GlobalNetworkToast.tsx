@@ -34,10 +34,10 @@ export function GlobalNetworkToast() {
 
       addToast({
         type: 'warning',
-        title: 'Serveur distant indisponible (CORS / Timeout)',
+        title: 'Service Appwrite indisponible (CORS / délai)',
         message: shortUrl
-          ? `Accès à ${shortUrl} bloqué ou en délai dépassé. Les données distantes ne sont pas disponibles.`
-          : 'Problème de connexion avec le serveur distant. Aucune donnée distante n’a été chargée.',
+          ? `Accès à ${shortUrl} bloqué ou en délai dépassé. Les données Appwrite ne sont pas disponibles.`
+          : 'Problème de connexion avec Appwrite. Aucune donnée persistée n’a été chargée.',
         duration: 7000,
       })
     }
@@ -47,7 +47,7 @@ export function GlobalNetworkToast() {
       addToast({
         type: 'error',
         title: 'Connexion réseau interrompue',
-        message: 'Vous êtes actuellement hors-ligne. Les actions nécessitant le backend sont suspendues jusqu’au retour du réseau.',
+        message: 'Vous êtes actuellement hors-ligne. Les actions nécessitant Appwrite sont suspendues jusqu’au retour du réseau.',
         duration: 8000,
       })
     }
