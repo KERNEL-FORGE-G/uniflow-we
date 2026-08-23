@@ -148,12 +148,17 @@ export default function StudentsPage() {
   return (
     <div className="space-y-5 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">Gestion des Étudiants</h1>
           <p className="text-sm text-[#6b7280] mt-0.5">Administration · UniFlow 2026</p>
         </div>
-        <span className="rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-2 text-xs font-bold text-[#1e3a8a]">Répertoire Appwrite · lecture</span>
+        <div className="flex items-center gap-2">
+          <span className="rounded-lg border border-[#bfdbfe] bg-[#eff6ff] px-3 py-2 text-xs font-bold text-[#1e3a8a]">Appwrite · CRUD sécurisé</span>
+          <Button onClick={handleOpenAdd} className="bg-[#1e3a8a] text-white hover:bg-[#2d4fa8]">
+            <Plus className="mr-2 h-4 w-4" /> Ajouter un étudiant
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -216,6 +221,7 @@ export default function StudentsPage() {
                 <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Niveau / Filière</th>
                 <th className="px-4 py-3 text-left text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Statut</th>
                 <th className="px-4 py-3 text-right text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Source</th>
+                <th className="px-4 py-3 text-right text-xs font-semibold text-[#6b7280] uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#f3f4f6]">
@@ -244,6 +250,12 @@ export default function StudentsPage() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-right text-xs font-semibold text-[#0d9488]">Appwrite</td>
+                  <td className="px-4 py-3">
+                    <div className="flex justify-end gap-1">
+                      <button type="button" title="Modifier l’étudiant" aria-label="Modifier l’étudiant" onClick={() => handleOpenEdit(student)} className="rounded-lg p-2 text-[#1e3a8a] hover:bg-[#eff6ff]"><Edit className="h-4 w-4" /></button>
+                      <button type="button" title="Supprimer l’étudiant" aria-label="Supprimer l’étudiant" onClick={() => handleDelete(student.id)} className="rounded-lg p-2 text-[#dc2626] hover:bg-red-50"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
