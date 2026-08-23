@@ -80,6 +80,46 @@ async function ensureCollection(schema) {
   }
 }
 
+async function ensurePublicSubscriptionPlanRead() {
+  const response = await request('GET', `/databases/${databaseId}/collections/subscription_plans/documents`)
+  for (const plan of response.payload.documents || []) {
+    await request('PATCH', `/databases/${databaseId}/collections/subscription_plans/documents/${plan.$id}`, {
+      data: {},
+      permissions: ['read("any")'],
+    })
+  }
+}
+
+async function ensureIndependentWhatsAppPlan() {
+  const data = {
+    code: 'personal_cm',
+    name: 'UniFlow Personnel',
+    category: 'PERSONAL',
+    countryCode: 'CM',
+    currency: 'XAF',
+    priceMonthlyAmount: 100,
+    priceAnnuallyAmount: 1000,
+    period: 'Abonnement personnel',
+    badge: 'Paiement WhatsApp',
+    highlight: false,
+    description: 'Accès indépendant UniFlow au Cameroun. La demande est enregistrée dans Appwrite puis confirmée manuellement après réception de la preuve WhatsApp.',
+    providers: '["WHATSAPP"]',
+    status: 'ACTIVE',
+  }
+  const created = await request('POST', `/databases/${databaseId}/collections/subscription_plans/documents`, {
+    documentId: 'personal_cm',
+    data,
+    permissions: ['read("any")'],
+  })
+  if (created.status === 409) {
+    await request('PATCH', `/databases/${databaseId}/collections/subscription_plans/documents/personal_cm`, {
+      data,
+      permissions: ['read("any")'],
+    })
+  }
+  console.log(created.status === 201 ? 'Formule indépendante WhatsApp créée.' : 'Formule indépendante WhatsApp mise à jour.')
+}
+
 const string = (key, size, required = false, defaultValue) => ({
   type: 'string',
   body: { key, size, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false, encrypt: false },
@@ -321,4 +361,6 @@ const schemas = [
 await ensureDatabase();
 await ensureBucket();
 for (const schema of schemas) await ensureCollection(schema);
+await ensureIndependentWhatsAppPlan();
+await ensurePublicSubscriptionPlanRead();
 console.log('Provisionnement Appwrite UniFlow terminé.');
