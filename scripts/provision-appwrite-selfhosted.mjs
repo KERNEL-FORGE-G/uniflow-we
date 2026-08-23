@@ -216,6 +216,38 @@ const schemas = [
     ],
   },
   {
+    id: 'chat_conversations',
+    name: 'Conversations UniFlow',
+    attributes: [
+      string('participantA', 36, true),
+      string('participantB', 36, true),
+      string('lastMessage', 5000, false, ''),
+      datetime('lastMessageAt', false),
+    ],
+    indexes: [
+      { key: 'chat_participant_a', type: 'key', attributes: ['participantA'] },
+      { key: 'chat_participant_b', type: 'key', attributes: ['participantB'] },
+      { key: 'chat_participant_pair', type: 'unique', attributes: ['participantA', 'participantB'] },
+    ],
+  },
+  {
+    id: 'chat_messages',
+    name: 'Messages UniFlow',
+    attributes: [
+      string('conversationId', 36, true),
+      string('senderId', 36, true),
+      string('body', 5000, true),
+      datetime('createdAt', true),
+      boolean('readByA', false, false),
+      boolean('readByB', false, false),
+    ],
+    indexes: [
+      { key: 'chat_message_conversation', type: 'key', attributes: ['conversationId'] },
+      { key: 'chat_message_sender', type: 'key', attributes: ['senderId'] },
+      { key: 'chat_message_created', type: 'key', attributes: ['createdAt'] },
+    ],
+  },
+  {
     id: 'attendance_qr_tokens',
     name: 'Jetons QR de présence',
     attributes: [
@@ -256,6 +288,33 @@ const schemas = [
       datetime('verifiedAt', false),
     ],
     indexes: [{ key: 'attendance_verification', type: 'key', attributes: ['verificationMethod'] }],
+  },
+  {
+    id: 'subscription_payment_requests',
+    name: 'Demandes de paiement d’abonnement',
+    attributes: [
+      string('userId', 36, true),
+      string('reference', 64, true),
+      string('planCode', 64, true),
+      string('planName', 255, true),
+      enumeration('billingCycle', ['MONTHLY', 'ANNUALLY'], true),
+      integer('amount', true),
+      enumeration('currency', ['XAF', 'EUR', 'USD'], true),
+      string('fullName', 255, true),
+      string('email', 255, true),
+      string('phoneNumber', 64, false, ''),
+      enumeration('status', ['PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED'], true),
+      datetime('requestedAt', true),
+      datetime('processedAt', false),
+      string('processedBy', 36, false, ''),
+      string('adminNote', 1000, false, ''),
+    ],
+    indexes: [
+      { key: 'payment_request_reference', type: 'unique', attributes: ['reference'] },
+      { key: 'payment_request_user_status', type: 'key', attributes: ['userId', 'status'] },
+      { key: 'payment_request_requested_at', type: 'key', attributes: ['requestedAt'] },
+      { key: 'payment_request_status', type: 'key', attributes: ['status'] },
+    ],
   },
 ];
 

@@ -236,6 +236,112 @@ export async function executeAcademicGradesAction(payload: AcademicGradeMutation
   return response
 }
 
+export type MessagingRequest = {
+  action: 'list' | 'open' | 'send'
+  email?: string
+  conversationId?: string
+  text?: string
+}
+
+export type MessagingConversation = {
+  id: string
+  name: string
+  role: UniFlowRole
+  email: string
+  online: boolean
+  time: string
+  preview: string
+  unread: number
+  messages: Array<{ id: string; from: 'me' | 'them'; text: string; time: string; senderId: string }>
+}
+
+export type MessagingResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: 'list' | 'open' | 'send'
+  conversations?: MessagingConversation[]
+  conversation?: MessagingConversation
+}
+
+export const APPWRITE_MESSAGING_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_MESSAGING_FUNCTION_ID || 'messaging')
+
+export async function executeMessagingAction(payload: MessagingRequest): Promise<MessagingResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_MESSAGING_FUNCTION_ID, JSON.stringify(payload), false),
+    'la messagerie sécurisée',
+  )
+  let response: MessagingResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as MessagingResponse } catch {
+    throw new Error('La Function Appwrite de messagerie a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La Function Appwrite a refusé la messagerie.')
+  }
+  return response
+}
+
+export type SubscriptionPaymentRequest = {
+  action: 'create' | 'list' | 'admin-list' | 'review'
+  planCode?: string
+  billingCycle?: 'MONTHLY' | 'ANNUALLY'
+  fullName?: string
+  email?: string
+  phoneNumber?: string
+  status?: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED'
+  requestId?: string
+  decision?: 'CONFIRMED' | 'REJECTED'
+  adminNote?: string
+}
+
+export type SubscriptionPaymentRecord = {
+  id: string
+  userId: string
+  reference: string
+  planCode: string
+  planName: string
+  billingCycle: 'MONTHLY' | 'ANNUALLY'
+  amount: number
+  currency: 'XAF' | 'EUR' | 'USD'
+  fullName: string
+  email: string
+  phoneNumber: string
+  status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED'
+  requestedAt: string
+  processedAt?: string | null
+  processedBy?: string | null
+  adminNote?: string
+  whatsappUrl?: string
+}
+
+export type SubscriptionPaymentResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: SubscriptionPaymentRequest['action']
+  request?: SubscriptionPaymentRecord
+  requests?: SubscriptionPaymentRecord[]
+  idempotent?: boolean
+  subscriptionStatusId?: string | null
+}
+
+export const APPWRITE_SUBSCRIPTION_PAYMENTS_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_SUBSCRIPTION_PAYMENTS_FUNCTION_ID || 'subscription_payments')
+
+export async function executeSubscriptionPaymentAction(payload: SubscriptionPaymentRequest): Promise<SubscriptionPaymentResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_SUBSCRIPTION_PAYMENTS_FUNCTION_ID, JSON.stringify(payload), false),
+    'la demande de paiement WhatsApp',
+  )
+  let response: SubscriptionPaymentResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as SubscriptionPaymentResponse } catch {
+    throw new Error('La Function Appwrite de paiement a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La Function Appwrite a refusé la demande de paiement.')
+  }
+  return response
+}
+
 export type UniFlowAccountType = 'UNIVERSITY' | 'PERSONAL'
 export type UniFlowRole = 'STUDENT' | 'DELEGATE' | 'TEACHER' | 'ADMIN'
 

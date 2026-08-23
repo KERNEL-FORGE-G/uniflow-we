@@ -74,6 +74,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     items: [
       { to: '/admin',           icon: BarChart3,  labelFr: 'Tableau de bord',      labelEn: 'Dashboard',         end: true },
       { to: '/admin/rapports',  icon: FileText,   labelFr: 'Rapports & Analyses',  labelEn: 'Reports',           end: false },
+      { to: '/admin/paiements', icon: CircleDollarSign, labelFr: 'Paiements WhatsApp', labelEn: 'WhatsApp payments', end: false },
       { to: '/admin/historique-presences', icon: CalendarClock, labelFr: 'Historique présences', labelEn: 'Attendance history', end: false },
       { to: '/admin/activite',  icon: Activity,   labelFr: 'Journal d\'activité',  labelEn: 'Activity Log',      end: false },
     ],

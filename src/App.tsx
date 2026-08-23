@@ -63,6 +63,7 @@ const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'))
 const AttendanceHistoryPage = lazy(() => import('./pages/admin/AttendanceHistoryPage'))
 const AdminActivityPage = lazy(() => import('./pages/admin/AdminActivityPage'))
 const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'))
+const AdminPaymentsPage = lazy(() => import('./pages/admin/AdminPaymentsPage'))
 
 // Loading fallback
 function PageLoader() {
@@ -95,6 +96,12 @@ function GuestRoute({ children }: { children: React.ReactNode }) {
   const { authUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
   return authUser ? <Navigate to={authUser.role === 'ADMIN' ? '/admin' : '/app'} replace /> : <>{children}</>
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { authUser, isSessionReady } = useUserRole()
+  if (!isSessionReady) return <PageLoader />
+  return authUser?.role === 'ADMIN' ? <>{children}</> : <Navigate to="/app" replace />
 }
 
 function PersonalAwareRoute({ kind, children }: { kind: 'profile' | 'settings' | 'messages' | 'library' | 'attendance' | 'notifications' | 'video' | 'classrooms' | 'help'; children: React.ReactNode }) {
@@ -221,7 +228,7 @@ export default function App() {
           <Route path="/app/demo" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><DemoPage /></StudentApp>} />
 
           {/* Partie 5 — Administration */}
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin" element={<AuthenticatedRoute><AdminRoute><AdminLayout /></AdminRoute></AuthenticatedRoute>}>
             <Route index element={<AdminDashboardPage />} />
             <Route path="utilisateurs" element={<AdminUsersPage />} />
             <Route path="etudiants" element={<StudentsPage />} />
@@ -232,6 +239,7 @@ export default function App() {
             <Route path="salles" element={<AdminClassroomsPage />} />
             <Route path="parametres" element={<AdminSettingsPage />} />
             <Route path="rapports" element={<AdminReportsPage />} />
+            <Route path="paiements" element={<AdminPaymentsPage />} />
             <Route path="historique-presences" element={<AttendanceHistoryPage />} />
             <Route path="activite" element={<AdminActivityPage />} />
             <Route path="securite" element={<AdminSecurityPage />} />

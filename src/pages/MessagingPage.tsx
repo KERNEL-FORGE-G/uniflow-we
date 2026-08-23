@@ -2,10 +2,8 @@ import { useState, useRef, useEffect } from 'react'
 import { Search, Plus, Phone, Video, Paperclip, Smile, Mic, Send, MoreHorizontal, X, AlertTriangle, UserCircle, Mail, Loader2 } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { AnimatedList } from '../components/ui/AnimatedList'
-import { getToken, messagingApi, type ChatConversation } from '../lib/api'
+import { messagingApi, type ChatConversation } from '../lib/api'
 import { useNavigate } from 'react-router-dom'
-
-const TYPING_DELAY = 1200
 
 interface Message {
   id: string
@@ -34,7 +32,7 @@ export default function MessagingPage() {
   const [loading, setLoading] = useState(true)
   const [text, setText] = useState('')
   const [search, setSearch] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
+  const [isSending, setIsSending] = useState(false)
   const [showInfo, setShowInfo] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
   const [newEmailInput, setNewEmailInput] = useState('')
@@ -46,15 +44,10 @@ export default function MessagingPage() {
     if (active) {
       bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
     }
-  }, [active?.messages, isTyping])
+  }, [active?.messages, isSending])
 
   // Load conversations from the real backend only.
   useEffect(() => {
-    if (!getToken()) {
-      setLoading(false)
-      return
-    }
-
     async function loadConversations() {
       try {
         const list = await messagingApi.conversations()
@@ -62,7 +55,7 @@ export default function MessagingPage() {
         setConvos(conversations)
         if (conversations.length > 0) setActive(conversations[0])
       } catch (err) {
-        console.error('Failed to load conversations', err)
+        setAddError(err instanceof Error ? err.message : 'Les conversations Appwrite sont indisponibles.')
       } finally {
         setLoading(false)
       }
@@ -70,22 +63,33 @@ export default function MessagingPage() {
     loadConversations()
   }, [])
 
-  const handleAddContactByEmail = (e: React.FormEvent) => {
+  const handleAddContactByEmail = async (e: React.FormEvent) => {
     e.preventDefault()
-    setAddError('La création de conversations par e-mail n’est pas disponible via le backend.')
+    setAddError(null)
+    try {
+      const conversation = await messagingApi.openByEmail(newEmailInput)
+      setConvos((previous) => previous.some((entry) => entry.id === conversation.id)
+        ? previous.map((entry) => entry.id === conversation.id ? conversation : entry)
+        : [conversation, ...previous])
+      setActive(conversation)
+      setNewEmailInput('')
+      setShowAddModal(false)
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Le contact universitaire n’a pas pu être ajouté.')
+    }
   }
 
   // Clear unread on select
   const selectConvo = (c: Conversation) => {
     setConvos(prev => prev.map(cv => cv.id === c.id ? { ...cv, unread: 0 } : cv))
     setActive({ ...c, unread: 0 })
-    setIsTyping(false)
+    setIsSending(false)
   }
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!text.trim() || !active) return
-    setIsTyping(true)
+    setIsSending(true)
     setAddError(null)
     try {
       const updated = await messagingApi.sendMessage(active.id, text.trim())
@@ -94,9 +98,9 @@ export default function MessagingPage() {
       setConvos(prev => prev.map(c => c.id === conversation.id ? conversation : c))
       setText('')
     } catch (err: any) {
-      setAddError(err?.message || 'Le message n’a pas pu être envoyé par le backend.')
+      setAddError(err?.message || 'Le message n’a pas pu être envoyé dans Appwrite.')
     } finally {
-      setIsTyping(false)
+      setIsSending(false)
     }
   }
 
@@ -209,14 +213,14 @@ export default function MessagingPage() {
                 <div>
                   <p className="font-semibold text-[#111827]">{active.name}</p>
                   <div className="flex items-center gap-1.5">
-                    {isTyping ? (
+                    {isSending ? (
                       <span className="text-xs text-[#0d9488] font-medium flex items-center gap-1">
                         <span className="flex gap-0.5">
                           <span className="h-1 w-1 rounded-full bg-[#0d9488] animate-bounce" style={{ animationDelay: '0ms' }} />
                           <span className="h-1 w-1 rounded-full bg-[#0d9488] animate-bounce" style={{ animationDelay: '150ms' }} />
                           <span className="h-1 w-1 rounded-full bg-[#0d9488] animate-bounce" style={{ animationDelay: '300ms' }} />
                         </span>
-                        est en train d'écrire...
+                        Envoi sécurisé en cours…
                       </span>
                     ) : active.online ? (
                       <span className="flex items-center gap-1 text-xs text-[#10b981]">
@@ -257,7 +261,7 @@ export default function MessagingPage() {
                     className="h-28 w-28 object-contain opacity-10 animate-pulse" 
                     onError={(e) => { e.currentTarget.src = '/logo_1.png' }}
                   />
-                  <p className="text-xs text-[#9ca3af] mt-2 opacity-50">Commencez la conversation locale avec {active.name}…</p>
+                  <p className="text-xs text-[#9ca3af] mt-2 opacity-50">Commencez la conversation avec {active.name}…</p>
                 </div>
               )}
               {/* Mascot watermark — toujours présente en fond, très discrète */}
@@ -289,7 +293,7 @@ export default function MessagingPage() {
                   </div>
                 </div>
               ))}
-              {isTyping && (
+              {isSending && (
                 <div className="flex items-center gap-2">
                   <Avatar name={active.name} size="sm" />
                   <div className="bg-[#f3f4f6] rounded-2xl rounded-bl-sm px-4 py-2.5">
@@ -314,7 +318,7 @@ export default function MessagingPage() {
                   <Smile className="h-5 w-5" />
                 </button>
                 <input value={text} onChange={e => setText(e.target.value)}
-                  placeholder={`Écrire un message local ou cliquer sur l'enveloppe pour un e-mail réel...`}
+                  placeholder={`Écrire un message à ${active.name}…`}
                   className="flex-1 rounded-lg border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a] focus:ring-1 focus:ring-[#1e3a8a] transition-all" />
                 <button type="button" className="rounded-lg p-2 text-[#9ca3af] hover:bg-[#f3f4f6] hover:text-[#374151] transition-colors">
                   <Mic className="h-5 w-5" />
@@ -446,4 +450,3 @@ export default function MessagingPage() {
     </div>
   )
 }
-
