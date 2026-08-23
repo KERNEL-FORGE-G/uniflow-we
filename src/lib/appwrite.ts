@@ -318,6 +318,7 @@ export interface AcademicGradeDocument {
 
 export interface AcademicAttendanceSessionDocument {
   $id: string
+  $createdAt?: string
   courseId: string
   date: string
   createdBy?: string
@@ -325,10 +326,21 @@ export interface AcademicAttendanceSessionDocument {
 
 export interface AcademicAttendanceRecordDocument {
   $id: string
+  $createdAt?: string
   sessionId: string
   courseId: string
   studentId: string
   status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'
+}
+
+export interface AcademicAttendanceQrTokenDocument {
+  $id: string
+  token: string
+  sessionId: string
+  courseId: string
+  createdBy: string
+  expiresAt: string
+  revoked?: boolean
 }
 
 export interface AcademicDirectoryDocument {
@@ -398,6 +410,7 @@ export const academicAppwriteApi = {
   attendance: {
     sessions: () => listDocuments<AcademicAttendanceSessionDocument>('attendance_sessions', [Query.limit(200)]),
     records: () => listDocuments<AcademicAttendanceRecordDocument>('attendance_records', [Query.limit(200)]),
+    qrTokens: () => listDocuments<AcademicAttendanceQrTokenDocument>('attendance_qr_tokens', [Query.limit(200)]),
     createSession: async (data: { courseId: string; date: string; createdBy: string }) => {
       const document = await awaitAppwrite(
         appwriteDatabases.createDocument(
@@ -435,6 +448,19 @@ export const academicAppwriteApi = {
         'la mise à jour de la présence',
       )
       return document as unknown as AcademicAttendanceRecordDocument
+    },
+    createQrToken: async (data: Omit<AcademicAttendanceQrTokenDocument, '$id'>, actorId: string) => {
+      const document = await awaitAppwrite(
+        appwriteDatabases.createDocument(
+          APPWRITE_DATABASE_ID,
+          'attendance_qr_tokens',
+          ID.unique(),
+          data,
+          [Permission.read(Role.users()), Permission.update(Role.user(actorId)), Permission.delete(Role.user(actorId))],
+        ),
+        'la création du jeton QR de présence',
+      )
+      return document as unknown as AcademicAttendanceQrTokenDocument
     },
   },
   directory: {

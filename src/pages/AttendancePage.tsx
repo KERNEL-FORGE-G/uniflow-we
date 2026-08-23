@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { QrCode, CheckCircle, XCircle, Clock, Calendar, TrendingUp, RefreshCw, AlertCircle, X } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { QrCode, CheckCircle, XCircle, Clock, Calendar, TrendingUp, RefreshCw, AlertCircle, X, Camera, Loader2 } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 import { useApi } from '../hooks/useApi'
@@ -25,6 +25,13 @@ const courseGradients = [
 export default function AttendancePage() {
   const [showQR, setShowQR] = useState(false)
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null)
+  const [qrValue, setQrValue] = useState('')
+  const [qrStatus, setQrStatus] = useState<string | null>(null)
+  const [qrError, setQrError] = useState<string | null>(null)
+  const [qrSubmitting, setQrSubmitting] = useState(false)
+  const [cameraAvailable, setCameraAvailable] = useState(true)
+  const [refreshKey, setRefreshKey] = useState(0)
+  const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null)
 
   // On charge les cours puis les sessions pour chacun
   const { data: courses, loading: lCourses, error: eCourses, refetch } = useApi(() => coursesApi.mine())
@@ -41,8 +48,60 @@ export default function AttendancePage() {
       ? Promise.all((courses as Course[]).map(c => attendanceApi.byCourse(c.id).catch(() => [] as AttendanceSession[])))
         .then(res => res.flat())
       : Promise.resolve([] as AttendanceSession[]),
-    [courses?.length]
+    [courses?.length, refreshKey]
   )
+
+  const submitQr = async (value: string) => {
+    if (!value.trim() || qrSubmitting) return
+    setQrSubmitting(true)
+    setQrError(null)
+    try {
+      const result = await attendanceApi.scan({ qrCode: value.trim() })
+      setQrStatus(result.alreadyRecorded ? 'Votre émargement était déjà enregistré pour cette séance.' : 'Émargement enregistré dans Appwrite.')
+      setRefreshKey((key) => key + 1)
+    } catch (err) {
+      setQrError(err instanceof Error ? err.message : 'Impossible de valider ce QR UniFlow.')
+    } finally {
+      setQrSubmitting(false)
+    }
+  }
+
+  useEffect(() => {
+    if (!showQR) return
+    let cancelled = false
+    const startCamera = async () => {
+      try {
+        const { Html5Qrcode } = await import('html5-qrcode')
+        if (cancelled) return
+        const scanner = new Html5Qrcode('uniflow-qr-reader')
+        scannerRef.current = scanner
+        await scanner.start(
+          { facingMode: 'environment' },
+          { fps: 10, qrbox: { width: 220, height: 220 } },
+          async (decodedText) => {
+            if (cancelled) return
+            await scanner.stop().catch(() => undefined)
+            scannerRef.current = null
+            setQrValue(decodedText)
+            await submitQr(decodedText)
+          },
+          () => undefined,
+        )
+      } catch {
+        if (!cancelled) setCameraAvailable(false)
+      }
+    }
+    setCameraAvailable(true)
+    void startCamera()
+    return () => {
+      cancelled = true
+      const scanner = scannerRef.current
+      scannerRef.current = null
+      if (scanner) void scanner.stop().catch(() => undefined)
+    }
+  // La caméra ne doit démarrer qu’à l’ouverture du modal; la soumission est déclenchée par le scanner.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showQR])
 
   const myRecords = (allSessions ?? []).flatMap((s: AttendanceSession) => s.records ?? [])
   const totalPresent = myRecords.filter(r => r.status === 'PRESENT').length
@@ -89,7 +148,7 @@ export default function AttendancePage() {
           <h1 className="text-xl font-bold text-[#111827]">Mes présences</h1>
           <p className="text-sm text-[#6b7280] mt-0.5">Suivi personnel par matière</p>
         </div>
-        <button onClick={() => setShowQR(true)}
+        <button onClick={() => { setQrStatus(null); setQrError(null); setQrValue(''); setShowQR(true) }}
           className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">
           <QrCode className="h-4 w-4" /> Scanner QR
         </button>
@@ -273,18 +332,19 @@ export default function AttendancePage() {
               <X className="h-5 w-5" />
             </button>
             <h3 className="text-base font-bold text-[#111827] mb-1">Scanner le QR Code</h3>
-            <p className="text-xs text-[#6b7280] mb-4">Pointez votre caméra vers le QR Code de cours</p>
-            <div className="mx-auto flex h-48 w-48 items-center justify-center rounded-xl border-2 border-dashed border-[#1e3a8a] bg-[#eff3ff]">
-              <QrCode className="h-28 w-28 text-[#1e3a8a] animate-pulse" />
-            </div>
+            <p className="text-xs text-[#6b7280] mb-4">Pointez votre caméra vers le QR affiché par le délégué ou saisissez son contenu en secours.</p>
+            <div id="uniflow-qr-reader" className="mx-auto overflow-hidden rounded-xl border-2 border-dashed border-[#1e3a8a] bg-[#eff3ff]" />
+            {!cameraAvailable && <p className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">Caméra indisponible. Utilisez la saisie de secours ci-dessous.</p>}
+            <label className="mt-4 block text-left text-xs font-semibold text-[#374151]">Contenu du QR</label>
+            <textarea value={qrValue} onChange={(event) => setQrValue(event.target.value)} placeholder="Collez le jeton UniFlow…" rows={3} className="mt-1 w-full rounded-xl border border-slate-200 p-2 text-xs outline-none focus:border-[#1e3a8a]" />
+            {qrError && <p className="mt-3 rounded-lg border border-red-200 bg-red-50 p-2 text-left text-xs text-red-700">{qrError}</p>}
+            {qrStatus && <p className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-2 text-left text-xs text-emerald-800">{qrStatus}</p>}
             <button
-              onClick={() => {
-                setShowQR(false)
-                refetch()
-              }}
-              className="mt-5 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-xs font-bold text-white hover:bg-blue-900 shadow-sm"
+              onClick={() => void submitQr(qrValue)} disabled={qrSubmitting || !qrValue.trim()}
+              className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a8a] py-2.5 text-xs font-bold text-white hover:bg-blue-900 shadow-sm disabled:opacity-50"
             >
-              Valider mon émargement
+              {qrSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+              {qrSubmitting ? 'Validation Appwrite…' : 'Valider mon émargement'}
             </button>
           </div>
         </div>

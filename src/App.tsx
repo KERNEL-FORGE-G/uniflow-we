@@ -60,6 +60,7 @@ const UEPage = lazy(() => import('./pages/admin/UEPage'))
 const AdminClassroomsPage = lazy(() => import('./pages/admin/ClassroomsPage'))
 const AdminSettingsPage = lazy(() => import('./pages/admin/AdminSettingsPage'))
 const AdminReportsPage = lazy(() => import('./pages/admin/AdminReportsPage'))
+const AttendanceHistoryPage = lazy(() => import('./pages/admin/AttendanceHistoryPage'))
 const AdminActivityPage = lazy(() => import('./pages/admin/AdminActivityPage'))
 const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'))
 
@@ -231,6 +232,7 @@ export default function App() {
             <Route path="salles" element={<AdminClassroomsPage />} />
             <Route path="parametres" element={<AdminSettingsPage />} />
             <Route path="rapports" element={<AdminReportsPage />} />
+            <Route path="historique-presences" element={<AttendanceHistoryPage />} />
             <Route path="activite" element={<AdminActivityPage />} />
             <Route path="securite" element={<AdminSecurityPage />} />
             <Route path="*" element={<AdminDashboardPage />} />

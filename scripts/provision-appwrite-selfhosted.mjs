@@ -209,6 +209,23 @@ const schemas = [
     ],
     indexes: [{ key: 'owner_notifications', type: 'key', attributes: ['ownerId'] }],
   },
+  {
+    id: 'attendance_qr_tokens',
+    name: 'Jetons QR de présence',
+    attributes: [
+      string('token', 128, true),
+      string('sessionId', 36, true),
+      string('courseId', 36, true),
+      string('createdBy', 36, true),
+      datetime('expiresAt', true),
+      boolean('revoked', false, false),
+    ],
+    indexes: [
+      { key: 'attendance_qr_token_unique', type: 'unique', attributes: ['token'] },
+      { key: 'attendance_qr_session', type: 'key', attributes: ['sessionId'] },
+      { key: 'attendance_qr_expiry', type: 'key', attributes: ['expiresAt'] },
+    ],
+  },
 ];
 
 await ensureDatabase();
