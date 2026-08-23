@@ -51,3 +51,7 @@ Après invalidation du cache PWA de la session de test, la production a servi `i
 ## Vérification Enseignants
 
 La page `#/admin/enseignants` de production affiche désormais « Appwrite · CRUD sécurisé », le bouton « Ajouter un enseignant » et les actions de modification/suppression sur la ligne existante. Le formulaire d’ajout expose prénom, nom, email et mot de passe initial, puis a été fermé sans créer de donnée supplémentaire. Le chargement initial du répertoire peut prendre quelques secondes pendant la résolution de session Appwrite, mais il se termine et présente les données réelles.
+
+## Répertoire administratif sécurisé — complément
+
+La Function `admin_directory` expose désormais une action `list` réservée à un administrateur UY1 / ICT4D / L1. Elle joint les profils et le répertoire uniquement côté serveur afin de transmettre les emails réels aux pages Étudiants et Enseignants sans étendre les permissions de lecture du navigateur. La version production affiche les quatre apprenants existants et leurs contacts Appwrite réels. Les requêtes de répertoire sont dédupliquées en mémoire pendant 60 secondes et le cache est invalidé après toute création, mise à jour ou suppression.
