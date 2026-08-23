@@ -63,3 +63,7 @@ L’inscription universitaire crée actuellement le compte Auth Appwrite et son 
 La liste d’appel charge encore tous les apprenants du répertoire UY1 / ICT4D / L1, sans filtrage par inscription au cours. Les opérations de présence existantes évitent déjà la plupart des doublons côté client, mais la liste de participants et la validation de l’inscription au cours doivent devenir des règles serveur vérifiables.
 
 Les écrans de notes lisent `academic_grades`, mais aucun chemin universitaire sécurisé n’expose aujourd’hui la création ou la mise à jour d’une note par l’enseignant. La moyenne affichée est une moyenne arithmétique et ignore `maxScore` et `coefficient`. Le prochain correctif doit créer un chemin serveur contrôlé par l’affectation enseignant–cours, imposer l’inscription de l’apprenant, et appliquer la formule pondérée normalisée sur 20.
+
+## Déploiement du cycle académique
+
+Les Functions `academic_registration` et `academic_grades` ont été créées avec exécution réservée aux utilisateurs connectés, accès base de données serveur et variable protégée. La Function `attendance_secure` a été redéployée pour enregistrer l’appel manuel après validation serveur du rôle, du cours, des inscriptions et des clés d’idempotence. La production a servi le formulaire universitaire ICT4D / L1 après le commit `cd1105e` et une inscription QA éphémère a été lancée ; le résultat du provisioning et son nettoyage restent à confirmer avant de clôturer ce cycle.
