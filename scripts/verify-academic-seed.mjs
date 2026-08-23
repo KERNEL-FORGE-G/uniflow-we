@@ -11,8 +11,9 @@ async function count(collectionId) {
   return payload.total
 }
 
-const [courses, schedules, enrollments, library, users] = await Promise.all([
+const [courses, schedules, enrollments, library, users, assignments, grades, attendanceSessions, attendanceRecords, subscriptionPlans, subscriptionStatuses] = await Promise.all([
   count('academic_courses'), count('academic_schedules'), count('academic_enrollments'), count('academic_library'), count('users'),
+  count('academic_assignments'), count('academic_grades'), count('attendance_sessions'), count('attendance_records'), count('subscription_plans'), count('subscription_statuses'),
 ])
 
-console.log(JSON.stringify({ endpoint, courses, schedules, enrollments, library, users }, null, 2))
+console.log(JSON.stringify({ endpoint, courses, schedules, enrollments, library, users, assignments, grades, attendanceSessions, attendanceRecords, subscriptionPlans, subscriptionStatuses }, null, 2))

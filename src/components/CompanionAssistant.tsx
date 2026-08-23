@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { Component, type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, useAnimations, useGLTF } from '@react-three/drei'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
@@ -66,9 +66,24 @@ function CompanionScene({ active, reducedMotion }: { active: boolean; reducedMot
       <directionalLight position={[3, 4, 3]} intensity={2.4} color="#cbd8ff" />
       <directionalLight position={[-3, 1, 2]} intensity={1.3} color="#22d3ee" />
       <AnimatedCharacter active={active} reducedMotion={reducedMotion} />
-      <Environment preset="city" />
     </Canvas>
   )
+}
+
+class NovaSceneBoundary extends Component<{ children: ReactNode; onFailure: () => void }, { failed: boolean }> {
+  state = { failed: false }
+
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+
+  componentDidCatch() {
+    this.props.onFailure()
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children
+  }
 }
 
 export function CompanionAssistant() {
@@ -76,6 +91,8 @@ export function CompanionAssistant() {
   const { pathname } = useLocation()
   const reduceMotion = useReducedMotion() ?? false
   const [isOpen, setIsOpen] = useState(false)
+  const [show3D, setShow3D] = useState(false)
+  const [sceneUnavailable, setSceneUnavailable] = useState(false)
 
   // La route emploi du temps doit continuer à n’afficher que la grille hebdomadaire.
   if (pathname === '/app/emploi-du-temps') return null
@@ -108,6 +125,16 @@ export function CompanionAssistant() {
             </div>
             <div className="space-y-3 p-4">
               <p className="text-sm leading-6 text-[#334155]">{message}</p>
+              {!show3D && !sceneUnavailable && (
+                <button
+                  type="button"
+                  onClick={() => setShow3D(true)}
+                  className="w-full rounded-xl border border-[#bae6fd] bg-[#f0f9ff] px-3 py-2 text-xs font-bold text-[#0369a1] transition hover:bg-[#e0f2fe]"
+                >
+                  Activer l’aperçu 3D de Nova
+                </button>
+              )}
+              {sceneUnavailable && <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">L’aperçu 3D n’est pas disponible sur cet appareil. Nova reste accessible en mode assistant.</p>}
               <div className="space-y-1.5">
                 {companionActions.map((action) => {
                   const Icon = action.icon
@@ -135,7 +162,15 @@ export function CompanionAssistant() {
         aria-expanded={isOpen}
         className="group relative flex h-[82px] w-[82px] items-center justify-center overflow-hidden rounded-2xl border border-[#93c5fd] bg-[radial-gradient(circle_at_50%_30%,#ecfeff_0%,#dbeafe_43%,#1e3a8a_100%)] shadow-[0_10px_28px_rgba(30,58,138,0.32)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_32px_rgba(30,58,138,0.4)] focus:outline-none focus:ring-4 focus:ring-[#93c5fd]"
       >
-        <CompanionScene active={isOpen} reducedMotion={reduceMotion} />
+        {show3D && !sceneUnavailable ? (
+          <NovaSceneBoundary onFailure={() => setSceneUnavailable(true)}>
+            <CompanionScene active={isOpen} reducedMotion={reduceMotion} />
+          </NovaSceneBoundary>
+        ) : (
+          <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/30 bg-white/15 text-white shadow-inner">
+            <Sparkles className="h-7 w-7" aria-hidden="true" />
+          </span>
+        )}
         <span className="absolute bottom-1.5 rounded-md bg-[#0f172a]/75 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-white">NOVA</span>
       </button>
     </div>

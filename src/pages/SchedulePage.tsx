@@ -4,20 +4,20 @@ import { useApi } from '../hooks/useApi'
 import { schedulesApi, type Schedule } from '../lib/api'
 import { useUserRole } from '../utils/userRole'
 
-const HOURS = ['08:00','09:00','10:00','11:00','12:00','13:00','14:00','15:00','16:00','17:00','18:00']
 const DAY_LABELS = ['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi']
 const DAY_KEYS   = ['LUNDI','MARDI','MERCREDI','JEUDI','VENDREDI','SAMEDI']
-const CELL_H = 56
+const CELL_H = 64
 
 const typeColors: Record<string, string> = {
   CM: 'bg-[#1e3a8a] border-[#1e3a8a]',
   TD: 'bg-[#0d9488] border-[#0d9488]',
   TP: 'bg-orange-500 border-orange-500',
+  Projet: 'bg-violet-600 border-violet-600',
 }
 
-function timeToRow(time: string): number {
+function timeToRow(time: string, firstHour: number): number {
   const [h, m] = time.split(':').map(Number)
-  return (h - 8) * CELL_H + (m / 60) * CELL_H
+  return (h - firstHour) * CELL_H + (m / 60) * CELL_H
 }
 function timeDuration(start: string, end: string): number {
   const [sh, sm] = start.split(':').map(Number)
@@ -68,6 +68,16 @@ export default function SchedulePage() {
     acc[d].push(s)
     return acc
   }, {})
+  const displayDays = weekDays.filter((day) => (grouped[day.key] ?? []).length > 0)
+  const timetableDays = displayDays.length ? displayDays : weekDays
+  const scheduledMinutes = (schedules ?? []).flatMap((schedule) => [schedule.startTime, schedule.endTime]).map((time) => {
+    const [hour, minute] = time.split(':').map(Number)
+    return hour * 60 + minute
+  })
+  const firstHour = scheduledMinutes.length ? Math.max(7, Math.floor(Math.min(...scheduledMinutes) / 60)) : 8
+  const lastHour = scheduledMinutes.length ? Math.min(20, Math.max(13, Math.ceil(Math.max(...scheduledMinutes) / 60))) : 18
+  const hours = Array.from({ length: lastHour - firstHour + 1 }, (_, index) => `${String(firstHour + index).padStart(2, '0')}:00`)
+  const totalMinutes = (schedules ?? []).reduce((total, schedule) => total + Math.max(0, timeDuration(schedule.startTime, schedule.endTime) / CELL_H * 60), 0)
 
   if (loading) return (
     <div className="space-y-4 animate-fade-in">
@@ -91,9 +101,7 @@ export default function SchedulePage() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
         <div>
           <h1 className="text-xl font-bold text-[#111827]">Emploi du temps</h1>
-          <p className="text-sm text-[#6b7280]">
-            {currentRole === 'teacher' ? 'Vos cours programmés' : 'Planning hebdomadaire'}
-          </p>
+          <p className="text-sm text-[#6b7280]">{currentRole === 'teacher' ? 'Vos cours programmés' : 'Grille ICT4D L1 synchronisée depuis Appwrite'}</p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setWeekOffset(w => w - 1)} className="rounded-lg border border-[#e5e7eb] p-2 hover:bg-[#f9fafb]">
@@ -123,22 +131,27 @@ export default function SchedulePage() {
         </div>
       </div>
 
-      {/* Légende */}
-      <div className="flex items-center gap-3 px-1">
+      {/* Légende et indicateurs issus des créneaux persistés */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5">
         {Object.entries(typeColors).map(([type, cls]) => (
           <span key={type} className="flex items-center gap-1.5 text-xs font-semibold text-[#374151]">
             <span className={`h-2.5 w-2.5 rounded-sm ${cls.split(' ')[0]}`} /> {type}
           </span>
         ))}
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-600">
+          <span className="rounded-full bg-white px-2.5 py-1 shadow-sm">{schedules?.length || 0} créneaux</span>
+          <span className="rounded-full bg-white px-2.5 py-1 shadow-sm">{timetableDays.length} jours actifs</span>
+          <span className="rounded-full bg-white px-2.5 py-1 shadow-sm">{Math.round(totalMinutes / 60)} h planifiées</span>
+        </div>
       </div>
 
       {/* Grille */}
-      <div className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-x-auto">
-        <div className="min-w-[700px]">
+      <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-x-auto">
+        <div className="min-w-[860px]">
           {/* Header jours */}
-          <div className="grid border-b border-[#e5e7eb]" style={{ gridTemplateColumns: '60px repeat(6,1fr)' }}>
-            <div className="border-r border-[#e5e7eb]" />
-            {weekDays.map(d => (
+          <div className="grid border-b border-[#e5e7eb]" style={{ gridTemplateColumns: `64px repeat(${timetableDays.length}, minmax(168px, 1fr))` }}>
+            <div className="border-r border-[#e5e7eb] bg-slate-50" />
+            {timetableDays.map(d => (
               <div
                 key={d.key}
                 className={`border-r border-[#e5e7eb] px-2 py-2 text-center transition-colors ${
@@ -159,38 +172,42 @@ export default function SchedulePage() {
           </div>
 
           {/* Body */}
-          <div className="grid relative" style={{ gridTemplateColumns: '60px repeat(6,1fr)' }}>
+          <div className="grid relative" style={{ gridTemplateColumns: `64px repeat(${timetableDays.length}, minmax(168px, 1fr))` }}>
             {/* Colonne heures */}
-            <div className="border-r border-[#e5e7eb]">
-              {HOURS.map(h => (
-                <div key={h} className="border-b border-[#f3f4f6] text-right pr-2 text-[10px] text-[#9ca3af]" style={{ height: CELL_H }}>
+            <div className="border-r border-[#e5e7eb] bg-slate-50/70">
+              {hours.map(h => (
+                <div key={h} className="border-b border-[#f3f4f6] text-right pr-2 text-[10px] font-semibold text-[#64748b]" style={{ height: CELL_H }}>
                   <span className="relative -top-2">{h}</span>
                 </div>
               ))}
             </div>
 
             {/* Colonnes jours */}
-            {weekDays.map(d => (
+            {timetableDays.map(d => (
               <div
                 key={d.key}
                 className={`relative border-r border-[#e5e7eb] ${d.isToday ? 'bg-[#eff3ff]/20' : ''}`}
               >
-                {HOURS.map(h => <div key={h} className="border-b border-[#f3f4f6]" style={{ height: CELL_H }} />)}
+                {hours.map(h => <div key={h} className="border-b border-[#f3f4f6]" style={{ height: CELL_H }} />)}
                 {(grouped[d.key] ?? []).map(s => {
-                  const top = timeToRow(s.startTime ?? '08:00')
+                  const top = timeToRow(s.startTime ?? `${String(firstHour).padStart(2, '0')}:00`, firstHour)
                   const height = timeDuration(s.startTime ?? '08:00', s.endTime ?? '09:30')
                   const type = s.course?.type ?? 'CM'
                   const color = typeColors[type] ?? typeColors.CM
                   return (
                     <div key={s.id}
                       onClick={() => setSelected(s)}
-                      className={`absolute left-0.5 right-0.5 rounded-lg border ${color} bg-opacity-90 p-1.5 cursor-pointer hover:brightness-110 transition-all`}
-                      style={{ top, height: Math.max(height - 4, 20) }}
+                      className={`absolute left-1 right-1 rounded-xl border ${color} bg-opacity-95 p-2 cursor-pointer shadow-sm ring-1 ring-white/20 hover:-translate-y-0.5 hover:brightness-110 hover:shadow-md transition-all`}
+                      style={{ top, height: Math.max(height - 6, 28) }}
                     >
-                      <p className="text-[10px] font-bold text-white leading-tight truncate">{s.course?.name}</p>
-                      <p className="text-[9px] text-white/80 truncate">{s.startTime} - {s.endTime}</p>
-                      {height > 50 && (
-                        <p className="text-[9px] text-white/70 truncate">{s.course?.classroom?.name}</p>
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="rounded bg-white/20 px-1 py-0.5 text-[8px] font-black tracking-wide text-white">{s.course?.code}</span>
+                        <span className="text-[8px] font-semibold text-white/80">{s.course?.type}</span>
+                      </div>
+                      <p className="mt-1 text-[10px] font-bold text-white leading-tight line-clamp-2">{s.course?.name}</p>
+                      <p className="mt-1 text-[9px] font-semibold text-white/90 truncate">{s.startTime} – {s.endTime}</p>
+                      {height > 64 && (
+                        <p className="mt-0.5 text-[9px] text-white/75 truncate">{s.course?.classroom?.name}</p>
                       )}
                     </div>
                   )

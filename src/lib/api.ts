@@ -489,13 +489,80 @@ export const settingsApi = {
 export interface SupportTicket { id?: string; message: string; category?: string; status?: string }
 export const supportApi = { faqs: async (): Promise<Array<{ q: string; a: string; cat: string }>> => [], sendTicket: async (_ticket: SupportTicket) => unavailable<SupportTicket>('Le support') }
 
-export interface SubscriptionPlan { id: string; code: string; name: string; category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION'; countryCode?: string; currency?: string; priceMonthlyAmount: number; priceAnnuallyAmount: number; priceMonthly: string; priceAnnually: string; period: string; badge?: string; highlight?: boolean; description: string; btnText: string; btnVariant?: string; providers: string[]; features: string[]; status?: 'ACTIVE' | 'INACTIVE' }
+export interface SubscriptionPlan { id: string; code: string; name: string; category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION' | 'ACADEMIC'; countryCode?: string; currency?: string; priceMonthlyAmount: number; priceAnnuallyAmount: number; priceMonthly: string; priceAnnually: string; period: string; badge?: string; highlight?: boolean; description: string; btnText: string; btnVariant?: string; providers: string[]; features: string[]; status?: 'ACTIVE' | 'INACTIVE' }
 export interface PricingInfo { countryCode: string; currency: 'XAF' | 'EUR' | 'USD'; amount: number; formattedPrice: string; billingInterval: string; providers: string[] }
 export interface SubscriptionStatus { status: 'NONE' | 'PENDING' | 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'; planCode?: string | null; countryCode?: string | null; currency?: string | null; monthlyAmount?: number | null; currentPeriodEnd?: string | null; isAutoRenew: boolean }
 export interface CheckoutResult { transactionId?: string; paymentUrl?: string; status?: string; message?: string }
 export type CheckoutPayload = { planId?: string; planCode: string; countryCode: string; paymentProvider?: string; phoneNumber?: string; billingInterval?: 'MONTHLY' | 'ANNUALLY'; billingCycle: 'monthly' | 'annually'; email?: string; fullName?: string }
-const subscriptionsUnavailable = <T>() => unavailable<T>('Les abonnements et paiements')
+
+function subscriptionProviders(value?: string): string[] {
+  try {
+    const parsed = value ? JSON.parse(value) : []
+    return Array.isArray(parsed) ? parsed.filter((provider): provider is string => typeof provider === 'string') : []
+  } catch {
+    return []
+  }
+}
+
+function money(amount: number, currency: string) {
+  return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: currency === 'EUR' || currency === 'USD' ? currency : 'XAF', maximumFractionDigits: 0 }).format(amount)
+}
+
+async function appwriteSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const rows = await academicAppwriteApi.subscriptions.listPlans()
+  return rows.map((row) => ({
+    id: row.$id,
+    code: row.code,
+    name: row.name,
+    category: row.category,
+    countryCode: row.countryCode,
+    currency: row.currency,
+    priceMonthlyAmount: row.priceMonthlyAmount,
+    priceAnnuallyAmount: row.priceAnnuallyAmount,
+    priceMonthly: money(row.priceMonthlyAmount, row.currency),
+    priceAnnually: money(row.priceAnnuallyAmount, row.currency),
+    period: row.period || 'Accès académique',
+    badge: row.badge || undefined,
+    highlight: !!row.highlight,
+    description: row.description,
+    btnText: row.priceMonthlyAmount === 0 ? 'Accès inclus' : 'Choisir cette formule',
+    btnVariant: row.highlight ? 'primary' : 'secondary',
+    providers: subscriptionProviders(row.providers),
+    features: [],
+    status: row.status,
+  }))
+}
+
+async function appwriteSubscriptionStatus(): Promise<SubscriptionStatus> {
+  const current = await getCurrentAccount()
+  if (!current) throw new ApiError(401, 'Connectez-vous pour consulter votre statut de souscription.')
+  const row = await academicAppwriteApi.subscriptions.getStatus(current.id)
+  if (!row) return { status: 'NONE', isAutoRenew: false }
+  return {
+    status: row.status,
+    planCode: row.planCode || null,
+    countryCode: row.countryCode || null,
+    currency: row.currency || null,
+    monthlyAmount: row.monthlyAmount ?? null,
+    currentPeriodEnd: row.currentPeriodEnd || null,
+    isAutoRenew: !!row.isAutoRenew,
+  }
+}
+
 export const subscriptionApi = {
-  getPlans: () => subscriptionsUnavailable<SubscriptionPlan[]>(), getPlanById: (_id: string) => subscriptionsUnavailable<SubscriptionPlan | null>(), getPricing: (_countryCode = 'CM') => subscriptionsUnavailable<PricingInfo>(), getStatus: () => subscriptionsUnavailable<SubscriptionStatus>(), createCheckout: (_payload: CheckoutPayload) => subscriptionsUnavailable<CheckoutResult>(),
+  getPlans: appwriteSubscriptionPlans,
+  getPlanById: async (id: string) => (await appwriteSubscriptionPlans()).find((plan) => plan.id === id || plan.code === id) || null,
+  getPricing: async (countryCode = 'CM') => {
+    const plan = (await appwriteSubscriptionPlans()).find((item) => item.countryCode === countryCode) || (await appwriteSubscriptionPlans())[0]
+    if (!plan) throw new ApiError(404, 'Aucune formule active n’est enregistrée dans Appwrite.')
+    return { countryCode: plan.countryCode || countryCode, currency: (plan.currency || 'XAF') as PricingInfo['currency'], amount: plan.priceMonthlyAmount, formattedPrice: plan.priceMonthly, billingInterval: 'MONTHLY', providers: plan.providers }
+  },
+  getStatus: appwriteSubscriptionStatus,
+  createCheckout: async (payload: CheckoutPayload) => {
+    const plan = await subscriptionApi.getPlanById(payload.planCode)
+    if (!plan) throw new ApiError(404, 'La formule demandée n’existe pas dans Appwrite.')
+    if (plan.priceMonthlyAmount === 0) return { status: 'ACTIVE', message: 'L’accès académique gratuit est déjà inclus dans cette formule Appwrite.' }
+    throw new ApiError(501, 'Aucun prestataire de paiement n’est configuré dans Appwrite pour cette formule. Aucune transaction n’a été initiée.')
+  },
 }
 export const personalSubscriptionApi = subscriptionApi

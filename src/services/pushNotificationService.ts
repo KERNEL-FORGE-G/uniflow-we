@@ -13,10 +13,13 @@ export interface PushNotificationPayload {
   icon?: string
 }
 
+export type AppwritePushChannelState = 'registered' | 'not-configured' | 'unavailable'
+
 class PushNotificationService {
   private swRegistration: ServiceWorkerRegistration | null = null
   private storageKey = 'uniflow_push_notifications_enabled'
   private updateBound = false
+  private appwritePushState: AppwritePushChannelState = 'not-configured'
 
   /**
    * Initialize Service Worker and Push Notification Service
@@ -104,6 +107,17 @@ class PushNotificationService {
       return saved === 'true' && Notification.permission === 'granted'
     }
     return Notification.permission === 'granted'
+  }
+
+  getAppwritePushState(): AppwritePushChannelState {
+    return this.appwritePushState
+  }
+
+  async registerAppwritePushTarget(): Promise<{ state: AppwritePushChannelState; message: string }> {
+    const { registerAppwritePushTarget } = await import('./appwritePushBridge')
+    const result = await registerAppwritePushTarget(this.swRegistration)
+    this.appwritePushState = result.state
+    return result
   }
 
   /**

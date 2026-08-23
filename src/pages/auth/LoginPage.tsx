@@ -42,12 +42,16 @@ export default function LoginPage() {
     e.preventDefault()
     setError(null)
     if (!email || !password) { setError('Veuillez remplir tous les champs.'); return }
-    await login({
-      email,
-      password,
-      accountType,
-      universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined,
-    })
+    try {
+      await login({
+        email,
+        password,
+        accountType,
+        universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined,
+      })
+    } catch {
+      // Le hook expose déjà un message utilisateur Appwrite précis dans `error`.
+    }
   }
 
   return (

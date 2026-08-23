@@ -288,6 +288,35 @@ export interface AcademicLibraryDocument {
   publishedAt: string
 }
 
+export interface SubscriptionPlanDocument {
+  $id: string
+  code: string
+  name: string
+  category: 'PERSONAL' | 'TEACHER' | 'INSTITUTION' | 'ACADEMIC'
+  countryCode: string
+  currency: 'XAF' | 'EUR' | 'USD'
+  priceMonthlyAmount: number
+  priceAnnuallyAmount: number
+  period?: string
+  badge?: string
+  highlight?: boolean
+  description: string
+  providers?: string
+  status: 'ACTIVE' | 'INACTIVE'
+}
+
+export interface SubscriptionStatusDocument {
+  $id: string
+  userId: string
+  status: 'NONE' | 'ACTIVE'
+  planCode?: string
+  countryCode?: string
+  currency?: 'XAF' | 'EUR' | 'USD'
+  monthlyAmount?: number
+  currentPeriodEnd?: string
+  isAutoRenew?: boolean
+}
+
 export const academicAppwriteApi = {
   courses: {
     list: () => listDocuments<AcademicCourseDocument>('academic_courses'),
@@ -297,6 +326,13 @@ export const academicAppwriteApi = {
   },
   library: {
     list: () => listDocuments<AcademicLibraryDocument>('academic_library', [Query.limit(200)]),
+  },
+  subscriptions: {
+    listPlans: () => listDocuments<SubscriptionPlanDocument>('subscription_plans', [Query.equal('status', 'ACTIVE')]),
+    getStatus: async (userId: string) => {
+      const rows = await listDocuments<SubscriptionStatusDocument>('subscription_statuses', [Query.equal('userId', userId)])
+      return rows[0] || null
+    },
   },
 }
 
