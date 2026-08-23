@@ -118,17 +118,17 @@ export default function AttendanceManagePage() {
     setSaving(true)
     setError(null)
     try {
-      const session = await attendanceApi.createSession({
-        courseId: course.id,
-        date: new Date().toISOString(),
-      })
       const statusMap: Record<RollStatus, 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'> = {
         'Présent': 'PRESENT',
         'Absent': 'ABSENT',
         'Late': 'RETARD',
         'Excusé': 'JUSTIFIE',
       }
-      await attendanceApi.saveRoll(session, students.map((student) => ({ studentId: student.id, status: statusMap[student.status] })))
+      await attendanceApi.saveTodayRoll({
+        courseId: course.id,
+        date: new Date().toISOString(),
+        rows: students.map((student) => ({ studentId: student.id, status: statusMap[student.status] })),
+      })
       setSaved(true)
       setPending(0)
       setTimeout(() => setSaved(false), 3500)
