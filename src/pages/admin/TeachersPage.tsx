@@ -26,7 +26,7 @@ export default function TeachersPage() {
   const loadTeachers = async () => {
     setLoading(true)
     try {
-      const data = await teachersApi.list()
+      const data = await teachersApi.listForAdmin()
       setTeachers(data)
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement')

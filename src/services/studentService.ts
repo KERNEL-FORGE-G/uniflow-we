@@ -30,6 +30,10 @@ export const studentService = {
     return studentsApi.list()
   },
 
+  getAllForAdmin: async (): Promise<Student[]> => {
+    return studentsApi.listForAdmin()
+  },
+
   /**
    * Récupère un étudiant par son ID
    */

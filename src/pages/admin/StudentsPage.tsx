@@ -29,7 +29,7 @@ export default function StudentsPage() {
   const loadStudents = async () => {
     setLoading(true)
     try {
-      const data = await studentService.getAll()
+      const data = await studentService.getAllForAdmin()
       setStudents(data)
     } catch (err: any) {
       setError(err.message || 'Erreur lors du chargement')

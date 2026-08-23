@@ -82,7 +82,7 @@ async function ensureNoAcademicReferences(databases, userId, role) {
   return null
 }
 
-export default async ({ req, res }) => {
+export default async ({ req, res, log, error }) => {
   const actorId = normalizeUserId(req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user'])
   if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
 
@@ -95,6 +95,32 @@ export default async ({ req, res }) => {
   const body = parseBody(req)
 
   try {
+    log(`admin_directory action=${typeof body.action === 'string' ? body.action : 'unknown'}`)
+    if (body.action === 'list') {
+      const [directoryResult, profileResult] = await Promise.all([
+        databases.listDocuments(DATABASE_ID, DIRECTORY_COLLECTION, [Query.limit(200)]),
+        databases.listDocuments(DATABASE_ID, PROFILE_COLLECTION, [Query.limit(200)]),
+      ])
+      const directoryEntries = directoryResult.documents.filter((entry) => entry.university === UNIVERSITY && entry.program === PROGRAM && entry.level === LEVEL)
+      const admin = directoryEntries.find((entry) => entry.userId === actorId && entry.role === 'ADMIN')
+      if (!admin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Seul un administrateur UY1/ICT4D/L1 peut consulter les contacts.' }, 403)
+      const profileById = new Map(profileResult.documents.map((profile) => [profile.$id, profile]))
+      const entries = directoryEntries
+        .filter((entry) => roleOf(entry.role))
+        .map((entry) => {
+          const profile = profileById.get(entry.userId)
+          return {
+            userId: entry.userId,
+            name: entry.name,
+            role: entry.role,
+            matricule: entry.matricule || '',
+            status: entry.status || 'ACTIVE',
+            email: typeof profile?.email === 'string' ? profile.email : '',
+          }
+        })
+      return json(res, { ok: true, action: 'list', entries })
+    }
+
     const admin = await assertAdmin(databases, actorId)
     if (!admin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Seul un administrateur UY1/ICT4D/L1 peut gérer les comptes.' }, 403)
 
@@ -144,6 +170,7 @@ export default async ({ req, res }) => {
 
     return json(res, { ok: false, code: 'ACTION_UNKNOWN', message: 'Action de gestion inconnue.' }, 400)
   } catch (exception) {
+    error(`admin_directory action=${typeof body.action === 'string' ? body.action : 'unknown'} failed=${exception?.message || 'unknown'}`)
     return json(res, { ok: false, code: 'ADMIN_DIRECTORY_ERROR', message: exception.message || 'La gestion du compte a échoué.' }, 400)
   }
 }
