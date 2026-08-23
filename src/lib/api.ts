@@ -368,7 +368,12 @@ export const studentsApi = {
   delete: async (_id: string) => universityCollectionUnavailable<void>('Les étudiants'),
 }
 export const teachersApi = {
-  list: async (): Promise<Teacher[]> => (await academicDirectory()).filter((entry) => entry.role === 'TEACHER').map(asTeacher),
+  list: async (): Promise<Teacher[]> => {
+    const [directory, courses] = await Promise.all([academicDirectory(), academicAppwriteApi.courses.list()])
+    return directory
+      .filter((entry) => entry.role === 'TEACHER')
+      .map((entry) => ({ ...asTeacher(entry), courses: courses.filter((course) => course.teacherId === entry.userId).map(asAcademicCourse) }))
+  },
   getOne: async (id: string) => {
     const teacher = (await teachersApi.list()).find((entry) => entry.id === id)
     if (!teacher) throw new ApiError(404, 'Enseignant introuvable dans le répertoire Appwrite.')
