@@ -1,24 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Download, GraduationCap, Loader2, RefreshCw, TrendingUp, Trophy, Sparkles, BookOpen, AlertCircle } from 'lucide-react'
-import { listPersonalGrades, type PersonalGrade } from '../lib/appwrite'
+import { gradesApi, type Grade } from '../lib/api'
 
-type GradeWithScale = PersonalGrade & { maxScore?: string | number; coefficient?: string | number; evaluationTitle?: string }
+type GradeWithScale = Grade
 
 function scoreValue(grade: GradeWithScale) {
-  return Number(grade.score)
+  return Number(grade.grade)
 }
 
 function maxValue(grade: GradeWithScale) {
-  return Math.max(Number(grade.maxScore || 20), 1)
+  return 20
 }
 
 function gradeLabel(grade: GradeWithScale) {
-  return grade.evaluationTitle || grade.label || 'Évaluation sans titre'
+  return grade.title || 'Évaluation sans titre'
 }
 
 function subjectLabel(grade: GradeWithScale) {
-  return grade.subjectId?.trim() || 'Matière non renseignée'
+  return grade.code?.trim() || grade.ue?.trim() || 'Matière non renseignée'
 }
 
 function scoreTone(percent: number) {
@@ -28,7 +28,7 @@ function scoreTone(percent: number) {
 }
 
 export default function GradesPage() {
-  const [grades, setGrades] = useState<PersonalGrade[]>([])
+  const [grades, setGrades] = useState<Grade[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [semester] = useState('Tous les semestres')
@@ -37,10 +37,7 @@ export default function GradesPage() {
     setLoading(true)
     setError(null)
     try {
-      const raw = localStorage.getItem('uniflow_user')
-      const user = raw ? JSON.parse(raw) as { id?: string } : null
-      if (!user?.id) throw new Error('Connectez-vous pour afficher vos notes réelles.')
-      setGrades(await listPersonalGrades(user.id))
+      setGrades(await gradesApi.mine())
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Impossible de charger les notes depuis Appwrite.')
       setGrades([])
@@ -158,11 +155,10 @@ export default function GradesPage() {
                 </motion.div>
               ) : (
                 <div className="grid gap-3 lg:grid-cols-2">
-                  {grades.map((rawGrade, index) => {
-                    const grade = rawGrade as GradeWithScale
+                  {grades.map((grade, index) => {
                     const percent = Math.min(100, Math.max(0, (scoreValue(grade) / maxValue(grade)) * 100))
                     const tone = scoreTone(percent)
-                    return <motion.article key={grade.$id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-white hover:shadow-lg hover:shadow-teal-900/5 dark:border-slate-800 dark:bg-slate-800/50 dark:hover:bg-slate-800">
+                    return <motion.article key={grade.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="group rounded-2xl border border-slate-200 bg-slate-50/70 p-4 transition hover:-translate-y-0.5 hover:border-teal-300 hover:bg-white hover:shadow-lg hover:shadow-teal-900/5 dark:border-slate-800 dark:bg-slate-800/50 dark:hover:bg-slate-800">
                       <div className="flex items-start justify-between gap-4">
                         <div className="min-w-0"><p className="truncate font-bold text-slate-900 dark:text-white">{gradeLabel(grade)}</p><p className="mt-1 truncate text-xs font-medium text-slate-500 dark:text-slate-400">Matière : {subjectLabel(grade)}</p></div>
                         <div className="shrink-0 text-right"><p className={`text-2xl font-black ${tone.text}`}>{scoreValue(grade)}<span className="text-sm font-bold text-slate-400">/{maxValue(grade)}</span></p><p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{tone.badge}</p></div>
