@@ -45,3 +45,9 @@ La Function `notification_alerts` est maintenant déployée avec les événement
 Après le push `3b290cb` sur `main`, l’URL canonique `https://uniflow.kernelforge.codes/` sert le nouveau bundle Vercel. La navigation vers `#/admin/securite` a affiché l’administration et la page Sécurité & Accès sans erreur console visible. Depuis l’accueil, le lien « Accéder à l’application » a reconnu la session persistante et affiché « Connecté / Mon espace ».
 
 Le tableau de bord connecté affiche toutefois des états « Aucune donnée » pour les indicateurs qui ne sont pas chargés sur cette route dans cette session, sans valeurs fictives. La console n’a signalé aucune erreur ; les pages spécialisées restent la source des listes Appwrite réelles. Ce point doit être conservé comme état à surveiller plutôt que remplacé par des nombres inventés.
+## Test CRUD depuis l’interface
+
+Après invalidation du cache PWA de la session de test, la production a servi `index-CBbtjtiE.js` et affiché « Appwrite · CRUD sécurisé », le bouton « Ajouter un étudiant » ainsi que les actions modifier/supprimer. Le formulaire a créé le compte QA `qa.crud.1641853@kernelforge.codes` ; l’exécution `admin_directory` correspondante est terminée avec HTTP 200 et les collections contenaient bien le profil UY1 / ICT4D / L1. Le compte Auth et son document `academic_directory` ont ensuite été supprimés avec HTTP 204. Aucun artefact de test n’est conservé.
+## Vérification Enseignants
+
+La page `#/admin/enseignants` de production affiche désormais « Appwrite · CRUD sécurisé », le bouton « Ajouter un enseignant » et les actions de modification/suppression sur la ligne existante. Le formulaire d’ajout expose prénom, nom, email et mot de passe initial, puis a été fermé sans créer de donnée supplémentaire. Le chargement initial du répertoire peut prendre quelques secondes pendant la résolution de session Appwrite, mais il se termine et présente les données réelles.
