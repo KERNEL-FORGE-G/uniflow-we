@@ -65,10 +65,13 @@ export default function DashboardPage() {
     try {
       const [courses, assignments, grades] = await Promise.all([coursesApi.mine(), assignmentsApi.mine(), gradesApi.mine()])
       const gradeAverage = grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade), 0) / grades.length : null
-      setOverview({ courseCount: courses.length, assignmentCount: assignments.length, gradeCount: grades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: null, studentCount: 0 })
+      const nextOverview = { courseCount: courses.length, assignmentCount: assignments.length, gradeCount: grades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: null, studentCount: 0 }
+      setOverview(nextOverview)
+      return nextOverview
     } catch (err) {
       setOverviewError(err instanceof Error ? err.message : 'Impossible de charger les données Appwrite du dashboard.')
       setOverview({ courseCount: 0, assignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
+      return null
     } finally {
       setOverviewLoading(false)
     }
@@ -76,11 +79,19 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isSessionReady || !authUser?.id) return
-    void refetchOverview()
-    // Après une connexion, le cookie Appwrite et le profil peuvent se stabiliser
-    // juste après le premier rendu. Un second passage évite un compteur initial à zéro.
-    const retry = window.setTimeout(() => { void refetchOverview() }, 700)
-    return () => window.clearTimeout(retry)
+    let cancelled = false
+    const loadAfterSession = async () => {
+      // Après une connexion, cookie et profil Appwrite peuvent devenir lisibles
+      // quelques instants après le premier rendu. Trois essais bornés évitent un
+      // tableau initial vide sans inventer de données ni exiger un clic manuel.
+      for (let attempt = 0; attempt < 3 && !cancelled; attempt += 1) {
+        const loaded = await refetchOverview()
+        if (loaded && (loaded.courseCount > 0 || loaded.assignmentCount > 0 || loaded.gradeCount > 0)) return
+        if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 900))
+      }
+    }
+    void loadAfterSession()
+    return () => { cancelled = true }
   }, [authUser?.id, isSessionReady])
   const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 
@@ -330,7 +341,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[#6b7280]">Aucune activité récente fournie par le backend.</p>
+              <p className="text-xs text-[#6b7280]">Aucune activité académique Appwrite n’est encore disponible.</p>
             )}
           </div>
         </div>
@@ -395,7 +406,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-[#6b7280]">Aucun cours prévu aujourd’hui dans le backend.</p>
+              <p className="text-xs text-[#6b7280]">Aucun cours Appwrite n’est planifié aujourd’hui.</p>
             )}
           </div>
 
@@ -434,7 +445,7 @@ export default function DashboardPage() {
                 <AlertTriangle className="h-4 w-4 text-[#d97706]" />
                 <h2 className="text-sm font-bold text-[#111827]">Tâches pédagogiques</h2>
               </div>
-              <p className="text-xs text-[#6b7280]">Les tâches seront affichées ici dès que le backend fournira les données de votre espace enseignant.</p>
+              <p className="text-xs text-[#6b7280]">Les tâches pédagogiques Appwrite apparaîtront ici dès leur enregistrement pour ce cours.</p>
               <button onClick={() => navigate('/app/mes-cours-enseignant')} className="mt-3 text-xs font-bold text-[#1e3a8a] hover:underline">Ouvrir l’espace pédagogique →</button>
             </div>
           )}
@@ -445,7 +456,7 @@ export default function DashboardPage() {
                 <Users className="h-4 w-4 text-[#0d9488]" />
                 <h2 className="text-sm font-bold text-[#111827]">Suivi de cohorte</h2>
               </div>
-              <p className="text-xs text-[#6b7280]">Les statistiques de cohorte seront affichées après synchronisation avec le backend.</p>
+              <p className="text-xs text-[#6b7280]">Les statistiques de cohorte apparaîtront lorsque les données de présence Appwrite seront agrégées.</p>
               <button onClick={() => navigate('/app/gestion-presences')} className="mt-3 text-xs font-bold text-[#0d9488] hover:underline">Gérer les présences →</button>
             </div>
           )}
