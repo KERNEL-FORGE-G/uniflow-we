@@ -117,7 +117,11 @@ export default async ({ req, res, log, error }) => {
       const date = requireValue(body.date, 'date')
       const dateKey = new Date(date).toISOString().slice(0, 10)
       if (Number.isNaN(new Date(date).getTime())) return json(res, { ok: false, code: 'DATE_INVALID', message: 'Date de séance invalide.' }, 400)
-      const courses = await databases.listDocuments(DATABASE_ID, 'academic_courses', [Query.equal('$id', courseId), Query.limit(1)])
+      const [courses, enrollments, sessions] = await Promise.all([
+        databases.listDocuments(DATABASE_ID, 'academic_courses', [Query.equal('$id', courseId), Query.limit(1)]),
+        databases.listDocuments(DATABASE_ID, 'academic_enrollments', [Query.equal('courseId', courseId), Query.limit(200)]),
+        databases.listDocuments(DATABASE_ID, 'attendance_sessions', [Query.equal('courseId', courseId), Query.limit(200)]),
+      ])
       const course = courses.documents[0]
       if (!course || course.university !== 'Université de Yaoundé I' || course.program !== 'ICT4D' || course.level !== 'L1') return json(res, { ok: false, code: 'COURSE_INVALID', message: 'Cours académique invalide.' }, 404)
       if (profile.role === 'TEACHER' && course.teacherId !== userId) return json(res, { ok: false, code: 'COURSE_ASSIGNMENT_DENIED', message: 'Cet enseignant n’est pas affecté à ce cours.' }, 403)
@@ -125,10 +129,8 @@ export default async ({ req, res, log, error }) => {
       if (rows.some((row) => !row || typeof row.studentId !== 'string' || !['PRESENT', 'ABSENT', 'RETARD', 'JUSTIFIE'].includes(row.status))) return json(res, { ok: false, code: 'ROLL_INVALID', message: 'La liste d’appel contient un statut ou un apprenant invalide.' }, 400)
       const studentIds = [...new Set(rows.map((row) => row.studentId))]
       if (studentIds.length !== rows.length) return json(res, { ok: false, code: 'ROLL_DUPLICATE', message: 'Un apprenant ne peut apparaître qu’une seule fois dans le même appel.' }, 400)
-      const enrollments = await databases.listDocuments(DATABASE_ID, 'academic_enrollments', [Query.equal('courseId', courseId), Query.limit(200)])
       const activeStudentIds = new Set(enrollments.documents.filter((entry) => entry.status !== 'INACTIVE').map((entry) => entry.studentId))
       if (studentIds.some((studentId) => !activeStudentIds.has(studentId))) return json(res, { ok: false, code: 'ENROLLMENT_REQUIRED', message: 'La liste d’appel contient un apprenant qui n’est pas inscrit à ce cours.' }, 403)
-      const sessions = await databases.listDocuments(DATABASE_ID, 'attendance_sessions', [Query.equal('courseId', courseId), Query.limit(200)])
       let session = sessions.documents.find((entry) => String(entry.date).slice(0, 10) === dateKey)
       if (!session) {
         const sessionId = deterministicId('ses', `${courseId}:${dateKey}`)
@@ -141,26 +143,25 @@ export default async ({ req, res, log, error }) => {
       }
       const records = await databases.listDocuments(DATABASE_ID, 'attendance_records', [Query.equal('sessionId', session.$id), Query.limit(200)])
       const byStudentId = new Map(records.documents.map((record) => [record.studentId, record]))
-      let created = 0
-      let updated = 0
-      for (const row of rows) {
+      const writeResults = await Promise.all(rows.map(async (row) => {
         const existing = byStudentId.get(row.studentId)
-        if (existing?.status === row.status) continue
+        if (existing?.status === row.status) return { created: 0, updated: 0 }
         if (existing) {
           await databases.updateDocument(DATABASE_ID, 'attendance_records', existing.$id, { status: row.status, verificationMethod: 'MANUAL', proximityStatus: 'NOT_REQUIRED', verifiedAt: new Date().toISOString() })
-          updated += 1
-          continue
+          return { created: 0, updated: 1 }
         }
         const recordId = deterministicId('att', `${session.$id}:${row.studentId}`)
         try {
           await databases.createDocument(DATABASE_ID, 'attendance_records', recordId, { sessionId: session.$id, courseId, studentId: row.studentId, status: row.status, verificationMethod: 'MANUAL', proximityStatus: 'NOT_REQUIRED', proximityDistanceMeters: -1, locationAccuracyMeters: -1, verifiedAt: new Date().toISOString() }, [Permission.read(Role.users()), Permission.update(Role.user(userId)), Permission.delete(Role.user(userId))])
-          created += 1
+          return { created: 1, updated: 0 }
         } catch (creationError) {
           if (Number(creationError?.code) !== 409) throw creationError
           await databases.updateDocument(DATABASE_ID, 'attendance_records', recordId, { status: row.status, verificationMethod: 'MANUAL', proximityStatus: 'NOT_REQUIRED', verifiedAt: new Date().toISOString() })
-          updated += 1
+          return { created: 0, updated: 1 }
         }
-      }
+      }))
+      const created = writeResults.reduce((sum, result) => sum + result.created, 0)
+      const updated = writeResults.reduce((sum, result) => sum + result.updated, 0)
       return json(res, { ok: true, action: 'roll', sessionId: session.$id, courseId, date: session.date, created, updated })
     }
 
