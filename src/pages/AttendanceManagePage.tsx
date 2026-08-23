@@ -25,6 +25,7 @@ export default function AttendanceManagePage() {
   const [saved, setSaved] = useState(false)
   const [activeTab, setActiveTab] = useState<'appel'|'annonces'>('appel')
   const [loading, setLoading] = useState(true)
+  const [attendanceLoading, setAttendanceLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,24 +45,13 @@ export default function AttendanceManagePage() {
           setSelectedCode(myCourses[0].code)
         }
 
-        const todayKey = new Date().toISOString().slice(0, 10)
-        const todaySession = myCourses[0]
-          ? (await attendanceApi.byCourse(myCourses[0].id)).find((session) => session.date.slice(0, 10) === todayKey)
-          : undefined
-        const persistedStatuses = new Map(todaySession?.records.map((record) => [record.studentId, record.status]) ?? [])
-        const statusFromAppwrite: Record<'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE', RollStatus> = {
-          PRESENT: 'Présent',
-          ABSENT: 'Absent',
-          RETARD: 'Late',
-          JUSTIFIE: 'Excusé',
-        }
-
-        // Format student rolls with the persisted state for today when it exists.
+        // Le relevé historique est chargé séparément : son délai ne doit jamais
+        // bloquer l’affichage des cours et de la liste d’appel.
         const rolls: StudentRoll[] = studentList.map((s: Student) => ({
           id: s.id,
           name: `${s.firstName} ${s.lastName}`,
           email: s.user?.email || '',
-          status: persistedStatuses.get(s.id) ? statusFromAppwrite[persistedStatuses.get(s.id) as keyof typeof statusFromAppwrite] : 'Présent' as RollStatus
+          status: 'Présent'
         }))
         setStudents(rolls)
       } catch (err) {
@@ -72,6 +62,43 @@ export default function AttendanceManagePage() {
     }
     loadData()
   }, [])
+
+  useEffect(() => {
+    const selectedCourse = courses.find((item) => item.code === selectedCode)
+    const selectedCourseId = selectedCourse?.id
+    if (!selectedCourseId || students.length === 0) return
+
+    let mounted = true
+    const statusFromAppwrite: Record<'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE', RollStatus> = {
+      PRESENT: 'Présent',
+      ABSENT: 'Absent',
+      RETARD: 'Late',
+      JUSTIFIE: 'Excusé',
+    }
+
+    async function loadPersistedStatuses() {
+      setAttendanceLoading(true)
+      try {
+        const todayKey = new Date().toISOString().slice(0, 10)
+        const todaySession = (await attendanceApi.byCourse(selectedCourseId!)).find((session) => session.date.slice(0, 10) === todayKey)
+        if (!mounted) return
+        const persistedStatuses = new Map(todaySession?.records.map((record) => [record.studentId, record.status]) ?? [])
+        setStudents((current) => current.map((student) => ({
+          ...student,
+          status: persistedStatuses.get(student.id)
+            ? statusFromAppwrite[persistedStatuses.get(student.id) as keyof typeof statusFromAppwrite]
+            : 'Présent',
+        })))
+      } catch (err) {
+        if (mounted) setError(err instanceof Error ? `Le relevé existant reste indisponible : ${err.message}` : 'Le relevé existant reste indisponible.')
+      } finally {
+        if (mounted) setAttendanceLoading(false)
+      }
+    }
+
+    loadPersistedStatuses()
+    return () => { mounted = false }
+  }, [courses, selectedCode, students.length])
 
   const course = courses.find(c => c.code === selectedCode)
   const present  = students.filter(s => s.status === 'Présent').length
@@ -92,34 +119,24 @@ export default function AttendanceManagePage() {
       return
     }
     setSaving(true)
+    setError(null)
     try {
-        // Create session
-        const session = await attendanceApi.createSession({
-          courseId: course.id,
-          date: new Date().toISOString()
-        })
-
-        // Map UI statuses to backend statuses
-        const statusMap: Record<RollStatus, 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'> = {
-          'Présent': 'PRESENT',
-          'Absent': 'ABSENT',
-          'Late': 'RETARD',
-          'Excusé': 'JUSTIFIE'
-        }
-
-        // Submit each student attendance
-        await Promise.all(
-          students.map(s => attendanceApi.mark(session.id, {
-            studentId: s.id,
-            status: statusMap[s.status],
-          }))
-        )
-
-        setSaved(true)
-        setPending(0)
-        setTimeout(() => setSaved(false), 3500)
+      const session = await attendanceApi.createSession({
+        courseId: course.id,
+        date: new Date().toISOString(),
+      })
+      const statusMap: Record<RollStatus, 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'> = {
+        'Présent': 'PRESENT',
+        'Absent': 'ABSENT',
+        'Late': 'RETARD',
+        'Excusé': 'JUSTIFIE',
+      }
+      await attendanceApi.saveRoll(session, students.map((student) => ({ studentId: student.id, status: statusMap[student.status] })))
+      setSaved(true)
+      setPending(0)
+      setTimeout(() => setSaved(false), 3500)
     } catch (err) {
-      alert('Erreur lors de la validation : ' + (err as any).message)
+      setError(`Erreur lors de la validation Appwrite : ${err instanceof Error ? err.message : 'échec inconnu.'}`)
     } finally {
       setSaving(false)
     }
@@ -319,10 +336,10 @@ export default function AttendanceManagePage() {
                   <p className="text-xs text-[#9ca3af] flex items-center gap-1.5">
                     <HelpCircle className="h-4 w-4" /> Les absences sont persistées dans Appwrite ; les notifications distantes exigent un fournisseur FCM configuré.
                   </p>
-                  <button onClick={handleSave} disabled={saving}
+                  <button onClick={handleSave} disabled={saving || attendanceLoading || !course}
                     className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-50">
-                    {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
-                    Valider et sauvegarder
+                    {saving || attendanceLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
+                    {attendanceLoading ? 'Chargement du relevé…' : saving ? 'Sauvegarde Appwrite…' : 'Valider et sauvegarder'}
                   </button>
                 </div>
               </div>

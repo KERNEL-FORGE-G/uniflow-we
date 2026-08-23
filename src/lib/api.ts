@@ -456,6 +456,23 @@ export const attendanceApi = {
     const created = await academicAppwriteApi.attendance.createRecord({ sessionId, courseId: session.courseId, studentId: dto.studentId, status: dto.status as AttendanceRecord['status'] }, current.id)
     return { id: created.$id, studentId: created.studentId, status: created.status, student: { firstName: student.firstName, lastName: student.lastName, matricule: student.matricule } }
   },
+  saveRoll: async (session: Pick<AttendanceSession, 'id' | 'courseId'>, rows: Array<{ studentId: string; status: AttendanceRecord['status'] }>) => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
+    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut enregistrer une présence.')
+
+    const existingRecords = await academicAppwriteApi.attendance.records()
+    const byStudentId = new Map(existingRecords
+      .filter((record) => record.sessionId === session.id)
+      .map((record) => [record.studentId, record]))
+
+    return Promise.all(rows.map(async (row) => {
+      const existing = byStudentId.get(row.studentId)
+      if (existing?.status === row.status) return existing
+      if (existing) return academicAppwriteApi.attendance.updateRecord(existing.$id, row.status)
+      return academicAppwriteApi.attendance.createRecord({ sessionId: session.id, courseId: session.courseId, studentId: row.studentId, status: row.status }, current.id)
+    }))
+  },
   scan: async (_dto: { qrCode: string }) => unavailable<AttendanceRecord>('Les présences'),
 }
 
