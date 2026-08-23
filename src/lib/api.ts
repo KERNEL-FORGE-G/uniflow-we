@@ -591,12 +591,72 @@ export const libraryApi = {
   upload: async (_dto: Partial<LibraryResource>) => unavailable<LibraryResource>('La bibliothèque universitaire'),
 }
 
-export interface UE { id: string; name: string; code: string; credits: number; courses?: Course[] }
+export interface UE {
+  id: string
+  name: string
+  code: string
+  credits: number
+  hours: number
+  teacherName: string
+  type: string
+  classroom: string
+  enrollmentCount: number
+  scheduleCount: number
+  scheduledHours: number
+  courses?: Course[]
+}
+
+function scheduleHours(startTime: string, endTime: string) {
+  const toMinutes = (value: string) => {
+    const [hour = '0', minute = '0'] = value.split(':')
+    return Number(hour) * 60 + Number(minute)
+  }
+  const duration = toMinutes(endTime) - toMinutes(startTime)
+  return duration > 0 ? duration / 60 : 0
+}
+
+async function academicTeachingUnits(): Promise<UE[]> {
+  const current = await getCurrentAccount('UNIVERSITY')
+  if (!current || current.role !== 'ADMIN') {
+    throw new ApiError(403, 'La consultation du référentiel pédagogique Appwrite est réservée au rôle administrateur.')
+  }
+
+  const [courses, schedules, enrollments] = await Promise.all([
+    academicAppwriteApi.courses.list(),
+    academicAppwriteApi.schedules.list(),
+    academicAppwriteApi.enrollments.list(),
+  ])
+
+  return courses
+    .filter((course) => course.university === 'Université de Yaoundé I' && course.program === 'ICT4D' && course.level === 'L1')
+    .map((course) => {
+      const courseSchedules = schedules.filter((schedule) => schedule.courseId === course.$id)
+      return {
+        id: course.$id,
+        name: course.name,
+        code: course.code,
+        credits: Number(course.credits || 0),
+        hours: Number(course.hours || 0),
+        teacherName: course.teacherName || 'Non renseigné',
+        type: course.type || 'Non renseigné',
+        classroom: course.classroom || 'Non renseignée',
+        enrollmentCount: enrollments.filter((enrollment) => enrollment.courseId === course.$id).length,
+        scheduleCount: courseSchedules.length,
+        scheduledHours: courseSchedules.reduce((total, schedule) => total + scheduleHours(schedule.startTime, schedule.endTime), 0),
+      }
+    })
+    .sort((left, right) => left.code.localeCompare(right.code))
+}
+
 export const ueApi = {
-  list: async (): Promise<UE[]> => [],
-  byLevel: async (_id: string): Promise<UE[]> => [],
-  bySemester: async (_id: string): Promise<UE[]> => [],
-  getOne: async (_id: string) => unavailable<UE>('Les unités d’enseignement'),
+  list: academicTeachingUnits,
+  byLevel: async (id: string): Promise<UE[]> => id === 'L1' ? academicTeachingUnits() : [],
+  bySemester: async (_id: string): Promise<UE[]> => unavailable<UE[]>('Les semestres d’unités d’enseignement'),
+  getOne: async (id: string) => {
+    const unit = (await academicTeachingUnits()).find((item) => item.id === id)
+    if (!unit) throw new ApiError(404, 'Cours introuvable dans le référentiel Appwrite ICT4D L1.')
+    return unit
+  },
   create: async (_dto: Partial<UE> & { levelId?: string; semesterId?: string }) => unavailable<UE>('Les unités d’enseignement'),
   update: async (_id: string, _dto: Partial<UE>) => unavailable<UE>('Les unités d’enseignement'),
   delete: async (_id: string) => unavailable<void>('Les unités d’enseignement'),
