@@ -222,7 +222,7 @@ export default function AdminDashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-2xl font-black text-[#111827]">Tableau de bord Admin</h1>
             <span className="rounded-full bg-[#eff3ff] px-3 py-1 text-xs font-extrabold text-[#1e3a8a] border border-[#1e3a8a]/20">
-              Vue Analytique API
+              Vue analytique Appwrite
             </span>
             <span className="flex items-center gap-1.5 rounded-full bg-[#f3f4f6] px-3 py-1 text-xs font-bold text-[#374151] border border-[#e5e7eb]">
               <Calendar className="h-3.5 w-3.5 text-[#1e3a8a]" />
@@ -230,13 +230,13 @@ export default function AdminDashboardPage() {
             </span>
           </div>
           <p className="text-sm text-[#6b7280] mt-1">
-            Analyse dynamique connectée aux endpoints{' '}
+            Analyse dynamique connectée aux collections Appwrite{' '}
             <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 font-mono text-xs text-[#1e3a8a]">
-              /students
+              academic_directory
             </code>{' '}
             et{' '}
             <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 font-mono text-xs text-[#1e3a8a]">
-              /attendance/sessions
+              attendance_sessions
             </code>
           </p>
         </div>

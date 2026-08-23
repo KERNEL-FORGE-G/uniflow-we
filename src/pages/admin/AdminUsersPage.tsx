@@ -32,10 +32,9 @@ export default function AdminUsersPage() {
       try {
         const rawUsers = await usersApi.listAll()
         const formatted: User[] = rawUsers.map((u: any) => {
-          const isStudent = u.type === 'student'
-          const roleMapped = isStudent
-            ? (u.status === 'delegate' ? 'Délégué' : 'Étudiant')
-            : 'Enseignant'
+          const roleMapped = u.type === 'teacher'
+            ? 'Enseignant'
+            : (u.status === 'delegate' ? 'Délégué' : 'Étudiant')
 
           return {
             id: u.id,
@@ -75,7 +74,7 @@ export default function AdminUsersPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">Gestion des utilisateurs</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">{users.length} comptes synchronisés du backend</p>
+          <p className="text-sm text-[#6b7280] mt-0.5">{users.length} comptes du répertoire académique Appwrite</p>
         </div>
         <div className="flex gap-2">
           <button onClick={() => navigate('/admin/etudiants')}
@@ -175,4 +174,3 @@ export default function AdminUsersPage() {
     </div>
   )
 }
-
