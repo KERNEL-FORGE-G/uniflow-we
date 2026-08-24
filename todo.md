@@ -29,6 +29,9 @@
 - [x] Créer une présentation de configuration et référencement Google destinée à l’équipe UniFlow.
 - [x] Analyser les mots-clés concurrents et les opportunités de positionnement du marché des logiciels de gestion universitaire pour UniFlow.
 - [x] Documenter les opportunités de mots-clés francophones à partir de résultats publics, sans inventer de volume, trafic ou position concurrentielle.
+- [x] Définir la structure éditoriale des pages cibles « présence QR code université » et « émargement universitaire ».
+- [x] Rédiger le guide comparatif « SIS vs logiciel de gestion scolaire » avec périmètre factuel UniFlow.
+- [x] Créer une présentation de synthèse de l’analyse concurrentielle des mots-clés pour l’équipe UniFlow.
 - [x] Auditer les plans, statuts et écrans d’abonnement Appwrite afin d’identifier les actions indisponibles ou simulées.
 - [x] Enregistrer une demande d’abonnement Appwrite avec référence unique, statut en attente et lien WhatsApp prérempli vers le numéro fourni.
 - [x] Ajouter le contrôle administratif manuel qui confirme ou rejette une demande après vérification externe de la preuve de paiement.
