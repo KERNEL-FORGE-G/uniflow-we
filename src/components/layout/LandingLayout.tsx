@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { useUserRole } from '../../utils/userRole'
+import logo from '../../assets/logo.png'
 
 const navLinks = [
   { to: '/about',        label: 'À propos' },
@@ -26,21 +27,11 @@ export function LandingNavbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
           <img
-            src="https://i.imgur.com/GAiZ7WY.png"
+            src={logo}
             alt="UniFlow"
             loading="eager"
             decoding="async"
             className="h-10 w-auto object-contain"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              if (!target.dataset.triedFallback1) {
-                target.dataset.triedFallback1 = 'true'
-                target.src = '/logo_1.png'
-              } else if (!target.dataset.triedFallback2) {
-                target.dataset.triedFallback2 = 'true'
-                target.src = '/logo.png'
-              }
-            }}
           />
         </Link>
 
@@ -116,31 +107,20 @@ export function LandingFooter() {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
               <img 
-                src="https://i.imgur.com/GAiZ7WY.png" 
+                src={logo}
                 alt="UniFlow" 
                 className="h-10 w-auto object-contain" 
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  if (!target.dataset.triedFallback1) {
-                    target.dataset.triedFallback1 = 'true'
-                    target.src = '/logo_1.png'
-                  } else if (!target.dataset.triedFallback2) {
-                    target.dataset.triedFallback2 = 'true'
-                    target.src = '/logo.png'
-                  }
-                }} 
               />
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
-              La plateforme universitaire intelligente conçue pour les universités africaines.
-              Offline First, sécurisée, multi-rôles.
+              Une plateforme académique UniFlow reliée à Appwrite, validée sur le périmètre UY1 / ICT4D / L1.
             </p>
             <div className="mt-5 flex gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-300">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Offline First
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" /> Données Appwrite
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-300">
-                <Lock className="h-3 w-3 text-slate-400" /> JWT + RBAC
+                <Lock className="h-3 w-3 text-slate-400" /> Accès par rôle
               </span>
             </div>
           </div>
@@ -151,9 +131,9 @@ export function LandingFooter() {
             <ul className="space-y-2.5 text-sm">
               {[
                 { to: '/#fonctionnalites', label: 'Fonctionnalités' },
-                { to: '/sentinelle', label: 'Sentinelle IoT' },
                 { to: '/presentation', label: 'Présentation' },
                 { to: '/pricing', label: 'Tarifs' },
+                { to: '/forum', label: 'Forum' },
               ].map(l => (
                 <li key={l.label}>
                   <Link to={l.to} className="text-slate-400 hover:text-white transition-colors">{l.label}</Link>
@@ -167,10 +147,9 @@ export function LandingFooter() {
             <h4 className="text-sm font-semibold text-white mb-4">Ressources</h4>
             <ul className="space-y-2.5 text-sm">
               {[
-                { to: '/app/aide', label: 'Documentation' },
-                { to: '/app/aide', label: 'Centre d\'aide' },
+                { to: '/presentation', label: 'Documentation du projet' },
                 { to: '/contact', label: 'Support' },
-                { to: '/about', label: 'Blog' },
+                { to: '/forum', label: 'Communauté' },
               ].map(l => (
                 <li key={l.label}>
                   <Link to={l.to} className="text-slate-400 hover:text-white transition-colors">{l.label}</Link>
@@ -187,7 +166,7 @@ export function LandingFooter() {
                 { to: '/about', label: 'À propos' },
                 { to: '/contact', label: 'Contact' },
                 { to: '/about', label: 'KERNEL FORGE' },
-                { to: '/about', label: 'Partenaires' },
+                { to: '/presentation', label: 'Présentation' },
               ].map(l => (
                 <li key={l.label}>
                   <Link to={l.to} className="text-slate-400 hover:text-white transition-colors">{l.label}</Link>
@@ -199,7 +178,7 @@ export function LandingFooter() {
 
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800 pt-8 text-xs text-slate-500">
-          <p>© 2026 UniFlow — KERNEL FORGE · Université de Yaoundé I · Licence MIT</p>
+          <p>© 2026 UniFlow — KERNEL FORGE · Périmètre validé : UY1 / ICT4D / L1</p>
           <div className="flex items-center gap-4">
             <Link to="/about" className="hover:text-slate-300 transition-colors">Confidentialité</Link>
             <Link to="/about" className="hover:text-slate-300 transition-colors">CGU</Link>

@@ -26,9 +26,22 @@ function queryString(queries = []) {
   return queries.map((item, index) => `queries%5B${index}%5D=${encodeURIComponent(item)}`).join('&')
 }
 
+async function fetchWithRetry(url, options) {
+  let lastError
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await fetch(url, options)
+    } catch (error) {
+      lastError = error
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 1000 * (attempt + 1)))
+    }
+  }
+  throw lastError
+}
+
 async function request(path, { method = 'GET', body, jwt, cookieHeader, queryValues = [], server = false, includeResponse = false } = {}) {
   const url = `${endpoint}${path}${queryValues.length ? `?${queryString(queryValues)}` : ''}`
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     method,
     headers: {
       'Content-Type': 'application/json',

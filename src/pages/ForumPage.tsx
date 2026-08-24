@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
-import { createForumPost, deleteForumPost, listForumPosts, updateForumPostLikes, type ForumPost as AppwriteForumPost } from '../lib/appwrite'
+import { createForumPost, deleteForumPost, executeForumReactionAction, listForumPosts, type ForumPost as AppwriteForumPost } from '../lib/appwrite'
 import { useAuth } from '../hooks/useAuth'
 import { 
   MessageSquare, ThumbsUp, Star, Search, Filter, Plus, ShieldCheck, 
   UserCheck, GraduationCap, CheckCircle, Send, Award, Users, 
-  MessageCircle, Sparkles, X
+  MessageCircle, Sparkles, Trash2, X
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 
@@ -17,16 +17,35 @@ type ForumPost = AppwriteForumPost & {
   isLiked?: boolean
 }
 
+function forumRoleLabel(role: string) {
+  if (role === 'DELEGATE') return 'Délégué'
+  if (role === 'TEACHER') return 'Enseignant'
+  if (role === 'ADMIN') return 'Administration'
+  return 'Étudiant'
+}
+
 export default function ForumPage() {
   const { getCurrentUser } = useAuth()
   const [posts, setPosts] = useState<ForumPost[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [isPublishing, setIsPublishing] = useState(false)
 
   useEffect(() => {
     let mounted = true
-    listForumPosts()
-      .then((documents) => {
+    const loadForum = async () => {
+      try {
+        const documents = await listForumPosts()
+        let reactedPostIds = new Set<string>()
+        if (getCurrentUser()) {
+          try {
+            const reactions = await executeForumReactionAction({ action: 'list' })
+            reactedPostIds = new Set(reactions.reactedPostIds || [])
+          } catch {
+            // Les publications restent lisibles si le relevé des réactions est indisponible.
+          }
+        }
         if (!mounted) return
         setPosts(documents.map((post) => ({
           ...post,
@@ -35,13 +54,18 @@ export default function ForumPage() {
           avatarBg: 'bg-blue-600 text-white',
           verified: Boolean(post.authorId),
           date: new Date(post.createdAt).toLocaleString('fr-FR'),
-          tags: Array.isArray(post.tags) ? post.tags : [],
+          tags: Array.isArray(post.tags) && post.tags.length ? post.tags : [forumRoleLabel(post.role), post.category],
+          isLiked: reactedPostIds.has(post.$id),
         })))
-      })
-      .catch((err) => mounted && setError(err instanceof Error ? err.message : 'Impossible de charger le forum depuis Appwrite.'))
-      .finally(() => mounted && setLoading(false))
+      } catch (err) {
+        if (mounted) setError(err instanceof Error ? err.message : 'Impossible de charger le forum depuis Appwrite.')
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    void loadForum()
     return () => { mounted = false }
-  }, [])
+  }, [getCurrentUser])
 
   const updatePosts = (newPosts: ForumPost[] | ((prev: ForumPost[]) => ForumPost[])) => {
     setPosts(prev => typeof newPosts === 'function' ? newPosts(prev) : newPosts)
@@ -53,34 +77,43 @@ export default function ForumPage() {
   const [showModal, setShowModal] = useState(false)
 
   // New post form state
-  const [authorName, setAuthorName] = useState('')
-  const [authorRole, setAuthorRole] = useState<'Étudiant' | 'Enseignant' | 'Délégué' | 'Administration'>('Étudiant')
-  const [university, setUniversity] = useState('Université de Yaoundé I')
   const [postTitle, setPostTitle] = useState('')
   const [postContent, setPostContent] = useState('')
   const [postCategory, setPostCategory] = useState('Retour d\'expérience')
   const [postRating, setPostRating] = useState(5)
 
   const handleLike = async (id: string) => {
-    const current = posts.find((post) => post.id === id)
-    if (!current) return
-    const nextLikes = current.isLiked ? Math.max(0, current.likes - 1) : current.likes + 1
+    if (!getCurrentUser()) {
+      setActionError('Connectez-vous avec un compte UniFlow pour recommander une publication.')
+      return
+    }
     try {
-      await updateForumPostLikes(id, nextLikes)
-      updatePosts(prev => prev.map(post => post.id === id ? { ...post, likes: nextLikes, isLiked: !post.isLiked } : post))
+      setActionError(null)
+      const result = await executeForumReactionAction({ action: 'react', postId: id })
+      updatePosts(prev => prev.map(post => post.id === id ? { ...post, likes: result.likes ?? post.likes, isLiked: Boolean(result.liked) } : post))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Impossible de mettre à jour la recommandation.')
+      setActionError(err instanceof Error ? err.message : 'Impossible de mettre à jour la recommandation.')
     }
   }
 
   const handleDeletePost = async (id: string) => {
     if (!confirm('Voulez-vous vraiment supprimer ce message ?')) return
     try {
+      setActionError(null)
       await deleteForumPost(id)
       updatePosts(prev => prev.filter(p => p.id !== id))
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Vous ne pouvez supprimer que vos propres publications.')
+      setActionError(err instanceof Error ? err.message : 'Vous ne pouvez supprimer que vos propres publications.')
     }
+  }
+
+  const openPublishModal = () => {
+    if (!getCurrentUser()) {
+      setActionError('Connectez-vous avec un compte UniFlow pour publier dans le forum.')
+      return
+    }
+    setActionError(null)
+    setShowModal(true)
   }
 
   const handleSubmitPost = async (e: React.FormEvent) => {
@@ -92,12 +125,14 @@ export default function ForumPage() {
     }
     if (!postTitle.trim() || !postContent.trim()) return
     try {
+      setIsPublishing(true)
+      setActionError(null)
       const created = await createForumPost(user, {
         title: postTitle.trim(),
         content: postContent.trim(),
         category: postCategory,
         rating: postRating,
-        tags: [authorRole, 'Avis'],
+        tags: [],
       })
       const newPost: ForumPost = {
         ...(created as unknown as AppwriteForumPost),
@@ -106,20 +141,23 @@ export default function ForumPage() {
         avatarBg: 'bg-blue-600 text-white',
         verified: true,
         date: new Date(created.createdAt).toLocaleString('fr-FR'),
+        tags: [forumRoleLabel(user.role), postCategory],
+        isLiked: false,
       }
       updatePosts(prev => [newPost, ...prev])
       setShowModal(false)
-      setAuthorName('')
       setPostTitle('')
       setPostContent('')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'La publication n’a pas pu être enregistrée dans Appwrite.')
+      setActionError(err instanceof Error ? err.message : 'La publication n’a pas pu être enregistrée dans Appwrite.')
+    } finally {
+      setIsPublishing(false)
     }
   }
 
   // Filter & Sort Logic
   const filteredPosts = posts.filter(post => {
-    const matchesRole = selectedRole === 'Tous' || post.role === selectedRole
+    const matchesRole = selectedRole === 'Tous' || forumRoleLabel(post.role) === selectedRole
     const matchesSearch = searchQuery === '' || 
       post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       post.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -129,7 +167,7 @@ export default function ForumPage() {
   }).sort((a, b) => {
     if (sortBy === 'popular') return b.likes - a.likes
     if (sortBy === 'rating') return b.rating - a.rating
-    return 0 // Default recent
+    return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   })
 
   // Stats calculation
@@ -210,7 +248,7 @@ export default function ForumPage() {
               </select>
 
               <button
-                onClick={() => setShowModal(true)}
+                onClick={openPublishModal}
                 className="inline-flex items-center gap-2 rounded-2xl bg-[#1e3a8a] hover:bg-[#2d4fa8] px-5 py-3 text-xs font-bold text-white shadow-md transition-all active:scale-95 cursor-pointer"
               >
                 <Plus className="h-4 w-4" /> Publier un avis
@@ -218,6 +256,12 @@ export default function ForumPage() {
             </div>
 
           </div>
+
+          {actionError && (
+            <div role="alert" className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+              {actionError}
+            </div>
+          )}
 
           {/* Role Filter Tabs */}
           <div className="flex flex-wrap gap-2 mb-8 border-b border-slate-200 pb-4">
@@ -269,7 +313,7 @@ export default function ForumPage() {
                             </span>
                           )}
                           <span className="px-2 py-0.5 rounded-full bg-slate-100 text-[10px] font-bold text-slate-600 border border-slate-200">
-                            {post.role}
+                            {forumRoleLabel(post.role)}
                           </span>
                         </div>
                         <p className="text-xs text-slate-500">{post.university}</p>
@@ -315,17 +359,27 @@ export default function ForumPage() {
                       ))}
                     </div>
 
-                    <button
-                      onClick={() => handleLike(post.id)}
-                      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                        post.isLiked
-                          ? 'bg-blue-100 text-[#1e3a8a] border border-blue-200 shadow-2xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-                      }`}
-                    >
-                      <ThumbsUp className={`h-3.5 w-3.5 ${post.isLiked ? 'fill-[#1e3a8a]' : ''}`} />
-                      <span>{post.likes}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {getCurrentUser()?.id === post.authorId && (
+                        <button
+                          onClick={() => handleDeletePost(post.id)}
+                          className="inline-flex items-center gap-1.5 rounded-xl border border-red-100 bg-red-50 px-3 py-1.5 font-bold text-xs text-red-700 transition-all hover:bg-red-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" /> Supprimer
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                          post.isLiked
+                            ? 'bg-blue-100 text-[#1e3a8a] border border-blue-200 shadow-2xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                        }`}
+                      >
+                        <ThumbsUp className={`h-3.5 w-3.5 ${post.isLiked ? 'fill-[#1e3a8a]' : ''}`} />
+                        <span>{post.likes}</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -354,30 +408,18 @@ export default function ForumPage() {
 
             <form onSubmit={handleSubmitPost} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Votre Nom & Prénom *</label>
-                <input
-                  type="text"
-                  required
-                  value={authorName}
-                  onChange={(e) => setAuthorName(e.target.value)}
-                  placeholder="Ex: NGHOMSI Ravel"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:border-[#1e3a8a] focus:outline-none focus:bg-white"
-                />
+                <p className="block text-xs font-bold text-slate-700 mb-1">Profil de publication</p>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-700">
+                  {getCurrentUser()?.name || 'Compte UniFlow requis'}
+                </div>
               </div>
 
               <div className="grid sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Rôle *</label>
-                  <select
-                    value={authorRole}
-                    onChange={(e) => setAuthorRole(e.target.value as any)}
-                    className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-[#1e3a8a] focus:outline-none focus:bg-white"
-                  >
-                    <option value="Étudiant">Étudiant</option>
-                    <option value="Enseignant">Enseignant</option>
-                    <option value="Délégué">Délégué</option>
-                    <option value="Administration">Administration</option>
-                  </select>
+                  <p className="block text-xs font-bold text-slate-700 mb-1">Rôle</p>
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-700">
+                    {forumRoleLabel(getCurrentUser()?.role || 'STUDENT')}
+                  </div>
                 </div>
 
                 <div>
@@ -398,14 +440,17 @@ export default function ForumPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Université / Faculté</label>
-                <input
-                  type="text"
-                  value={university}
-                  onChange={(e) => setUniversity(e.target.value)}
-                  placeholder="Ex: Université de Yaoundé I"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-medium text-slate-900 focus:border-[#1e3a8a] focus:outline-none focus:bg-white"
-                />
+                <label className="block text-xs font-bold text-slate-700 mb-1">Catégorie</label>
+                <select
+                  value={postCategory}
+                  onChange={(e) => setPostCategory(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-xs font-bold text-slate-900 focus:border-[#1e3a8a] focus:outline-none focus:bg-white"
+                >
+                  <option value="Retour d'expérience">Retour d’expérience</option>
+                  <option value="Question">Question</option>
+                  <option value="Suggestion">Suggestion</option>
+                  <option value="Support">Support</option>
+                </select>
               </div>
 
               <div>
@@ -442,9 +487,10 @@ export default function ForumPage() {
                 </button>
                 <button
                   type="submit"
+                  disabled={isPublishing}
                   className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#1e3a8a] hover:bg-[#2d4fa8] text-xs font-bold text-white shadow-md transition-all active:scale-95 cursor-pointer"
                 >
-                  <Send className="h-3.5 w-3.5" /> Publier mon avis
+                  <Send className="h-3.5 w-3.5" /> {isPublishing ? 'Publication…' : 'Publier mon avis'}
                 </button>
               </div>
             </form>

@@ -237,6 +237,37 @@ const schemas = [
     indexes: [{ key: 'forum_author', type: 'key', attributes: ['authorId'] }],
   },
   {
+    id: 'forum_reactions',
+    name: 'Réactions du forum',
+    attributes: [
+      string('postId', 36, true),
+      string('userId', 36, true),
+      datetime('createdAt', true),
+    ],
+    indexes: [
+      { key: 'forum_reaction_unique', type: 'unique', attributes: ['postId', 'userId'] },
+      { key: 'forum_reaction_user', type: 'key', attributes: ['userId'] },
+    ],
+  },
+  {
+    id: 'contact_messages',
+    name: 'Demandes de contact',
+    attributes: [
+      string('requesterName', 255, true),
+      string('requesterEmail', 255, true),
+      string('requesterUserId', 36, false, ''),
+      string('subject', 160, true),
+      string('message', 5000, true),
+      enumeration('status', ['NEW', 'IN_PROGRESS', 'CLOSED'], true),
+      datetime('createdAt', true),
+      datetime('consentAt', true),
+    ],
+    indexes: [
+      { key: 'contact_email_created', type: 'key', attributes: ['requesterEmail', 'createdAt'] },
+      { key: 'contact_status_created', type: 'key', attributes: ['status', 'createdAt'] },
+    ],
+  },
+  {
     id: 'notifications',
     name: 'Notifications UniFlow',
     attributes: [
