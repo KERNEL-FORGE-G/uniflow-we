@@ -14,7 +14,7 @@
 - [x] Exécuter les tests de création de compte, présence, saisie de notes et vérification production avant publication.
 - [x] Mesurer les temps de réponse, erreurs et comportements idempotents de la Function de présence sous charge Appwrite contrôlée.
 - [x] Créer et exécuter une suite E2E automatisée couvrant le parcours UY1 : inscription, inscriptions, appel, notes et relevé.
-- [ ] Produire une présentation synthétique du cycle ICT4D destinée à l’équipe pédagogique à partir des résultats mesurés.
+- [x] Produire une présentation synthétique du cycle ICT4D destinée à l’équipe pédagogique à partir des résultats mesurés.
 - [x] Auditer les collections, permissions et composants de messagerie afin d’identifier les données actuellement absentes ou simulées.
 - [x] Implémenter les conversations et messages universitaires réels dans Appwrite, avec lecture, envoi et autorisations par utilisateur.
 - [x] Valider depuis l’interface de production un échange réel entre comptes universitaires, puis documenter le résultat.
