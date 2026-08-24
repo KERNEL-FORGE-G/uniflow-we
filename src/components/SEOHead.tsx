@@ -85,6 +85,13 @@ export default function SEOHead({ title, description, canonicalUrl }: SEOHeadPro
     setMeta('meta[name="twitter:title"]', 'content', finalTitle)
     setMeta('meta[name="twitter:description"]', 'content', finalDesc)
 
+    const isPrivateRoute = pathname === '/login' || pathname === '/register' || pathname === '/subscribe' || pathname.startsWith('/app') || pathname.startsWith('/admin')
+    setMeta(
+      'meta[name="robots"]',
+      'content',
+      isPrivateRoute ? 'noindex, nofollow, noarchive' : 'index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1',
+    )
+
     // Update canonical link tag
     let canonical = document.querySelector('link[rel="canonical"]')
     if (!canonical) {
