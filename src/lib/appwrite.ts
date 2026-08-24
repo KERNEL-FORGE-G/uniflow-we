@@ -237,7 +237,7 @@ export async function executeAcademicGradesAction(payload: AcademicGradeMutation
 }
 
 export type MessagingRequest = {
-  action: 'list' | 'open' | 'send'
+  action: 'list' | 'open' | 'send' | 'read'
   email?: string
   conversationId?: string
   text?: string
@@ -259,9 +259,11 @@ export type MessagingResponse = {
   ok: boolean
   code?: string
   message?: string
-  action?: 'list' | 'open' | 'send'
+  action?: 'list' | 'open' | 'send' | 'read'
   conversations?: MessagingConversation[]
   conversation?: MessagingConversation
+  conversationId?: string
+  markedRead?: number
 }
 
 export const APPWRITE_MESSAGING_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_MESSAGING_FUNCTION_ID || 'messaging')

@@ -219,8 +219,13 @@ try {
   await executeFunction('messaging', { action: 'send', conversationId: conversations[0].$id, text: chatText }, delegate.jwt, { allowEmptyResponse: true })
   await executeFunction('messaging', { action: 'list' }, student.jwt, { allowEmptyResponse: true })
   const studentMessages = await request('/databases/uniflow/collections/chat_messages/documents', { jwt: student.jwt })
-  if (!(studentMessages.documents || []).some((entry) => entry.conversationId === conversations[0].$id && entry.body === chatText && entry.senderId === delegate.userId)) throw new Error('Le destinataire E2E ne peut pas lire le message universitaire envoyé.')
-  result.steps.messaging = { conversationCreated: true, studentCanReadMessage: true }
+  const sentMessage = (studentMessages.documents || []).find((entry) => entry.conversationId === conversations[0].$id && entry.body === chatText && entry.senderId === delegate.userId)
+  if (!sentMessage) throw new Error('Le destinataire E2E ne peut pas lire le message universitaire envoyé.')
+  await executeFunction('messaging', { action: 'read', conversationId: conversations[0].$id }, student.jwt, { allowEmptyResponse: true })
+  const messageAfterRead = await request(`/databases/${databaseId}/collections/chat_messages/documents/${sentMessage.$id}`, { server: true })
+  const recipientReadField = conversations[0].participantA === student.userId ? 'readByA' : 'readByB'
+  if (messageAfterRead[recipientReadField] !== true) throw new Error('Le marquage lu Appwrite du destinataire n’a pas été persisté.')
+  result.steps.messaging = { conversationCreated: true, studentCanReadMessage: true, explicitReadPersisted: true }
 
   const paymentPlanId = `qa_pay_${runId}`.slice(0, 36)
   const paymentPlanCode = `qa_whatsapp_${runId}`
