@@ -27,6 +27,8 @@
 - [x] Auditer puis renforcer les fondations SEO techniques et sémantiques des pages publiques UniFlow.
 - [x] Rédiger un plan SEO priorisé fondé sur les données observables, sans promesse de classement.
 - [x] Créer une présentation de configuration et référencement Google destinée à l’équipe UniFlow.
+- [x] Analyser les mots-clés concurrents et les opportunités de positionnement du marché des logiciels de gestion universitaire pour UniFlow.
+- [x] Documenter les opportunités de mots-clés francophones à partir de résultats publics, sans inventer de volume, trafic ou position concurrentielle.
 - [x] Auditer les plans, statuts et écrans d’abonnement Appwrite afin d’identifier les actions indisponibles ou simulées.
 - [x] Enregistrer une demande d’abonnement Appwrite avec référence unique, statut en attente et lien WhatsApp prérempli vers le numéro fourni.
 - [x] Ajouter le contrôle administratif manuel qui confirme ou rejette une demande après vérification externe de la preuve de paiement.
