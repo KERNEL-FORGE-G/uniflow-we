@@ -52,8 +52,15 @@ export default function MessagingPage() {
       try {
         const list = await messagingApi.conversations()
         const conversations = (list ?? []) as ChatConversation[]
-        setConvos(conversations)
-        if (conversations.length > 0) setActive(conversations[0])
+        if (conversations.length > 0) {
+          const first = conversations[0]
+          await messagingApi.markRead(first.id)
+          const refreshed = conversations.map((conversation, index) => index === 0 ? { ...conversation, unread: 0 } : conversation)
+          setConvos(refreshed)
+          setActive(refreshed[0])
+        } else {
+          setConvos([])
+        }
       } catch (err) {
         setAddError(err instanceof Error ? err.message : 'Les conversations Appwrite sont indisponibles.')
       } finally {
@@ -84,6 +91,7 @@ export default function MessagingPage() {
     setConvos(prev => prev.map(cv => cv.id === c.id ? { ...cv, unread: 0 } : cv))
     setActive({ ...c, unread: 0 })
     setIsSending(false)
+    void messagingApi.markRead(c.id).catch((error: unknown) => setAddError(error instanceof Error ? error.message : 'Le marquage lu Appwrite a échoué.'))
   }
 
   const sendMessage = async (e: React.FormEvent) => {

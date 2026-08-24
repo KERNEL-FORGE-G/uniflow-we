@@ -89,7 +89,6 @@ async function serializeConversation(databases, conversation, actorId) {
   ])
   const unreadField = conversation.participantA === actorId ? 'readByA' : 'readByB'
   const unread = messages.documents.filter((message) => message.senderId !== actorId && !message[unreadField])
-  if (unread.length) await Promise.all(unread.map((message) => databases.updateDocument(DATABASE_ID, 'chat_messages', message.$id, { [unreadField]: true })))
   return {
     id: conversation.$id,
     name: profile.name,
@@ -101,6 +100,15 @@ async function serializeConversation(databases, conversation, actorId) {
     unread: unread.length,
     messages: messages.documents.map((message) => asMessage(message, actorId)),
   }
+}
+
+async function markConversationRead(databases, conversation, actorId) {
+  if (![conversation.participantA, conversation.participantB].includes(actorId)) throw new Error('CONVERSATION_DENIED')
+  const unreadField = conversation.participantA === actorId ? 'readByA' : 'readByB'
+  const messages = await databases.listDocuments(DATABASE_ID, 'chat_messages', [Query.equal('conversationId', conversation.$id), Query.limit(100)])
+  const unread = messages.documents.filter((message) => message.senderId !== actorId && !message[unreadField])
+  if (unread.length) await Promise.all(unread.map((message) => databases.updateDocument(DATABASE_ID, 'chat_messages', message.$id, { [unreadField]: true })))
+  return unread.length
 }
 
 export default async ({ req, res, error }) => {
@@ -143,6 +151,12 @@ export default async ({ req, res, error }) => {
       return json(res, { ok: true, action: 'open', conversation: await serializeConversation(databases, conversation, actorId) })
     }
 
+    if (body.action === 'read') {
+      const conversationId = cleanText(body.conversationId, 'conversationId', 36)
+      const conversation = await databases.getDocument(DATABASE_ID, 'chat_conversations', conversationId)
+      return json(res, { ok: true, action: 'read', conversationId, markedRead: await markConversationRead(databases, conversation, actorId) })
+    }
+
     if (body.action === 'send') {
       const conversationId = cleanText(body.conversationId, 'conversationId', 36)
       const text = cleanText(body.text, 'message', 5000)
@@ -164,7 +178,7 @@ export default async ({ req, res, error }) => {
     return json(res, { ok: false, code: 'ACTION_UNKNOWN', message: 'Action de messagerie inconnue.' }, 400)
   } catch (exception) {
     const message = String(exception?.message || '')
-    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND'].includes(message)) return json(res, { ok: false, code: message, message: 'La messagerie est réservée aux comptes universitaires UY1 / ICT4D / L1.' }, 403)
+    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND', 'CONVERSATION_DENIED'].includes(message)) return json(res, { ok: false, code: message, message: message === 'CONVERSATION_DENIED' ? 'Cette conversation ne vous appartient pas.' : 'La messagerie est réservée aux comptes universitaires UY1 / ICT4D / L1.' }, 403)
     error(`messaging action=${body.action || 'unknown'} failed=${message || 'unknown'}`)
     return json(res, { ok: false, code: 'MESSAGING_ERROR', message: 'La messagerie Appwrite a échoué.' }, 400)
   }

@@ -18,6 +18,7 @@
 - [x] Auditer les collections, permissions et composants de messagerie afin d’identifier les données actuellement absentes ou simulées.
 - [x] Implémenter les conversations et messages universitaires réels dans Appwrite, avec lecture, envoi et autorisations par utilisateur.
 - [ ] Valider depuis l’interface de production un échange réel entre comptes universitaires, puis documenter le résultat.
+- [ ] Corriger le marquage lu Appwrite afin que le compteur de messages se mette à jour après l’ouverture effective d’une conversation.
 - [x] Auditer les plans, statuts et écrans d’abonnement Appwrite afin d’identifier les actions indisponibles ou simulées.
 - [x] Enregistrer une demande d’abonnement Appwrite avec référence unique, statut en attente et lien WhatsApp prérempli vers le numéro fourni.
 - [x] Ajouter le contrôle administratif manuel qui confirme ou rejette une demande après vérification externe de la preuve de paiement.
@@ -26,4 +27,4 @@
 - [x] Auditer puis corriger la restauration de session Appwrite depuis IndexedDB, sans stocker de secret ou de jeton réutilisable dans IndexedDB.
 - [x] Permettre une navigation explicite entre l’espace authentifié et l’accueil sans déconnexion, avec un retour cohérent vers le bon tableau de bord.
 - [x] Évaluer Stripe et confirmer son retrait du périmètre : aucun secret, code Stripe, webhook ou paiement carte n’est activé dans UniFlow.
-- [ ] Tester les parcours de session, navigation et WhatsApp avant publication, sans effectuer de transaction financière réelle pendant les tests.
+- [x] Tester les parcours de session, navigation et WhatsApp avant publication, sans effectuer de transaction financière réelle pendant les tests.
