@@ -2,7 +2,7 @@ import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
 import {
   Search, Bell, LogOut, BarChart3, Database, BookOpen, BookMarked,
   Calendar, Users, GraduationCap, UserCheck, Settings, ChevronRight,
-  Shield, TrendingUp, FileText, AlertCircle, Activity
+  Shield, TrendingUp, FileText, AlertCircle, Activity, Home
 } from 'lucide-react'
 import { adminNavGroups } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
@@ -136,6 +136,14 @@ export function AdminLayout() {
           <AdminBreadcrumb />
 
           <div className="flex-1 hidden lg:block" />
+
+          <button
+            onClick={() => navigate('/')}
+            title="Retour à l’accueil — session conservée"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff] transition-all"
+          >
+            <Home className="h-4 w-4" /> Accueil
+          </button>
 
           {/* Search */}
           <div className="relative flex-1 max-w-sm lg:max-w-xs">
