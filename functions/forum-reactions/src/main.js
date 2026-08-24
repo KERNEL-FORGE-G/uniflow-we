@@ -51,7 +51,8 @@ export default async ({ req, res, error }) => {
 
     if (body.action === 'react') {
       const postId = cleanPostId(body.postId)
-      await databases.getDocument(DATABASE_ID, 'forum_posts', postId)
+      const post = await databases.getDocument(DATABASE_ID, 'forum_posts', postId)
+      if (post.authorId === actorId) return json(res, { ok: false, code: 'SELF_REACTION_DENIED', message: 'Vous ne pouvez pas recommander votre propre publication.' }, 403)
       const existing = await databases.listDocuments(DATABASE_ID, 'forum_reactions', [Query.equal('postId', postId), Query.equal('userId', actorId), Query.limit(1)])
       let liked = false
       if (existing.documents[0]) {

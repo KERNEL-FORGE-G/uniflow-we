@@ -12,6 +12,7 @@ const password = `UniFlowQa-${runId}!`
 let postId = ''
 let reactionId = ''
 let contactId = ''
+let likerId = ''
 
 async function responseOf(response) {
   const text = await response.text()
@@ -75,6 +76,7 @@ async function cleanup() {
   if (reactionId) operations.push(admin('DELETE', `/databases/${databaseId}/collections/forum_reactions/documents/${reactionId}`))
   if (postId) operations.push(admin('DELETE', `/databases/${databaseId}/collections/forum_posts/documents/${postId}`))
   if (contactId) operations.push(admin('DELETE', `/databases/${databaseId}/collections/contact_messages/documents/${contactId}`))
+  if (likerId) operations.push(admin('DELETE', `/users/${likerId}`))
   operations.push(admin('DELETE', `/users/${userId}`))
   await Promise.allSettled(operations)
 }
@@ -100,11 +102,31 @@ try {
   })
   postId = post.payload.$id
 
-  const firstReaction = await execute('forum_reactions', { action: 'react', postId }, sessionCookie)
+  let selfReactionDenied = false
+  try {
+    await execute('forum_reactions', { action: 'react', postId }, sessionCookie)
+  } catch (error) {
+    selfReactionDenied = String(error?.message || error).includes('SELF_REACTION_DENIED')
+  }
+  if (!selfReactionDenied) throw new Error('FORUM_SELF_REACTION_NOT_DENIED')
+
+  likerId = `qafc_liker_${runId}`.slice(0, 36)
+  const likerEmail = `qafc-liker-${runId}@example.invalid`
+  await admin('POST', '/users', { userId: likerId, email: likerEmail, password, name: 'QA Forum Liker' })
+  const likerSessionResponse = await fetchWithRetry(`${endpoint}/account/sessions/email`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Appwrite-Project': projectId },
+    body: JSON.stringify({ email: likerEmail, password }),
+  })
+  const likerSession = await responseOf(likerSessionResponse)
+  const likerCookie = likerSession.cookie.split(';')[0]
+  if (!likerCookie) throw new Error('LIKER_SESSION_COOKIE_MISSING')
+
+  const firstReaction = await execute('forum_reactions', { action: 'react', postId }, likerCookie)
   if (!firstReaction.liked || firstReaction.likes !== 1) throw new Error('FORUM_FIRST_REACTION_INVALID')
-  const reactions = await execute('forum_reactions', { action: 'list' }, sessionCookie)
+  const reactions = await execute('forum_reactions', { action: 'list' }, likerCookie)
   if (!reactions.reactedPostIds?.includes(postId)) throw new Error('FORUM_REACTION_LIST_INVALID')
-  const secondReaction = await execute('forum_reactions', { action: 'react', postId }, sessionCookie)
+  const secondReaction = await execute('forum_reactions', { action: 'react', postId }, likerCookie)
   if (secondReaction.liked || secondReaction.likes !== 0) throw new Error('FORUM_SECOND_REACTION_INVALID')
 
   const contact = await execute('contact_messages', {
