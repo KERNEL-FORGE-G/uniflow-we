@@ -542,8 +542,11 @@ export async function getCurrentAccount(accountType?: UniFlowAccountType): Promi
       // L’authentification Appwrite reste utilisable pendant la création ou la restauration du profil.
     }
     return normalizeUser(profile, resolvedAccountType, role, userProfile)
-  } catch {
-    return null
+  } catch (error) {
+    // Une absence explicite de session est différente d’un délai réseau ou d’un
+    // démarrage Appwrite lent. Seul 401 invalide l’instantané IndexedDB.
+    if (Number((error as { code?: unknown })?.code) === 401) return null
+    throw error
   }
 }
 

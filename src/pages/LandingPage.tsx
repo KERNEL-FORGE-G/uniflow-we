@@ -97,8 +97,9 @@ const faqs = [
 type RoleTab = 'etudiant' | 'delegue' | 'enseignant' | 'admin'
 
 export default function LandingPage() {
-  const { currentUser, isSessionReady } = useUserRole()
+  const { currentUser, authUser, isSessionReady } = useUserRole()
   const isConnected = isSessionReady && currentUser.email !== '—'
+  const workspacePath = authUser?.role === 'ADMIN' ? '/admin' : '/app'
   // Les statistiques de campus nécessitent une session universitaire. La page publique
   // n’appelle donc aucun endpoint protégé et n’invente aucune métrique.
   const stats: Array<{ icon: typeof Users; value: string; label: string; color: string }> = []
@@ -186,7 +187,7 @@ export default function LandingPage() {
                 variants={fadeInUp}
                 className="flex flex-wrap items-center gap-4 pt-2"
               >
-                <Link to="/app">
+                <Link to={workspacePath}>
                   <Button size="lg" className="gap-2.5 text-base px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-extrabold border-b-4 border-blue-950 shadow-xl shadow-blue-600/25 active:translate-y-0.5 transition-all rounded-2xl">
                     {isConnected ? 'Reprendre mon espace' : "Accéder à l'application"} <ArrowRight className="h-5 w-5" />
                   </Button>
@@ -780,7 +781,7 @@ export default function LandingPage() {
             className="flex flex-wrap items-center justify-center gap-4"
           >
             <Link
-              to="/app"
+              to={workspacePath}
               className="inline-flex items-center gap-2 rounded-2xl bg-white text-[#1e3a8a] hover:bg-slate-100 text-base font-black px-8 py-4 shadow-2xl border-b-4 border-slate-200 active:translate-y-0.5 transition-all cursor-pointer"
             >
               Accéder à l'application gratuitement <ChevronRight className="h-5 w-5" />

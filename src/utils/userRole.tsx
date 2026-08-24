@@ -99,7 +99,13 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
 
   const restoreSession = useCallback(async () => {
     const snapshot = await readSessionSnapshot()
-    const restored = await getCurrentAccount(snapshot?.user.accountType)
+    let restored: UniFlowUser | null = null
+    let unavailable = false
+    try {
+      restored = await getCurrentAccount(snapshot?.user.accountType)
+    } catch {
+      unavailable = true
+    }
 
     if (restored) {
       const user = appwriteUserToBackendUser(restored)
@@ -110,12 +116,16 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('uniflow_user')
       await persistSessionSnapshot(restored)
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
-    } else if (!navigator.onLine && snapshot) {
-      // Le cache permet la consultation hors ligne, mais ne remplace pas une session Appwrite en ligne.
+    } else if (snapshot && (!navigator.onLine || unavailable)) {
+      // Les seules données IndexedDB sont des métadonnées de profil. Elles
+      // maintiennent la navigation pendant une indisponibilité temporaire, mais
+      // ne remplacent jamais le cookie Appwrite comme preuve d’authentification.
       const user = appwriteUserToBackendUser(snapshot.user)
       setAuthUser(user)
       setRoleState(mapRole(user.role))
     } else {
+      // Une réponse 401 Appwrite sans instantané valide signifie que la session
+      // est réellement expirée : on nettoie alors l’état local.
       clearTokens()
       localStorage.removeItem('uniflow_account_type')
       await clearSessionSnapshot()

@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import {
   Search, Bell, LogOut, Wifi, WifiOff, Globe, ChevronDown,
   GraduationCap, Megaphone, UserCheck, Settings, Menu, X,
-  ChevronRight, Sparkles
+  ChevronRight, Sparkles, Home
 } from 'lucide-react'
 import { useUserRole } from '../../utils/userRole'
 import { navItems } from '../../data/navigation'
@@ -54,23 +54,25 @@ export function Sidebar() {
       {/* Logo Header */}
       <div className="relative overflow-hidden border-b border-[#e5e7eb] px-4 py-4">
         <div className="flex items-center justify-between gap-3">
-          <img
-            src="https://i.imgur.com/GAiZ7WY.png"
-            alt="UniFlow"
-            loading="eager"
-            decoding="async"
-            className="h-9 w-auto object-contain"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              if (!target.dataset.triedFallback1) {
-                target.dataset.triedFallback1 = 'true'
-                target.src = '/logo_1.png'
-              } else if (!target.dataset.triedFallback2) {
-                target.dataset.triedFallback2 = 'true'
-                target.src = '/logo.png'
-              }
-            }}
-          />
+          <button onClick={() => navigate('/')} title="Retour à l’accueil — session conservée" className="rounded-lg p-1 text-left hover:bg-[#f3f4f6] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/30">
+            <img
+              src="https://i.imgur.com/GAiZ7WY.png"
+              alt="Accueil UniFlow"
+              loading="eager"
+              decoding="async"
+              className="h-9 w-auto object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                if (!target.dataset.triedFallback1) {
+                  target.dataset.triedFallback1 = 'true'
+                  target.src = '/logo_1.png'
+                } else if (!target.dataset.triedFallback2) {
+                  target.dataset.triedFallback2 = 'true'
+                  target.src = '/logo.png'
+                }
+              }}
+            />
+          </button>
           <Sparkles className="h-4 w-4 text-[#0d9488] animate-pulse-dot" />
         </div>
       </div>
@@ -237,6 +239,13 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
       <GlobalSearch />
 
       <div className="flex items-center gap-2 ml-auto">
+        <button
+          onClick={() => navigate('/')}
+          className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff] transition-all touch-target"
+          title="Retour à l’accueil — session conservée"
+        >
+          <Home className="h-4 w-4" /> Accueil
+        </button>
         {/* Role Badge */}
         <div className={cn(
           'hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold',
@@ -348,21 +357,23 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
       {/* Logo + Close */}
       <div className="flex items-center justify-between border-b border-[#e5e7eb] px-5 py-4">
         <div className="flex items-center gap-3">
-          <img
-            src="https://i.imgur.com/GAiZ7WY.png"
-            alt="UniFlow"
-            className="h-8 w-auto object-contain"
-            onError={(e) => {
-              const target = e.target as HTMLImageElement
-              if (!target.dataset.triedFallback1) {
-                target.dataset.triedFallback1 = 'true'
-                target.src = '/logo_1.png'
-              } else if (!target.dataset.triedFallback2) {
-                target.dataset.triedFallback2 = 'true'
-                target.src = '/logo.png'
-              }
-            }}
-          />
+          <button onClick={() => { navigate('/'); onClose() }} title="Retour à l’accueil — session conservée" className="rounded-lg p-1 text-left hover:bg-[#f3f4f6]">
+            <img
+              src="https://i.imgur.com/GAiZ7WY.png"
+              alt="Accueil UniFlow"
+              className="h-8 w-auto object-contain"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement
+                if (!target.dataset.triedFallback1) {
+                  target.dataset.triedFallback1 = 'true'
+                  target.src = '/logo_1.png'
+                } else if (!target.dataset.triedFallback2) {
+                  target.dataset.triedFallback2 = 'true'
+                  target.src = '/logo.png'
+                }
+              }}
+            />
+          </button>
         </div>
         <button onClick={onClose} className="rounded-xl p-2 hover:bg-[#f3f4f6] transition-colors">
           <X className="h-5 w-5 text-[#6b7280]" />
