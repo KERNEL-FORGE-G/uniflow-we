@@ -19,6 +19,14 @@
 - [x] Implémenter les conversations et messages universitaires réels dans Appwrite, avec lecture, envoi et autorisations par utilisateur.
 - [x] Valider depuis l’interface de production un échange réel entre comptes universitaires, puis documenter le résultat.
 - [x] Corriger le marquage lu Appwrite afin que le compteur de messages se mette à jour après l’ouverture effective d’une conversation.
+- [x] Créer des captures représentatives de la production UniFlow et préparer une publication LinkedIn avec description et hashtags.
+- [x] Créer des captures d’interfaces utilisateur UniFlow réelles, anonymisées et adaptées au carrousel LinkedIn.
+- [x] Exclure de toutes les captures LinkedIn les écrans de connexion, adresses e-mail, mots de passe et identifiants saisis.
+- [x] Héberger le fichier de validation Google fourni à la racine du domaine UniFlow et vérifier son accès en production.
+- [x] Vérifier les données d’indexation et de performance Google Search Console disponibles pour UniFlow (rapports privés non accessibles dans cette session ; limite documentée).
+- [x] Auditer puis renforcer les fondations SEO techniques et sémantiques des pages publiques UniFlow.
+- [x] Rédiger un plan SEO priorisé fondé sur les données observables, sans promesse de classement.
+- [x] Créer une présentation de configuration et référencement Google destinée à l’équipe UniFlow.
 - [x] Auditer les plans, statuts et écrans d’abonnement Appwrite afin d’identifier les actions indisponibles ou simulées.
 - [x] Enregistrer une demande d’abonnement Appwrite avec référence unique, statut en attente et lien WhatsApp prérempli vers le numéro fourni.
 - [x] Ajouter le contrôle administratif manuel qui confirme ou rejette une demande après vérification externe de la preuve de paiement.
