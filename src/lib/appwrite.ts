@@ -283,6 +283,71 @@ export async function executeMessagingAction(payload: MessagingRequest): Promise
   return response
 }
 
+export type ForumReactionRequest = {
+  action: 'react' | 'list'
+  postId?: string
+}
+
+export type ForumReactionResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: ForumReactionRequest['action']
+  postId?: string
+  liked?: boolean
+  likes?: number
+  reactedPostIds?: string[]
+}
+
+export const APPWRITE_FORUM_REACTIONS_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_FORUM_REACTIONS_FUNCTION_ID || 'forum_reactions')
+
+export async function executeForumReactionAction(payload: ForumReactionRequest): Promise<ForumReactionResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_FORUM_REACTIONS_FUNCTION_ID, JSON.stringify(payload), false),
+    'la réaction sécurisée du forum',
+  )
+  let response: ForumReactionResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as ForumReactionResponse } catch {
+    throw new Error('La Function Appwrite du forum a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La Function Appwrite a refusé cette réaction du forum.')
+  }
+  return response
+}
+
+export type ContactMessageRequest = {
+  fullName: string
+  email: string
+  subject: string
+  message: string
+  consent: boolean
+}
+
+export type ContactMessageResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  reference?: string
+}
+
+export const APPWRITE_CONTACT_MESSAGES_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_CONTACT_MESSAGES_FUNCTION_ID || 'contact_messages')
+
+export async function executeContactMessageAction(payload: ContactMessageRequest): Promise<ContactMessageResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_CONTACT_MESSAGES_FUNCTION_ID, JSON.stringify({ action: 'create', ...payload }), false),
+    'l’envoi du message de contact',
+  )
+  let response: ContactMessageResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as ContactMessageResponse } catch {
+    throw new Error('La Function Appwrite de contact a retourné une réponse invalide.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La demande de contact Appwrite a été refusée.')
+  }
+  return response
+}
+
 export type SubscriptionPaymentRequest = {
   action: 'create' | 'list' | 'admin-list' | 'review'
   planCode?: string
@@ -860,21 +925,26 @@ export async function listForumPosts() {
 }
 
 export async function createForumPost(user: UniFlowUser, data: Pick<ForumPost, 'title' | 'content' | 'category' | 'rating' | 'tags'>) {
-  return appwriteDatabases.createDocument(
+  const { tags: _tags, ...post } = data
+  return awaitAppwrite(appwriteDatabases.createDocument(
     APPWRITE_DATABASE_ID,
     'forum_posts',
     ID.unique(),
-    { authorId: user.id, authorName: user.name || user.email, role: user.role, university: user.university || '', likes: 0, createdAt: new Date().toISOString(), ...data },
+    {
+      authorId: user.id,
+      authorName: user.name || user.email,
+      role: user.role,
+      university: user.accountType === 'UNIVERSITY' ? (user.university || 'Université de Yaoundé I') : 'Compte personnel UniFlow',
+      likes: 0,
+      createdAt: new Date().toISOString(),
+      ...post,
+    },
     [Permission.read(Role.any()), ...userPermissions(user.id)],
-  )
-}
-
-export async function updateForumPostLikes(postId: string, likes: number) {
-  return appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'forum_posts', postId, { likes })
+  ), 'la publication du forum')
 }
 
 export async function deleteForumPost(postId: string) {
-  return appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'forum_posts', postId)
+  return awaitAppwrite(appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'forum_posts', postId), 'la suppression de la publication du forum')
 }
 
 function normalizeRole(value: string | undefined, accountType: UniFlowAccountType): UniFlowRole {

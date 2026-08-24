@@ -4,6 +4,7 @@ import {
   Copy, ExternalLink, Sparkles, Building2, Globe, Shield
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { executeContactMessageAction } from '../lib/appwrite'
 
 export default function ContactPage() {
   const [fullName, setFullName] = useState('')
@@ -12,25 +13,36 @@ export default function ContactPage() {
   const [message, setMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [consent, setConsent] = useState(false)
   const [copiedText, setCopiedText] = useState<string | null>(null)
 
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text)
-    setCopiedText(label)
-    setTimeout(() => setCopiedText(null), 2000)
+  const handleCopy = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopiedText(label)
+      setTimeout(() => setCopiedText(null), 2000)
+    } catch {
+      setSubmitError('La copie n’est pas disponible dans ce navigateur. Vous pouvez sélectionner l’adresse manuellement.')
+    }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
-
-    setTimeout(() => {
+    setSubmitError(null)
+    try {
+      await executeContactMessageAction({ fullName, email, subject, message, consent })
       setIsSubmitting(false)
       setIsSubmitted(true)
       setFullName('')
       setEmail('')
       setMessage('')
-    }, 1200)
+      setConsent(false)
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'La demande de contact n’a pas pu être enregistrée.')
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -50,7 +62,7 @@ export default function ContactPage() {
           </h1>
 
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
-            Une question sur le déploiement, une demande de démonstration personnalisée ou un projet de partenariat ? Nous vous répondons sous 24h.
+            Une question sur le déploiement, une demande de démonstration personnalisée ou un projet de partenariat ? Enregistrez votre demande auprès de l’équipe UniFlow.
           </p>
         </div>
       </section>
@@ -95,16 +107,9 @@ export default function ContactPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Téléphone & WhatsApp</p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate mt-0.5">+237 6 90 00 00 00</p>
-                      <p className="text-[11px] text-slate-500">Disponible du Lun au Ven (8h-18h)</p>
+                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate mt-0.5">Coordonnée en attente de confirmation</p>
+                      <p className="text-[11px] text-slate-500">Utilisez le formulaire ou l’adresse e-mail publiée ci-dessus.</p>
                     </div>
-                    <button
-                      onClick={() => handleCopy('+237 6 90 00 00 00', 'phone')}
-                      className="p-2 text-slate-400 hover:text-teal-700 transition-colors cursor-pointer"
-                      title="Copier le numéro"
-                    >
-                      {copiedText === 'phone' ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                    </button>
                   </div>
 
                   {/* Campus Address */}
@@ -135,19 +140,13 @@ export default function ContactPage() {
 
               {/* Mascotte & Quick Links */}
               <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-50 to-teal-50 p-6 flex items-center gap-5 shadow-sm">
-                <img 
-                  src="https://i.imgur.com/GAiZ7WY.png" 
-                  alt="UniFlow Mascotte" 
-                  className="h-16 w-16 object-contain shrink-0 drop-shadow-sm" 
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    target.src = '/logo_1.png'
-                  }}
-                />
+                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white text-[#1e3a8a] shadow-sm">
+                  <Building2 className="h-8 w-8" />
+                </div>
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">KERNEL FORGE Labs</h4>
                   <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                    Projet Open Source développé sous licence MIT pour les universités africaines.
+                    Projet UniFlow développé par KERNEL FORGE pour le périmètre UY1 / ICT4D / L1.
                   </p>
                 </div>
               </div>
@@ -169,7 +168,7 @@ export default function ContactPage() {
                     </div>
                     <h3 className="text-xl font-bold text-emerald-900">Message Envoyé avec Succès !</h3>
                     <p className="text-xs sm:text-sm text-emerald-700 max-w-md mx-auto leading-relaxed">
-                      Merci pour votre intérêt envers UniFlow. Un membre de l'équipe KERNEL FORGE prendra contact avec vous à l'adresse indiquée sous 24h ouvrées.
+                      Merci pour votre intérêt envers UniFlow. Votre demande a été enregistrée dans Appwrite et sera traitée par l’équipe selon ses disponibilités.
                     </p>
                     <button
                       onClick={() => setIsSubmitted(false)}
@@ -180,6 +179,11 @@ export default function ContactPage() {
                   </div>
                 ) : (
                   <form onSubmit={handleSubmit} className="space-y-5">
+                    {submitError && (
+                      <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-xs font-medium text-red-700">
+                        {submitError}
+                      </div>
+                    )}
                     <div className="grid sm:grid-cols-2 gap-5">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-1.5">Nom & Prénom *</label>
@@ -231,6 +235,17 @@ export default function ContactPage() {
                         className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs sm:text-sm font-medium text-slate-900 focus:border-[#1e3a8a] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20 transition-all"
                       />
                     </div>
+
+                    <label className="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+                      <input
+                        type="checkbox"
+                        required
+                        checked={consent}
+                        onChange={(event) => setConsent(event.target.checked)}
+                        className="mt-0.5 h-4 w-4 rounded border-slate-300 text-[#1e3a8a] focus:ring-[#1e3a8a]"
+                      />
+                      <span>J’accepte que UniFlow enregistre les informations ci-dessus uniquement pour traiter ma demande de contact.</span>
+                    </label>
 
                     <button
                       type="submit"
