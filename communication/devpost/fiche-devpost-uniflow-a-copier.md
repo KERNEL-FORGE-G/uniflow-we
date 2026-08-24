@@ -84,3 +84,7 @@ Les captures sont anonymisées : elles ne montrent aucun écran de connexion, mo
 | Liens | Domaine UniFlow et dépôt GitHub exacts. |
 | Médias | PNG, fichier inférieur à 5 Mo, sans données de connexion. Devpost recommande le 3:2, mais les captures réelles conservent leur cadrage natif pour éviter toute bordure ou recadrage artificiel. |
 | Vidéo | Laisser vide tant qu’une URL vidéo compatible n’est pas disponible. |
+
+## État du lot final
+
+Les tests Appwrite et les contrôles de production Vercel du 24 août 2026 ont validé le parcours UY1 / ICT4D / L1, le Forum, Contact, la messagerie, les notes, les présences et l’emploi du temps. Le lot peut être téléversé sans ajouter d’image générée, de bordure, de recadrage artificiel ou de donnée de connexion.

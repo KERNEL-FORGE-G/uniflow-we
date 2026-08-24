@@ -31,4 +31,8 @@ Le remontage a affiché correctement la grille Appwrite : 10 créneaux, 20 heure
 | Messagerie | `/?validation=messages-20260824#/app/messages` | Après le démarrage de la Function Appwrite, la page affiche l’état réel sans conversation et les actions « Nouveau » / « Ajouter par e-mail ». Aucun message n’a été créé pendant le contrôle. | Validé, avec latence de démarrage observée. |
 | Présences | `/?validation=attendance-20260824#/app/presences` | Les dix matières ICT4D L1, le scanner QR et les compteurs à zéro sont visibles pour le profil sans relevé persistant. | Validé : état Appwrite explicite, aucun scan ni relevé créé. |
 
+Après le déploiement `841308b`, l’emploi du temps a été rechargé avec un document Vercel neuf. Le squelette d’initialisation est visible ; le contrôle attend la fin des appels Appwrite avant de confirmer le rendu final.
+
+Le déploiement Vercel `841308b` est `READY`. Après la restauration de session et les lectures Appwrite, l’emploi du temps a rendu les 10 créneaux et les 20 heures hebdomadaires. Le client recharge désormais une fois le document actif lorsqu’un import Vite périmé est signalé, ce qui réduit le risque de page blanche pour une session restée ouverte au moment d’un déploiement.
+
 Les tests Appwrite automatisés restent distincts du rendu Vercel : cette observation concerne le bundle web publié et la restauration de session dans le navigateur de production.

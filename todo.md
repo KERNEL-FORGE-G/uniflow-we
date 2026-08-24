@@ -36,8 +36,8 @@
 - [ ] Renseigner le brouillon Devpost et fournir des captures de contrôle sans effectuer la soumission publique.
 - [x] Fournir un lot Devpost prêt à copier, incluant textes publics complets et captures UniFlow anonymisées au format compatible.
 - [x] Exécuter une vérification E2E complète des derniers flux Appwrite et contrôler les pages concernées sur Vercel.
-- [ ] Recharger proprement le client lorsqu’un import Vite périmé est détecté après un déploiement Vercel.
-- [ ] Vérifier le contenu et les captures réelles Devpost pour produire un lot final sans retouche ni données d’accès.
+- [x] Recharger proprement le client lorsqu’un import Vite périmé est détecté après un déploiement Vercel.
+- [x] Vérifier le contenu et les captures réelles Devpost pour produire un lot final sans retouche ni données d’accès.
 - [x] Fournir uniquement des captures brutes de l’interface UniFlow depuis le navigateur, sans image générée, retouche IA, identifiant ni écran de connexion.
 - [x] Retirer les bordures ajoutées autour des captures Devpost en conservant l’interface réelle plein cadre.
 - [x] Vérifier et restructurer le README GitHub UniFlow pour en faire un lien de référence Devpost fiable.
