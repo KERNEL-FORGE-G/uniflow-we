@@ -17,8 +17,8 @@
 - [ ] Produire une présentation synthétique du cycle ICT4D destinée à l’équipe pédagogique à partir des résultats mesurés.
 - [x] Auditer les collections, permissions et composants de messagerie afin d’identifier les données actuellement absentes ou simulées.
 - [x] Implémenter les conversations et messages universitaires réels dans Appwrite, avec lecture, envoi et autorisations par utilisateur.
-- [ ] Valider depuis l’interface de production un échange réel entre comptes universitaires, puis documenter le résultat.
-- [ ] Corriger le marquage lu Appwrite afin que le compteur de messages se mette à jour après l’ouverture effective d’une conversation.
+- [x] Valider depuis l’interface de production un échange réel entre comptes universitaires, puis documenter le résultat.
+- [x] Corriger le marquage lu Appwrite afin que le compteur de messages se mette à jour après l’ouverture effective d’une conversation.
 - [x] Auditer les plans, statuts et écrans d’abonnement Appwrite afin d’identifier les actions indisponibles ou simulées.
 - [x] Enregistrer une demande d’abonnement Appwrite avec référence unique, statut en attente et lien WhatsApp prérempli vers le numéro fourni.
 - [x] Ajouter le contrôle administratif manuel qui confirme ou rejette une demande après vérification externe de la preuve de paiement.
