@@ -41,6 +41,7 @@
 - [x] Identifier, appliquer et valider des améliorations prioritaires du projet compatibles avec Appwrite.
 - [x] Auditer, corriger et tester le parcours Forum avec des données Appwrite réelles et des permissions contrôlées.
 - [x] Auditer, corriger et tester le parcours Contact sans inventer de coordonnées ni exposer de données sensibles.
+- [x] Empêcher les auto-réactions sur les publications Forum et vérifier ce contrôle par un test Appwrite auto-nettoyant.
 - [x] Auditer les plans, statuts et écrans d’abonnement Appwrite afin d’identifier les actions indisponibles ou simulées.
 - [x] Enregistrer une demande d’abonnement Appwrite avec référence unique, statut en attente et lien WhatsApp prérempli vers le numéro fourni.
 - [x] Ajouter le contrôle administratif manuel qui confirme ou rejette une demande après vérification externe de la preuve de paiement.

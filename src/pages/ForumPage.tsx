@@ -368,17 +368,23 @@ export default function ForumPage() {
                           <Trash2 className="h-3.5 w-3.5" /> Supprimer
                         </button>
                       )}
-                      <button
-                        onClick={() => handleLike(post.id)}
-                        className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
-                          post.isLiked
-                            ? 'bg-blue-100 text-[#1e3a8a] border border-blue-200 shadow-2xs'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
-                        }`}
-                      >
-                        <ThumbsUp className={`h-3.5 w-3.5 ${post.isLiked ? 'fill-[#1e3a8a]' : ''}`} />
-                        <span>{post.likes}</span>
-                      </button>
+                      {getCurrentUser()?.id === post.authorId ? (
+                        <span className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-1.5 font-bold text-xs text-slate-500">
+                          <ThumbsUp className="h-3.5 w-3.5" /> {post.likes}
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleLike(post.id)}
+                          className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all cursor-pointer ${
+                            post.isLiked
+                              ? 'bg-blue-100 text-[#1e3a8a] border border-blue-200 shadow-2xs'
+                              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
+                          }`}
+                        >
+                          <ThumbsUp className={`h-3.5 w-3.5 ${post.isLiked ? 'fill-[#1e3a8a]' : ''}`} />
+                          <span>{post.likes}</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
