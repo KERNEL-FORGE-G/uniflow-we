@@ -1,9 +1,14 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
+import { UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_FALLBACK_URL, UNIFLOW_PRIMARY_LOGO_URL } from '../../lib/brandAssets'
 import { useUserRole } from '../../utils/userRole'
 
-const logo = '/logo.svg'
+const logo = UNIFLOW_PRIMARY_LOGO_URL
+const restoreOriginalLogo = (event: React.SyntheticEvent<HTMLImageElement>) => {
+  event.currentTarget.onerror = null
+  event.currentTarget.src = UNIFLOW_PRIMARY_LOGO_FALLBACK_URL
+}
 
 const navLinks = [
   { to: '/about',        label: 'À propos' },
@@ -29,9 +34,10 @@ export function LandingNavbar() {
         <Link to="/" className="flex items-center shrink-0">
           <img
             src={logo}
-            alt="UniFlow"
+            alt={UNIFLOW_PRIMARY_LOGO_ALT}
             loading="eager"
             decoding="async"
+            onError={restoreOriginalLogo}
             className="h-10 w-auto object-contain"
           />
         </Link>
@@ -109,8 +115,9 @@ export function LandingFooter() {
             <div className="flex items-center gap-3 mb-4">
               <img 
                 src={logo}
-                alt="UniFlow" 
-                className="h-10 w-auto object-contain" 
+                alt={UNIFLOW_PRIMARY_LOGO_ALT}
+                onError={restoreOriginalLogo}
+                className="h-10 w-auto rounded-sm bg-white px-1 object-contain"
               />
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
