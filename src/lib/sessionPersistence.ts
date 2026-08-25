@@ -4,8 +4,10 @@ const DATABASE_NAME = 'uniflow-auth'
 const STORE_NAME = 'session'
 const SESSION_KEY = 'current'
 
+export type PersistedUser = Omit<UniFlowUser, 'email'>
+
 export type PersistedSession = {
-  user: UniFlowUser
+  user: PersistedUser
   persistedAt: number
 }
 
@@ -47,7 +49,8 @@ async function runTransaction<T>(mode: IDBTransactionMode, callback: (store: IDB
  * Appwrite restent la seule preuve d’authentification et sont validés au démarrage.
  */
 export async function persistSessionSnapshot(user: UniFlowUser) {
-  await runTransaction('readwrite', (store) => store.put({ user, persistedAt: Date.now() } satisfies PersistedSession, SESSION_KEY))
+  const { email: _email, ...nonSensitiveUser } = user
+  await runTransaction('readwrite', (store) => store.put({ user: nonSensitiveUser, persistedAt: Date.now() } satisfies PersistedSession, SESSION_KEY))
 }
 
 export async function readSessionSnapshot(): Promise<PersistedSession | null> {

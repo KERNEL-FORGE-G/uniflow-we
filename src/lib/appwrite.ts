@@ -789,57 +789,6 @@ export const academicAppwriteApi = {
     sessions: () => listDocuments<AcademicAttendanceSessionDocument>('attendance_sessions', [Query.limit(200)]),
     records: () => listDocuments<AcademicAttendanceRecordDocument>('attendance_records', [Query.limit(200)]),
     qrTokens: () => listDocuments<AcademicAttendanceQrTokenDocument>('attendance_qr_tokens', [Query.limit(200)]),
-    createSession: async (data: { courseId: string; date: string; createdBy: string }) => {
-      const document = await awaitAppwrite(
-        appwriteDatabases.createDocument(
-          APPWRITE_DATABASE_ID,
-          'attendance_sessions',
-          ID.unique(),
-          data,
-          [Permission.read(Role.users()), Permission.update(Role.user(data.createdBy)), Permission.delete(Role.user(data.createdBy))],
-        ),
-        'la création de la séance de présence',
-      )
-      return document as unknown as AcademicAttendanceSessionDocument
-    },
-    createRecord: async (data: Omit<AcademicAttendanceRecordDocument, '$id'>, actorId: string) => {
-      const document = await awaitAppwrite(
-        appwriteDatabases.createDocument(
-          APPWRITE_DATABASE_ID,
-          'attendance_records',
-          ID.unique(),
-          data,
-          [Permission.read(Role.users()), Permission.update(Role.user(actorId)), Permission.delete(Role.user(actorId))],
-        ),
-        'l’enregistrement de la présence',
-      )
-      return document as unknown as AcademicAttendanceRecordDocument
-    },
-    updateRecord: async (recordId: string, status: AcademicAttendanceRecordDocument['status']) => {
-      const document = await awaitAppwrite(
-        appwriteDatabases.updateDocument(
-          APPWRITE_DATABASE_ID,
-          'attendance_records',
-          recordId,
-          { status },
-        ),
-        'la mise à jour de la présence',
-      )
-      return document as unknown as AcademicAttendanceRecordDocument
-    },
-    createQrToken: async (data: Omit<AcademicAttendanceQrTokenDocument, '$id'>, actorId: string) => {
-      const document = await awaitAppwrite(
-        appwriteDatabases.createDocument(
-          APPWRITE_DATABASE_ID,
-          'attendance_qr_tokens',
-          ID.unique(),
-          data,
-          [Permission.read(Role.users()), Permission.update(Role.user(actorId)), Permission.delete(Role.user(actorId))],
-        ),
-        'la création du jeton QR de présence',
-      )
-      return document as unknown as AcademicAttendanceQrTokenDocument
-    },
   },
   directory: {
     list: () => listDocuments<AcademicDirectoryDocument>('academic_directory', [Query.limit(200)]),
