@@ -563,74 +563,21 @@ export const attendanceApi = {
     return studentsApi.listForCourse(courseId)
   },
   listSessions: appwriteAttendanceSessions,
-  createSession: async (dto: { courseId: string; date: string }) => {
-    const current = await getCurrentAccount('UNIVERSITY')
-    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
-    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut créer une séance de présence.')
-    const course = (await universityCourses()).find((entry) => entry.id === dto.courseId)
-    if (!course) throw new ApiError(403, 'Ce cours n’est pas disponible pour votre rôle Appwrite.')
-    const dateKey = new Date(dto.date).toISOString().slice(0, 10)
-    const existing = (await appwriteAttendanceSessions()).find((entry) => entry.courseId === dto.courseId && entry.date.slice(0, 10) === dateKey)
-    if (existing) return existing
-    const created = await academicAppwriteApi.attendance.createSession({ courseId: dto.courseId, date: new Date(dto.date).toISOString(), createdBy: current.id })
-    return { id: created.$id, date: created.date, courseId: created.courseId, course: { name: course.name, code: course.code }, records: [] }
-  },
-  getSession: async (id: string) => {
-    const session = (await appwriteAttendanceSessions()).find((entry) => entry.id === id)
-    if (!session) throw new ApiError(404, 'Séance de présence introuvable dans Appwrite.')
-    return session
-  },
   byCourse: async (courseId: string): Promise<AttendanceSession[]> => (await appwriteAttendanceSessions()).filter((entry) => entry.courseId === courseId),
-  mark: async (sessionId: string, dto: { studentId: string; status: string }) => {
-    const current = await getCurrentAccount('UNIVERSITY')
-    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
-    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut enregistrer une présence.')
-    if (!['PRESENT', 'ABSENT', 'RETARD', 'JUSTIFIE'].includes(dto.status)) throw new ApiError(400, 'Statut de présence Appwrite invalide.')
-    const session = await attendanceApi.getSession(sessionId)
-    const student = await studentsApi.getOne(dto.studentId)
-    const existing = session.records.find((record) => record.studentId === dto.studentId)
-    if (existing) {
-      if (existing.status === dto.status) return existing
-      const updated = await academicAppwriteApi.attendance.updateRecord(existing.id, dto.status as AttendanceRecord['status'])
-      return { ...existing, status: updated.status }
-    }
-    const created = await academicAppwriteApi.attendance.createRecord({ sessionId, courseId: session.courseId, studentId: dto.studentId, status: dto.status as AttendanceRecord['status'] }, current.id)
-    return { id: created.$id, studentId: created.studentId, status: created.status, student: { firstName: student.firstName, lastName: student.lastName, matricule: student.matricule } }
-  },
-  saveRoll: async (session: Pick<AttendanceSession, 'id' | 'courseId'>, rows: Array<{ studentId: string; status: AttendanceRecord['status'] }>) => {
-    const current = await getCurrentAccount('UNIVERSITY')
-    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
-    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut enregistrer une présence.')
-
-    const existingRecords = await academicAppwriteApi.attendance.records()
-    const byStudentId = new Map(existingRecords
-      .filter((record) => record.sessionId === session.id)
-      .map((record) => [record.studentId, record]))
-
-    return Promise.all(rows.map(async (row) => {
-      const existing = byStudentId.get(row.studentId)
-      if (existing?.status === row.status) return existing
-      if (existing) return academicAppwriteApi.attendance.updateRecord(existing.$id, row.status)
-      return academicAppwriteApi.attendance.createRecord({ sessionId: session.id, courseId: session.courseId, studentId: row.studentId, status: row.status }, current.id)
-    }))
-  },
   saveTodayRoll: async (dto: { courseId: string; date: string; rows: Array<{ studentId: string; status: AttendanceRecord['status'] }> }) => {
     const response = await executeAttendanceSecureAction({ action: 'roll', courseId: dto.courseId, date: dto.date, rows: dto.rows })
     if (!response.sessionId || !response.courseId || !response.date) throw new ApiError(502, 'La Function Appwrite n’a pas retourné la séance de présence.')
     return { id: response.sessionId, courseId: response.courseId, date: response.date }
   },
   openQrSession: async (dto: { courseId: string; date?: string; origin: { latitude: number; longitude: number; accuracy: number }; radiusMeters?: number }) => {
-    const current = await getCurrentAccount('UNIVERSITY')
-    if (!current) throw new ApiError(401, 'Session Appwrite absente.')
-    if (current.role === 'STUDENT') throw new ApiError(403, 'Seul un enseignant, un délégué ou un administrateur peut générer un QR de présence.')
-
     const date = dto.date || new Date().toISOString()
-    const session = await attendanceApi.createSession({ courseId: dto.courseId, date })
-    const qr = await executeAttendanceSecureAction({ action: 'issue', sessionId: session.id, courseId: session.courseId, origin: dto.origin, radiusMeters: dto.radiusMeters })
+    const session = await executeAttendanceSecureAction({ action: 'roll', courseId: dto.courseId, date, rows: [] })
+    if (!session.sessionId || !session.courseId) throw new ApiError(502, 'La Function Appwrite n’a pas retourné la séance de présence.')
+    const qr = await executeAttendanceSecureAction({ action: 'issue', sessionId: session.sessionId, courseId: session.courseId, origin: dto.origin, radiusMeters: dto.radiusMeters })
     if (!qr.token || !qr.expiresAt) throw new ApiError(502, 'La Function Appwrite n’a pas retourné de jeton QR exploitable.')
     return {
       token: qr.token,
-      sessionId: session.id,
+      sessionId: session.sessionId,
       courseId: session.courseId,
       expiresAt: qr.expiresAt,
       payload: JSON.stringify({ type: 'uniflow-attendance', version: 1, token: qr.token }),

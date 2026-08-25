@@ -85,8 +85,8 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
   }
 }
 
-function appwriteUserToBackendUser(user: UniFlowUser): BackendUser {
-  return { id: user.id, email: user.email, role: user.role, fullName: user.name, accountType: user.accountType }
+function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role' | 'accountType'> & Partial<Pick<UniFlowUser, 'email'>>): BackendUser {
+  return { id: user.id, email: user.email || '', role: user.role, fullName: user.name, accountType: user.accountType }
 }
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {
