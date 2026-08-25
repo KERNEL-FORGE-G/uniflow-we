@@ -113,7 +113,7 @@ export default function PresentationPage() {
               className="h-20 w-20 object-contain drop-shadow-md animate-bounce" 
               onError={(e) => {
                 const target = e.target as HTMLImageElement
-                target.src = '/logo_1.png'
+                target.src = '/logos/icon-512.png'
               }}
             />
           </div>
@@ -196,7 +196,7 @@ export default function PresentationPage() {
                   preload="metadata"
                   playsInline
                   key={currentVideo.id}
-                  poster="/logos/landing.png"
+                  poster="/logos/og-image.png"
                   onError={() => setVideoErrorId(currentVideo.id)}
                 >
                   <source src={currentVideo.videoSrc} type="video/mp4" />
