@@ -83,3 +83,7 @@ Les éléments ci-dessus seront cochés après vérification effective, sans exp
 - [x] Simuler la validation administrative d’une demande de souscription et vérifier la transition `PENDING` vers `CONFIRMED`/actif.
 - [x] Mesurer sous concurrence contrôlée les flux Forum et abonnement Appwrite avec des données de test isolées.
 - [x] Nettoyer toutes les données et comptes de charge puis documenter les résultats, erreurs et limites observées.
+
+- [x] Étendre le test de charge Forum et abonnement à 50 utilisateurs Appwrite simultanés et mesurer p50/p95/max ainsi que les échecs.
+- [x] Vérifier l’intégrité post-nettoyage des collections Appwrite : absence des données éphémères, unicité des références et conservation des volumes de référence.
+- [x] Documenter la limite observée et conserver le scénario de charge reproductible sans secrets ni données persistantes.
