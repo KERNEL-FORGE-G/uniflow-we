@@ -8,15 +8,29 @@ const runId = `load${Date.now().toString(36)}${randomUUID().slice(0, 5)}`.toLowe
 const password = `Load!${randomUUID().replaceAll('-', '')}`
 const users = []
 const documents = []
+let baselineCounts = {}
 
 if (!apiKey) throw new Error('APPWRITE_SELF_HOSTED_API_KEY est requis pour le test de charge.')
 
 const query = (method, attribute, values) => JSON.stringify({ method, attribute, values: Array.isArray(values) ? values : [values] })
 const queryString = (queries = []) => queries.map((item, index) => `queries%5B${index}%5D=${encodeURIComponent(item)}`).join('&')
 
+async function fetchWithRetry(url, options) {
+  let lastError
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    try {
+      return await fetch(url, options)
+    } catch (error) {
+      lastError = error
+      if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * (attempt + 1)))
+    }
+  }
+  throw lastError
+}
+
 async function request(path, { method = 'GET', body, jwt, server = false, queries = [] } = {}) {
   const url = `${endpoint}${path}${queries.length ? `?${queryString(queries)}` : ''}`
-  const response = await fetch(url, {
+  const response = await fetchWithRetry(url, {
     method,
     headers: {
       ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
@@ -31,6 +45,11 @@ async function request(path, { method = 'GET', body, jwt, server = false, querie
   try { data = text ? JSON.parse(text) : {} } catch { data = { message: text } }
   if (!response.ok) throw new Error(`${method} ${path} (${response.status}): ${data.message || 'réponse Appwrite invalide'}`)
   return data
+}
+
+async function countCollection(collection) {
+  const data = await request(`/databases/${databaseId}/collections/${collection}/documents`, { server: true, queries: [query('limit', undefined, 1)] })
+  return data.total
 }
 
 async function createUser(index) {
@@ -51,9 +70,27 @@ async function createUser(index) {
   return { userId, email }
 }
 
+async function createAccountsInBatches(count, batchSize = 5) {
+  const accounts = []
+  for (let start = 0; start < count; start += batchSize) {
+    const batch = await Promise.all(Array.from({ length: Math.min(batchSize, count - start) }, (_, offset) => createUser(start + offset)))
+    accounts.push(...batch)
+  }
+  return accounts
+}
+
+async function createSessionsInBatches(count, batchSize = 5) {
+  const sessions = []
+  for (let start = 0; start < count; start += batchSize) {
+    const batch = await Promise.all(Array.from({ length: Math.min(batchSize, count - start) }, (_, offset) => createSession(start + offset)))
+    sessions.push(...batch)
+  }
+  return sessions
+}
+
 async function createSession(index) {
   const user = users[index]
-  const sessionResponse = await fetch(`${endpoint}/account/sessions/email`, {
+  const sessionResponse = await fetchWithRetry(`${endpoint}/account/sessions/email`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Appwrite-Project': projectId },
     body: JSON.stringify({ email: user.email, password }),
@@ -63,7 +100,7 @@ async function createSession(index) {
     : [sessionResponse.headers.get('set-cookie')].filter(Boolean)
   if (!sessionResponse.ok) throw new Error(`POST /account/sessions/email (${sessionResponse.status})`)
   const cookieHeader = setCookie.map((value) => value.split(';', 1)[0]).join('; ')
-  const jwtResponse = await fetch(`${endpoint}/account/jwt`, { method: 'POST', headers: { 'X-Appwrite-Project': projectId, Cookie: cookieHeader } })
+  const jwtResponse = await fetchWithRetry(`${endpoint}/account/jwt`, { method: 'POST', headers: { 'X-Appwrite-Project': projectId, Cookie: cookieHeader } })
   const jwt = await jwtResponse.json()
   if (!jwtResponse.ok) throw new Error(`POST /account/jwt (${jwtResponse.status})`)
   return { userId: user.userId, email: user.email, jwt: jwt.jwt }
@@ -124,6 +161,10 @@ async function runSubscription(user, index) {
     action: 'create', planCode: 'personal_cm', billingCycle: 'MONTHLY',
     fullName: `Charge Abonnement ${index}`, email: user.email, phoneNumber: `+23765000${String(index).padStart(4, '0')}`,
   }, user.jwt)
+  const requests = await request(`/databases/${databaseId}/collections/subscription_payment_requests/documents`, { server: true, queries: [query('equal', 'userId', user.userId)] })
+  for (const document of requests.documents || []) documents.push({ collection: 'subscription_payment_requests', id: document.$id })
+  const statuses = await request(`/databases/${databaseId}/collections/subscription_statuses/documents`, { server: true, queries: [query('equal', 'userId', user.userId)] })
+  for (const document of statuses.documents || []) documents.push({ collection: 'subscription_statuses', id: document.$id })
   return result.durationMs
 }
 
@@ -139,11 +180,12 @@ async function cleanup() {
 }
 
 const startedAt = new Date().toISOString()
-const concurrency = 8
+const concurrency = 50
 let report
 try {
-  const accounts = await Promise.all(Array.from({ length: concurrency }, (_, index) => createUser(index)))
-  const sessions = await Promise.all(accounts.map((_, index) => createSession(index)))
+  baselineCounts = Object.fromEntries(await Promise.all(['users', 'forum_posts', 'subscription_payment_requests', 'subscription_statuses'].map(async (collection) => [collection, await countCollection(collection)])))
+  const accounts = await createAccountsInBatches(concurrency)
+  const sessions = await createSessionsInBatches(concurrency)
   const [forumResults, subscriptionResults] = await Promise.all([
     Promise.allSettled(sessions.map((user, index) => runForum(user, index))),
     Promise.allSettled(sessions.map((user, index) => runSubscription(user, index))),
@@ -156,7 +198,14 @@ try {
   report = { runId, startedAt, concurrency, forum: summarize(forumResults), subscriptions: summarize(subscriptionResults) }
 } finally {
   const errors = await cleanup()
-  report = { ...(report || { runId, startedAt, concurrency }), cleanup: { ok: errors.length === 0, errors }, finishedAt: new Date().toISOString(), passed: Boolean(report && report.forum.failed === 0 && report.subscriptions.failed === 0 && errors.length === 0) }
+  let afterCounts = {}
+  try {
+    afterCounts = Object.fromEntries(await Promise.all(['users', 'forum_posts', 'subscription_payment_requests', 'subscription_statuses'].map(async (collection) => [collection, await countCollection(collection)])))
+  } catch (error) {
+    errors.push(`integrity query: ${String(error)}`)
+  }
+  const integrityMatchesBaseline = Object.keys(baselineCounts).length === 4 && Object.entries(baselineCounts).every(([collection, count]) => afterCounts[collection] === count)
+  report = { ...(report || { runId, startedAt, concurrency }), cleanup: { ok: errors.length === 0, errors }, integrity: { baselineCounts, afterCounts, matchesBaseline: integrityMatchesBaseline }, finishedAt: new Date().toISOString(), passed: Boolean(report && report.forum.failed === 0 && report.subscriptions.failed === 0 && errors.length === 0 && integrityMatchesBaseline) }
 }
 console.log(JSON.stringify(report, null, 2))
 if (!report.passed) process.exitCode = 1
