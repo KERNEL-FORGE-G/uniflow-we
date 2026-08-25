@@ -67,3 +67,19 @@
 - [x] Permettre une navigation explicite entre l’espace authentifié et l’accueil sans déconnexion, avec un retour cohérent vers le bon tableau de bord.
 - [x] Évaluer Stripe et confirmer son retrait du périmètre : aucun secret, code Stripe, webhook ou paiement carte n’est activé dans UniFlow.
 - [x] Tester les parcours de session, navigation et WhatsApp avant publication, sans effectuer de transaction financière réelle pendant les tests.
+
+- [x] Créer des commentaires de contrôle dans le Forum depuis le parcours Appwrite réel et vérifier leur lecture.
+- [x] Tester une demande d’abonnement WhatsApp Appwrite sans confirmer de paiement réel.
+- [x] Nettoyer les données de test créées et documenter les résultats ainsi que les éventuelles limites de permissions.
+
+## Historique — contrôle forum et abonnement du 25 août 2026
+
+- [x] Validation demandée et confirmée par l’utilisateur pour les écritures de test dans Appwrite.
+
+## Fin de l’historique
+
+Les éléments ci-dessus seront cochés après vérification effective, sans exposer de compte de test ni de secret.
+
+- [x] Simuler la validation administrative d’une demande de souscription et vérifier la transition `PENDING` vers `CONFIRMED`/actif.
+- [x] Mesurer sous concurrence contrôlée les flux Forum et abonnement Appwrite avec des données de test isolées.
+- [x] Nettoyer toutes les données et comptes de charge puis documenter les résultats, erreurs et limites observées.
