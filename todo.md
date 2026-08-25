@@ -43,6 +43,9 @@
 - [x] Vérifier et purger les caches locaux historiques qui peuvent contenir des données personnelles d’anciens comptes.
 - [x] Remplacer les promesses de connexion obsolètes par une explication exacte de la session Appwrite et des limites hors ligne.
 - [x] Exécuter les tests de non-régression, vérifier la production Vercel et documenter les limites résiduelles.
+- [x] Auditer les images, vidéos, logos et autres assets qui ne chargent plus sur UniFlow en production.
+- [x] Corriger les références, politiques de contenu et fichiers assets défaillants sans remplacer les contenus validés par des éléments fictifs.
+- [ ] Tester les assets corrigés sur Vercel et documenter la validation de production.
 - [x] Fournir uniquement des captures brutes de l’interface UniFlow depuis le navigateur, sans image générée, retouche IA, identifiant ni écran de connexion.
 - [x] Retirer les bordures ajoutées autour des captures Devpost en conservant l’interface réelle plein cadre.
 - [x] Vérifier et restructurer le README GitHub UniFlow pour en faire un lien de référence Devpost fiable.

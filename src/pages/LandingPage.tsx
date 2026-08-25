@@ -274,10 +274,7 @@ export default function LandingPage() {
                     const target = e.target as HTMLImageElement
                     if (!target.dataset.triedFallback1) {
                       target.dataset.triedFallback1 = 'true'
-                      target.src = '/landing.png'
-                    } else if (!target.dataset.triedFallback2) {
-                      target.dataset.triedFallback2 = 'true'
-                      target.src = '/Image 1.png'
+                      target.src = '/logos/og-image.png'
                     }
                   }}
                 />

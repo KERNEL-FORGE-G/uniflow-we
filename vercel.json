@@ -14,7 +14,7 @@
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
         { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" },
         { "key": "Permissions-Policy", "value": "accelerometer=(), camera=(self), geolocation=(self), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'self'; connect-src 'self' https://appwrite.kernelforge.codes; font-src 'self' data:; form-action 'self'; frame-ancestors 'self'; frame-src 'self' https://www.youtube-nocookie.com; img-src 'self' data: blob: https://i.imgur.com https://ui-avatars.com https://github.com https://avatars.githubusercontent.com; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; worker-src 'self' blob:" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'self'; connect-src 'self' https://appwrite.kernelforge.codes; font-src 'self' data: https://fonts.gstatic.com; form-action 'self'; frame-ancestors 'self'; frame-src 'self' https://www.youtube-nocookie.com; img-src 'self' data: blob: https://i.imgur.com https://ui-avatars.com https://github.com https://avatars.githubusercontent.com; object-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; worker-src 'self' blob:" }
       ]
     },
     {

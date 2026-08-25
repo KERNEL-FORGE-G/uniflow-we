@@ -2,7 +2,8 @@ import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { useUserRole } from '../../utils/userRole'
-import logo from '../../assets/logo.png'
+
+const logo = '/logo.svg'
 
 const navLinks = [
   { to: '/about',        label: 'À propos' },
