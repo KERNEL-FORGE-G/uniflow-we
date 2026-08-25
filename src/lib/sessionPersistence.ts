@@ -3,6 +3,7 @@ import type { UniFlowUser } from './appwrite'
 const DATABASE_NAME = 'uniflow-auth'
 const STORE_NAME = 'session'
 const SESSION_KEY = 'current'
+const PERSONAL_CACHE_PREFIX = 'uniflow:personal-cache:'
 
 export type PersistedUser = Omit<UniFlowUser, 'email'>
 
@@ -13,6 +14,16 @@ export type PersistedSession = {
 
 function databaseAvailable() {
   return typeof window !== 'undefined' && 'indexedDB' in window
+}
+
+function clearPersonalCaches() {
+  try {
+    for (const key of Object.keys(localStorage)) {
+      if (key.startsWith(PERSONAL_CACHE_PREFIX)) localStorage.removeItem(key)
+    }
+  } catch {
+    // Le nettoyage des caches ne doit jamais empêcher la fermeture de session.
+  }
 }
 
 function openDatabase(): Promise<IDBDatabase | null> {
@@ -54,9 +65,15 @@ export async function persistSessionSnapshot(user: UniFlowUser) {
 }
 
 export async function readSessionSnapshot(): Promise<PersistedSession | null> {
-  return runTransaction<PersistedSession>('readonly', (store) => store.get(SESSION_KEY))
+  const snapshot = await runTransaction<PersistedSession & { user?: UniFlowUser }>('readonly', (store) => store.get(SESSION_KEY))
+  if (!snapshot?.user) return null
+  const { email: _email, ...nonSensitiveUser } = snapshot.user
+  const sanitized = { user: nonSensitiveUser, persistedAt: snapshot.persistedAt } satisfies PersistedSession
+  if ('email' in snapshot.user) await runTransaction('readwrite', (store) => store.put(sanitized, SESSION_KEY))
+  return sanitized
 }
 
 export async function clearSessionSnapshot() {
   await runTransaction('readwrite', (store) => store.delete(SESSION_KEY))
+  clearPersonalCaches()
 }

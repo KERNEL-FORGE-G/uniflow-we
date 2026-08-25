@@ -40,6 +40,7 @@
 - [x] Vérifier le contenu et les captures réelles Devpost pour produire un lot final sans retouche ni données d’accès.
 - [x] Auditer les contrôles client, Functions et en-têtes HTTP pour identifier les risques de robustesse et de sécurité prioritaires.
 - [x] Renforcer les protections prioritaires sans modifier le périmètre Appwrite ni ajouter de données simulées.
+- [ ] Vérifier et purger les caches locaux historiques qui peuvent contenir des données personnelles d’anciens comptes.
 - [ ] Exécuter les tests de non-régression, vérifier la production Vercel et documenter les limites résiduelles.
 - [x] Fournir uniquement des captures brutes de l’interface UniFlow depuis le navigateur, sans image générée, retouche IA, identifiant ni écran de connexion.
 - [x] Retirer les bordures ajoutées autour des captures Devpost en conservant l’interface réelle plein cadre.
