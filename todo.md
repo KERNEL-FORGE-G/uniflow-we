@@ -45,12 +45,12 @@
 - [x] Exécuter les tests de non-régression, vérifier la production Vercel et documenter les limites résiduelles.
 - [x] Auditer les images, vidéos, logos et autres assets qui ne chargent plus sur UniFlow en production.
 - [x] Corriger les références, politiques de contenu et fichiers assets défaillants sans remplacer les contenus validés par des éléments fictifs.
-- [ ] Tester les assets corrigés sur Vercel et documenter la validation de production.
+- [x] Tester les assets corrigés sur Vercel et documenter la validation de production.
 - [x] Retrouver et restaurer exclusivement le logo UniFlow d’origine, sans substitution visuelle générée ou générique.
-- [ ] Vérifier le rendu du logo restauré sur Vercel et retirer les remplacements non souhaités.
+- [x] Vérifier le rendu du logo restauré sur Vercel et retirer les remplacements non souhaités.
 - [x] Inventorier les images et médias lourds réellement utilisés afin de les distribuer depuis le bucket Appwrite sans déplacer les icônes légères.
 - [x] Téléverser les médias validés vers le bucket Appwrite et relier le client à des URL de prévisualisation publiques contrôlées.
-- [ ] Vérifier les fallbacks locaux, le poids de distribution et le rendu Vercel après externalisation des assets lourds.
+- [x] Vérifier les fallbacks locaux, le poids de distribution et le rendu Vercel après externalisation des assets lourds.
 - [x] Fournir uniquement des captures brutes de l’interface UniFlow depuis le navigateur, sans image générée, retouche IA, identifiant ni écran de connexion.
 - [x] Retirer les bordures ajoutées autour des captures Devpost en conservant l’interface réelle plein cadre.
 - [x] Vérifier et restructurer le README GitHub UniFlow pour en faire un lien de référence Devpost fiable.
