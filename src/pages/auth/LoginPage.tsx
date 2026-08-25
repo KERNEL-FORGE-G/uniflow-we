@@ -15,14 +15,14 @@ const features = [
   },
   { 
     icon: Wifi, 
-    title: 'Mode Offline First', 
-    desc: 'Fonctionne sans Internet avec synchronisation automatique au retour du réseau.',
+    title: 'Accès résilient',
+    desc: 'Les données déjà disponibles peuvent rester consultables temporairement ; les opérations sensibles exigent une session Appwrite active.',
     color: 'text-blue-400'
   },
   { 
     icon: ShieldCheck, 
-    title: 'Sécurisé & Multi-rôles', 
-    desc: 'JWT + RBAC pour chaque type d\'utilisateur. Données protégées et chiffrées.',
+    title: 'Rôles contrôlés',
+    desc: 'La session Appwrite et les permissions par rôle encadrent les accès aux données académiques.',
     color: 'text-purple-400'
   },
 ]

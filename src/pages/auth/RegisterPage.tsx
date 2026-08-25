@@ -23,8 +23,8 @@ const benefits = [
   },
   {
     icon: Sparkles,
-    title: 'Mode Offline puissant',
-    desc: 'Fonctionne sans Internet avec synchronisation intelligente.',
+    title: 'Accès adapté à la connexion',
+    desc: 'Les données déjà consultées peuvent rester disponibles temporairement ; les créations et modifications nécessitent Appwrite.',
     color: 'text-purple-400'
   },
   {
