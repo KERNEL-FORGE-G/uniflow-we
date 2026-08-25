@@ -16,3 +16,9 @@ Le premier chargement de la présence sous les nouveaux en-têtes rend l’inter
 ## Nettoyage local vérifié
 
 Après publication du commit `f226cd0`, un chargement sans session a supprimé les caches locaux personnels historiques. Seule la préférence d’interface non personnelle est restée dans `localStorage`; aucun instantané de profil ni cache de matières, planning, tâches ou notes n’est resté présent. Une clé de récupération de déploiement, bornée dans le temps, reste en `sessionStorage` pour prévenir les imports Vite périmés.
+
+## Contrôle de la version `e96b20b`
+
+Le déploiement Vercel correspondant est `READY`. La page de connexion a bien chargé le document de la version publiée, mais le rendu est resté sur son squelette initial lors du premier contrôle. Une observation après délai borné est nécessaire avant de conclure à un défaut ou à une latence Appwrite.
+
+Après le délai de démarrage, la page de connexion a rendu correctement. Les messages publics affichent désormais « Accès résilient » et « Rôles contrôlés », avec une description exacte de la session Appwrite et des opérations sensibles. Aucun identifiant n’a été saisi pendant ce contrôle.
