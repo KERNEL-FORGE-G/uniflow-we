@@ -89,4 +89,4 @@ Les éléments ci-dessus seront cochés après vérification effective, sans exp
 - [x] Documenter la limite observée et conserver le scénario de charge reproductible sans secrets ni données persistantes.
 - [x] Identifier l’image erronée de l’accueil et confirmer le visuel UniFlow officiel attendu.
 - [x] Remplacer la source et le repli de l’image d’accueil par des assets UniFlow validés.
-- [ ] Vérifier sur Vercel le rendu et le chargement de l’image d’accueil corrigée.
+- [x] Vérifier sur Vercel le rendu et le chargement de l’image d’accueil corrigée.
