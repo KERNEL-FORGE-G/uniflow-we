@@ -87,3 +87,6 @@ Les éléments ci-dessus seront cochés après vérification effective, sans exp
 - [x] Étendre le test de charge Forum et abonnement à 50 utilisateurs Appwrite simultanés et mesurer p50/p95/max ainsi que les échecs.
 - [x] Vérifier l’intégrité post-nettoyage des collections Appwrite : absence des données éphémères, unicité des références et conservation des volumes de référence.
 - [x] Documenter la limite observée et conserver le scénario de charge reproductible sans secrets ni données persistantes.
+- [x] Identifier l’image erronée de l’accueil et confirmer le visuel UniFlow officiel attendu.
+- [x] Remplacer la source et le repli de l’image d’accueil par des assets UniFlow validés.
+- [ ] Vérifier sur Vercel le rendu et le chargement de l’image d’accueil corrigée.
