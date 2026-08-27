@@ -17,8 +17,9 @@ import { Button } from '../components/ui/Button'
 import { fadeInUp, staggerContainer, float } from '../utils/animations'
 import { cn } from '../utils/cn'
 import { useUserRole } from '../utils/userRole'
+import { UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL } from '../lib/brandAssets'
 
-const landingImg = 'https://i.imgur.com/35YpEbS.png'
+const landingImg = UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL
 
 const features = [
   {
@@ -274,7 +275,7 @@ export default function LandingPage() {
                     const target = e.target as HTMLImageElement
                     if (!target.dataset.triedFallback1) {
                       target.dataset.triedFallback1 = 'true'
-                      target.src = '/logos/og-image.png'
+                      target.src = UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL
                     }
                   }}
                 />

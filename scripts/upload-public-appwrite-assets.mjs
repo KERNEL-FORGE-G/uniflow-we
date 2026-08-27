@@ -24,18 +24,26 @@ function requestHeaders() {
   }
 }
 
-async function deleteIfPresent(fileId) {
+async function getFile(fileId) {
   const response = await fetch(`${endpoint}/storage/buckets/${bucketId}/files/${fileId}`, {
-    method: 'DELETE',
     headers: requestHeaders(),
   })
-  if (response.status === 404) return
-  if (!response.ok) throw new Error(`Suppression Appwrite refusée (${response.status}) pour ${fileId}.`)
+  if (response.status === 404) return null
+  if (!response.ok) throw new Error(`Lecture Appwrite refusée (${response.status}) pour ${fileId}.`)
+  return response.json()
 }
 
 async function uploadAsset(asset) {
   const buffer = await readFile(asset.source)
-  await deleteIfPresent(asset.fileId)
+  const existing = await getFile(asset.fileId)
+  const viewUrl = `${endpoint}/storage/buckets/${bucketId}/files/${asset.fileId}/view?project=${encodeURIComponent(projectId)}`
+  if (existing) {
+    if (existing.sizeOriginal !== buffer.byteLength) {
+      throw new Error(`Le fichier existant ${asset.fileId} ne correspond pas à la source locale ; son remplacement doit être réalisé sans supprimer la ressource publique active.`)
+    }
+    console.log(JSON.stringify({ fileId: asset.fileId, bytes: buffer.byteLength, viewUrl, reused: true }))
+    return
+  }
 
   const form = new FormData()
   form.set('fileId', asset.fileId)
@@ -53,7 +61,6 @@ async function uploadAsset(asset) {
   if (uploaded.$id !== asset.fileId || uploaded.sizeOriginal !== buffer.byteLength) {
     throw new Error(`Réponse Appwrite incohérente pour ${asset.fileId}.`)
   }
-  const viewUrl = `${endpoint}/storage/buckets/${bucketId}/files/${asset.fileId}/view?project=${encodeURIComponent(projectId)}`
   console.log(JSON.stringify({ fileId: asset.fileId, bytes: buffer.byteLength, viewUrl }))
 }
 
