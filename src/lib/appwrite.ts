@@ -9,7 +9,7 @@ const configuredEndpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || '').
 const endpoint = /185\.181\.10\.106|eu-fr-cloud-xip\.com/i.test(configuredEndpoint)
   ? CERTIFIED_APPWRITE_ENDPOINT
   : (configuredEndpoint || CERTIFIED_APPWRITE_ENDPOINT)
-const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a885ccc000ddfbb3bb9')
+const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a959096002a64d9d4e6')
 export const APPWRITE_ENDPOINT = endpoint
 export const APPWRITE_PROJECT_ID = projectId
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
@@ -166,6 +166,7 @@ export type AcademicRegistrationResponse = {
   totalCourses?: number
 }
 
+// ID stable de la Function Appwrite déployée par le provisioning UniFlow.
 export const APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID || 'academic_registration')
 
 export async function provisionAcademicRegistration(matricule?: string): Promise<AcademicRegistrationResponse> {

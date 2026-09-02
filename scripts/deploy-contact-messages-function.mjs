@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises'
 
 const endpoint = String(process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
-const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || '6a885ccc000ddfbb3bb9'
+const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || '6a959096002a64d9d4e6'
 const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY
 const functionId = 'contact_messages'
 const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-contact-messages.tar.gz'
