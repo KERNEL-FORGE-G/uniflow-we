@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Edit, Users, Star, UserCheck, Camera, Microscope, Laptop, Wifi } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
@@ -9,6 +10,7 @@ const tabs = ['Informations', 'Parcours', 'Présences', 'Grades', 'Paramètres',
 type Tab = typeof tabs[number]
 
 export default function ProfilePage() {
+  const navigate = useNavigate()
   const { currentRole, currentUser: user } = useUserRole()
   const [activeTab, setActiveTab] = useState<Tab>('Informations')
   const [editing, setEditing] = useState(false)
@@ -50,14 +52,23 @@ export default function ProfilePage() {
       <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-start gap-5">
           <div className="relative">
-            <Avatar name={user.name} size="2xl" />
-            <button className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#1e3a8a] text-white shadow-md hover:bg-[#2d4fa8] transition-colors">
+            <Avatar name={user.name} avatarFileId={user.avatarFileId} size="2xl" />
+            {/* Le bouton mène aux réglages, seul endroit où la photo est
+                réellement téléversée dans Appwrite. */}
+            <button
+              onClick={() => navigate('/app/parametres')}
+              title="Changer la photo de profil"
+              className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#1e3a8a] text-white shadow-md hover:bg-[#2d4fa8] transition-colors"
+            >
               <Camera className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-3">
               <h1 className="text-xl font-bold text-[#111827]">{user.name}</h1>
+              {user.username && (
+                <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-0.5 text-xs font-semibold text-[#0d9488]">@{user.username}</span>
+              )}
               <Badge variant="success">Actif</Badge>
             </div>
             <p className="text-sm text-[#6b7280] mt-0.5">{user.roleLabel} · {user.filiere ?? 'Informatique'} · {user.level ?? ''}</p>

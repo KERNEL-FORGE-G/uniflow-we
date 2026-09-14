@@ -58,6 +58,37 @@ export function getAvatarUrl(name: string, githubHandle?: string, customUrl?: st
 }
 
 /**
+ * Priorité d'affichage d'un avatar : la photo téléversée dans Appwrite
+ * `uniflow_avatars` d'abord, puis l'URL explicite, puis le repli GitHub /
+ * ui-avatars. Une chaîne vide est traitée comme « pas de photo » : les
+ * documents dont l'attribut n'a jamais été renseigné contiennent `''`.
+ */
+export function resolveAvatarUrl(options: {
+  name: string
+  avatarFileId?: string | null
+  githubHandle?: string
+  customUrl?: string
+}): string {
+  const uploaded = avatarFileUrl(options.avatarFileId)
+  return uploaded || getAvatarUrl(options.name, options.githubHandle, options.customUrl)
+}
+
+/**
+ * URL publique d'un fichier du bucket `uniflow_avatars`.
+ *
+ * Écrit ici plutôt qu'importé de `lib/appwrite.ts` : ce module est utilisé par
+ * des composants de présentation qui ne doivent pas tirer le client Appwrite
+ * entier, et l'URL est une simple convention.
+ */
+export function avatarFileUrl(fileId?: string | null): string {
+  if (!fileId) return ''
+  const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
+  const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a959096002a64d9d4e6')
+  const bucketId = String(import.meta.env.VITE_APPWRITE_AVATAR_BUCKET_ID || 'uniflow_avatars')
+  return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`
+}
+
+/**
  * React image onError event handler to fall back to ui-avatars.com if an avatar fails to load
  */
 export function handleAvatarError(

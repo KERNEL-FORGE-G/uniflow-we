@@ -144,6 +144,10 @@ export interface BackendUser {
   subscriptionStatus?: string
   student?: StudentProfile
   teacher?: TeacherProfile
+  /** Pseudo unique : référent de la messagerie. */
+  username?: string
+  /** Fichier de la photo de profil dans le bucket `uniflow_avatars`. */
+  avatarFileId?: string
 }
 export interface AuthResult { accessToken: string; refreshToken: string; user: BackendUser }
 interface StudentProfile { firstName: string; lastName: string; matricule?: string; level?: string; specialty?: string }
@@ -163,6 +167,8 @@ function toBackendUser(user: Awaited<ReturnType<typeof getCurrentAccount>>): Bac
     accountCategory: user.accountType,
     countryCode: user.country === 'Cameroun' ? 'CM' : user.country,
     universityCode: user.accountType === 'UNIVERSITY' ? 'UY1' : undefined,
+    username: user.username,
+    avatarFileId: user.avatarFileId,
   }
 }
 
@@ -745,7 +751,29 @@ export const gradesApi = {
 }
 
 export interface ChatMessage { id: string; from: 'me' | 'them'; text: string; time: string; file?: string }
-export interface ChatConversation { id: string; name: string; role: string; email: string; online: boolean; time: string; preview: string; unread: number; messages: ChatMessage[] }
+export interface ChatConversation {
+  id: string
+  name: string
+  role: string
+  email: string
+  /** Pseudo du contact : le référent de la messagerie. */
+  username?: string
+  /** Photo de profil du contact, si elle a été téléversée. */
+  avatarFileId?: string
+  online: boolean
+  time: string
+  preview: string
+  unread: number
+  messages: ChatMessage[]
+}
+export interface ChatContact {
+  userId: string
+  name: string
+  email: string
+  username: string
+  avatarFileId: string
+  role: string
+}
 const asChatTime = (value: string) => {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
@@ -765,6 +793,13 @@ export const messagingApi = {
     return (response.conversations || []).map((conversation) => asChatConversation(conversation))
   },
   openByEmail: async (email: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', email })).conversation),
+  /** Ouvre (ou crée) la conversation avec le compte portant ce pseudo. */
+  openByUsername: async (username: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', username })).conversation),
+  /** Recherche des contacts par pseudo ou par nom, pour le sélecteur. */
+  searchContacts: async (query: string): Promise<ChatContact[]> => {
+    const response = await executeMessagingAction({ action: 'search', query })
+    return (response.contacts || []) as ChatContact[]
+  },
   sendMessage: async (convId: string, text: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'send', conversationId: convId, text })).conversation),
   markRead: async (convId: string): Promise<number> => (await executeMessagingAction({ action: 'read', conversationId: convId })).markedRead || 0,
 }

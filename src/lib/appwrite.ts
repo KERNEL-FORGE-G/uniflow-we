@@ -1,4 +1,4 @@
-import { Account, Client, Databases, Functions, ID, Models, Permission, Query, Role } from 'appwrite'
+import { Account, Client, Databases, Functions, ID, Models, Permission, Query, Role, Storage } from 'appwrite'
 import { readSessionSnapshot } from './sessionPersistence'
 
 // L’instance Appwrite UniFlow est servie par le domaine TLS certifié du VPS.
@@ -9,11 +9,19 @@ const configuredEndpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || '').
 const endpoint = /185\.181\.10\.106|eu-fr-cloud-xip\.com/i.test(configuredEndpoint)
   ? CERTIFIED_APPWRITE_ENDPOINT
   : (configuredEndpoint || CERTIFIED_APPWRITE_ENDPOINT)
-const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a885ccc000ddfbb3bb9')
+// Repli sur le projet auto-hébergé réellement utilisé par les quatre
+// applications UniFlow. L'ancien identifiant `6a885ccc000ddfbb3bb9` datait du
+// tout premier projet Appwrite et n'existe plus sur le VPS : un build sans
+// VITE_APPWRITE_PROJECT_ID pointait donc vers un projet injoignable.
+const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a959096002a64d9d4e6')
 export const APPWRITE_ENDPOINT = endpoint
 export const APPWRITE_PROJECT_ID = projectId
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
 export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets')
+// Bucket dédié aux photos de profil, distinct du bucket de documents : lecture
+// publique, écriture réservée aux comptes connectés. Les trois applications
+// (web, mobile, desktop) écrivent dans ce même bucket.
+export const APPWRITE_AVATAR_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_AVATAR_BUCKET_ID || 'uniflow_avatars')
 // Les Functions Appwrite auto-hébergées peuvent nécessiter un démarrage à
 // froid supérieur à 12 secondes. Le délai client reste borné, mais couvre
 // l’inscription académique et les appels sécurisés sans faux échec partiel.
@@ -23,6 +31,7 @@ export const appwriteClient = new Client().setEndpoint(endpoint).setProject(proj
 export const appwriteAccount = new Account(appwriteClient)
 export const appwriteDatabases = new Databases(appwriteClient)
 export const appwriteFunctions = new Functions(appwriteClient)
+export const appwriteStorage = new Storage(appwriteClient)
 export const APPWRITE_ATTENDANCE_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ATTENDANCE_FUNCTION_ID || 'attendance_secure')
 
 function normalizeAppwriteFailure(error: unknown, operation: string): Error {
@@ -236,11 +245,25 @@ export async function executeAcademicGradesAction(payload: AcademicGradeMutation
   return response
 }
 
+export type MessagingContact = {
+  userId: string
+  name: string
+  email: string
+  username: string
+  avatarFileId: string
+  role: string
+}
+
 export type MessagingRequest = {
-  action: 'list' | 'open' | 'send' | 'read'
+  action: 'list' | 'open' | 'send' | 'read' | 'search'
+  /** Référent principal de la messagerie : le pseudo. */
+  username?: string
+  /** Conservé pour les clients qui adressent encore un contact par email. */
   email?: string
   conversationId?: string
   text?: string
+  /** Terme de recherche de l'action `search`. */
+  query?: string
 }
 
 export type MessagingConversation = {
@@ -248,6 +271,8 @@ export type MessagingConversation = {
   name: string
   role: UniFlowRole
   email: string
+  username?: string
+  avatarFileId?: string
   online: boolean
   time: string
   preview: string
@@ -259,11 +284,12 @@ export type MessagingResponse = {
   ok: boolean
   code?: string
   message?: string
-  action?: 'list' | 'open' | 'send' | 'read'
+  action?: 'list' | 'open' | 'send' | 'read' | 'search'
   conversations?: MessagingConversation[]
   conversation?: MessagingConversation
   conversationId?: string
   markedRead?: number
+  contacts?: MessagingContact[]
 }
 
 export const APPWRITE_MESSAGING_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_MESSAGING_FUNCTION_ID || 'messaging')
@@ -422,6 +448,10 @@ export interface UniFlowUser {
   program?: string
   level?: 'L1'
   country?: string
+  /** Pseudo unique : c'est le référent de la messagerie. */
+  username?: string
+  /** Identifiant du fichier dans le bucket `uniflow_avatars`, vide si aucune photo. */
+  avatarFileId?: string
 }
 
 export type UniFlowProfileInput = {
@@ -435,6 +465,8 @@ export type UniFlowProfileInput = {
 type UniFlowProfileDocument = UniFlowProfileInput & {
   accountType?: UniFlowAccountType
   role?: UniFlowRole
+  username?: string
+  avatarFileId?: string
 }
 
 export interface ForumPost {
@@ -619,6 +651,120 @@ export async function getCurrentAccount(accountType?: UniFlowAccountType): Promi
 
 export async function logoutAccount() {
   try { await awaitAppwrite(appwriteAccount.deleteSession('current'), 'la fermeture de session') } catch { /* already logged out */ }
+}
+
+// ---------------------------------------------------------------------------
+// Photo de profil
+//
+// L'image est téléversée dans le bucket `uniflow_avatars` puis son identifiant
+// est enregistré sur le document `users` du compte (attribut `avatarFileId`).
+// Le bucket n'est pas le même que celui des documents : il est lisible
+// publiquement, car un avatar doit s'afficher dans les listes, les
+// conversations et les annuaires sans exiger de session.
+// ---------------------------------------------------------------------------
+
+/** Taille maximale acceptée par le bucket `uniflow_avatars`. */
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024
+
+/** Types acceptés, avec l'extension correspondante attendue par le bucket. */
+const AVATAR_TYPES: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+}
+
+/** URL publique d'une photo de profil, ou chaîne vide s'il n'y en a pas. */
+export function avatarViewUrl(fileId?: string | null): string {
+  if (!fileId) return ''
+  return `${endpoint}/storage/buckets/${APPWRITE_AVATAR_BUCKET_ID}/files/${fileId}/view?project=${projectId}`
+}
+
+/** Message d'erreur si le fichier ne convient pas, `null` s'il convient. */
+export function validateAvatarFile(file: File): string | null {
+  if (!AVATAR_TYPES[file.type]) return 'Choisissez une image JPEG, PNG ou WebP.'
+  if (file.size > AVATAR_MAX_BYTES) {
+    const mo = (file.size / 1024 / 1024).toFixed(1)
+    return `L'image fait ${mo} Mo ; la limite est de 5 Mo.`
+  }
+  return null
+}
+
+/**
+ * Téléverse une photo de profil et l'enregistre sur le profil.
+ * Renvoie l'identifiant du nouveau fichier.
+ *
+ * L'ancienne image est supprimée après la mise à jour du profil, et non avant :
+ * si la suppression réussissait mais que l'enregistrement échouait, le compte se
+ * retrouverait sans photo alors que la nouvelle image serait déjà perdue.
+ */
+export async function uploadAvatar(userId: string, file: File, previousFileId?: string | null): Promise<string> {
+  const invalid = validateAvatarFile(file)
+  if (invalid) throw new Error(invalid)
+
+  // Le nom est normalisé pour que l'extension déclarée soit toujours l'une des
+  // extensions autorisées par le bucket, quelle que soit la casse ou le nom
+  // d'origine choisi par l'utilisateur.
+  const extension = AVATAR_TYPES[file.type]
+  const normalized = new File([file], `avatar.${extension}`, { type: file.type })
+
+  let created: Models.File
+  try {
+    created = await awaitAppwrite(
+      appwriteStorage.createFile(APPWRITE_AVATAR_BUCKET_ID, ID.unique(), normalized, [Permission.read(Role.any())]),
+      'le téléversement de la photo de profil',
+    )
+  } catch (error) {
+    // Un bucket absent ou mal nommé produit ici un 404 peu explicite.
+    if (Number((error as { code?: unknown })?.code) === 404) {
+      throw new Error("Le bucket « uniflow_avatars » est introuvable sur Appwrite. Lancez scripts/provision-appwrite-selfhosted.mjs pour le créer.")
+    }
+    throw error
+  }
+
+  try {
+    await awaitAppwrite(
+      appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'users', userId, { avatarFileId: created.$id }),
+      "l'enregistrement de la photo de profil",
+    )
+  } catch (error) {
+    // Sans cet attribut, l'image resterait orpheline dans le bucket : on la
+    // retire pour ne pas accumuler de fichiers invisibles.
+    await appwriteStorage.deleteFile(APPWRITE_AVATAR_BUCKET_ID, created.$id).catch(() => undefined)
+    if (/unknown attribute|avatarFileId/i.test(String((error as Error)?.message || ''))) {
+      throw new Error("L'attribut « avatarFileId » manque sur la collection users. Lancez scripts/provision-appwrite-selfhosted.mjs.")
+    }
+    throw error
+  }
+
+  // Best-effort : un échec ici ne doit pas faire croire que l'upload a échoué.
+  if (previousFileId && previousFileId !== created.$id) {
+    await appwriteStorage.deleteFile(APPWRITE_AVATAR_BUCKET_ID, previousFileId).catch(() => undefined)
+  }
+  return created.$id
+}
+
+/** Retire la photo de profil et supprime le fichier correspondant. */
+export async function removeAvatar(userId: string, fileId?: string | null): Promise<void> {
+  await awaitAppwrite(
+    appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'users', userId, { avatarFileId: '' }),
+    'le retrait de la photo de profil',
+  )
+  if (fileId) await appwriteStorage.deleteFile(APPWRITE_AVATAR_BUCKET_ID, fileId).catch(() => undefined)
+}
+
+/**
+ * Pseudos déjà pris, pour prévenir une collision avant l'enregistrement.
+ * L'index unique d'Appwrite reste le seul garant : cette vérification sert
+ * uniquement à donner un message lisible au lieu d'une erreur serveur.
+ */
+export async function isUsernameTaken(username: string, exceptUserId: string): Promise<boolean> {
+  const normalized = username.trim().replace(/^@/, '').toLowerCase()
+  if (!normalized) return false
+  const result = await awaitAppwrite(
+    appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'users', [Query.equal('username', normalized), Query.limit(1)]),
+    'la vérification du pseudo',
+  )
+  return result.documents.some((document) => document.$id !== exceptUserId)
 }
 
 export async function listDocuments<T>(collectionId: string, queries: string[] = []) {
@@ -912,6 +1058,8 @@ function normalizeUser(profile: Models.User<Models.Preferences>, accountType: Un
     program: userProfile?.program || undefined,
     level: userProfile?.level,
     country: userProfile?.country || undefined,
+    username: userProfile?.username || undefined,
+    avatarFileId: userProfile?.avatarFileId || undefined,
   }
 }
 

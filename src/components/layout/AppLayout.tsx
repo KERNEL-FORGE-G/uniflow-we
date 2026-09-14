@@ -85,7 +85,7 @@ export function Sidebar() {
           className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-[#f9fafb] to-[#eff3ff] px-3 py-2.5 cursor-pointer hover:from-[#eff3ff] hover:to-[#dce5fd] transition-all group"
         >
           <div className="relative flex-shrink-0">
-            <Avatar name={currentUser.name} size="md" />
+            <Avatar name={currentUser.name} avatarFileId={currentUser.avatarFileId} size="md" />
             <span className={cn(
               'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white',
               isOfflineMode ? 'bg-gray-400' : 'bg-emerald-500'
@@ -273,7 +273,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           onClick={() => navigate('/app/profil')}
           className="flex items-center gap-2 rounded-xl px-2 py-1.5 hover:bg-[#f3f4f6] transition-all touch-target"
         >
-          <Avatar name={currentUser.name} size="sm" />
+          <Avatar name={currentUser.name} avatarFileId={currentUser.avatarFileId} size="sm" />
           <div className="hidden sm:block text-left">
             <p className="text-sm font-bold text-[#111827] leading-none">{currentUser.name}</p>
             <p className="text-[11px] text-[#6b7280] leading-none mt-0.5 truncate max-w-[130px]">{currentUser.roleLabel}</p>
@@ -387,7 +387,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
           className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-[#f9fafb] to-[#eff3ff] px-3 py-2.5 cursor-pointer hover:from-[#eff3ff] hover:to-[#dce5fd] transition-all"
         >
           <div className="relative flex-shrink-0">
-            <Avatar name={currentUser.name} size="md" />
+            <Avatar name={currentUser.name} avatarFileId={currentUser.avatarFileId} size="md" />
             <span className={cn(
               'absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-white',
               isOfflineMode ? 'bg-gray-400' : 'bg-emerald-500'
