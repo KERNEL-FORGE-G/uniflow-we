@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff, CheckCircle2, Plus, Sparkles, CreditCard } from 'lucide-react'
+import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff, CheckCircle2, Plus, Sparkles, CreditCard, Loader2, Trash2, AlertCircle } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
 import PushNotificationControl from '../components/PushNotificationControl'
 import { applyTheme, getStoredTheme, ThemeMode } from '../utils/theme'
 import { authApi } from '../lib/api'
+import { removeAvatar, uploadAvatar, validateAvatarFile } from '../lib/appwrite'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 
 const sections = ['Profil', 'Abonnement', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
@@ -21,10 +22,13 @@ const sectionIcons: Record<string, any> = {
 }
 
 export default function SettingsPage() {
-  const { currentUser: user, language, setLanguage, isOfflineMode, setIsOfflineMode } = useUserRole()
+  const { currentUser: user, setAuthUser, authUser, language, setLanguage, isOfflineMode, setIsOfflineMode } = useUserRole()
   const [section, setSection] = useState('Profil')
   const [saved, setSaved] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [avatarBusy, setAvatarBusy] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
+  const [avatarSaved, setAvatarSaved] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const [notifications, setNotifications] = useState({
@@ -117,12 +121,56 @@ export default function SettingsPage() {
     dlAnchor.remove()
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // L'aperçu local s'affiche immédiatement, mais la photo n'existe réellement
+  // qu'une fois téléversée dans le bucket `uniflow_avatars` et son identifiant
+  // enregistré sur le profil. L'ancien code s'arrêtait à l'aperçu : la photo
+  // disparaissait au rechargement, ce qui donnait l'impression d'un bug.
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = ev => setAvatarPreview(ev.target?.result as string)
-      reader.readAsDataURL(file)
+    // Le champ est remis à zéro pour qu'un second choix du même fichier
+    // déclenche bien `onChange`.
+    e.target.value = ''
+    if (!file) return
+
+    setAvatarError(null)
+    const invalid = validateAvatarFile(file)
+    if (invalid) {
+      setAvatarError(invalid)
+      return
+    }
+
+    const previewUrl = URL.createObjectURL(file)
+    setAvatarPreview(previewUrl)
+    setAvatarBusy(true)
+    try {
+      const previousFileId = user.avatarFileId
+      const fileId = await uploadAvatar(user.id, file, previousFileId)
+      // Remonter l'identifiant dans la session courante : la barre latérale et
+      // l'en-tête se rafraîchissent sans rechargement de page.
+      if (authUser) setAuthUser({ ...authUser, avatarFileId: fileId })
+      setAvatarSaved(true)
+      setTimeout(() => setAvatarSaved(false), 3000)
+    } catch (error) {
+      setAvatarPreview(null)
+      setAvatarError(error instanceof Error ? error.message : 'Le téléversement a échoué.')
+    } finally {
+      URL.revokeObjectURL(previewUrl)
+      setAvatarBusy(false)
+    }
+  }
+
+  const handleAvatarRemove = async () => {
+    if (!user.avatarFileId) return
+    setAvatarError(null)
+    setAvatarBusy(true)
+    try {
+      await removeAvatar(user.id, user.avatarFileId)
+      if (authUser) setAuthUser({ ...authUser, avatarFileId: undefined })
+      setAvatarPreview(null)
+    } catch (error) {
+      setAvatarError(error instanceof Error ? error.message : 'Le retrait a échoué.')
+    } finally {
+      setAvatarBusy(false)
     }
   }
 
@@ -203,26 +251,58 @@ export default function SettingsPage() {
                   {avatarPreview ? (
                     <img src={avatarPreview} alt="Avatar" className="h-20 w-20 rounded-2xl object-cover ring-4 ring-[#1e3a8a]/20" />
                   ) : (
-                    <Avatar name={user.name} size="xl" />
+                    <Avatar name={user.name} avatarFileId={user.avatarFileId} size="xl" />
                   )}
-                  <input ref={fileInputRef} type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                  {avatarBusy && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
+                      <Loader2 className="h-6 w-6 animate-spin text-white" />
+                    </div>
+                  )}
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} className="hidden" />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl bg-[#1e3a8a] text-white shadow-md hover:bg-[#2d4fa8] transition-all hover:scale-110"
+                    disabled={avatarBusy}
+                    className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl bg-[#1e3a8a] text-white shadow-md hover:bg-[#2d4fa8] transition-all hover:scale-110 disabled:opacity-50 disabled:hover:scale-100"
                     title="Changer la photo de profil"
                   >
                     <Camera className="h-4 w-4" />
                   </button>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h3 className="font-bold text-lg text-[#111827]">{user.name}</h3>
-                  <p className="text-sm text-[#6b7280]">{user.role} · {user.filiere}</p>
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="mt-2 text-xs font-semibold text-[#1e3a8a] hover:underline"
-                  >
-                    Changer la photo de profil
-                  </button>
+                  <p className="text-sm text-[#6b7280]">{user.roleLabel}{user.filiere ? ` · ${user.filiere}` : ''}</p>
+                  {user.username && (
+                    <p className="mt-0.5 text-xs font-semibold text-[#0d9488]">@{user.username}</p>
+                  )}
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={avatarBusy}
+                      className="text-xs font-semibold text-[#1e3a8a] hover:underline disabled:opacity-50"
+                    >
+                      {user.avatarFileId ? 'Changer la photo' : 'Ajouter une photo'}
+                    </button>
+                    {user.avatarFileId && (
+                      <button
+                        onClick={handleAvatarRemove}
+                        disabled={avatarBusy}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-[#dc2626] hover:underline disabled:opacity-50"
+                      >
+                        <Trash2 className="h-3 w-3" /> Retirer
+                      </button>
+                    )}
+                  </div>
+                  <p className="mt-1 text-[11px] text-[#9ca3af]">JPEG, PNG ou WebP · 5 Mo maximum</p>
+                  {avatarError && (
+                    <p className="mt-1.5 inline-flex items-start gap-1 text-xs font-medium text-[#dc2626]">
+                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{avatarError}
+                    </p>
+                  )}
+                  {avatarSaved && (
+                    <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-[#059669]">
+                      <CheckCircle2 className="h-3.5 w-3.5" /> Photo de profil enregistrée.
+                    </p>
+                  )}
                 </div>
               </div>
 

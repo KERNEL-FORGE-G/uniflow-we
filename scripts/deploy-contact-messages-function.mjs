@@ -1,25 +1,15 @@
 import { readFile } from 'node:fs/promises'
+import { apiKey, createClient, functionRuntime, projectId } from './appwrite-env.mjs'
 
-const endpoint = String(process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
-const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || '6a885ccc000ddfbb3bb9'
-const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY
 const functionId = 'contact_messages'
 const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-contact-messages.tar.gz'
 
-if (!apiKey) throw new Error('APPWRITE_SELF_HOSTED_API_KEY est requise pour déployer la Function des messages de contact.')
+console.log(`Déploiement de la Function « ${functionId} » sur le projet ${projectId} (${functionRuntime}).`)
 
-const headers = { 'X-Appwrite-Project': projectId, 'X-Appwrite-Key': apiKey }
-
-async function request(method, path, body) {
-  const response = await fetch(`${endpoint}${path}`, { method, headers: { ...headers, ...(body === undefined || body instanceof FormData ? {} : { 'Content-Type': 'application/json' }) }, body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body) })
-  const text = await response.text()
-  const payload = text ? JSON.parse(text) : {}
-  if (!response.ok && response.status !== 409) throw new Error(`${method} ${path} a échoué (${response.status}) : ${payload.message || text}`)
-  return { status: response.status, payload }
-}
+const request = createClient()
 
 async function ensureFunction() {
-  const definition = { functionId, name: 'UniFlow — Demandes de contact', runtime: 'node-16.0', execute: ['any'], events: [], schedule: '', timeout: 30, enabled: true, logging: true, entrypoint: 'src/main.js', commands: 'npm install' }
+  const definition = { functionId, name: 'UniFlow — Demandes de contact', runtime: functionRuntime, execute: ['any'], events: [], schedule: '', timeout: 30, enabled: true, logging: true, entrypoint: 'src/main.js', commands: 'npm install' }
   const created = await request('POST', '/functions', definition)
   if (created.status === 409) await request('PUT', `/functions/${functionId}`, definition)
 }

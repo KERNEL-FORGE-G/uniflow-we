@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, createContext, useContext, useCallback } from 'react'
 import { clearTokens, type BackendUser } from '@/lib/api'
 import { getCurrentAccount, type UniFlowUser } from '@/lib/appwrite'
+import { avatarFileUrl } from '@/utils/avatarUtils'
 import { clearSessionSnapshot, persistSessionSnapshot, readSessionSnapshot } from '@/lib/sessionPersistence'
 
 export type Role = 'student' | 'delegate' | 'teacher' | 'admin'
@@ -19,6 +20,10 @@ export interface UserProfile {
   matricule?: string
   accountType?: 'UNIVERSITY' | 'PERSONAL'
   countryCode?: string
+  /** Pseudo unique : c'est lui que la messagerie utilise pour adresser un contact. */
+  username?: string
+  /** Identifiant du fichier de la photo de profil, tel qu'enregistré sur le profil. */
+  avatarFileId?: string
 }
 
 const EMPTY_PROFILE: UserProfile = {
@@ -82,11 +87,24 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
     matricule: user.student?.matricule,
     accountType: user.accountType === 'PERSONAL' || user.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY',
     countryCode: user.countryCode,
+    username: user.username,
+    avatarFileId: user.avatarFileId,
+    // Résolu ici une fois pour toutes : les composants de présentation
+    // reçoivent une URL affichable et n'ont pas à connaître Appwrite.
+    avatar: avatarFileUrl(user.avatarFileId) || undefined,
   }
 }
 
-function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role' | 'accountType'> & Partial<Pick<UniFlowUser, 'email'>>): BackendUser {
-  return { id: user.id, email: user.email || '', role: user.role, fullName: user.name, accountType: user.accountType }
+function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role' | 'accountType'> & Partial<Pick<UniFlowUser, 'email' | 'username' | 'avatarFileId'>>): BackendUser {
+  return {
+    id: user.id,
+    email: user.email || '',
+    role: user.role,
+    fullName: user.name,
+    accountType: user.accountType,
+    username: user.username,
+    avatarFileId: user.avatarFileId,
+  }
 }
 
 export function RoleProvider({ children }: { children: React.ReactNode }) {

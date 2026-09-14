@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
-import { Search, Plus, Phone, Video, Paperclip, Smile, Mic, Send, MoreHorizontal, X, AlertTriangle, UserCircle, Mail, Loader2 } from 'lucide-react'
+import { Search, Plus, Phone, Video, Paperclip, Smile, Mic, Send, MoreHorizontal, X, AlertTriangle, UserCircle, Mail, Loader2, AtSign } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { AnimatedList } from '../components/ui/AnimatedList'
-import { messagingApi, type ChatConversation } from '../lib/api'
+import { messagingApi, type ChatConversation, type ChatContact } from '../lib/api'
 import { useNavigate } from 'react-router-dom'
 
 interface Message {
@@ -18,6 +18,8 @@ interface Conversation {
   name: string
   role: string
   email: string
+  username?: string
+  avatarFileId?: string
   online: boolean
   time: string
   preview: string
@@ -35,7 +37,9 @@ export default function MessagingPage() {
   const [isSending, setIsSending] = useState(false)
   const [showInfo, setShowInfo] = useState(true)
   const [showAddModal, setShowAddModal] = useState(false)
-  const [newEmailInput, setNewEmailInput] = useState('')
+  const [usernameInput, setUsernameInput] = useState('')
+  const [suggestions, setSuggestions] = useState<ChatContact[]>([])
+  const [searchingContacts, setSearchingContacts] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
@@ -70,16 +74,65 @@ export default function MessagingPage() {
     loadConversations()
   }, [])
 
-  const handleAddContactByEmail = async (e: React.FormEvent) => {
+  // Recherche de contacts par pseudo pendant la frappe, pour éviter d'avoir à
+  // connaître l'adresse e-mail exacte. Le terme est envoyé au serveur après une
+  // courte pause, afin de ne pas déclencher un appel par caractère.
+  useEffect(() => {
+    const term = usernameInput.trim().replace(/^@/, '')
+    if (!showAddModal || term.length < 2) {
+      setSuggestions([])
+      setSearchingContacts(false)
+      return
+    }
+    let cancelled = false
+    setSearchingContacts(true)
+    const timer = setTimeout(async () => {
+      try {
+        const contacts = await messagingApi.searchContacts(term)
+        if (!cancelled) setSuggestions(contacts)
+      } catch {
+        // Une recherche indisponible ne doit pas masquer la saisie manuelle :
+        // l'utilisateur peut toujours valider le pseudo tel quel.
+        if (!cancelled) setSuggestions([])
+      } finally {
+        if (!cancelled) setSearchingContacts(false)
+      }
+    }, 300)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [usernameInput, showAddModal])
+
+  const openConversation = (conversation: ChatConversation) => {
+    // La Function renvoie le profil complet : on le conserve tel quel pour que
+    // l'avatar et le pseudo restent disponibles dans le fil.
+    setConvos((previous) => previous.some((entry) => entry.id === conversation.id)
+      ? previous.map((entry) => entry.id === conversation.id ? conversation : entry)
+      : [conversation, ...previous])
+    setActive(conversation)
+    setIsSending(false)
+  }
+
+  const handleAddContactByUsername = async (e: React.FormEvent) => {
     e.preventDefault()
+    const username = usernameInput.trim().replace(/^@/, '')
+    if (!username) return
     setAddError(null)
     try {
-      const conversation = await messagingApi.openByEmail(newEmailInput)
-      setConvos((previous) => previous.some((entry) => entry.id === conversation.id)
-        ? previous.map((entry) => entry.id === conversation.id ? conversation : entry)
-        : [conversation, ...previous])
-      setActive(conversation)
-      setNewEmailInput('')
+      openConversation(await messagingApi.openByUsername(username))
+      setUsernameInput('')
+      setSuggestions([])
+      setShowAddModal(false)
+    } catch (err) {
+      setAddError(err instanceof Error ? err.message : 'Le contact universitaire n’a pas pu être ajouté.')
+    }
+  }
+
+  const chooseSuggestion = async (contact: ChatContact) => {
+    setAddError(null)
+    setUsernameInput(`@${contact.username}`)
+    setSuggestions([])
+    try {
+      openConversation(await messagingApi.openByUsername(contact.username))
+      setUsernameInput('')
       setShowAddModal(false)
     } catch (err) {
       setAddError(err instanceof Error ? err.message : 'Le contact universitaire n’a pas pu être ajouté.')
@@ -112,10 +165,11 @@ export default function MessagingPage() {
     }
   }
 
-  const filteredConvos = convos.filter(c => 
-    !search || 
-    c.name.toLowerCase().includes(search.toLowerCase()) || 
-    c.email.toLowerCase().includes(search.toLowerCase())
+  const filteredConvos = convos.filter(c =>
+    !search ||
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.email.toLowerCase().includes(search.toLowerCase()) ||
+    (c.username || '').toLowerCase().includes(search.toLowerCase().replace(/^@/, ''))
   )
   const totalUnread = convos.reduce((s, c) => s + c.unread, 0)
 
@@ -156,8 +210,8 @@ export default function MessagingPage() {
             <input 
               value={search} 
               onChange={e => setSearch(e.target.value)}
-              placeholder="Rechercher par nom ou e-mail..."
-              className="w-full rounded-lg border border-[#e5e7eb] dark:border-slate-700 bg-[#f9fafb] dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-[#1e3a8a] focus:bg-white dark:focus:bg-slate-900 transition-colors" 
+              placeholder="Rechercher par pseudo, nom ou e-mail..."
+              className="w-full rounded-lg border border-[#e5e7eb] dark:border-slate-700 bg-[#f9fafb] dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-[#1e3a8a] focus:bg-white dark:focus:bg-slate-900 transition-colors"
             />
           </div>
         </div>
@@ -166,12 +220,12 @@ export default function MessagingPage() {
             <div className="p-6 text-center">
               <Mail className="h-8 w-8 text-slate-300 dark:text-slate-600 mx-auto mb-2" />
               <p className="text-xs text-gray-400 dark:text-slate-500">Aucun contact trouvé pour cette recherche.</p>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => { setShowAddModal(true); setAddError(null); }}
                 className="mt-3 text-xs text-[#1e3a8a] dark:text-teal-400 font-bold hover:underline"
               >
-                + Ajouter par e-mail
+                + Ajouter par pseudo
               </button>
             </div>
           ) : (
@@ -186,7 +240,7 @@ export default function MessagingPage() {
                 <button type="button"
                   className={`flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-[#f9fafb] dark:hover:bg-slate-800/60 transition-colors border-b border-[#f3f4f6] dark:border-slate-800/80 ${isSelected ? 'bg-[#f0f4ff] dark:bg-teal-950/30 border-l-2 border-[#1e3a8a] dark:border-teal-400' : ''}`}>
                   <div className="relative shrink-0">
-                    <Avatar name={c.name} size="md" />
+                    <Avatar name={c.name} avatarFileId={c.avatarFileId} size="md" />
                     {c.online && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#10b981] ring-2 ring-white dark:ring-slate-900" />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -194,7 +248,7 @@ export default function MessagingPage() {
                       <p className={`text-sm truncate ${c.unread > 0 ? 'font-bold text-[#111827] dark:text-white' : 'font-medium text-[#374151] dark:text-slate-200'}`}>{c.name}</p>
                       <span className="text-[10px] text-[#9ca3af] ml-1 shrink-0">{c.time}</span>
                     </div>
-                    <p className="text-[10px] text-[#1e3a8a] dark:text-teal-400 font-semibold truncate">{c.email}</p>
+                    <p className="text-[10px] text-[#1e3a8a] dark:text-teal-400 font-semibold truncate">{c.username ? `@${c.username}` : c.email}</p>
                     <p className={`text-xs truncate mt-0.5 ${c.unread > 0 ? 'text-[#374151] dark:text-slate-200 font-medium' : 'text-[#9ca3af]'}`}>{c.preview}</p>
                   </div>
                   {c.unread > 0 && (
@@ -215,7 +269,7 @@ export default function MessagingPage() {
             <div className="flex items-center justify-between border-b border-[#e5e7eb] px-5 py-3.5">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Avatar name={active.name} size="md" />
+                  <Avatar name={active.name} avatarFileId={active.avatarFileId} size="md" />
                   {active.online && <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full bg-[#10b981] ring-2 ring-white" />}
                 </div>
                 <div>
@@ -283,7 +337,7 @@ export default function MessagingPage() {
               </div>
               {active.messages.map(m => (
                 <div key={m.id} className={`flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}>
-                  {m.from === 'them' && <Avatar name={active.name} size="sm" className="mr-2 mt-1 shrink-0" />}
+                  {m.from === 'them' && <Avatar name={active.name} avatarFileId={active.avatarFileId} size="sm" className="mr-2 mt-1 shrink-0" />}
                   <div className={`max-w-sm ${m.from === 'me' ? 'items-end' : 'items-start'} flex flex-col gap-1`}>
                     <div className={`rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                       m.from === 'me'
@@ -303,7 +357,7 @@ export default function MessagingPage() {
               ))}
               {isSending && (
                 <div className="flex items-center gap-2">
-                  <Avatar name={active.name} size="sm" />
+                  <Avatar name={active.name} avatarFileId={active.avatarFileId} size="sm" />
                   <div className="bg-[#f3f4f6] rounded-2xl rounded-bl-sm px-4 py-2.5">
                     <div className="flex gap-1 items-center h-4">
                       {[0, 1, 2].map(i => (
@@ -354,9 +408,12 @@ export default function MessagingPage() {
             <button onClick={() => setShowInfo(false)} className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af]"><X className="h-4 w-4" /></button>
           </div>
           <div className="text-center bg-[#f9fafb] p-4 rounded-2xl border border-[#e5e7eb] mb-5">
-            <Avatar name={active.name} size="xl" className="mx-auto" />
+            <Avatar name={active.name} avatarFileId={active.avatarFileId} size="xl" className="mx-auto" />
             <h3 className="mt-3 font-bold text-[#111827]">{active.name}</h3>
             <p className="text-xs text-[#6b7280]">{active.role}</p>
+            {active.username && (
+              <p className="mt-0.5 text-xs font-semibold text-[#0d9488]">@{active.username}</p>
+            )}
             {active.online && (
               <span className="mt-1 inline-flex items-center gap-1 text-xs text-[#0d9488] font-medium">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#0d9488]" /> En ligne
@@ -366,8 +423,14 @@ export default function MessagingPage() {
           <dl className="space-y-3 text-sm border-t border-[#e5e7eb] pt-4">
             <div>
               <dt className="text-xs text-[#9ca3af]">Canal principal</dt>
-              <dd className="font-bold text-[#1e3a8a] text-xs mt-0.5">E-mail institutionnel</dd>
+              <dd className="font-bold text-[#1e3a8a] text-xs mt-0.5">{active.username ? 'Pseudo UniFlow' : 'E-mail institutionnel'}</dd>
             </div>
+            {active.username && (
+              <div>
+                <dt className="text-xs text-[#9ca3af]">Pseudo</dt>
+                <dd className="font-medium text-[#374151] text-xs mt-0.5 select-all">@{active.username}</dd>
+              </div>
+            )}
             <div>
               <dt className="text-xs text-[#9ca3af]">Email</dt>
               <dd className="font-medium text-[#374151] text-xs mt-0.5 select-all break-all">{active.email}</dd>
@@ -385,21 +448,21 @@ export default function MessagingPage() {
         </div>
       )}
 
-      {/* ── Modal Ajouter un Contact par E-mail ── */}
+      {/* ── Modal Ajouter un Contact par Pseudo ── */}
       {showAddModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-fade-in">
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e3a8a]/10 dark:bg-teal-500/10 text-[#1e3a8a] dark:text-teal-400">
-                  <Mail className="h-5 w-5" />
+                  <AtSign className="h-5 w-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 dark:text-white text-lg">Ajouter un contact</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Via l'adresse e-mail de l'utilisateur</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Par pseudo UniFlow</p>
                 </div>
               </div>
-              <button 
+              <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
                 className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -408,25 +471,53 @@ export default function MessagingPage() {
               </button>
             </div>
 
-            <form onSubmit={handleAddContactByEmail} className="mt-5 space-y-4">
+            <form onSubmit={handleAddContactByUsername} className="mt-5 space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                  Adresse e-mail de l'utilisateur
+                  Pseudo de l'utilisateur
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <AtSign className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <input
-                    type="email"
-                    value={newEmailInput}
-                    onChange={e => setNewEmailInput(e.target.value)}
-                    placeholder="ex: dr.martin@uniflow.edu"
+                    type="text"
+                    value={usernameInput}
+                    onChange={e => setUsernameInput(e.target.value)}
+                    placeholder="ex: @dr.martin"
                     autoFocus
                     required
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-[#1e3a8a] dark:focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 pl-10 pr-10 py-2.5 text-sm text-slate-900 dark:text-slate-100 outline-none focus:border-[#1e3a8a] dark:focus:border-teal-400 focus:bg-white dark:focus:bg-slate-900 transition-all"
                   />
+                  {searchingContacts && (
+                    <Loader2 className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-slate-400" />
+                  )}
                 </div>
+
+                {/* Suggestions issues de la recherche serveur : évite d'avoir à
+                    connaître le pseudo exact, et confirme que le compte existe. */}
+                {suggestions.length > 0 && (
+                  <ul className="mt-2 max-h-52 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-800">
+                    {suggestions.map((contact) => (
+                      <li key={contact.userId}>
+                        <button
+                          type="button"
+                          onClick={() => chooseSuggestion(contact)}
+                          className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                        >
+                          <Avatar name={contact.name} avatarFileId={contact.avatarFileId} size="sm" />
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-slate-900 dark:text-white">{contact.name}</span>
+                            <span className="block truncate text-xs text-[#0d9488]">
+                              {contact.username ? `@${contact.username}` : contact.email}
+                            </span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1.5">
-                  Le référent e-mail permet de connecter instantanément les étudiants, délégués et enseignants.
+                  Le pseudo relie instantanément les étudiants, délégués et enseignants. Saisissez au moins deux caractères pour voir les suggestions.
                 </p>
               </div>
 

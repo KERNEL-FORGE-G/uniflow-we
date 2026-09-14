@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '../../utils/cn'
-import { getUiAvatarUrl } from '../../utils/avatarUtils'
+import { avatarFileUrl, getUiAvatarUrl } from '../../utils/avatarUtils'
 
 const colorPalette = [
   'bg-[#1e3a8a] text-white',
@@ -32,11 +32,18 @@ const sizes = {
 
 export function Avatar({
   src,
+  avatarFileId,
   name,
   size = 'md',
   className,
 }: {
   src?: string
+  /**
+   * Identifiant du fichier dans le bucket `uniflow_avatars`. Prioritaire sur
+   * `src` : c'est la photo réellement téléversée par l'utilisateur, alors que
+   * `src` peut désigner un repli externe.
+   */
+  avatarFileId?: string | null
   name: string
   size?: keyof typeof sizes
   className?: string
@@ -52,7 +59,9 @@ export function Avatar({
     .slice(0, 2)
     .toUpperCase() || 'U'
 
-  const avatarSrc = errorCount > 0 ? getUiAvatarUrl(name) : (src || getUiAvatarUrl(name))
+  const avatarSrc = errorCount > 0
+    ? getUiAvatarUrl(name)
+    : (avatarFileUrl(avatarFileId) || src || getUiAvatarUrl(name))
 
   if (errorCount >= 2) {
     return (
