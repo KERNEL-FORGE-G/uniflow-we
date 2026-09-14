@@ -49,13 +49,51 @@ export const databaseId = process.env.APPWRITE_DATABASE_ID || backendEnv.APPWRIT
  * revu : ce runtime est en fin de vie et n'est plus proposé par les serveurs
  * Appwrite récents, qui refusent alors la création de la Function. `node-18.0`
  * est disponible aussi bien sur la branche 1.4/1.5 que sur la 1.6, et
- * `node-appwrite` 12 comme `node-appwrite` 17 y fonctionnent. Surchargeable
- * sans redéploiement du dépôt via UNIFLOW_FUNCTION_RUNTIME.
+ * `node-appwrite` 12 comme `node-appwrite` 17 y fonctionnent.
+ *
+ * Ce choix reste une préférence, pas une certitude : le serveur auto-hébergé de
+ * UniFlow n'expose QUE `node-16.0` — sa variable `_APP_FUNCTIONS_RUNTIMES` ne
+ * liste que celui-là — et refuse donc `node-18.0` avec « Runtime not supported ».
+ * Les scripts de déploiement appellent [resolveFunctionRuntime], qui interroge
+ * le serveur et retombe sur ce qu'il accepte réellement.
  */
 export const functionRuntime = process.env.UNIFLOW_FUNCTION_RUNTIME || 'node-18.0'
 
-/** URL absolue d'un avatar stocké dans le bucket des photos de profil. */
-export function avatarUrl(fileId, bucketId = 'uniflow_avatars') {
+/**
+ * Runtime Node réellement accepté par le serveur, du plus récent au plus ancien.
+ *
+ * Une version codée en dur finit toujours par être refusée : les serveurs
+ * n'exposent pas tous les mêmes runtimes. On lit donc `/functions/runtimes`,
+ * on garde les runtimes Node, et on prend le plus récent — sauf si
+ * `UNIFLOW_FUNCTION_RUNTIME` impose une valeur, qui est alors renvoyée telle
+ * quelle sans interroger le serveur.
+ */
+export async function resolveFunctionRuntime() {
+  if (process.env.UNIFLOW_FUNCTION_RUNTIME) return process.env.UNIFLOW_FUNCTION_RUNTIME
+  try {
+    const request = createClient()
+    const response = await request('GET', '/functions/runtimes')
+    const available = (response.payload.runtimes || [])
+      .map((runtime) => runtime.$id)
+      .filter((id) => typeof id === 'string' && id.startsWith('node-'))
+      .sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1]))
+    if (available.length > 0) return available[0]
+  } catch {
+    // Serveur injoignable ou endpoint absent : on retombe sur la préférence.
+  }
+  return functionRuntime
+}
+
+/**
+ * URL absolue d'un avatar stocké dans le bucket des photos de profil.
+ *
+ * Le second paramètre est l'**identifiant** du bucket, pas son nom : celui
+ * d'UniFlow s'appelle « uniflow_avatars » mais a été créé depuis la console
+ * sous `6aa81b840031e6a34dc3`, et Appwrite résout les URL par identifiant.
+ * La valeur par défaut reprend donc cet identifiant, sinon chaque appel sans
+ * argument explicite produisait un 404.
+ */
+export function avatarUrl(fileId, bucketId = '6aa81b840031e6a34dc3') {
   if (!fileId) return ''
   return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`
 }

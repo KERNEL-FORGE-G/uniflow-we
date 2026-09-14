@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import { apiKey, createClient, functionRuntime, projectId } from './appwrite-env.mjs'
+import { apiKey, createClient, projectId, resolveFunctionRuntime } from './appwrite-env.mjs'
 
 const functionId = 'contact_messages'
 const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-contact-messages.tar.gz'
@@ -7,6 +7,7 @@ const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-contac
 console.log(`Déploiement de la Function « ${functionId} » sur le projet ${projectId} (${functionRuntime}).`)
 
 const request = createClient()
+const functionRuntime = await resolveFunctionRuntime()
 
 async function ensureFunction() {
   const definition = { functionId, name: 'UniFlow — Demandes de contact', runtime: functionRuntime, execute: ['any'], events: [], schedule: '', timeout: 30, enabled: true, logging: true, entrypoint: 'src/main.js', commands: 'npm install' }

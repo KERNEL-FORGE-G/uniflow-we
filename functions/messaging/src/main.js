@@ -1,11 +1,25 @@
 import { createHash } from 'node:crypto'
-import { Client, Databases, ID, Permission, Query, Role } from 'node-appwrite'
+import { Client, Databases, ID, Permission, Query, Role, Storage } from 'node-appwrite'
 
 const DATABASE_ID = 'uniflow'
 const UNIVERSITY = 'Université de Yaoundé I'
 const PROGRAM = 'ICT4D'
 const LEVEL = 'L1'
 const ALLOWED_ROLES = ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN']
+
+/**
+ * Bucket des pièces jointes de discussion.
+ *
+ * Le serveur plafonne tout fichier à `_APP_STORAGE_LIMIT` (30 Mo par défaut) ;
+ * cette constante n'est qu'un garde-fou côté Function, la vraie limite restant
+ * celle du bucket. Un fichier plus gros est refusé au téléversement par
+ * Appwrite, avec un message que le client relaie.
+ */
+const CHAT_FILES_BUCKET = 'uniflow_chat_files'
+const MAX_ATTACHMENT_BYTES = 30_000_000
+
+/** Types MIME affichés comme des images dans la conversation. */
+const IMAGE_MIME_PREFIX = 'image/'
 
 // Le contrôle d'accès exigeait auparavant que le compte appartienne
 // simultanément à UY1, au programme ICT4D ET au niveau L1. Tout étudiant d'une
@@ -62,7 +76,69 @@ function asMessage(document, actorId) {
     text: document.body,
     time: document.createdAt || document.$createdAt,
     senderId: document.senderId,
+    // Une pièce jointe est décrite par quatre champs ; `kind` distingue les
+    // images (aperçu inline) des autres fichiers (carte à ouvrir).
+    fileId: document.fileId || '',
+    fileName: document.fileName || '',
+    fileSize: Number(document.fileSize || 0),
+    fileType: document.fileType || '',
+    kind: document.kind || 'text',
+    urgent: Boolean(document.urgent),
   }
+}
+
+/**
+ * Vérifie une pièce jointe auprès du Storage avant de la référencer.
+ *
+ * Un client pourrait sinon annoncer un `fileId` qui ne lui appartient pas — ou
+ * qui n'existe pas — et la conversation afficherait une carte cassée. On lit
+ * les métadonnées réelles du fichier et on refuse au-delà du plafond du bucket,
+ * en s'appuyant sur la taille réelle et non sur celle déclarée par le client.
+ */
+async function inspectAttachment(storage, fileId) {
+  let file
+  try {
+    file = await storage.getFile(CHAT_FILES_BUCKET, fileId)
+  } catch {
+    throw new Error('ATTACHMENT_NOT_FOUND')
+  }
+  if (Number(file.sizeOriginal || 0) > MAX_ATTACHMENT_BYTES) throw new Error('ATTACHMENT_TOO_LARGE')
+  const mimeType = String(file.mimeType || '')
+  const kind = mimeType.startsWith(IMAGE_MIME_PREFIX)
+    ? 'image'
+    : mimeType.startsWith('audio/')
+      ? 'audio'
+      : mimeType.startsWith('video/')
+        ? 'video'
+        : 'file'
+  return { fileId: file.$id, fileName: file.name, fileSize: Number(file.sizeOriginal || 0), fileType: mimeType, kind }
+}
+
+/**
+ * Notifie le destinataire d'un message urgent.
+ *
+ * L'`eventKey` rend l'opération idempotente : rejouer une livraison ne crée pas
+ * une seconde notification, le récepteur la retrouvant par cette clé.
+ */
+async function notifyUrgent(databases, { recipientId, senderName, text, messageId, conversationId, hasFile }) {
+  const eventKey = `msg:${messageId}`
+  const existing = await databases.listDocuments(DATABASE_ID, 'notifications', [Query.equal('eventKey', eventKey), Query.limit(1)])
+  if (existing.documents.length > 0) return null
+  const preview = text.length > 120 ? `${text.slice(0, 117)}…` : text
+  return databases.createDocument(DATABASE_ID, 'notifications', ID.unique(), {
+    ownerId: recipientId,
+    type: 'MESSAGE_URGENT',
+    title: `Message urgent de ${senderName}`,
+    message: hasFile && !preview ? 'Vous a envoyé un fichier' : preview,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    eventKey,
+    link: `/messages?conversation=${conversationId}`,
+  }, [
+    Permission.read(Role.user(recipientId)),
+    Permission.update(Role.user(recipientId)),
+    Permission.delete(Role.user(recipientId)),
+  ])
 }
 
 async function one(databases, collection, attribute, value) {
@@ -140,6 +216,7 @@ export default async ({ req, res, error }) => {
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
     .setKey(process.env.APPWRITE_FUNCTION_API_KEY)
   const databases = new Databases(client)
+  const storage = new Storage(client)
   const body = bodyOf(req)
 
   try {
@@ -219,32 +296,121 @@ export default async ({ req, res, error }) => {
 
     if (body.action === 'send') {
       const conversationId = cleanText(body.conversationId, 'conversationId', 36)
-      const text = cleanText(body.text, 'message', 5000)
+      // Un message peut désormais ne porter qu'un fichier : le texte devient
+      // facultatif dès qu'une pièce jointe est présente, et prend alors le nom
+      // du fichier comme contenu — `body` reste un attribut `required` en base.
+      const attachment = typeof body.fileId === 'string' && body.fileId.trim()
+        ? await inspectAttachment(storage, body.fileId.trim())
+        : null
+      const rawText = typeof body.text === 'string' ? body.text.trim() : ''
+      const text = rawText
+        ? cleanText(rawText, 'message', 5000)
+        : attachment
+          ? attachment.fileName.slice(0, 255)
+          : ''
+      if (!text) return json(res, { ok: false, code: 'MESSAGE_EMPTY', message: 'Saisissez un message ou joignez un fichier.' }, 400)
+      const urgent = body.urgent === true
       const conversation = await databases.getDocument(DATABASE_ID, 'chat_conversations', conversationId)
       if (![conversation.participantA, conversation.participantB].includes(actorId)) return json(res, { ok: false, code: 'CONVERSATION_DENIED', message: 'Cette conversation ne vous appartient pas.' }, 403)
       const now = new Date().toISOString()
-      await databases.createDocument(DATABASE_ID, 'chat_messages', ID.unique(), {
+      const message = await databases.createDocument(DATABASE_ID, 'chat_messages', ID.unique(), {
         conversationId,
         senderId: actorId,
         body: text,
         createdAt: now,
         readByA: actorId === conversation.participantA,
         readByB: actorId === conversation.participantB,
+        fileId: attachment?.fileId || '',
+        fileName: attachment?.fileName || '',
+        fileSize: attachment?.fileSize || 0,
+        fileType: attachment?.fileType || '',
+        kind: attachment?.kind || 'text',
+        urgent,
       }, participantPermissions(conversation.participantA, conversation.participantB))
-      const updated = await databases.updateDocument(DATABASE_ID, 'chat_conversations', conversationId, { lastMessage: text, lastMessageAt: now })
-      return json(res, { ok: true, action: 'send', conversation: await serializeConversation(databases, updated, actorId) })
+      const preview = urgent ? `Urgent — ${text}` : text
+      const updated = await databases.updateDocument(DATABASE_ID, 'chat_conversations', conversationId, {
+        lastMessage: preview.slice(0, 5000),
+        lastMessageAt: now,
+      })
+      // La notification ne doit jamais faire échouer l'envoi : le message est
+      // déjà écrit, et une erreur ici priverait l'expéditeur de sa réponse.
+      let notified = false
+      if (urgent) {
+        const recipientId = conversation.participantA === actorId ? conversation.participantB : conversation.participantA
+        try {
+          const sender = await participantProfile(databases, actorId)
+          notified = Boolean(await notifyUrgent(databases, {
+            recipientId,
+            senderName: sender.name,
+            text: rawText,
+            messageId: message.$id,
+            conversationId,
+            hasFile: Boolean(attachment),
+          }))
+        } catch (notificationError) {
+          error(`messaging urgent notification failed=${String(notificationError?.message || notificationError)}`)
+        }
+      }
+      return json(res, { ok: true, action: 'send', notified, conversation: await serializeConversation(databases, updated, actorId) })
+    }
+
+    // Notifications de l'utilisateur courant. Elles sont lues par la Function
+    // plutôt que directement par le client : la liste reste ainsi filtrée sur
+    // `ownerId`, et un compte ne peut pas remonter celles d'un autre en
+    // falsifiant une requête.
+    if (body.action === 'notifications') {
+      const result = await databases.listDocuments(DATABASE_ID, 'notifications', [
+        Query.equal('ownerId', actorId),
+        Query.orderDesc('createdAt'),
+        Query.limit(50),
+      ])
+      return json(res, {
+        ok: true,
+        action: 'notifications',
+        unread: result.documents.filter((notification) => !notification.isRead).length,
+        notifications: result.documents.map((notification) => ({
+          id: notification.$id,
+          type: notification.type,
+          title: notification.title,
+          message: notification.message,
+          isRead: Boolean(notification.isRead),
+          link: notification.link || '',
+          time: notification.createdAt || notification.$createdAt,
+        })),
+      })
+    }
+
+    if (body.action === 'notificationsRead') {
+      const notificationId = typeof body.notificationId === 'string' ? body.notificationId.trim() : ''
+      // Sans identifiant, on marque tout comme lu : c'est l'action « tout lire ».
+      const queries = [Query.equal('ownerId', actorId), Query.equal('isRead', false), Query.limit(200)]
+      if (notificationId) queries.unshift(Query.equal('$id', notificationId))
+      const result = await databases.listDocuments(DATABASE_ID, 'notifications', queries)
+      await Promise.all(result.documents.map((notification) => databases.updateDocument(DATABASE_ID, 'notifications', notification.$id, { isRead: true })))
+      return json(res, { ok: true, action: 'notificationsRead', markedRead: result.documents.length })
     }
 
     return json(res, { ok: false, code: 'ACTION_UNKNOWN', message: 'Action de messagerie inconnue.' }, 400)
   } catch (exception) {
     const message = String(exception?.message || '')
-    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND', 'CONVERSATION_DENIED'].includes(message)) {
-      const denial = message === 'CONVERSATION_DENIED'
+    if (['ATTACHMENT_NOT_FOUND', 'ATTACHMENT_TOO_LARGE'].includes(message)) {
+      const denial = message === 'ATTACHMENT_TOO_LARGE'
+        ? `Fichier trop volumineux : la limite du serveur est de ${Math.round(MAX_ATTACHMENT_BYTES / 1_000_000)} Mo.`
+        : "Ce fichier est introuvable dans l'espace de stockage UniFlow."
+      return json(res, { ok: false, code: message, message: denial }, 400)
+    }
+    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND', 'CONVERSATION_DENIED'].includes(message)) {      const denial = message === 'CONVERSATION_DENIED'
         ? 'Cette conversation ne vous appartient pas.'
         : STRICT_SCOPE
           ? 'La messagerie est réservée aux comptes universitaires UY1 / ICT4D / L1.'
           : "La messagerie est réservée aux membres de l'annuaire académique (étudiant, délégué, enseignant ou administration)."
       return json(res, { ok: false, code: message, message: denial }, 403)
+    }
+    // Conversation absente : le document a pu être supprimé, ou l'identifiant
+    // vient d'un cache client périmé. Un 404 explicite vaut mieux que le
+    // « La messagerie Appwrite a échoué » générique, qui n'indique rien.
+    if (Number(exception?.code) === 404) {
+      return json(res, { ok: false, code: 'CONVERSATION_NOT_FOUND', message: 'Cette conversation n’existe plus.' }, 404)
     }
     error(`messaging action=${body.action || 'unknown'} failed=${message || 'unknown'}`)
     return json(res, { ok: false, code: 'MESSAGING_ERROR', message: 'La messagerie Appwrite a échoué.' }, 400)

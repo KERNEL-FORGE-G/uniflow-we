@@ -1,12 +1,12 @@
 import { readFile } from 'node:fs/promises'
-import { apiKey, createClient, functionRuntime, projectId } from './appwrite-env.mjs'
+import { apiKey, createClient, projectId, resolveFunctionRuntime } from './appwrite-env.mjs'
 
 const functionId = 'forum_reactions'
 const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-forum-reactions.tar.gz'
 
-console.log(`Déploiement de la Function « ${functionId} » sur le projet ${projectId} (${functionRuntime}).`)
-
 const request = createClient()
+const functionRuntime = await resolveFunctionRuntime()
+console.log(`Déploiement de la Function « ${functionId} » sur le projet ${projectId} (${functionRuntime}).`)
 
 async function ensureFunction() {
   const definition = { functionId, name: 'UniFlow — Réactions Forum', runtime: functionRuntime, execute: ['users'], events: [], schedule: '', timeout: 30, enabled: true, logging: true, entrypoint: 'src/main.js', commands: 'npm install' }
