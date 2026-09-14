@@ -186,6 +186,10 @@ async function serializeConversation(databases, conversation, actorId) {
   const unread = messages.documents.filter((message) => message.senderId !== actorId && !message[unreadField])
   return {
     id: conversation.$id,
+    // Identifiant du correspondant : le client en a besoin pour donner au
+    // fichier téléversé les permissions des deux participants, Appwrite
+    // n'accordant au créateur que ce qu'il demande explicitement.
+    userId: otherId,
     name: profile.name,
     role: profile.role,
     email: profile.email,
