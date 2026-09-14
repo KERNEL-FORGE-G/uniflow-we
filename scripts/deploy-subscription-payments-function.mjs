@@ -1,5 +1,5 @@
 import { readFile } from 'node:fs/promises'
-import { apiKey, createClient, functionRuntime, projectId } from './appwrite-env.mjs'
+import { apiKey, createClient, projectId, resolveFunctionRuntime } from './appwrite-env.mjs'
 
 const functionId = 'subscription_payments'
 const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-subscription-payments.tar.gz'
@@ -7,6 +7,7 @@ const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-subscr
 console.log(`Déploiement de la Function « ${functionId} » sur le projet ${projectId} (${functionRuntime}).`)
 
 const request = createClient()
+const functionRuntime = await resolveFunctionRuntime()
 
 async function ensureFunction() {
   const definition = {

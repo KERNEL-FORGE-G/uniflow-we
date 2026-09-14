@@ -1,5 +1,5 @@
 import { createClient, databaseId, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
-import { avatarBucketId, bucketDefinitions, schemas, usernameAttribute, usernameIndex } from './appwrite-schema.mjs'
+import { allSchemas, avatarBucketId, bucketDefinitions, membersExtraAttributes, usernameAttribute, usernameIndex } from './appwrite-schema.mjs'
 
 // La configuration (endpoint, projet, clé) vient de uniflow-backend/.env via le
 // module partagé, qui refuse de démarrer si elle est absente : ce script a
@@ -28,21 +28,63 @@ async function ensureDatabase() {
 async function ensureBuckets() {
   for (const definition of bucketDefinitions) {
     const result = await request('POST', '/storage/buckets', definition);
-    console.log(result.status === 201
-      ? `Bucket ${definition.bucketId} créé.`
-      : `Bucket ${definition.bucketId} déjà présent.`);
+    if (result.status === 201) {
+      console.log(`Bucket ${definition.bucketId} créé.`);
+      continue;
+    }
+    // Le bucket existe : on réconcilie ses permissions au lieu de le croire
+    // conforme. Le bucket d'avatars d'UniFlow a été créé à la main dans la
+    // console, donc avec un identifiant généré et sans aucune permission —
+    // aucun client ne pouvait lire une photo, alors que la définition, elle,
+    // demande une lecture publique.
+    const updated = await request('PUT', `/storage/buckets/${definition.bucketId}`, definition);
+    console.log(updated.status === 200
+      ? `Bucket ${definition.bucketId} déjà présent, permissions réconciliées.`
+      : `Bucket ${definition.bucketId} déjà présent (inchangé).`);
+  }
+}
+
+async function ensureMembersAttributes() {
+  for (const attribute of membersExtraAttributes) {
+    const result = await request('POST', `/databases/${databaseId}/collections/users/attributes/${attribute.type}`, attribute.body);
+    if (result.status === 201) {
+      await waitForAttribute('users', attribute.body.key);
+      console.log(`Attribut users.${attribute.body.key} créé.`);
+    } else {
+      console.log(`Attribut users.${attribute.body.key} déjà présent.`);
+    }
   }
 }
 
 async function ensureCollection(schema) {
+  // Les collections académiques sont lues par les trois applications : sans
+  // `read("users")`, un étudiant connecté reçoit une liste vide alors que les
+  // documents existent. Les autres collections gardent le contrat historique
+  // (`create("users")` seul), leurs permissions étant gérées par document.
+  const permissions = schema.permissions || ['create("users")'];
   const collectionResult = await request('POST', `/databases/${databaseId}/collections`, {
     collectionId: schema.id,
     name: schema.name,
-    permissions: ['create("users")'],
+    permissions,
     documentSecurity: true,
     enabled: true,
   });
-  console.log(collectionResult.status === 201 ? `Collection ${schema.id} créée.` : `Collection ${schema.id} déjà présente.`);
+  if (collectionResult.status === 201) {
+    console.log(`Collection ${schema.id} créée.`);
+  } else {
+    console.log(`Collection ${schema.id} déjà présente.`);
+    // Le schéma déclare explicitement des permissions : elles sont alors
+    // réconciliées, une collection existante pouvant avoir été créée à la main
+    // sans aucune permission de lecture.
+    if (schema.permissions) {
+      await request('PUT', `/databases/${databaseId}/collections/${schema.id}`, {
+        name: schema.name,
+        permissions,
+        documentSecurity: true,
+        enabled: true,
+      });
+    }
+  }
 
   for (const attribute of schema.attributes) {
     const result = await request('POST', `/databases/${databaseId}/collections/${schema.id}/attributes/${attribute.type}`, attribute.body);
@@ -166,7 +208,9 @@ async function ensureIndependentWhatsAppPlan() {
 
 await ensureDatabase();
 await ensureBuckets();
-for (const schema of schemas) await ensureCollection(schema);
+for (const schema of allSchemas) await ensureCollection(schema);
+// Après les collections : `avatarFileId` est écrit par les écrans Paramètres.
+await ensureMembersAttributes();
 // Après ensureCollection : l'attribut et l'index portent sur la collection users.
 await ensureUsernameIdentity();
 await ensureIndependentWhatsAppPlan();

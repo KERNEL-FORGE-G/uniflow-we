@@ -1,8 +1,12 @@
 import { readFile } from 'node:fs/promises'
-import { apiKey, createClient, functionRuntime, projectId } from './appwrite-env.mjs'
+import { apiKey, createClient, projectId, resolveFunctionRuntime } from './appwrite-env.mjs'
 
 const functionId = 'messaging'
 const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-messaging.tar.gz'
+
+// Runtime effectivement exposé par le serveur : un identifiant codé en dur est
+// refusé dès que le serveur n'expose pas cette version.
+const functionRuntime = await resolveFunctionRuntime()
 
 // La configuration vient de uniflow-backend/.env : ce script utilisait
 // auparavant un identifiant de projet par défaut obsolète et déployait donc la
