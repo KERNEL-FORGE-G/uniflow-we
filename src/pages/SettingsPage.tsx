@@ -139,15 +139,24 @@ export default function SettingsPage() {
       return
     }
 
+    // L'identifiant Appwrite est celui du compte connecté, pas celui du profil
+    // affiché : `currentUser` est une projection destinée à l'affichage et ne
+    // porte pas d'identifiant. Sans session, `createFile` serait de toute façon
+    // refusé par Appwrite — on le dit avant de téléverser.
+    if (!authUser) {
+      setAvatarError('Connectez-vous pour changer de photo de profil.')
+      return
+    }
+
     const previewUrl = URL.createObjectURL(file)
     setAvatarPreview(previewUrl)
     setAvatarBusy(true)
     try {
       const previousFileId = user.avatarFileId
-      const fileId = await uploadAvatar(user.id, file, previousFileId)
+      const fileId = await uploadAvatar(authUser.id, file, previousFileId)
       // Remonter l'identifiant dans la session courante : la barre latérale et
       // l'en-tête se rafraîchissent sans rechargement de page.
-      if (authUser) setAuthUser({ ...authUser, avatarFileId: fileId })
+      setAuthUser({ ...authUser, avatarFileId: fileId })
       setAvatarSaved(true)
       setTimeout(() => setAvatarSaved(false), 3000)
     } catch (error) {
@@ -160,12 +169,12 @@ export default function SettingsPage() {
   }
 
   const handleAvatarRemove = async () => {
-    if (!user.avatarFileId) return
+    if (!user.avatarFileId || !authUser) return
     setAvatarError(null)
     setAvatarBusy(true)
     try {
-      await removeAvatar(user.id, user.avatarFileId)
-      if (authUser) setAuthUser({ ...authUser, avatarFileId: undefined })
+      await removeAvatar(authUser.id, user.avatarFileId)
+      setAuthUser({ ...authUser, avatarFileId: undefined })
       setAvatarPreview(null)
     } catch (error) {
       setAvatarError(error instanceof Error ? error.message : 'Le retrait a échoué.')

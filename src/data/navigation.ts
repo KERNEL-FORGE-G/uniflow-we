@@ -22,6 +22,7 @@ import {
   Shield,
   Activity,
   CalendarClock,
+  Code2,
   type LucideIcon,
 } from 'lucide-react'
 
@@ -94,6 +95,7 @@ export const adminNavGroups: AdminNavGroup[] = [
       { to: '/admin/utilisateurs', icon: Users,        labelFr: 'Tous les utilisateurs', labelEn: 'All Users' },
       { to: '/admin/etudiants',    icon: GraduationCap,labelFr: 'Étudiants',             labelEn: 'Students' },
       { to: '/admin/enseignants',  icon: UserCheck,    labelFr: 'Enseignants',            labelEn: 'Teachers' },
+      { to: '/admin/equipe',       icon: Code2,        labelFr: 'Équipe KERNEL FORGE',    labelEn: 'KERNEL FORGE Team' },
     ],
   },
   {

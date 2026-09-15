@@ -64,6 +64,7 @@ const AttendanceHistoryPage = lazy(() => import('./pages/admin/AttendanceHistory
 const AdminActivityPage = lazy(() => import('./pages/admin/AdminActivityPage'))
 const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'))
 const AdminPaymentsPage = lazy(() => import('./pages/admin/AdminPaymentsPage'))
+const AdminTeamPage = lazy(() => import('./pages/admin/AdminTeamPage'))
 
 // Loading fallback
 function PageLoader() {
@@ -233,6 +234,7 @@ export default function App() {
             <Route path="utilisateurs" element={<AdminUsersPage />} />
             <Route path="etudiants" element={<StudentsPage />} />
             <Route path="enseignants" element={<TeachersPage />} />
+            <Route path="equipe" element={<AdminTeamPage />} />
             <Route path="structure" element={<AcademicStructurePage />} />
             <Route path="cours" element={<AdminCoursesPage />} />
             <Route path="ue" element={<UEPage />} />

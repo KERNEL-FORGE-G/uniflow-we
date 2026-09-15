@@ -690,14 +690,14 @@ export function validateAvatarFile(file: File): string | null {
 }
 
 /**
- * Téléverse une photo de profil et l'enregistre sur le profil.
- * Renvoie l'identifiant du nouveau fichier.
+ * Téléverse une image dans le bucket des avatars et rend l'identifiant du
+ * fichier créé.
  *
- * L'ancienne image est supprimée après la mise à jour du profil, et non avant :
- * si la suppression réussissait mais que l'enregistrement échouait, le compte se
- * retrouverait sans photo alors que la nouvelle image serait déjà perdue.
+ * Extrait de [uploadAvatar] parce que la photo d'un membre de l'équipe suit le
+ * même chemin (mêmes types acceptés, même bucket, même permission de lecture
+ * publique) sans pour autant s'enregistrer sur un document `users`.
  */
-export async function uploadAvatar(userId: string, file: File, previousFileId?: string | null): Promise<string> {
+export async function uploadAvatarImage(file: File): Promise<string> {
   const invalid = validateAvatarFile(file)
   if (invalid) throw new Error(invalid)
 
@@ -707,12 +707,12 @@ export async function uploadAvatar(userId: string, file: File, previousFileId?: 
   const extension = AVATAR_TYPES[file.type]
   const normalized = new File([file], `avatar.${extension}`, { type: file.type })
 
-  let created: Models.File
   try {
-    created = await awaitAppwrite(
+    const created = await awaitAppwrite(
       appwriteStorage.createFile(APPWRITE_AVATAR_BUCKET_ID, ID.unique(), normalized, [Permission.read(Role.any())]),
       'le téléversement de la photo de profil',
     )
+    return created.$id
   } catch (error) {
     // Un bucket absent ou mal nommé produit ici un 404 peu explicite.
     if (Number((error as { code?: unknown })?.code) === 404) {
@@ -720,16 +720,28 @@ export async function uploadAvatar(userId: string, file: File, previousFileId?: 
     }
     throw error
   }
+}
+
+/**
+ * Téléverse une photo de profil et l'enregistre sur le profil.
+ * Renvoie l'identifiant du nouveau fichier.
+ *
+ * L'ancienne image est supprimée après la mise à jour du profil, et non avant :
+ * si la suppression réussissait mais que l'enregistrement échouait, le compte se
+ * retrouverait sans photo alors que la nouvelle image serait déjà perdue.
+ */
+export async function uploadAvatar(userId: string, file: File, previousFileId?: string | null): Promise<string> {
+  const createdFileId = await uploadAvatarImage(file)
 
   try {
     await awaitAppwrite(
-      appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'users', userId, { avatarFileId: created.$id }),
+      appwriteDatabases.updateDocument(APPWRITE_DATABASE_ID, 'users', userId, { avatarFileId: createdFileId }),
       "l'enregistrement de la photo de profil",
     )
   } catch (error) {
     // Sans cet attribut, l'image resterait orpheline dans le bucket : on la
     // retire pour ne pas accumuler de fichiers invisibles.
-    await appwriteStorage.deleteFile(APPWRITE_AVATAR_BUCKET_ID, created.$id).catch(() => undefined)
+    await appwriteStorage.deleteFile(APPWRITE_AVATAR_BUCKET_ID, createdFileId).catch(() => undefined)
     if (/unknown attribute|avatarFileId/i.test(String((error as Error)?.message || ''))) {
       throw new Error("L'attribut « avatarFileId » manque sur la collection users. Lancez scripts/provision-appwrite-selfhosted.mjs.")
     }
@@ -737,10 +749,10 @@ export async function uploadAvatar(userId: string, file: File, previousFileId?: 
   }
 
   // Best-effort : un échec ici ne doit pas faire croire que l'upload a échoué.
-  if (previousFileId && previousFileId !== created.$id) {
+  if (previousFileId && previousFileId !== createdFileId) {
     await appwriteStorage.deleteFile(APPWRITE_AVATAR_BUCKET_ID, previousFileId).catch(() => undefined)
   }
-  return created.$id
+  return createdFileId
 }
 
 /** Retire la photo de profil et supprime le fichier correspondant. */
@@ -1254,4 +1266,90 @@ export async function markAppwriteNotificationRead(id: string) {
 
 export async function deleteAppwriteNotification(id: string) {
   return appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'notifications', id)
+}
+
+// ---------------------------------------------------------------------------
+// Équipe KERNEL FORGE
+//
+// Les membres étaient figés dans `TeamsPage.tsx`, et le mobile comme le desktop
+// en avaient chacun une liste différente. Ils vivent désormais dans la
+// collection `team_members`, lue ici sans session : la page `/teams` est
+// publique. Les écritures, elles, passent par la Function `team-roster` — la
+// collection n'accorde aucune écriture, sans quoi n'importe quel compte
+// connecté pourrait effacer la page publique de l'équipe.
+// ---------------------------------------------------------------------------
+
+export const APPWRITE_TEAM_ROSTER_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_TEAM_ROSTER_FUNCTION_ID || 'team-roster')
+
+/** Couleurs sémantiques : chaque client les traduit dans sa propre palette. */
+export const TEAM_ACCENTS = ['blue', 'purple', 'emerald', 'amber', 'rose', 'cyan', 'indigo'] as const
+export type TeamAccent = (typeof TEAM_ACCENTS)[number]
+
+export const TEAM_NAMES = ['Leadership', 'Frontend', 'Backend'] as const
+export type TeamName = (typeof TEAM_NAMES)[number]
+
+export interface TeamMemberDocument {
+  $id: string
+  slug: string
+  name: string
+  github: string
+  email: string
+  team: TeamName
+  subTeam: string
+  role: string
+  badge: string
+  accent: TeamAccent
+  avatarFileId: string
+  displayOrder: number
+}
+
+/** Champs modifiables d'un membre. `memberId` est absent à la création. */
+export type TeamMemberInput = {
+  memberId?: string
+  slug?: string
+  name?: string
+  github?: string
+  email?: string
+  team?: TeamName
+  subTeam?: string
+  role?: string
+  badge?: string
+  accent?: TeamAccent
+  avatarFileId?: string
+  displayOrder?: number
+}
+
+export type TeamRosterResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: 'create' | 'update' | 'delete'
+  memberId?: string
+  slug?: string
+}
+
+/**
+ * Membres de l'équipe, dans l'ordre d'affichage voulu par l'administration.
+ *
+ * `displayOrder` porte cet ordre côté serveur plutôt que le client ne le
+ * recalcule : c'est ce qui garantit que la page est identique sur les trois
+ * applications.
+ */
+export async function listTeamMembers(): Promise<TeamMemberDocument[]> {
+  return listDocuments<TeamMemberDocument>('team_members', [Query.orderAsc('displayOrder'), Query.limit(100)])
+}
+
+export async function executeTeamRosterAction(payload: TeamMemberInput & { action: 'create' | 'update' | 'delete' }): Promise<TeamRosterResponse> {
+  const execution = await awaitAppwrite(
+    appwriteFunctions.createExecution(APPWRITE_TEAM_ROSTER_FUNCTION_ID, JSON.stringify(payload), false),
+    "la modification de l'équipe KERNEL FORGE",
+  )
+  let response: TeamRosterResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as TeamRosterResponse } catch {
+    throw new Error("La Function Appwrite de l'équipe a retourné une réponse invalide.")
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || "La Function Appwrite a refusé la modification de l'équipe.")
+  }
+  return response
 }
