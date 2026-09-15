@@ -69,6 +69,26 @@ function participantPermissions(participantA, participantB) {
   return [Permission.read(Role.user(participantA)), Permission.read(Role.user(participantB))]
 }
 
+/**
+ * Permissions d'une pièce jointe une fois envoyée.
+ *
+ * Le client téléverse avec ses seules permissions — Appwrite 1.6.1 refuse
+ * qu'il en accorde à un autre utilisateur — donc c'est ici, avec la clé API,
+ * que le destinataire reçoit la lecture.
+ *
+ * `update` et `delete` restent à l'expéditeur. `updateFile` **remplace** la
+ * liste complète : les omettre les retirerait, et un fichier envoyé par erreur
+ * deviendrait indestructible, par son auteur comme par la Function.
+ */
+function attachmentPermissions(uploaderId, participantA, participantB) {
+  return [
+    Permission.read(Role.user(participantA)),
+    Permission.read(Role.user(participantB)),
+    Permission.update(Role.user(uploaderId)),
+    Permission.delete(Role.user(uploaderId)),
+  ]
+}
+
 function asMessage(document, actorId) {
   return {
     id: document.$id,
@@ -94,6 +114,10 @@ function asMessage(document, actorId) {
  * qui n'existe pas — et la conversation afficherait une carte cassée. On lit
  * les métadonnées réelles du fichier et on refuse au-delà du plafond du bucket,
  * en s'appuyant sur la taille réelle et non sur celle déclarée par le client.
+ *
+ * `permissions` est renvoyé pour que l'appelant puisse vérifier la propriété du
+ * fichier : le téléversement n'accorde la lecture qu'à son auteur, donc sa
+ * présence dans cette liste identifie qui l'a déposé.
  */
 async function inspectAttachment(storage, fileId) {
   let file
@@ -111,7 +135,14 @@ async function inspectAttachment(storage, fileId) {
       : mimeType.startsWith('video/')
         ? 'video'
         : 'file'
-  return { fileId: file.$id, fileName: file.name, fileSize: Number(file.sizeOriginal || 0), fileType: mimeType, kind }
+  return {
+    fileId: file.$id,
+    fileName: file.name,
+    fileSize: Number(file.sizeOriginal || 0),
+    fileType: mimeType,
+    kind,
+    permissions: Array.isArray(file.$permissions) ? file.$permissions : [],
+  }
 }
 
 /**
@@ -316,6 +347,38 @@ export default async ({ req, res, error }) => {
       const urgent = body.urgent === true
       const conversation = await databases.getDocument(DATABASE_ID, 'chat_conversations', conversationId)
       if (![conversation.participantA, conversation.participantB].includes(actorId)) return json(res, { ok: false, code: 'CONVERSATION_DENIED', message: 'Cette conversation ne vous appartient pas.' }, 403)
+
+      // La pièce jointe a été téléversée par l'expéditeur avec ses seules
+      // permissions : Appwrite 1.6.1 refuse qu'un client accorde une permission
+      // à un autre utilisateur — il répond
+      //   « Permissions must be one of: (any, users, user:<soi>, …) », code 401.
+      // Le client ne peut donc *pas* donner la lecture au destinataire, et une
+      // pièce jointe envoyée depuis le mobile restait lisible par son seul
+      // auteur. La Function, elle, agit avec la clé API et peut accorder les
+      // deux. Le faire ici, au moment de l'envoi, évite un fichier orphelin
+      // si l'utilisateur téléverse puis renonce.
+      if (attachment) {
+        // Le fichier doit avoir été déposé par l'expéditeur : sans ce contrôle,
+        // annoncer le `fileId` d'autrui suffirait à se voir accorder `update`
+        // et `delete` dessus, c'est-à-dire à pouvoir supprimer le fichier d'un
+        // autre. Le téléversement n'accordant la lecture qu'à son auteur, sa
+        // présence dans les permissions du fichier l'identifie.
+        if (!attachment.permissions.includes(Permission.read(Role.user(actorId)))) {
+          return json(res, { ok: false, code: 'ATTACHMENT_DENIED', message: 'Cette pièce jointe ne vous appartient pas.' }, 403)
+        }
+        // `node-appwrite` 12 attend `name` puis `permissions`, en positionnels.
+        // Passer un objet `{ permissions }` en troisième position l'envoyait
+        // comme `name` : Appwrite rejetait la requête, et tout envoi de pièce
+        // jointe échouait en `MESSAGING_ERROR`. Un message texte, lui, traverse
+        // ce bloc sans y entrer et n'était donc pas affecté.
+        await storage.updateFile(
+          CHAT_FILES_BUCKET,
+          attachment.fileId,
+          attachment.fileName,
+          attachmentPermissions(actorId, conversation.participantA, conversation.participantB),
+        )
+      }
+
       const now = new Date().toISOString()
       const message = await databases.createDocument(DATABASE_ID, 'chat_messages', ID.unique(), {
         conversationId,

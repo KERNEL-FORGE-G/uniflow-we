@@ -1,8 +1,31 @@
 import { readFile } from 'node:fs/promises'
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
 import { apiKey, createClient, projectId, resolveFunctionRuntime } from './appwrite-env.mjs'
 
 const functionId = 'messaging'
+const sourceDir = join(dirname(fileURLToPath(import.meta.url)), '..', 'functions', functionId)
 const archivePath = process.env.UNIFLOW_FUNCTION_ARCHIVE || '/tmp/uniflow-messaging.tar.gz'
+
+/**
+ * Construit l'archive depuis les sources avant de déployer.
+ *
+ * Ce script publiait auparavant l'archive trouvée dans `/tmp`, sans jamais la
+ * reconstruire : après une modification de `src/main.js`, il annonçait
+ * « Déploiement prêt » et un nouvel identifiant de déploiement, mais le code
+ * exécuté restait l'ancien. Une correction de la messagerie a ainsi été
+ * annoncée déployée deux fois sans jamais l'être. Le déploiement est
+ * maintenant construit ici, et `UNIFLOW_FUNCTION_ARCHIVE` ne sert plus qu'à
+ * publier une archive préparée ailleurs — auquel cas c'est un choix explicite.
+ */
+function buildArchive() {
+  if (process.env.UNIFLOW_FUNCTION_ARCHIVE) {
+    console.log(`Archive fournie par UNIFLOW_FUNCTION_ARCHIVE : ${archivePath}`)
+    return
+  }
+  execFileSync('tar', ['czf', archivePath, 'package.json', 'src'], { cwd: sourceDir, stdio: 'inherit' })
+}
 
 // Runtime effectivement exposé par le serveur : un identifiant codé en dur est
 // refusé dès que le serveur n'expose pas cette version.
@@ -53,4 +76,5 @@ async function deploy() {
 
 await ensureFunction()
 await ensureVariable()
+buildArchive()
 await deploy()
