@@ -230,6 +230,62 @@ export const academicSchemas = [
 ]
 
 /**
+ * Clés de couleur des pastilles de l'équipe.
+ *
+ * Ce sont des **clés** (« blue », « purple »…) et non des classes CSS ou des
+ * codes hexadécimaux : le web les traduit en classes Tailwind, les deux clients
+ * Flutter en couleurs. Stocker `bg-purple-100 text-purple-800` en base aurait
+ * lié le schéma à Tailwind, et un code hexadécimal n'aurait pas su rendre le
+ * fond, le texte et la bordure que la page utilise.
+ */
+export const teamAccents = ['blue', 'purple', 'emerald', 'amber', 'rose', 'cyan', 'indigo']
+
+/**
+ * Équipe KERNEL FORGE — les développeurs présentés sur la page publique
+ * `/teams`.
+ *
+ * Cette liste vivait en dur dans `src/pages/TeamsPage.tsx`, et chaque client en
+ * portait sa propre copie : **9 membres sur le web, 6 sur le mobile, 4 sur le
+ * desktop**. Les trois pages affichaient donc trois équipes différentes, et
+ * changer un membre demandait de redéployer trois applications. Elle est
+ * désormais en base, lue par les trois, et modifiable depuis l'administration
+ * du web.
+ */
+export const teamSchema = {
+  id: 'team_members',
+  name: 'Équipe KERNEL FORGE',
+  attributes: [
+    // Clé stable reprise des `id` de l'ancienne liste en dur : elle permet au
+    // seed d'être idempotent sans dépendre de l'identifiant Appwrite.
+    string('slug', 64, true),
+    string('name', 255, true),
+    string('github', 100, false, ''),
+    string('email', 255, false, ''),
+    enumeration('team', ['Leadership', 'Frontend', 'Backend'], true),
+    string('subTeam', 255, false, ''),
+    string('role', 255, true),
+    string('badge', 64, false, ''),
+    enumeration('accent', teamAccents, false, 'blue'),
+    // Fichier du bucket des avatars. Vide tant que l'administration n'a pas
+    // téléversé de photo : les trois clients affichent alors une silhouette
+    // neutre, jamais une image portant des initiales.
+    string('avatarFileId', 36, false, ''),
+    integer('displayOrder', false, 0),
+  ],
+  indexes: [
+    { key: 'team_slug', type: 'unique', attributes: ['slug'] },
+    { key: 'team_order', type: 'key', attributes: ['displayOrder'] },
+  ],
+  // La page `/teams` du web est publique, sans session : `read("any")` est la
+  // seule permission dont les trois clients ont besoin. Aucune écriture n'est
+  // ouverte au niveau collection — les documents sont créés, modifiés et
+  // supprimés par la Function `team-roster`, qui vérifie que l'appelant est
+  // ADMIN. Accorder `create("users")` ici laisserait n'importe quel étudiant
+  // connecté effacer la page publique de l'équipe.
+  permissions: ['read("any")'],
+}
+
+/**
  * Attributs de `users` que les applications écrivent et lisent mais que le
  * schéma ne déclarait pas.
  *
@@ -551,6 +607,7 @@ export const referencedCollections = ['courses', 'enrollments', 'subscription_pl
 export const allSchemas = [
   ...schemas,
   ...academicSchemas.map((schema) => ({ ...schema, permissions: ['read("users")', 'create("users")'] })),
+  teamSchema,
 ]
 
 export const expectedCollections = [...new Set([...allSchemas.map((schema) => schema.id), ...referencedCollections])]
