@@ -7,6 +7,7 @@ import {
   executeAdminDirectoryAction,
   executeMessagingAction,
   executeSubscriptionPaymentAction,
+  type SubscriptionPaymentRecord,
   getCurrentAccount,
   listDocuments,
   listAppwriteNotifications,
@@ -995,7 +996,8 @@ export interface PricingInfo { countryCode: string; currency: 'XAF' | 'EUR' | 'U
 export interface SubscriptionStatus { status: 'NONE' | 'PENDING' | 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'; planCode?: string | null; countryCode?: string | null; currency?: string | null; monthlyAmount?: number | null; currentPeriodEnd?: string | null; isAutoRenew: boolean }
 export interface CheckoutResult { transactionId?: string; paymentUrl?: string; status?: string; message?: string; requestedAt?: string }
 export type CheckoutPayload = { planId?: string; planCode: string; countryCode: string; paymentProvider?: string; phoneNumber?: string; billingInterval?: 'MONTHLY' | 'ANNUALLY'; billingCycle: 'monthly' | 'annually'; email?: string; fullName?: string }
-export interface SubscriptionPaymentRequest { id: string; userId: string; reference: string; planCode: string; planName: string; billingCycle: 'MONTHLY' | 'ANNUALLY'; amount: number; currency: 'XAF' | 'EUR' | 'USD'; fullName: string; email: string; phoneNumber: string; status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED'; requestedAt: string; processedAt?: string | null; processedBy?: string | null; adminNote?: string; whatsappUrl?: string }
+export type SubscriptionPaymentRequest = SubscriptionPaymentRecord
+export interface AdminPaymentFilters { status?: SubscriptionPaymentRequest['status']; planCode?: string; from?: string; to?: string; search?: string }
 
 function subscriptionProviders(value?: string): string[] {
   try {
@@ -1027,7 +1029,7 @@ async function appwriteSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     badge: row.badge || undefined,
     highlight: !!row.highlight,
     description: row.description,
-    btnText: row.priceMonthlyAmount === 0 ? 'Accès inclus' : 'Choisir cette formule',
+    btnText: row.priceMonthlyAmount === 0 ? 'Accès inclus' : 'Payer par WhatsApp',
     btnVariant: row.highlight ? 'primary' : 'secondary',
     providers: subscriptionProviders(row.providers),
     features: [],
@@ -1081,9 +1083,16 @@ export const subscriptionApi = {
     return { transactionId: result.request.reference, paymentUrl: result.request.whatsappUrl, status: result.request.status, message: result.idempotent ? 'Votre demande de paiement en attente a été retrouvée.' : 'Votre demande a été enregistrée. Envoyez la preuve de paiement sur WhatsApp avec cette référence.', requestedAt: result.request.requestedAt }
   },
   listPaymentRequests: async (): Promise<SubscriptionPaymentRequest[]> => (await executeSubscriptionPaymentAction({ action: 'list' })).requests || [],
-  listPaymentRequestsForAdmin: async (status?: SubscriptionPaymentRequest['status']): Promise<SubscriptionPaymentRequest[]> => (await executeSubscriptionPaymentAction({ action: 'admin-list', status })).requests || [],
-  reviewPaymentRequest: async (requestId: string, decision: 'CONFIRMED' | 'REJECTED', adminNote = ''): Promise<SubscriptionPaymentRequest> => {
-    const result = await executeSubscriptionPaymentAction({ action: 'review', requestId, decision, adminNote })
+  listPaymentRequestsForAdmin: async (filters: AdminPaymentFilters = {}): Promise<SubscriptionPaymentRequest[]> => (await executeSubscriptionPaymentAction({ action: 'admin-list', ...filters })).requests || [],
+  /** Valide : passe la demande en CONFIRMED et active `subscription_statuses`. */
+  validatePaymentRequest: async (requestId: string, adminNote = ''): Promise<SubscriptionPaymentRequest> => {
+    const result = await executeSubscriptionPaymentAction({ action: 'validate', requestId, adminNote })
+    if (!result.request) throw new ApiError(502, 'Appwrite n’a pas retourné la demande traitée.')
+    return result.request
+  },
+  /** Rejette : le motif est obligatoire, la Function le refuse sinon (INVALID_ADMIN_NOTE). */
+  rejectPaymentRequest: async (requestId: string, reason: string): Promise<SubscriptionPaymentRequest> => {
+    const result = await executeSubscriptionPaymentAction({ action: 'reject', requestId, reason })
     if (!result.request) throw new ApiError(502, 'Appwrite n’a pas retourné la demande traitée.')
     return result.request
   },

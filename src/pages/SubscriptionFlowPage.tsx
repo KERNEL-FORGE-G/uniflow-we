@@ -8,10 +8,15 @@ import {
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { personalSubscriptionApi, type CheckoutResult, type SubscriptionPlan, ApiError } from '../lib/api'
+import { CONTACT_PHONE_DISPLAY } from '../lib/contactInfo'
+import { whatsappBillingUrl } from '../lib/paymentsModel'
+import { ActionResult } from '../components/feedback/ActionResult'
+import { useUserRole } from '../utils/userRole'
 
 export default function SubscriptionFlowPage() {
   const { planId } = useParams<{ planId?: string }>()
   const navigate = useNavigate()
+  const { currentUser, authUser } = useUserRole()
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null)
@@ -61,21 +66,13 @@ export default function SubscriptionFlowPage() {
     loadData()
   }, [planId])
 
-  // Fill in stored user info if available
+  // Pré-remplissage depuis la session : le localStorage « uniflow_user » n'est plus alimenté.
   useEffect(() => {
-    const storedUser = localStorage.getItem('uniflow_user')
-    if (storedUser) {
-      try {
-        const u = JSON.parse(storedUser)
-        if (u.email) setEmail(u.email)
-        if (u.student) {
-          setFullName(`${u.student.firstName || ''} ${u.student.lastName || ''}`.trim())
-        } else if (u.teacher) {
-          setFullName(`${u.teacher.firstName || ''} ${u.teacher.lastName || ''}`.trim())
-        }
-      } catch {}
-    }
-  }, [])
+    if (!authUser) return
+    if (authUser.email && !email) setEmail(authUser.email)
+    if (currentUser.name && !fullName && currentUser.name !== 'Utilisateur non connecté') setFullName(currentUser.name)
+    if (currentUser.phone && !phoneNumber) setPhoneNumber(currentUser.phone)
+  }, [authUser, currentUser, email, fullName, phoneNumber])
 
   const handleProcessPayment = async () => {
     if (!selectedPlan) return
@@ -95,10 +92,14 @@ export default function SubscriptionFlowPage() {
         email: email.trim(),
         fullName: fullName.trim(),
       })
-      setTransactionResult(res)
+      // L'URL vient de la Function (référence incluse) ; on la reconstruit
+      // localement si elle manque, avec le même numéro de facturation.
+      const url = res.paymentUrl || (res.transactionId ? whatsappBillingUrl({ reference: res.transactionId, planName: selectedPlan.name, billingCycle, amount: finalPrice, currency: selectedPlan.currency || 'XAF', fullName: fullName.trim(), email: email.trim() }) : undefined)
+      setTransactionResult({ ...res, paymentUrl: url })
       setCurrentStep(4)
+      if (url && !includedAccess) window.open(url, '_blank', 'noopener')
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'Le paiement n’a pas pu être initialisé.'
+      const message = err instanceof ApiError ? err.message : 'La demande n’a pas pu être enregistrée.'
       setPaymentError(message)
     } finally {
       setIsSubmitting(false)
@@ -498,14 +499,14 @@ export default function SubscriptionFlowPage() {
                     <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-300 text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 mb-2">
                       Étape 3 sur 4
                     </span>
-                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Sélection du Mode de Paiement</h2>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Règlement par WhatsApp</h2>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{includedAccess ? 'Cet accès académique est déjà inclus et ne requiert aucun paiement.' : 'La demande est enregistrée dans Appwrite puis ouvre WhatsApp avec une référence. Aucun paiement n’est validé automatiquement.'}</p>
                   </div>
 
-                  {paymentError && <div className="mb-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 dark:border-rose-800 dark:bg-rose-950/30 dark:text-rose-300">{paymentError}</div>}
+                  {paymentError && <div className="mb-6"><ActionResult status="error" title="Demande non enregistrée" description={paymentError} /></div>}
 
                   <div className="mb-8 rounded-2xl border border-[#1e3a8a]/20 bg-blue-50 p-5 text-sm text-slate-700 dark:bg-slate-900">
-                    {includedAccess ? <p className="font-semibold text-emerald-800">Accès académique inclus : aucune transaction ni donnée de paiement ne sont nécessaires.</p> : <><p className="font-bold text-[#1e3a8a]">WhatsApp — confirmation manuelle</p><p className="mt-2">UniFlow va créer une demande Appwrite avec une référence unique, puis ouvrir WhatsApp vers le +237 657 635 644. Joignez votre preuve de paiement à ce message. Votre accès restera <strong>en attente</strong> jusqu’à la confirmation manuelle d’un administrateur.</p></>}
+                    {includedAccess ? <p className="font-semibold text-emerald-800">Accès académique inclus : aucune transaction ni donnée de paiement ne sont nécessaires.</p> : <><p className="font-bold text-[#1e3a8a]">WhatsApp — confirmation manuelle</p><p className="mt-2">UniFlow va créer une demande Appwrite avec une référence unique, puis ouvrir WhatsApp vers le {CONTACT_PHONE_DISPLAY}. Joignez votre preuve de paiement à ce message. Votre accès restera <strong>en attente</strong> jusqu’à la confirmation manuelle d’un administrateur.</p></>}
                   </div>
 
                   {/* Guarantee banner */}
@@ -538,8 +539,8 @@ export default function SubscriptionFlowPage() {
                         </>
                       ) : (
                         <>
-                          <Lock className="h-4 w-4" />
-                          <span>{includedAccess ? 'Activer l’accès inclus' : `Créer la demande WhatsApp — ${finalPrice.toLocaleString()} ${getCurrencyLabel()}`}</span>
+                          <Smartphone className="h-4 w-4" />
+                          <span>{includedAccess ? 'Activer l’accès inclus' : `Payer par WhatsApp — ${finalPrice.toLocaleString()} ${getCurrencyLabel()}`}</span>
                         </>
                       )}
                     </button>
@@ -547,53 +548,33 @@ export default function SubscriptionFlowPage() {
                 </motion.div>
               )}
 
-                  {/* STEP 4: RESULTAT DU CHECKOUT */}
+                  {/* STEP 4: CONFIRMATION */}
               {currentStep === 4 && (
-                <motion.div
-                  key="step4"
-                  initial={{ opacity: 0, scale: 0.98 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="rounded-3xl bg-white p-8 text-center shadow-lg dark:bg-slate-900"
-                >
-                  <div className={`mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full ring-8 ${paymentConfirmed ? 'bg-emerald-100 text-emerald-600 ring-emerald-50 dark:bg-emerald-950/80 dark:text-emerald-400 dark:ring-emerald-950/40' : 'bg-amber-100 text-amber-600 ring-amber-50 dark:bg-amber-950/80 dark:text-amber-400 dark:ring-amber-950/40'}`}>
-                    {paymentConfirmed ? <CheckCircle2 className="h-10 w-10" /> : <RefreshCw className="h-10 w-10" />}
-                  </div>
-
-                  <span className={`mb-3 inline-block rounded-full px-3.5 py-1 text-[11px] font-extrabold uppercase tracking-wider ${paymentConfirmed ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300'}`}>
-                    {paymentConfirmed ? (includedAccess ? 'Accès académique inclus' : 'Paiement confirmé') : 'Paiement en attente de confirmation'}
-                  </span>
-
-                  <h2 className="mb-2 text-3xl font-black text-slate-900 dark:text-white">{paymentConfirmed ? 'Votre abonnement est actif' : 'Votre paiement doit encore être confirmé'}</h2>
-                  <p className="mx-auto mb-8 max-w-md text-sm text-slate-600 dark:text-slate-300">
-                    {includedAccess ? 'Votre accès universitaire est déjà actif dans Appwrite. Aucune transaction de paiement n’a été créée.' : paymentConfirmed ? 'Le statut de souscription Appwrite confirme l’activation de votre abonnement.' : 'Votre demande est persistée dans Appwrite. Transmettez la preuve de paiement dans WhatsApp avec la référence affichée ; un administrateur devra ensuite la confirmer.'}
-                  </p>
-
-                  <div className="mx-auto mb-8 max-w-md space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
-                    {transactionResult?.transactionId && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Référence transaction :</span><span className="font-mono font-bold text-slate-900 dark:text-white">{transactionResult.transactionId}</span></div>}
-                    <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Formule :</span><span className="font-bold text-slate-900 dark:text-white">{selectedPlan?.name}</span></div>
-                    <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Statut Appwrite :</span><span className="font-bold text-slate-900 dark:text-white">{transactionResult?.status || 'PENDING'}</span></div>
-                    <div className="flex justify-between gap-4"><span className="text-slate-500">Montant :</span><span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span></div>
-                  </div>
-
-                  {transactionResult?.paymentUrl && !paymentConfirmed && <a href={transactionResult.paymentUrl} target="_blank" rel="noreferrer" className="mb-6 inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-6 py-3.5 text-xs font-bold uppercase tracking-wider text-white shadow-md">Ouvrir WhatsApp avec ma référence <ArrowRight className="h-4 w-4" /></a>}
-
-                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-                    <Link
-                      to="/app"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3.5 rounded-xl bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95"
-                    >
-                      <span>Accéder à mon Espace UniFlow</span>
-                      <ArrowRight className="h-4 w-4" />
-                    </Link>
-
-                    <Link
-                      to="/pricing"
-                      className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-xs uppercase tracking-wider hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                    >
-                      <Receipt className="h-4 w-4" />
-                      <span>Voir mes abonnements</span>
-                    </Link>
-                  </div>
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+                  <ActionResult
+                    layout="screen"
+                    status={paymentConfirmed ? 'success' : 'pending'}
+                    icon={paymentConfirmed ? CheckCircle2 : Smartphone}
+                    title={paymentConfirmed ? (includedAccess ? 'Accès académique inclus' : 'Votre abonnement est actif') : 'Demande enregistrée — finalisez sur WhatsApp'}
+                    description={includedAccess
+                      ? 'Votre accès universitaire est déjà actif. Aucune transaction n’a été créée.'
+                      : paymentConfirmed
+                        ? 'Le statut de souscription confirme l’activation de votre abonnement.'
+                        : `WhatsApp s’ouvre avec un message pré-rempli vers le ${CONTACT_PHONE_DISPLAY}. Envoyez-le avec votre preuve de paiement : l’administration valide ensuite votre abonnement.`}
+                    className="max-w-none"
+                    actions={[
+                      ...(transactionResult?.paymentUrl && !paymentConfirmed ? [{ label: 'Ouvrir WhatsApp', href: transactionResult.paymentUrl }] : []),
+                      { label: 'Accéder à mon espace', to: '/app', variant: (transactionResult?.paymentUrl && !paymentConfirmed ? 'secondary' : 'primary') as 'primary' | 'secondary' },
+                      { label: 'Voir les offres', to: '/pricing', variant: 'secondary' as const },
+                    ]}
+                  >
+                    <div className="mx-auto max-w-md space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
+                      {transactionResult?.transactionId && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Référence :</span><span className="select-all font-mono font-bold text-slate-900 dark:text-white">{transactionResult.transactionId}</span></div>}
+                      <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Formule :</span><span className="font-bold text-slate-900 dark:text-white">{selectedPlan?.name}</span></div>
+                      <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Statut :</span><span className="font-bold text-slate-900 dark:text-white">{paymentConfirmed ? 'Actif' : 'En attente de validation'}</span></div>
+                      <div className="flex justify-between gap-4"><span className="text-slate-500">Montant :</span><span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span></div>
+                    </div>
+                  </ActionResult>
                 </motion.div>
               )}
 

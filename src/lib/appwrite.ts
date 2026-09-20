@@ -397,7 +397,7 @@ export async function executeContactMessageAction(payload: ContactMessageRequest
 }
 
 export type SubscriptionPaymentRequest = {
-  action: 'create' | 'list' | 'admin-list' | 'review'
+  action: 'create' | 'list' | 'admin-list' | 'review' | 'validate' | 'reject'
   planCode?: string
   billingCycle?: 'MONTHLY' | 'ANNUALLY'
   fullName?: string
@@ -407,6 +407,11 @@ export type SubscriptionPaymentRequest = {
   requestId?: string
   decision?: 'CONFIRMED' | 'REJECTED'
   adminNote?: string
+  reason?: string
+  /** Filtres de `admin-list` (appliqués côté Function). */
+  from?: string
+  to?: string
+  search?: string
 }
 
 export type SubscriptionPaymentRecord = {
@@ -427,6 +432,9 @@ export type SubscriptionPaymentRecord = {
   processedBy?: string | null
   adminNote?: string
   whatsappUrl?: string
+  channel?: 'WHATSAPP'
+  /** Conversation WhatsApp avec le client, quand son numéro est connu. */
+  customerWhatsappUrl?: string
 }
 
 export type SubscriptionPaymentResponse = {

@@ -24,7 +24,7 @@ const comparisonCategories = [
       { name: 'Prise de présence QR Code / NFC', student: false, teacher: true, campus: true },
       { name: 'Saisie & validation des notes', student: false, teacher: true, campus: true },
       { name: 'Rapports d\'assiduité automatisés', student: false, teacher: true, campus: true },
-      { name: 'Visioconférence LAN dédiée', student: true, teacher: true, campus: true },
+      { name: 'Visioconférence locale via l’application de bureau', student: true, teacher: true, campus: true },
     ]
   },
   {
@@ -54,6 +54,11 @@ const faqs = [
     q: 'Qu\'est-ce que le module Sentinelle IoT ?',
     a: 'Sentinelle est notre extension matérielle optionnelle basée sur Raspberry Pi. Elle combine un Kiosque Santé autonome (mesure de la tension, oxygène SpO2, température) et un module Vigie Edge AI de surveillance vidéo locale. Ce module s\'intègre au plan Université.',
     cat: 'Sentinelle IoT'
+  },
+  {
+    q: 'Comment régler un abonnement ?',
+    a: 'Aucun paiement en ligne : en choisissant une formule, UniFlow enregistre votre demande avec une référence et ouvre WhatsApp vers notre numéro de facturation avec un message pré-rempli. Envoyez-le avec votre preuve de paiement (Orange Money, MTN MoMo, virement) ; l’administration valide ensuite votre abonnement.',
+    cat: 'Général'
   },
   {
     q: 'Comment faire une demande de déploiement pour notre université ?',
