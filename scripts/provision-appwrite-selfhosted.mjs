@@ -89,6 +89,29 @@ async function ensureMembersAttributes() {
   }
 }
 
+/**
+ * Une énumération déjà créée ne reçoit jamais ses nouvelles valeurs par le
+ * `POST` ci-dessus (409 ignoré). Or le schéma en gagne avec le temps — `M1` et
+ * `M2` dans `users.level` pour les étudiants de Master de la Faculté des
+ * Sciences, `PLATFORM` dans `users.accountType` pour l'administrateur de la
+ * plateforme — et le serveur refusait ces documents alors que le script
+ * annonçait un schéma à jour. On complète donc l'énumération existante ; on ne
+ * retire jamais une valeur, des documents pouvant encore la porter.
+ */
+async function reconcileEnumElements(collectionId, body) {
+  const current = await request('GET', `/databases/${databaseId}/collections/${collectionId}/attributes/${body.key}`);
+  const existing = current.payload.elements || [];
+  const missing = body.elements.filter((element) => !existing.includes(element));
+  if (missing.length === 0) return;
+  await request('PATCH', `/databases/${databaseId}/collections/${collectionId}/attributes/enum/${body.key}`, {
+    elements: [...existing, ...missing],
+    required: current.payload.required ?? body.required,
+    default: current.payload.default ?? null,
+  });
+  await waitForAttribute(collectionId, body.key);
+  console.log(`Énumération ${collectionId}.${body.key} complétée : ${missing.join(', ')}.`);
+}
+
 async function ensureCollection(schema) {
   // Les collections académiques sont lues par les trois applications : sans
   // `read("users")`, un étudiant connecté reçoit une liste vide alors que les
@@ -122,6 +145,7 @@ async function ensureCollection(schema) {
   for (const attribute of schema.attributes) {
     const result = await request('POST', `/databases/${databaseId}/collections/${schema.id}/attributes/${attribute.type}`, attribute.body);
     if (result.status === 201) await waitForAttribute(schema.id, attribute.body.key);
+    else if (attribute.type === 'enum') await reconcileEnumElements(schema.id, attribute.body);
   }
 
   for (const index of schema.indexes || []) {

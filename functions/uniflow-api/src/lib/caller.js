@@ -111,8 +111,12 @@ export async function resolveCaller(req, users, databases) {
     isSuperAdmin: isSuperAdmin(labels),
     name: typeof account?.name === 'string' ? account.name : '',
     email: typeof account?.email === 'string' ? account.email : '',
-    accountType: profile?.accountType === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY',
+    // `PLATFORM` : l'admin de la plateforme, sans université ni filière.
+    accountType: profile?.accountType === 'PERSONAL' ? 'PERSONAL'
+      : profile?.accountType === 'PLATFORM' || isSuperAdmin(labels) ? 'PLATFORM'
+        : 'UNIVERSITY',
     university: typeof profile?.university === 'string' ? profile.university : '',
+    faculty: typeof profile?.faculty === 'string' ? profile.faculty : '',
     program: typeof profile?.program === 'string' ? profile.program : '',
     level: typeof profile?.level === 'string' ? profile.level : '',
   }

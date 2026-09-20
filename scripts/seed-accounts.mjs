@@ -4,15 +4,17 @@
  * L'ancien serveur auto-hébergé portait onze comptes (sept étudiants, un
  * administrateur, trois sondes) ; il est mort avec sa montée en 2.2.0 et ses
  * mots de passe n'étaient de toute façon pas exportables. Le projet Cloud
- * repart donc de zéro : ce script crée **un compte par rôle** — ADMIN,
- * administration (ADMIN), enseignant, délégué, étudiant, tous UY1 / ICT4D — et
- * un compte **indépendant** (`PERSONAL`), pour que les deux parcours de
- * connexion des trois clients soient réellement testables.
+ * repart donc de zéro : ce script crée **un compte par rôle** — admin de la
+ * plateforme, administration de la Faculté des Sciences (ADMIN), enseignant,
+ * délégué et étudiants ICT4D (UY1) — et un compte **indépendant** (`PERSONAL`),
+ * pour que les parcours de connexion des trois clients soient réellement
+ * testables.
  *
- * `kernel@forge.codes` est l'**admin de la plateforme** (label `superadmin`) :
- * seul lui crée des comptes administration ; une administration crée les
- * enseignants, délégués et étudiants de son université ; l'inscription libre
- * ne produit que des étudiants.
+ * `kernel@forge.codes` est l'**admin de la plateforme** (label `superadmin`,
+ * type de compte `PLATFORM`, sans université ni filière) : seul lui crée des
+ * comptes administration ; une administration crée les enseignants, délégués
+ * et étudiants de son université ; l'inscription libre ne produit que des
+ * étudiants.
  *
  * Idempotent : les identifiants sont fixes, une seconde exécution met à jour
  * le profil et l'annuaire sans recréer le compte. Les mots de passe sont
@@ -32,18 +34,30 @@ requireConfig()
 const request = createClient()
 
 const UNIVERSITY = 'Université de Yaoundé I'
-const PROGRAM = 'ICT4D'
+const FACULTY = 'Faculté des Sciences'
 const CREDENTIALS_FILE = new URL('../../uniflow-backend/.comptes-demo.local', import.meta.url)
 
-/** `id` = identifiant Appwrite ET identifiant du document `users`. */
+/** Périmètre d'un compte universitaire de la Faculté des Sciences. */
+const fs = (program = '', level = '') => ({ university: UNIVERSITY, faculty: FACULTY, program, level })
+
+/**
+ * `id` = identifiant Appwrite ET identifiant du document `users`.
+ *
+ * L'admin de la plateforme est un compte `PLATFORM` : il n'appartient à aucune
+ * université, faculté ni filière (il était déclaré UY1 / ICT4D / L1, et ses
+ * écrans d'administration ne montraient que cette filière). L'administration
+ * d'université porte l'université et la faculté, jamais une filière ni un
+ * niveau : elle gère toutes les filières de sa faculté. Seuls délégués et
+ * étudiants ont un niveau.
+ */
 export const accounts = [
-  { id: 'kernel-forge-admin', email: 'kernel@forge.codes', name: 'KERNEL FORGE', username: 'kernelforge', accountType: 'UNIVERSITY', role: 'ADMIN', level: 'L1', matricule: '', superAdmin: true },
-  { id: 'uy1-administration', email: 'administration.ict4d@uniflow.test', name: 'Administration ICT4D', username: 'administration', accountType: 'UNIVERSITY', role: 'ADMIN', level: 'L1', matricule: '' },
-  { id: 'uy1-teacher-01', email: 'enseignant.ict4d@uniflow.test', name: 'Pr. Fouda', username: 'pr.fouda', accountType: 'UNIVERSITY', role: 'TEACHER', level: 'L1', matricule: '' },
-  { id: 'uy1-delegate-l1', email: 'delegue.ict4d.l1@uniflow.test', name: 'Délégué ICT4D L1', username: 'delegue.l1', accountType: 'UNIVERSITY', role: 'DELEGATE', level: 'L1', matricule: 'UY1-ICT4D-L1-2026-001' },
-  { id: 'uy1-student-l1', email: 'etudiant.ict4d.l1@uniflow.test', name: 'Étudiante ICT4D L1', username: 'etudiante.l1', accountType: 'UNIVERSITY', role: 'STUDENT', level: 'L1', matricule: 'UY1-ICT4D-L1-2026-002' },
-  { id: 'uy1-student-l2', email: 'etudiant.ict4d.l2@uniflow.test', name: 'Étudiant ICT4D L2', username: 'etudiant.l2', accountType: 'UNIVERSITY', role: 'STUDENT', level: 'L2', matricule: 'UY1-ICT4D-L2-2026-001' },
-  { id: 'independant-01', email: 'independant@uniflow.test', name: 'Compte indépendant', username: 'independant', accountType: 'PERSONAL', role: 'STUDENT', level: '', matricule: '' },
+  { id: 'kernel-forge-admin', email: 'kernel@forge.codes', name: 'KERNEL FORGE', username: 'kernelforge', accountType: 'PLATFORM', role: 'ADMIN', university: '', faculty: '', program: '', level: '', matricule: '', superAdmin: true },
+  { id: 'uy1-administration', email: 'administration.ict4d@uniflow.test', name: 'Administration — Faculté des Sciences', username: 'administration', accountType: 'UNIVERSITY', role: 'ADMIN', ...fs(), matricule: '' },
+  { id: 'uy1-teacher-01', email: 'enseignant.ict4d@uniflow.test', name: 'Pr. Fouda', username: 'pr.fouda', accountType: 'UNIVERSITY', role: 'TEACHER', ...fs('ICT4D'), matricule: '' },
+  { id: 'uy1-delegate-l1', email: 'delegue.ict4d.l1@uniflow.test', name: 'Délégué ICT4D L1', username: 'delegue.l1', accountType: 'UNIVERSITY', role: 'DELEGATE', ...fs('ICT4D', 'L1'), matricule: 'UY1-ICT4D-L1-2026-001' },
+  { id: 'uy1-student-l1', email: 'etudiant.ict4d.l1@uniflow.test', name: 'Étudiante ICT4D L1', username: 'etudiante.l1', accountType: 'UNIVERSITY', role: 'STUDENT', ...fs('ICT4D', 'L1'), matricule: 'UY1-ICT4D-L1-2026-002' },
+  { id: 'uy1-student-l2', email: 'etudiant.ict4d.l2@uniflow.test', name: 'Étudiant ICT4D L2', username: 'etudiant.l2', accountType: 'UNIVERSITY', role: 'STUDENT', ...fs('ICT4D', 'L2'), matricule: 'UY1-ICT4D-L2-2026-001' },
+  { id: 'independant-01', email: 'independant@uniflow.test', name: 'Compte indépendant', username: 'independant', accountType: 'PERSONAL', role: 'STUDENT', university: '', faculty: '', program: '', level: '', matricule: '' },
 ]
 
 function loadCredentials() {
@@ -102,9 +116,9 @@ export function labelsFor(account) {
 
 async function ensureAccount(account, password) {
   const created = await request('POST', '/users', { userId: account.id, email: account.email, password, name: account.name })
-  if (created.status === 201) {
-    await request('PATCH', `/users/${account.id}/prefs`, { prefs: { uniflowAccountType: account.accountType } })
-  }
+  // Les préférences sont réécrites à chaque passage : le type de compte de
+  // l'admin de la plateforme a changé (UNIVERSITY → PLATFORM) après sa création.
+  await request('PATCH', `/users/${account.id}/prefs`, { prefs: { uniflowAccountType: account.accountType } })
   await request('PUT', `/users/${account.id}/labels`, { labels: labelsFor(account) })
 
   const profile = {
@@ -113,9 +127,11 @@ async function ensureAccount(account, password) {
     username: account.username,
     accountType: account.accountType,
     role: account.role,
-    university: account.accountType === 'UNIVERSITY' ? UNIVERSITY : '',
-    program: account.accountType === 'UNIVERSITY' ? PROGRAM : '',
-    ...(account.level ? { level: account.level } : {}),
+    university: account.university,
+    faculty: account.faculty,
+    program: account.program,
+    // `level` est une énumération : la valeur vide est refusée, on l'omet.
+    ...(account.level ? { level: account.level } : { level: null }),
     country: 'Cameroun',
   }
   const profileState = await upsertDocument('users', account.id, profile, ownerPermissions(account.id))
@@ -126,12 +142,21 @@ async function ensureAccount(account, password) {
       userId: account.id,
       name: account.name,
       role: account.role,
-      university: UNIVERSITY,
-      program: PROGRAM,
+      university: account.university,
+      faculty: account.faculty,
+      program: account.program,
       level: account.level,
       matricule: account.matricule,
       status: 'ACTIVE',
     }, ['read("users")', `update("user:${account.id}")`])
+  } else if (account.accountType === 'PLATFORM') {
+    // L'admin de la plateforme n'est inscrit dans l'annuaire d'aucune université.
+    try {
+      await request('DELETE', `/databases/${databaseId}/collections/academic_directory/documents/directory_${account.id}`)
+      directoryState = 'retiré'
+    } catch {
+      directoryState = 'absent'
+    }
   }
 
   console.log(`${account.role.padEnd(8)} ${account.email.padEnd(40)} compte ${created.status === 201 ? 'créé' : 'existant'}, profil ${profileState}, annuaire ${directoryState}`)

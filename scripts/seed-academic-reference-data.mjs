@@ -156,7 +156,7 @@ function courseDocument(course) {
   }
 }
 
-function scheduleDocument(session) {
+function scheduleDocument(session, course) {
   const typeLabel = [session.type, session.group].filter(Boolean).join(' ')
   return {
     courseId: courseId(session.program, session.level, session.code),
@@ -166,6 +166,58 @@ function scheduleDocument(session) {
     endTime: session.endTime,
     classroom: session.room.slice(0, 64),
     type: typeLabel.slice(0, 32),
+    // Périmètre recopié du cours : les clients filtrent l'emploi du temps par
+    // filière et niveau sans passer par la liste des cours.
+    university: UNIVERSITY.name,
+    program: session.program,
+    level: session.level,
+    courseName: (course?.name || session.title || session.code).slice(0, 255),
+    teacherName: (course?.teacherName || session.teachers || '').slice(0, 255),
+    group: (session.group || '').slice(0, 32),
+    semester: `S${SEMESTER}`,
+    academicYear: ACADEMIC_YEAR,
+  }
+}
+
+/**
+ * Les séances créées avant l'ajout du périmètre aux `academic_schedules`
+ * (démonstration ICT4D, saisies manuelles) n'ont ni `program` ni `level` : elles
+ * disparaîtraient de tout écran filtrant par filière. On les complète depuis
+ * leur cours.
+ */
+async function backfillLegacySchedules() {
+  const orphans = await listAll('academic_schedules', [{ method: 'isNull', attribute: 'program' }])
+  const empties = await listAll('academic_schedules', [{ method: 'equal', attribute: 'program', values: [''] }])
+  const pending = [...orphans, ...empties.filter((doc) => !orphans.some((o) => o.$id === doc.$id))]
+  if (pending.length === 0) return
+  console.log(`\n— ${pending.length} séance(s) sans filière : rétro-remplissage depuis leur cours`)
+  const courses = new Map()
+  for (const session of pending) {
+    if (!courses.has(session.courseId)) {
+      try {
+        const { payload } = await request('GET', `/databases/${databaseId}/collections/academic_courses/documents/${session.courseId}`)
+        courses.set(session.courseId, payload)
+      } catch {
+        courses.set(session.courseId, null)
+      }
+    }
+    const course = courses.get(session.courseId)
+    if (!course) {
+      console.log(`  ! ${session.$id} : cours ${session.courseId} introuvable, séance laissée telle quelle`)
+      continue
+    }
+    await request('PATCH', `/databases/${databaseId}/collections/academic_schedules/documents/${session.$id}`, {
+      data: {
+        university: course.university || UNIVERSITY.name,
+        program: course.program || '',
+        level: course.level || '',
+        courseName: (course.name || session.courseCode || '').slice(0, 255),
+        teacherName: (course.teacherName || '').slice(0, 255),
+        semester: `S${SEMESTER}`,
+        academicYear: ACADEMIC_YEAR,
+      },
+    })
+    counters['mis à jour'] += 1
   }
 }
 
@@ -224,8 +276,11 @@ async function main() {
   console.log(`  ${CLASSROOMS.length} salles traitées.`)
 
   console.log('\n— Cours')
+  const courseDocuments = new Map()
   for (const course of courses) {
-    tally(await upsert('academic_courses', course.id, courseDocument(course), ['read("users")']))
+    const document = courseDocument(course)
+    courseDocuments.set(course.id, document)
+    tally(await upsert('academic_courses', course.id, document, ['read("users")']))
   }
   console.log(`  ${courses.length} cours traités.`)
 
@@ -234,9 +289,12 @@ async function main() {
   for (const session of sessions) {
     const id = scheduleId(session)
     keptIds.add(id)
-    tally(await upsert('academic_schedules', id, scheduleDocument(session), ['read("users")']))
+    const course = courseDocuments.get(courseId(session.program, session.level, session.code))
+    tally(await upsert('academic_schedules', id, scheduleDocument(session, course), ['read("users")']))
   }
   console.log(`  ${sessions.length} séances traitées.`)
+
+  if (!dryRun) await backfillLegacySchedules()
 
   if (prune && !dryRun) {
     console.log('\n— Nettoyage des séances obsolètes')

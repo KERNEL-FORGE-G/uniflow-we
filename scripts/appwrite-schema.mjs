@@ -100,13 +100,29 @@ const enumeration = (key, elements, required = false, defaultValue) => ({
 })
 
 /**
- * Niveaux d'études admis pour un compte universitaire. Demande du
- * propriétaire : la filière ICT couvre les trois années de Licence.
+ * Niveaux d'études admis pour un compte universitaire.
+ *
+ * Limités à la Licence à l'origine (périmètre ICT4D), puis étendus au Master :
+ * les emplois du temps 2026-2027 de la Faculté des Sciences chargés dans
+ * `academic_courses` comportent des M1 (PHY, MAT, INF, GEO, CHM, MIB, BOA,
+ * BOV, BCH), et un étudiant de M1 ne pouvait pas s'inscrire tant que
+ * `users.level` refusait cette valeur.
  */
-export const academicLevels = ['L1', 'L2', 'L3']
+export const academicLevels = ['L1', 'L2', 'L3', 'M1', 'M2']
 
 /** Les quatre rôles lus par les trois clients et vérifiés par les Functions. */
 export const userRoles = ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN']
+
+/**
+ * Types de compte.
+ *
+ * `PLATFORM` est réservé à l'administrateur de la plateforme (label
+ * `superadmin`, `kernel@forge.codes`) : il n'appartient à aucune université,
+ * faculté ni filière, contrairement à un compte `UNIVERSITY` qui porte toujours
+ * un périmètre. Le compte était jusque-là déclaré `UNIVERSITY` / UY1 / ICT4D /
+ * L1, ce qui restreignait ses écrans d'administration à cette seule filière.
+ */
+export const accountTypes = ['UNIVERSITY', 'PERSONAL', 'PLATFORM']
 
 /**
  * Collections académiques : cours, emploi du temps, annuaire, notes,
@@ -158,8 +174,27 @@ export const academicSchemas = [
       string('endTime', 8, true),
       string('classroom', 64, false, ''),
       string('type', 32, false, ''),
+      // Périmètre recopié depuis le cours. Sans lui, afficher l'emploi du temps
+      // d'une filière obligeait à lister ses cours puis à interroger les séances
+      // par lot d'identifiants — et le web se rabattait sur « ICT4D / L1 » codé
+      // en dur, ne montrant qu'une filière sur les douze chargées. Optionnels
+      // pour que les séances déjà présentes restent valides ; le seed du
+      // référentiel les rétro-remplit.
+      string('university', 255, false, ''),
+      string('program', 100, false, ''),
+      string('level', 16, false, ''),
+      string('courseName', 255, false, ''),
+      string('teacherName', 255, false, ''),
+      // « G1 », « G2 »… quand la séance ne concerne qu'un groupe de TD/TP.
+      string('group', 32, false, ''),
+      string('semester', 8, false, ''),
+      string('academicYear', 16, false, ''),
     ],
-    indexes: [{ key: 'schedule_day', type: 'key', attributes: ['dayOfWeek', 'startTime'] }],
+    indexes: [
+      { key: 'schedule_day', type: 'key', attributes: ['dayOfWeek', 'startTime'] },
+      { key: 'schedule_program_level', type: 'key', attributes: ['program', 'level'] },
+      { key: 'schedule_course', type: 'key', attributes: ['courseId'] },
+    ],
   },
   {
     id: 'academic_directory',
@@ -169,6 +204,7 @@ export const academicSchemas = [
       string('name', 255, true),
       string('role', 32, true),
       string('university', 255, false, ''),
+      string('faculty', 255, false, ''),
       string('program', 255, false, ''),
       string('level', 16, false, ''),
       string('matricule', 64, false, ''),
@@ -444,9 +480,12 @@ export const schemas = [
     attributes: [
       string('email', 255, true),
       string('name', 255, true),
-      enumeration('accountType', ['UNIVERSITY', 'PERSONAL'], true),
+      enumeration('accountType', accountTypes, true),
       enumeration('role', userRoles, false, 'STUDENT'),
       string('university', 255, false, ''),
+      // Une université a plusieurs facultés ; l'administration en gère une, et
+      // l'inscription descend université → faculté → filière → niveau.
+      string('faculty', 255, false, ''),
       string('program', 100, false, ''),
       // La filière ICT de l'UY1 va de la Licence 1 à la Licence 3 : le schéma
       // n'admettait que `L1`, si bien qu'un compte L2 ou L3 aurait été refusé
