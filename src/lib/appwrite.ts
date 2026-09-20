@@ -141,15 +141,22 @@ export type AdminDirectoryRequest = {
   role?: UniFlowRole
   matricule?: string
   status?: string
+  university?: string
+  program?: string
+  level?: string
 }
 
 export type AdminDirectoryEntry = {
   userId: string
   name: string
   role: UniFlowRole
+  isSuperAdmin?: boolean
   matricule: string
   status: string
   email: string
+  university?: string
+  program?: string
+  level?: string
 }
 
 export type AdminDirectoryResponse = {
@@ -166,6 +173,7 @@ export type AdminDirectoryResponse = {
   status?: string
   collection?: string
   entries?: AdminDirectoryEntry[]
+  caller?: { role: UniFlowRole; isSuperAdmin: boolean; university?: string }
 }
 
 
