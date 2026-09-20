@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, createContext, useContext, useCallback } from 'react'
 import { clearTokens, type BackendUser } from '@/lib/api'
 import { getCurrentAccount, type UniFlowUser } from '@/lib/appwrite'
+import { isUniFlowRole, ROLE_LABELS_FR, type UniFlowRole } from '@/lib/roles'
 import { avatarFileUrl } from '@/utils/avatarUtils'
 import { clearSessionSnapshot, persistSessionSnapshot, readSessionSnapshot } from '@/lib/sessionPersistence'
 
@@ -24,6 +25,12 @@ export interface UserProfile {
   username?: string
   /** Identifiant du fichier de la photo de profil, tel qu'enregistré sur le profil. */
   avatarFileId?: string
+  /** Administrateur de la plateforme (label Appwrite `superadmin`). */
+  isSuperAdmin?: boolean
+  /** Rôle normalisé UniFlow, tel que résolu depuis les labels. */
+  uniflowRole?: UniFlowRole
+  university?: string
+  program?: string
 }
 
 const EMPTY_PROFILE: UserProfile = {
@@ -73,19 +80,27 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
   const fullNameParts = user.fullName?.trim().split(/\s+/).filter(Boolean) ?? []
   const firstName = user.student?.firstName ?? user.teacher?.firstName ?? fullNameParts[0] ?? user.email.split('@')[0]
   const lastName = user.student?.lastName ?? user.teacher?.lastName ?? fullNameParts.slice(1).join(' ')
-  const studentLevel = user.student?.level ?? 'Niveau inconnu'
-  const studentSpecialty = user.student?.specialty
+  const studentLevel = user.student?.level ?? user.level
+  const studentSpecialty = user.student?.specialty ?? user.program
+  const uniflowRole: UniFlowRole = isUniFlowRole(user.role) ? user.role : 'STUDENT'
+  const accountType = user.accountType === 'PERSONAL' || user.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
+  const learner = role === 'student' || role === 'delegate'
 
   return {
     name: `${firstName}${lastName ? ` ${lastName}` : ''}`,
     email: user.email,
-    roleLabel: role === 'student' ? 'Étudiant' : role === 'delegate' ? 'Délégué' : role === 'teacher' ? 'Enseignant' : 'Administrateur',
+    roleLabel: accountType === 'PERSONAL' ? 'Compte indépendant' : user.isSuperAdmin ? 'Administrateur de la plateforme' : ROLE_LABELS_FR[uniflowRole],
     status: 'En ligne',
     role,
-    filiere: role === 'student' ? (studentSpecialty ? `${studentLevel} · ${studentSpecialty}` : studentLevel) : undefined,
-    level: role === 'student' ? studentLevel : undefined,
+    uniflowRole,
+    isSuperAdmin: Boolean(user.isSuperAdmin),
+    university: user.university,
+    program: user.program,
+    // Filière et niveau viennent du profil ; rien n'est présumé quand ils manquent.
+    filiere: learner && accountType === 'UNIVERSITY' ? [studentLevel, studentSpecialty].filter(Boolean).join(' · ') || undefined : undefined,
+    level: learner ? studentLevel : undefined,
     matricule: user.student?.matricule,
-    accountType: user.accountType === 'PERSONAL' || user.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY',
+    accountType,
     countryCode: user.countryCode,
     username: user.username,
     avatarFileId: user.avatarFileId,
@@ -95,7 +110,7 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
   }
 }
 
-function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role' | 'accountType'> & Partial<Pick<UniFlowUser, 'email' | 'username' | 'avatarFileId'>>): BackendUser {
+function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role' | 'accountType'> & Partial<Pick<UniFlowUser, 'email' | 'username' | 'avatarFileId' | 'labels' | 'isSuperAdmin' | 'university' | 'program' | 'level'>>): BackendUser {
   return {
     id: user.id,
     email: user.email || '',
@@ -104,6 +119,11 @@ function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role
     accountType: user.accountType,
     username: user.username,
     avatarFileId: user.avatarFileId,
+    labels: user.labels,
+    isSuperAdmin: Boolean(user.isSuperAdmin),
+    university: user.university,
+    program: user.program,
+    level: user.level,
   }
 }
 

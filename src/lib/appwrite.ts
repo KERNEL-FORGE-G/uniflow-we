@@ -1,5 +1,6 @@
 import { Account, Client, Databases, ExecutionMethod, Functions, ID, Models, Permission, Query, Role, Storage } from 'appwrite'
 import { readSessionSnapshot } from './sessionPersistence'
+import { isSuperAdmin, resolveRole, type UniFlowAccountType, type UniFlowRole } from './roles'
 
 // UniFlow est hébergé sur Appwrite Cloud (région Francfort) depuis septembre
 // 2026 : le serveur auto-hébergé `appwrite.kernelforge.codes` est mort avec sa
@@ -447,29 +448,34 @@ export async function executeSubscriptionPaymentAction(payload: SubscriptionPaym
   return response
 }
 
-export type UniFlowAccountType = 'UNIVERSITY' | 'PERSONAL'
-export type UniFlowRole = 'STUDENT' | 'DELEGATE' | 'TEACHER' | 'ADMIN'
+export type { UniFlowAccountType, UniFlowRole } from './roles'
 
 export interface UniFlowUser {
   id: string
   email: string
   name: string
   accountType: UniFlowAccountType
+  /** Rôle effectif, résolu depuis les labels Appwrite (repli : miroir `users.role`). */
   role: UniFlowRole
+  /** Labels Appwrite bruts ; `undefined` quand ils n'ont pas pu être lus (instantané hors ligne). */
+  labels?: string[]
+  /** Administrateur de la plateforme (label `superadmin`). */
+  isSuperAdmin: boolean
   university?: string
   program?: string
-  level?: 'L1'
+  /** Niveau universitaire (L1 à L3, ou M1/M2 selon la filière). */
+  level?: string
   country?: string
   /** Pseudo unique : c'est le référent de la messagerie. */
   username?: string
-  /** Identifiant du fichier dans le bucket `uniflow_avatars`, vide si aucune photo. */
+  /** Identifiant du fichier dans le bucket `uniflow_assets`, vide si aucune photo. */
   avatarFileId?: string
 }
 
 export type UniFlowProfileInput = {
   university?: string
   program?: string
-  level?: 'L1'
+  level?: string
   matricule?: string
   country?: string
 }
@@ -587,22 +593,32 @@ const userPermissions = (userId: string) => [
   Permission.delete(Role.user(userId)),
 ]
 
-export async function createAccount(email: string, password: string, name: string, accountType: UniFlowAccountType, role: UniFlowRole, profileInput: UniFlowProfileInput = {}) {
+/**
+ * Inscription libre. Un compte universitaire auto-inscrit est **toujours**
+ * STUDENT : aucun rôle n'est accepté du formulaire, et le serveur
+ * (`/academic-registration`) l'impose de son côté. Les rôles privilégiés se
+ * donnent depuis l'annuaire d'administration. Université, filière et niveau
+ * viennent du formulaire (référentiel en base) : rien n'est présumé ici.
+ */
+export async function createAccount(email: string, password: string, name: string, accountType: UniFlowAccountType, profileInput: UniFlowProfileInput = {}) {
+  if (accountType === 'UNIVERSITY' && (!profileInput.university || !profileInput.program || !profileInput.level)) {
+    throw new Error('Choisissez votre université, votre filière et votre niveau pour créer un compte universitaire.')
+  }
   // Appwrite peut refuser la séquence Auth si le navigateur possède encore
   // une session active. La fermeture doit précéder account.create, pas suivre.
   try { await awaitAppwrite(appwriteAccount.deleteSession('current'), 'la fermeture de session précédente') } catch { /* aucune session précédente ou service temporairement indisponible */ }
-  const account = await awaitAppwrite(appwriteAccount.create(ID.unique(), email.trim(), password, name.trim()), 'la création du compte')
+  await awaitAppwrite(appwriteAccount.create(ID.unique(), email.trim(), password, name.trim()), 'la création du compte')
   await awaitAppwrite(appwriteAccount.createEmailPasswordSession(email.trim(), password), 'l’ouverture de session')
   await persistAccountTypePreference(accountType)
   const profile = await awaitAppwrite(appwriteAccount.get(), 'la lecture du compte créé')
-  const effectiveRole: UniFlowRole = accountType === 'UNIVERSITY' ? 'STUDENT' : role
+  const effectiveRole: UniFlowRole = 'STUDENT'
   const userProfile: Required<Pick<UniFlowProfileDocument, 'accountType' | 'role'>> & UniFlowProfileInput & { email: string; name: string } = {
     email: profile.email,
     name: profile.name,
     accountType,
     role: effectiveRole,
-    university: accountType === 'UNIVERSITY' ? (profileInput.university || 'Université de Yaoundé I') : '',
-    program: accountType === 'UNIVERSITY' ? (profileInput.program || 'ICT4D') : '',
+    university: accountType === 'UNIVERSITY' ? (profileInput.university || '') : '',
+    program: accountType === 'UNIVERSITY' ? (profileInput.program || '') : '',
     ...(accountType === 'UNIVERSITY' && profileInput.level ? { level: profileInput.level } : {}),
     country: profileInput.country || 'Cameroun',
   }
@@ -626,16 +642,13 @@ export async function loginAccount(email: string, password: string, accountType:
   const profile = await awaitAppwrite(appwriteAccount.get(), 'la lecture du compte')
   const resolvedAccountType = await resolveAccountType(profile, accountType)
   if (resolvedAccountType !== accountType) await persistAccountTypePreference(resolvedAccountType)
-  let role: UniFlowRole = 'STUDENT'
   let userProfile: UniFlowProfileDocument | undefined
   try {
-    const doc = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil UniFlow') as unknown as UniFlowProfileDocument
-    role = normalizeRole((doc as { role?: string }).role, resolvedAccountType)
-    userProfile = doc
+    userProfile = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil UniFlow') as unknown as UniFlowProfileDocument
   } catch {
     // Le profil peut ne pas encore exister : l’interface reste authentifiée et affiche un état incomplet honnête.
   }
-  return normalizeUser(profile, resolvedAccountType, role, userProfile)
+  return normalizeUser(profile, resolvedAccountType, resolveRole(profile.labels, userProfile?.role), userProfile)
 }
 
 export async function getCurrentAccount(accountType?: UniFlowAccountType): Promise<UniFlowUser | null> {
@@ -644,15 +657,13 @@ export async function getCurrentAccount(accountType?: UniFlowAccountType): Promi
     const hintedType = accountType ?? (localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY')
     const resolvedAccountType = await resolveAccountType(profile, hintedType)
     if (resolvedAccountType !== hintedType) await persistAccountTypePreference(resolvedAccountType)
-    let role: UniFlowRole = 'STUDENT'
     let userProfile: UniFlowProfileDocument | undefined
     try {
       userProfile = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil UniFlow') as unknown as UniFlowProfileDocument
-      role = normalizeRole(userProfile.role, resolvedAccountType)
     } catch {
       // L’authentification Appwrite reste utilisable pendant la création ou la restauration du profil.
     }
-    return normalizeUser(profile, resolvedAccountType, role, userProfile)
+    return normalizeUser(profile, resolvedAccountType, resolveRole(profile.labels, userProfile?.role), userProfile)
   } catch (error) {
     // Une absence explicite de session est différente d’un délai réseau ou d’un
     // démarrage Appwrite lent. Seul 401 invalide l’instantané IndexedDB.
@@ -1066,11 +1077,6 @@ export async function deleteForumPost(postId: string) {
   return awaitAppwrite(appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'forum_posts', postId), 'la suppression de la publication du forum')
 }
 
-function normalizeRole(value: string | undefined, accountType: UniFlowAccountType): UniFlowRole {
-  if (value === 'ADMIN' || value === 'TEACHER' || value === 'DELEGATE' || value === 'STUDENT') return value
-  return accountType === 'PERSONAL' ? 'STUDENT' : 'STUDENT'
-}
-
 function normalizeUser(profile: Models.User<Models.Preferences>, accountType: UniFlowAccountType, role: UniFlowRole, userProfile?: UniFlowProfileDocument): UniFlowUser {
   return {
     id: profile.$id,
@@ -1078,6 +1084,8 @@ function normalizeUser(profile: Models.User<Models.Preferences>, accountType: Un
     name: profile.name,
     accountType,
     role,
+    labels: Array.isArray(profile.labels) ? [...profile.labels] : undefined,
+    isSuperAdmin: isSuperAdmin(profile.labels),
     university: userProfile?.university || undefined,
     program: userProfile?.program || undefined,
     level: userProfile?.level,

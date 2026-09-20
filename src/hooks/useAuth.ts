@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { createAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowRole, type UniFlowUser } from '@/lib/appwrite'
+import { createAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowUser } from '@/lib/appwrite'
 import { clearSessionSnapshot, persistSessionSnapshot } from '@/lib/sessionPersistence'
 import { setAccountType, type BackendUser } from '@/lib/api'
 import { useUserRole } from '@/utils/userRole'
@@ -26,7 +26,7 @@ export interface RegisterPayload {
   specialtyId?: string
   university?: string
   program?: string
-  level?: 'L1'
+  level?: string
 }
 
 function mapRole(role: string): Role {
@@ -44,13 +44,6 @@ function mapRole(role: string): Role {
   }
 }
 
-function normalizeRole(role: string): UniFlowRole {
-  if (role === 'ADMIN') return 'ADMIN'
-  if (role === 'DELEGUE' || role === 'DELEGATE') return 'DELEGATE'
-  if (role === 'ENSEIGNANT' || role === 'TEACHER' || role === 'INDEPENDENT_TEACHER') return 'TEACHER'
-  return 'STUDENT'
-}
-
 async function persistUser(user: UniFlowUser) {
   // Seules les métadonnées de profil vont dans IndexedDB. Appwrite reste la
   // source de vérité pour le cookie ou la session effective.
@@ -59,7 +52,20 @@ async function persistUser(user: UniFlowUser) {
 }
 
 function toBackendUser(user: UniFlowUser): BackendUser {
-  return { id: user.id, email: user.email, role: user.role, fullName: user.name, accountType: user.accountType }
+  return {
+    id: user.id,
+    email: user.email,
+    role: user.role,
+    fullName: user.name,
+    accountType: user.accountType,
+    username: user.username,
+    avatarFileId: user.avatarFileId,
+    labels: user.labels,
+    isSuperAdmin: user.isSuperAdmin,
+    university: user.university,
+    program: user.program,
+    level: user.level,
+  }
 }
 
 export function useAuth() {
@@ -97,7 +103,8 @@ export function useAuth() {
         payload.password,
         `${payload.firstName.trim()} ${payload.lastName.trim()}`,
         payload.accountType,
-        normalizeRole(payload.role),
+        // Aucun rôle transmis : un auto-inscrit universitaire est STUDENT,
+        // le serveur l'impose aussi.
         {
           university: payload.university,
           program: payload.program,
@@ -138,7 +145,7 @@ export function useAuth() {
     if (!authUser) return null
     const accountType = authUser.accountType === 'PERSONAL' || authUser.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
     const role = authUser.role === 'ADMIN' || authUser.role === 'DELEGATE' || authUser.role === 'TEACHER' ? authUser.role : 'STUDENT'
-    return { id: authUser.id, email: authUser.email, name: authUser.fullName || authUser.email, accountType, role }
+    return { id: authUser.id, email: authUser.email, name: authUser.fullName || authUser.email, accountType, role, isSuperAdmin: Boolean(authUser.isSuperAdmin), labels: authUser.labels, university: authUser.university, program: authUser.program, level: authUser.level }
   }, [authUser])
 
   const isAuthenticated = useCallback(() => Boolean(authUser), [authUser])

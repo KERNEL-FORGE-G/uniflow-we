@@ -146,8 +146,15 @@ export interface BackendUser {
   teacher?: TeacherProfile
   /** Pseudo unique : référent de la messagerie. */
   username?: string
-  /** Fichier de la photo de profil dans le bucket `uniflow_avatars`. */
+  /** Fichier de la photo de profil dans le bucket `uniflow_assets`. */
   avatarFileId?: string
+  /** Labels Appwrite (preuve du rôle) ; absent si l'instantané hors ligne n'en avait pas. */
+  labels?: string[]
+  /** Administrateur de la plateforme (label `superadmin`). */
+  isSuperAdmin?: boolean
+  university?: string
+  program?: string
+  level?: string
 }
 export interface AuthResult { accessToken: string; refreshToken: string; user: BackendUser }
 interface StudentProfile { firstName: string; lastName: string; matricule?: string; level?: string; specialty?: string }
@@ -166,16 +173,23 @@ function toBackendUser(user: Awaited<ReturnType<typeof getCurrentAccount>>): Bac
     accountType: user.accountType,
     accountCategory: user.accountType,
     countryCode: user.country === 'Cameroun' ? 'CM' : user.country,
-    universityCode: user.accountType === 'UNIVERSITY' ? 'UY1' : undefined,
     username: user.username,
     avatarFileId: user.avatarFileId,
+    labels: user.labels,
+    isSuperAdmin: user.isSuperAdmin,
+    university: user.university,
+    program: user.program,
+    level: user.level,
   }
 }
 
 export interface AcademicLevel { id: string; name: string; programName: string }
 export interface SpecialtyOption { id: string; name: string; levelId: string }
-const academicLevels: AcademicLevel[] = [{ id: 'L1', name: 'Licence 1', programName: 'ICT4D' }]
-const academicSpecialties: SpecialtyOption[] = academicLevels.map((level) => ({ id: `ICT4D-${level.id}`, name: 'ICT4D', levelId: level.id }))
+// Plus aucune liste codée en dur : niveaux et filières viennent du référentiel
+// en base (`src/lib/referenceData.ts`). Ces deux tableaux vides ne subsistent
+// que pour l'ancienne API `authApi.academicOptions`, qui n'a plus d'appelant.
+const academicLevels: AcademicLevel[] = []
+const academicSpecialties: SpecialtyOption[] = []
 
 export const authApi = {
   login: async (_dto: LoginDto): Promise<AuthResult> => unavailable<AuthResult>('La connexion legacy'),
