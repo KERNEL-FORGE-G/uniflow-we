@@ -478,6 +478,7 @@ export interface UniFlowUser {
   /** Administrateur de la plateforme (label `superadmin`). */
   isSuperAdmin: boolean
   university?: string
+  faculty?: string
   program?: string
   /** Niveau universitaire (L1 à L3, ou M1/M2 selon la filière). */
   level?: string
@@ -490,6 +491,7 @@ export interface UniFlowUser {
 
 export type UniFlowProfileInput = {
   university?: string
+  faculty?: string
   program?: string
   level?: string
   matricule?: string
@@ -556,7 +558,7 @@ type UniFlowPreferences = {
 }
 
 function asAccountType(value: unknown): UniFlowAccountType | null {
-  return value === 'PERSONAL' || value === 'UNIVERSITY' ? value : null
+  return value === 'PERSONAL' || value === 'UNIVERSITY' || value === 'PLATFORM' ? value : null
 }
 
 /**
@@ -634,6 +636,7 @@ export async function createAccount(email: string, password: string, name: strin
     accountType,
     role: effectiveRole,
     university: accountType === 'UNIVERSITY' ? (profileInput.university || '') : '',
+    faculty: accountType === 'UNIVERSITY' ? (profileInput.faculty || '') : '',
     program: accountType === 'UNIVERSITY' ? (profileInput.program || '') : '',
     ...(accountType === 'UNIVERSITY' && profileInput.level ? { level: profileInput.level } : {}),
     country: profileInput.country || 'Cameroun',
@@ -840,14 +843,44 @@ export async function listDocuments<T>(collectionId: string, queries: string[] =
   return result.documents as unknown as T[]
 }
 
+/**
+ * Lecture complète d'une collection par pages de 100.
+ *
+ * Symptôme (2026-09-20) : `listDocuments` sans `Query.limit` ne renvoie que
+ * 25 documents — avec 296 UE et 527 séances en base, l'interface n'en montrait
+ * qu'une fraction et donnait l'impression que seule ICT4D existait.
+ */
+export async function listAllDocuments<T extends { $id: string }>(collectionId: string, queries: string[] = [], pageSize = 100): Promise<T[]> {
+  const documents: T[] = []
+  let cursor: string | null = null
+  for (let page = 0; page < 100; page += 1) {
+    const pageQueries = [...queries, Query.limit(pageSize)]
+    if (cursor) pageQueries.push(Query.cursorAfter(cursor))
+    const batch = await listDocuments<T>(collectionId, pageQueries)
+    documents.push(...batch)
+    if (batch.length < pageSize) break
+    cursor = batch[batch.length - 1].$id
+  }
+  return documents
+}
+
+/** Filtres serveur pour une filière et un niveau (attributs indexés sur cours et séances). */
+export function scopeQueries(scope: { program?: string; level?: string } | undefined): string[] {
+  const queries: string[] = []
+  if (scope?.program) queries.push(Query.equal('program', scope.program))
+  if (scope?.level) queries.push(Query.equal('level', scope.level.toUpperCase()))
+  return queries
+}
+
 export interface AcademicCourseDocument {
   $id: string
   code: string
   name: string
   description?: string
   university: string
+  faculty?: string
   program: string
-  level: 'L1'
+  level: string
   teacherId?: string
   teacherName?: string
   credits?: number
@@ -865,6 +898,16 @@ export interface AcademicScheduleDocument {
   endTime: string
   classroom: string
   type?: string
+  // Portés directement par la séance depuis le 2026-09-20 : l'emploi du temps
+  // se filtre par filière et niveau sans passer par les cours.
+  university?: string
+  program?: string
+  level?: string
+  courseName?: string
+  teacherName?: string
+  group?: string
+  semester?: string
+  academicYear?: string
 }
 
 export interface AcademicLibraryDocument {
@@ -941,8 +984,9 @@ export interface AcademicDirectoryDocument {
   name: string
   role: UniFlowRole
   university: string
+  faculty?: string
   program: string
-  level: 'L1'
+  level: string
   matricule?: string
   status?: string
 }
@@ -985,10 +1029,10 @@ export interface SubscriptionStatusDocument {
 
 export const academicAppwriteApi = {
   courses: {
-    list: () => listDocuments<AcademicCourseDocument>('academic_courses'),
+    list: (scope?: { program?: string; level?: string }) => listAllDocuments<AcademicCourseDocument>('academic_courses', scopeQueries(scope)),
   },
   schedules: {
-    list: () => listDocuments<AcademicScheduleDocument>('academic_schedules'),
+    list: (scope?: { program?: string; level?: string }) => listAllDocuments<AcademicScheduleDocument>('academic_schedules', scopeQueries(scope)),
   },
   library: {
     list: () => listDocuments<AcademicLibraryDocument>('academic_library', [Query.limit(200)]),
@@ -1005,10 +1049,10 @@ export const academicAppwriteApi = {
     qrTokens: () => listDocuments<AcademicAttendanceQrTokenDocument>('attendance_qr_tokens', [Query.limit(200)]),
   },
   directory: {
-    list: () => listDocuments<AcademicDirectoryDocument>('academic_directory', [Query.limit(200)]),
+    list: () => listAllDocuments<AcademicDirectoryDocument>('academic_directory'),
   },
   enrollments: {
-    list: () => listDocuments<AcademicEnrollmentDocument>('academic_enrollments', [Query.limit(200)]),
+    list: () => listAllDocuments<AcademicEnrollmentDocument>('academic_enrollments'),
   },
   subscriptions: {
     listPlans: async () => (await listDocuments<SubscriptionPlanDocument>('subscription_plans')).filter((plan) => plan.status === 'ACTIVE'),
@@ -1097,7 +1141,7 @@ export async function createForumPost(user: UniFlowUser, data: Pick<ForumPost, '
       authorId: user.id,
       authorName: user.name || user.email,
       role: user.role,
-      university: user.accountType === 'UNIVERSITY' ? (user.university || 'Université de Yaoundé I') : 'Compte personnel UniFlow',
+      university: user.accountType === 'UNIVERSITY' ? (user.university || 'Université non renseignée') : user.accountType === 'PLATFORM' ? 'Administration de la plateforme' : 'Compte personnel UniFlow',
       likes: 0,
       createdAt: new Date().toISOString(),
       ...post,
@@ -1120,8 +1164,9 @@ function normalizeUser(profile: Models.User<Models.Preferences>, accountType: Un
     labels: Array.isArray(profile.labels) ? [...profile.labels] : undefined,
     isSuperAdmin: isSuperAdmin(profile.labels),
     university: userProfile?.university || undefined,
+    faculty: userProfile?.faculty || undefined,
     program: userProfile?.program || undefined,
-    level: userProfile?.level,
+    level: userProfile?.level || undefined,
     country: userProfile?.country || undefined,
     username: userProfile?.username || undefined,
     avatarFileId: userProfile?.avatarFileId || undefined,

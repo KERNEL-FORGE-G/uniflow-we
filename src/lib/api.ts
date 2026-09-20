@@ -15,6 +15,7 @@ import {
   deleteAppwriteNotification,
   personalAppwriteApi,
 } from './appwrite'
+import { type AcademicScope, filterByScope, matchesScope, mergeScope, scopeOf, teacherMatches } from './academicScope'
 
 /**
  * Adaptateur de compatibilité UniFlow.
@@ -32,11 +33,12 @@ export const UNIVERSITY_API_URL = APPWRITE_VPS_ENDPOINT
 export const PERSONAL_API_URL = APPWRITE_VPS_ENDPOINT
 export const BASE_URL = APPWRITE_VPS_ENDPOINT
 
-export type AccountType = 'UNIVERSITY' | 'PERSONAL'
+export type AccountType = 'UNIVERSITY' | 'PERSONAL' | 'PLATFORM'
 
 export function getAccountType(): AccountType {
   try {
-    return localStorage.getItem('uniflow_account_type') === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
+    const stored = localStorage.getItem('uniflow_account_type')
+    return stored === 'PERSONAL' || stored === 'PLATFORM' ? stored : 'UNIVERSITY'
   } catch {
     return 'UNIVERSITY'
   }
@@ -154,6 +156,7 @@ export interface BackendUser {
   /** Administrateur de la plateforme (label `superadmin`). */
   isSuperAdmin?: boolean
   university?: string
+  faculty?: string
   program?: string
   level?: string
 }
@@ -179,9 +182,45 @@ function toBackendUser(user: Awaited<ReturnType<typeof getCurrentAccount>>): Bac
     labels: user.labels,
     isSuperAdmin: user.isSuperAdmin,
     university: user.university,
+    faculty: user.faculty,
     program: user.program,
     level: user.level,
   }
+}
+
+/**
+ * Sélection explicite filière/niveau (sélecteur des pages administration et
+ * enseignant). Vide = périmètre implicite du profil.
+ */
+export type ScopeSelection = Partial<Pick<AcademicScope, 'program' | 'level'>>
+
+// Chaque liste (cours, séances, annuaire…) relit le compte pour connaître son
+// périmètre ; sans ce court cache une page en déclenchait cinq ou six fois.
+// Seuls les résultats non nuls sont retenus : une absence de session ne doit
+// jamais masquer une connexion qui vient d'aboutir.
+const CURRENT_ACCOUNT_TTL_MS = 5_000
+let currentAccountCache: { user: NonNullable<Awaited<ReturnType<typeof getCurrentAccount>>>; expiresAt: number } | null = null
+let currentAccountRequest: ReturnType<typeof getCurrentAccount> | null = null
+if (typeof window !== 'undefined') {
+  window.addEventListener('uniflow:logged-out', () => { currentAccountCache = null })
+}
+
+async function cachedUniversityAccount() {
+  if (currentAccountCache && currentAccountCache.expiresAt > Date.now()) return currentAccountCache.user
+  if (!currentAccountRequest) {
+    currentAccountRequest = getCurrentAccount('UNIVERSITY')
+      .then((user) => {
+        if (user) currentAccountCache = { user, expiresAt: Date.now() + CURRENT_ACCOUNT_TTL_MS }
+        return user
+      })
+      .finally(() => { currentAccountRequest = null })
+  }
+  return currentAccountRequest
+}
+
+async function currentScope(selection?: ScopeSelection) {
+  const current = await cachedUniversityAccount()
+  return { current, scope: mergeScope(scopeOf(current), selection) }
 }
 
 export interface AcademicLevel { id: string; name: string; programName: string }
@@ -255,22 +294,34 @@ function asAcademicCourse(course: import('./appwrite').AcademicCourseDocument): 
   }
 }
 
-async function universityCourses(): Promise<Course[]> {
-  const current = await getCurrentAccount('UNIVERSITY')
-  if (!current) return []
-  const courses = await academicAppwriteApi.courses.list()
-  return courses
-    .filter((course) => current.role !== 'TEACHER' || course.teacherId === current.id)
-    .map(asAcademicCourse)
+function courseBelongsToTeacher(course: { teacherId?: string; teacherName?: string }, current: { id: string; name: string }) {
+  return course.teacherId === current.id || teacherMatches(course.teacherName, current.name)
 }
 
-async function visibleCourses(): Promise<Course[]> {
-  return getAccountType() === 'PERSONAL' ? personalCourses() : universityCourses()
+async function universityCourseDocuments(selection?: ScopeSelection) {
+  const { current, scope } = await currentScope(selection)
+  if (!current) return { current: null, courses: [] as import('./appwrite').AcademicCourseDocument[] }
+  const documents = filterByScope(await academicAppwriteApi.courses.list(scope), scope)
+  // Un enseignant sans sélection explicite voit ses cours ; avec un sélecteur, la filière choisie.
+  const courses = current.role === 'TEACHER' && !selection?.program
+    ? documents.filter((course) => courseBelongsToTeacher(course, current))
+    : documents
+  return { current, courses }
+}
+
+async function universityCourses(selection?: ScopeSelection): Promise<Course[]> {
+  return (await universityCourseDocuments(selection)).courses.map(asAcademicCourse)
+}
+
+async function visibleCourses(selection?: ScopeSelection): Promise<Course[]> {
+  return getAccountType() === 'PERSONAL' ? personalCourses() : universityCourses(selection)
 }
 
 export const coursesApi = {
-  list: visibleCourses,
-  mine: visibleCourses,
+  list: () => visibleCourses(),
+  mine: () => visibleCourses(),
+  /** Cours d'une filière et d'un niveau choisis (administration, enseignant). */
+  listScoped: (selection: ScopeSelection) => visibleCourses(selection),
   getOne: async (id: string) => {
     const course = (await visibleCourses()).find((item) => item.id === id)
     if (!course) throw new ApiError(404, 'Cours introuvable dans les données Appwrite disponibles.')
@@ -294,6 +345,8 @@ export const personalApi = personalAppwriteApi
 
 export interface Schedule {
   id: string; dayOfWeek: string; startTime: string; endTime: string; semesterId: string
+  /** Groupe de TD/TP quand la séance ne concerne qu'une partie de la promotion. */
+  group?: string
   course: { id: string; name: string; code: string; type: string; teacher: { firstName: string; lastName: string }; classroom: { name: string; building: string } }
 }
 async function personalSchedules(): Promise<Schedule[]> {
@@ -312,36 +365,55 @@ async function personalSchedules(): Promise<Schedule[]> {
     }
   })
 }
-async function universitySchedules(): Promise<Schedule[]> {
-  const [schedules, courses] = await Promise.all([academicAppwriteApi.schedules.list(), universityCourses()])
-  const byId = new Map(courses.map((course) => [course.id, course]))
-  return schedules
-    .filter((item) => byId.has(item.courseId))
-    .map((item) => {
-      const course = byId.get(item.courseId)!
+function splitName(name: string | undefined) {
+  const [firstName = '', ...lastName] = (name || '').trim().split(/\s+/)
+  return { firstName, lastName: lastName.join(' ') }
+}
+
+/**
+ * Emploi du temps universitaire lu directement dans `academic_schedules`
+ * (filtre serveur par filière + niveau). Le cours n'est consulté qu'en repli
+ * pour les séances anciennes dépourvues de `courseName`.
+ */
+async function universitySchedules(selection?: ScopeSelection): Promise<Schedule[]> {
+  const { current, scope } = await currentScope(selection)
+  if (!current) return []
+  const rows = filterByScope(await academicAppwriteApi.schedules.list(scope), scope)
+  const needsCourses = rows.some((row) => !row.courseName)
+  const courses = needsCourses ? await academicAppwriteApi.courses.list(scope) : []
+  const byId = new Map(courses.map((course) => [course.$id, course]))
+  return rows
+    .filter((row) => current.role !== 'TEACHER' || selection?.program || teacherMatches(row.teacherName || byId.get(row.courseId)?.teacherName, current.name))
+    .map((row) => {
+      const course = byId.get(row.courseId)
+      const teacher = splitName(row.teacherName || course?.teacherName)
       return {
-        id: item.$id,
-        dayOfWeek: item.dayOfWeek,
-        startTime: item.startTime,
-        endTime: item.endTime,
-        semesterId: 'ICT4D-L1',
+        id: row.$id,
+        dayOfWeek: row.dayOfWeek,
+        startTime: row.startTime,
+        endTime: row.endTime,
+        semesterId: [row.program || scope.program, row.level || scope.level, row.semester].filter(Boolean).join('-'),
+        group: row.group || undefined,
         course: {
-          id: course.id,
-          name: course.name,
-          code: course.code,
-          type: item.type || course.type,
-          teacher: course.teacher || { firstName: '', lastName: '' },
-          classroom: { name: item.classroom || course.classroom?.name || '', building: '' },
+          id: row.courseId,
+          name: row.courseName || course?.name || row.courseCode,
+          code: row.courseCode || course?.code || '',
+          type: row.type || course?.type || 'CM',
+          teacher,
+          classroom: { name: row.classroom || course?.classroom || '', building: '' },
         },
       }
     })
+    .sort((a, b) => a.dayOfWeek.localeCompare(b.dayOfWeek) || a.startTime.localeCompare(b.startTime))
 }
-async function visibleSchedules(): Promise<Schedule[]> {
-  return getAccountType() === 'PERSONAL' ? personalSchedules() : universitySchedules()
+async function visibleSchedules(selection?: ScopeSelection): Promise<Schedule[]> {
+  return getAccountType() === 'PERSONAL' ? personalSchedules() : universitySchedules(selection)
 }
 export const schedulesApi = {
-  list: visibleSchedules,
-  mine: visibleSchedules,
+  list: () => visibleSchedules(),
+  mine: () => visibleSchedules(),
+  /** Séances d'une filière et d'un niveau choisis (administration, enseignant). */
+  listScoped: (selection: ScopeSelection) => visibleSchedules(selection),
   create: async (dto: Partial<Schedule>) => {
     if (getAccountType() !== 'PERSONAL') return unavailable<Schedule>('Les créneaux universitaires')
     const created = await personalAppwriteApi.schedules.create({ courseId: dto.course?.id || '', dayOfWeek: dto.dayOfWeek || 'LUNDI', startTime: dto.startTime || '00:00', endTime: dto.endTime || dto.startTime || '00:00', classroom: dto.course?.classroom?.name, type: dto.course?.type })
@@ -357,11 +429,10 @@ function directoryName(name: string) {
   return { firstName, lastName: lastName.join(' ') }
 }
 
-async function academicDirectory() {
-  const current = await getCurrentAccount('UNIVERSITY')
+async function academicDirectory(selection?: ScopeSelection) {
+  const { current, scope } = await currentScope(selection)
   if (!current) return []
-  return (await academicAppwriteApi.directory.list())
-    .filter((entry) => entry.university === 'Université de Yaoundé I' && entry.program === 'ICT4D' && entry.level === 'L1')
+  return filterByScope(await academicAppwriteApi.directory.list(), scope)
 }
 
 function asStudent(entry: import('./appwrite').AcademicDirectoryDocument): Student {
@@ -390,8 +461,8 @@ function asAdminStudent(entry: AdminDirectoryEntry): Student {
     lastName,
     matricule: entry.matricule || 'Non renseigné',
     status: entry.role === 'DELEGATE' ? 'delegate' : entry.status,
-    level: { name: 'L1', program: { name: 'ICT4D' } },
-    specialty: { name: 'ICT4D' },
+    level: { name: entry.level || '', program: { name: entry.program || '' } },
+    specialty: { name: entry.program || '' },
     user: { email: entry.email },
   }
 }
@@ -458,8 +529,11 @@ async function refreshTeacherForAdmin(id: string) {
   return teacher
 }
 
+const isLearner = (entry: { role: string }) => entry.role === 'STUDENT' || entry.role === 'DELEGATE'
+
 export const studentsApi = {
-  list: async (): Promise<Student[]> => (await academicDirectory()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asStudent),
+  list: async (): Promise<Student[]> => (await academicDirectory()).filter(isLearner).map(asStudent),
+  listScoped: async (selection: ScopeSelection): Promise<Student[]> => (await academicDirectory(selection)).filter(isLearner).map(asStudent),
   listForCourse: async (courseId: string): Promise<Student[]> => {
     const [directory, enrollments] = await Promise.all([academicDirectory(), academicAppwriteApi.enrollments.list()])
     const enrolledStudentIds = new Set(enrollments
@@ -470,7 +544,11 @@ export const studentsApi = {
       .filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE')
       .map(asStudent)
   },
-  listForAdmin: async (): Promise<Student[]> => (await adminDirectoryEntries()).filter((entry) => entry.role === 'STUDENT' || entry.role === 'DELEGATE').map(asAdminStudent),
+  listForAdmin: async (selection?: ScopeSelection): Promise<Student[]> => {
+    const entries = (await adminDirectoryEntries()).filter(isLearner)
+    const scoped = selection?.program || selection?.level ? entries.filter((entry) => matchesScope(entry, mergeScope({}, selection))) : entries
+    return scoped.map(asAdminStudent)
+  },
   getOne: async (id: string) => refreshStudent(id),
   create: async (dto: Partial<Student> & { userId?: string; levelId?: string; specialtyId?: string; email?: string; password?: string; role?: 'STUDENT' | 'DELEGATE' }) => {
     await requireAdminDirectoryAccess()
@@ -571,11 +649,7 @@ export const attendanceApi = {
     const current = await getCurrentAccount('UNIVERSITY')
     if (!current) throw new ApiError(401, 'Session Appwrite absente.')
 
-    const courseRows = await academicAppwriteApi.courses.list()
-    const courses = courseRows
-      .filter((row) => row.university === 'Université de Yaoundé I' && row.program === 'ICT4D' && row.level === 'L1')
-      .filter((row) => current.role !== 'TEACHER' || row.teacherId === current.id)
-      .map(asAcademicCourse)
+    const courses = (await universityCourseDocuments()).courses.map(asAcademicCourse)
     return { courses, students: [] }
   },
   roster: async (courseId: string): Promise<Student[]> => {
@@ -720,14 +794,15 @@ async function personalGrades(): Promise<Grade[]> {
 async function universityGrades(): Promise<Grade[]> {
   const current = await getCurrentAccount('UNIVERSITY')
   if (!current) return []
-  const [rows, courses] = await Promise.all([academicAppwriteApi.grades.list(), universityCourses()])
-  const allowedCourseIds = new Set(courses.map((course) => course.id))
+  const [rows, { courses }] = await Promise.all([academicAppwriteApi.grades.list(), universityCourseDocuments()])
+  const allowedCourseIds = new Set(courses.map((course) => course.$id))
+  const unitOf = new Map(courses.map((course) => [course.$id, `${course.program} ${course.level}`]))
   return rows
     .filter((item) => current.role === 'TEACHER' ? allowedCourseIds.has(item.courseId) : item.studentId === current.id)
     .map((item) => ({
       id: item.$id,
       studentId: item.studentId,
-      ue: 'ICT4D L1',
+      ue: unitOf.get(item.courseId) || [current.program, current.level].filter(Boolean).join(' '),
       code: item.courseCode,
       title: item.evaluationTitle,
       type: item.type || 'CC',
@@ -743,17 +818,19 @@ export const gradesApi = {
   mine: async () => getAccountType() === 'PERSONAL' ? personalGrades() : universityGrades(),
   roster: async (courseId: string) => {
     if (getAccountType() !== 'UNIVERSITY') return unavailable<{ students: Array<{ id: string; name: string; matricule: string }>; grades: Grade[] }>('Les évaluations universitaires')
-    const response = await executeAcademicGradesAction({ action: 'roster', courseId })
+    const [response, { courses }] = await Promise.all([executeAcademicGradesAction({ action: 'roster', courseId }), universityCourseDocuments()])
+    const course = courses.find((item) => item.$id === courseId)
+    const ue = course ? `${course.program} ${course.level}` : ''
     return {
       students: (response.students || []).map((student) => ({ id: student.userId, name: student.name, matricule: student.matricule })),
-      grades: (response.grades || []).map((item) => ({ id: item.id, studentId: item.studentId, ue: 'ICT4D L1', code: item.courseCode, title: item.evaluationTitle, type: item.type, coef: item.coefficient, grade: item.score, maxScore: item.maxScore, classAvg: 0, rank: 0, maxRank: 0 })),
+      grades: (response.grades || []).map((item) => ({ id: item.id, studentId: item.studentId, ue, code: item.courseCode, title: item.evaluationTitle, type: item.type, coef: item.coefficient, grade: item.score, maxScore: item.maxScore, classAvg: 0, rank: 0, maxRank: 0 })),
     }
   },
   upsertUniversity: async (dto: { courseId: string; studentId: string; evaluationTitle: string; type: string; score: number; maxScore: number; coefficient: number }) => {
     const response = await executeAcademicGradesAction({ action: 'upsert', ...dto })
     const item = response.grade
     if (!item) throw new ApiError(502, 'La Function Appwrite n’a pas retourné la note enregistrée.')
-    return { id: item.id, studentId: item.studentId, ue: 'ICT4D L1', code: item.courseCode, title: item.evaluationTitle, type: item.type, coef: item.coefficient, grade: item.score, maxScore: item.maxScore, classAvg: 0, rank: 0, maxRank: 0 } as Grade
+    return { id: item.id, studentId: item.studentId, ue: '', code: item.courseCode, title: item.evaluationTitle, type: item.type, coef: item.coefficient, grade: item.score, maxScore: item.maxScore, classAvg: 0, rank: 0, maxRank: 0 } as Grade
   },
   deleteUniversity: async (dto: { courseId: string; studentId: string; gradeId: string }) => {
     await executeAcademicGradesAction({ action: 'delete', ...dto })
@@ -842,6 +919,8 @@ export interface UE {
   id: string
   name: string
   code: string
+  program?: string
+  level?: string
   credits: number
   hours: number
   teacherName: string
@@ -862,26 +941,27 @@ function scheduleHours(startTime: string, endTime: string) {
   return duration > 0 ? duration / 60 : 0
 }
 
-async function academicTeachingUnits(): Promise<UE[]> {
-  const current = await getCurrentAccount('UNIVERSITY')
+async function academicTeachingUnits(selection?: ScopeSelection): Promise<UE[]> {
+  const { current, scope } = await currentScope(selection)
   if (!current || current.role !== 'ADMIN') {
     throw new ApiError(403, 'La consultation du référentiel pédagogique Appwrite est réservée au rôle administrateur.')
   }
 
   const [courses, schedules, enrollments] = await Promise.all([
-    academicAppwriteApi.courses.list(),
-    academicAppwriteApi.schedules.list(),
+    academicAppwriteApi.courses.list(scope),
+    academicAppwriteApi.schedules.list(scope),
     academicAppwriteApi.enrollments.list(),
   ])
 
-  return courses
-    .filter((course) => course.university === 'Université de Yaoundé I' && course.program === 'ICT4D' && course.level === 'L1')
+  return filterByScope(courses, scope)
     .map((course) => {
       const courseSchedules = schedules.filter((schedule) => schedule.courseId === course.$id)
       return {
         id: course.$id,
         name: course.name,
         code: course.code,
+        program: course.program,
+        level: course.level,
         credits: Number(course.credits || 0),
         hours: Number(course.hours || 0),
         teacherName: course.teacherName || 'Non renseigné',
@@ -896,12 +976,13 @@ async function academicTeachingUnits(): Promise<UE[]> {
 }
 
 export const ueApi = {
-  list: academicTeachingUnits,
-  byLevel: async (id: string): Promise<UE[]> => id === 'L1' ? academicTeachingUnits() : [],
+  list: () => academicTeachingUnits(),
+  listScoped: (selection: ScopeSelection) => academicTeachingUnits(selection),
+  byLevel: async (level: string): Promise<UE[]> => academicTeachingUnits({ level }),
   bySemester: async (_id: string): Promise<UE[]> => unavailable<UE[]>('Les semestres d’unités d’enseignement'),
   getOne: async (id: string) => {
     const unit = (await academicTeachingUnits()).find((item) => item.id === id)
-    if (!unit) throw new ApiError(404, 'Cours introuvable dans le référentiel Appwrite ICT4D L1.')
+    if (!unit) throw new ApiError(404, 'Unité d’enseignement introuvable dans le référentiel Appwrite.')
     return unit
   },
   create: async (_dto: Partial<UE> & { levelId?: string; semesterId?: string }) => unavailable<UE>('Les unités d’enseignement'),

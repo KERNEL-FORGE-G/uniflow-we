@@ -12,7 +12,8 @@
  */
 
 export type UniFlowRole = 'STUDENT' | 'DELEGATE' | 'TEACHER' | 'ADMIN'
-export type UniFlowAccountType = 'UNIVERSITY' | 'PERSONAL'
+/** `PLATFORM` : compte de l'administrateur de la plateforme, sans université ni périmètre. */
+export type UniFlowAccountType = 'UNIVERSITY' | 'PERSONAL' | 'PLATFORM'
 
 export const UNIFLOW_ROLES: readonly UniFlowRole[] = ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN']
 export const SUPERADMIN_LABEL = 'superadmin'
@@ -91,6 +92,7 @@ export function canManageAccounts(caller: RoleCaller | null | undefined): boolea
 export type Workspace = 'university' | 'personal'
 
 export function workspaceOf(accountType: UniFlowAccountType | undefined | null): Workspace {
+  // Le compte PLATFORM administre les universités : il partage l'espace universitaire, jamais le personnel.
   return accountType === 'PERSONAL' ? 'personal' : 'university'
 }
 
