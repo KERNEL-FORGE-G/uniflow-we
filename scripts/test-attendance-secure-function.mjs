@@ -3,8 +3,8 @@ import { rm } from 'node:fs/promises'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
-const endpoint = (process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
-const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || '6a959096002a64d9d4e6'
+const endpoint = (process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://fra.cloud.appwrite.io/v1').replace(/\/+$/, '')
+const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || 'uniflow'
 const email = process.env.UNIFLOW_TEST_EMAIL || 'qr-delegate-mt5t3b95@test.uniflow.local'
 const password = process.env.UNIFLOW_TEST_PASSWORD
 const action = process.env.UNIFLOW_TEST_ACTION || 'issue'
@@ -42,9 +42,11 @@ const payload = action === 'audit'
     : action === 'scan'
       ? { action, token, position: { latitude, longitude, accuracy } }
       : { action, token }
-const execution = await request('POST', '/functions/attendance_secure/executions', {
+const execution = await request('POST', '/functions/uniflow-api/executions', {
   body: JSON.stringify(payload),
   async: false,
+  method: 'POST',
+  path: '/attendance-secure',
 }, [`X-Appwrite-JWT: ${jwt.jwt}`])
 
 const response = JSON.parse(execution.responseBody || '{}')

@@ -1,0 +1,67 @@
+{
+    "organizationId": "6a2e769200255cbc1e80",
+    "projectId": "uniflow",
+    "projectName": "UniFlow",
+    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "functions": [
+        {
+            "$id": "uniflow-api",
+            "name": "UniFlow — services (messagerie, équipe, forum, contact, abonnements, présence, annuaire, inscription, notes)",
+            "runtime": "node-22",
+            "specification": "s-0.5vcpu-512mb",
+            "execute": [
+                "any"
+            ],
+            "events": [],
+            "scopes": [
+                "users.read",
+                "users.write",
+                "sessions.write",
+                "databases.read",
+                "collections.read",
+                "attributes.read",
+                "indexes.read",
+                "documents.read",
+                "documents.write",
+                "files.read",
+                "files.write",
+                "buckets.read"
+            ],
+            "schedule": "",
+            "timeout": 45,
+            "enabled": true,
+            "logging": true,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "path": "functions/uniflow-api"
+        },
+        {
+            "$id": "notification-alerts",
+            "name": "UniFlow — alertes (présence, emploi du temps, planning personnel)",
+            "runtime": "node-22",
+            "specification": "s-0.5vcpu-512mb",
+            "execute": [],
+            "events": [
+                "databases.uniflow.collections.attendance_records.documents.*.create",
+                "databases.uniflow.collections.attendance_records.documents.*.update",
+                "databases.uniflow.collections.academic_schedules.documents.*.create",
+                "databases.uniflow.collections.academic_schedules.documents.*.update",
+                "databases.uniflow.collections.personal_schedules.documents.*.create",
+                "databases.uniflow.collections.personal_schedules.documents.*.update"
+            ],
+            "scopes": [
+                "databases.read",
+                "collections.read",
+                "documents.read",
+                "documents.write"
+            ],
+            "schedule": "",
+            "timeout": 30,
+            "enabled": true,
+            "logging": true,
+            "entrypoint": "src/main.js",
+            "commands": "npm install",
+            "path": "functions/notification-alerts"
+        }
+    ]
+}

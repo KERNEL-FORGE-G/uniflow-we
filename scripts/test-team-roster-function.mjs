@@ -17,7 +17,7 @@ import { apiKey, databaseId, endpoint, projectId, requireConfig } from './appwri
 
 const collectionId = 'team_members'
 const profileCollectionId = 'users'
-const avatarBucketId = '6aa81b840031e6a34dc3'
+const avatarBucketId = 'uniflow_assets'
 
 requireConfig()
 
@@ -67,10 +67,10 @@ async function sessionDe(compte) {
  * d'un étudiant est le résultat attendu, pas une erreur du script.
  */
 async function executer(cookie, body) {
-  const response = await fetch(`${endpoint}/functions/team-roster/executions`, {
+  const response = await fetch(`${endpoint}/functions/uniflow-api/executions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Appwrite-Project': projectId, Cookie: cookie },
-    body: JSON.stringify({ body: JSON.stringify(body), async: false, method: 'POST' }),
+    body: JSON.stringify({ body: JSON.stringify(body), async: false, method: 'POST', path: '/team-roster' }),
   })
   const { payload } = await responseOf(response)
   return payload.responseBody ? JSON.parse(payload.responseBody) : { ok: false, code: 'NO_BODY' }

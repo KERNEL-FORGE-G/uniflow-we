@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
-const endpoint = (process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
-const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || '6a959096002a64d9d4e6'
+const endpoint = (process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://fra.cloud.appwrite.io/v1').replace(/\/+$/, '')
+const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || 'uniflow'
 const databaseId = 'uniflow'
 const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY
 const runId = `load${Date.now().toString(36)}${randomUUID().slice(0, 5)}`.toLowerCase()

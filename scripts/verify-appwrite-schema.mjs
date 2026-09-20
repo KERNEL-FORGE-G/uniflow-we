@@ -13,10 +13,9 @@
  */
 import { createClient, databaseId, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
 import {
+  allSchemas,
   bucketDefinitions,
-  expectedCollections,
   referencedCollections,
-  schemas,
   usernameAttribute,
   usernameIndex,
 } from './appwrite-schema.mjs'
@@ -62,6 +61,19 @@ async function checkServer() {
 // ---------------------------------------------------------------------------
 // Collections, attributs, index
 // ---------------------------------------------------------------------------
+/**
+ * Type d'un attribut tel qu'Appwrite le renvoie, ramené au vocabulaire du
+ * schéma : une énumération est un `string` de `format: "enum"`, un `float` est
+ * renvoyé `double`. Sans cette traduction, la sonde signalait « string au lieu
+ * de enum » sur neuf attributs parfaitement conformes — c'est l'origine de la
+ * « divergence schéma / serveur » restée ouverte pendant plusieurs sessions.
+ */
+function liveType(attribute) {
+  if (attribute.format === 'enum') return 'enum'
+  if (attribute.type === 'double') return 'float'
+  return attribute.type
+}
+
 function compareAttributes(collectionId, expected, live) {
   const byKey = new Map(live.map((attribute) => [attribute.key, attribute]))
   for (const attribute of expected) {
@@ -71,9 +83,16 @@ function compareAttributes(collectionId, expected, live) {
       fail(`${collectionId}.${key} — attribut absent (type ${attribute.type})`)
       continue
     }
-    if (actual.type !== attribute.type) {
-      fail(`${collectionId}.${key} — type ${actual.type} au lieu de ${attribute.type}`)
+    if (liveType(actual) !== attribute.type) {
+      fail(`${collectionId}.${key} — type ${liveType(actual)} au lieu de ${attribute.type}`)
       continue
+    }
+    if (attribute.type === 'enum') {
+      const missing = attribute.body.elements.filter((element) => !(actual.elements || []).includes(element))
+      if (missing.length) {
+        fail(`${collectionId}.${key} — valeurs d'énumération absentes : ${missing.join(', ')}`)
+        continue
+      }
     }
     if (Boolean(actual.required) !== Boolean(attribute.body.required)) {
       fail(`${collectionId}.${key} — required=${Boolean(actual.required)} au lieu de ${Boolean(attribute.body.required)}`)
@@ -111,22 +130,38 @@ function compareIndexes(collectionId, expected, live) {
   }
 }
 
+/**
+ * `request()` lève sur tout statut non-OK, 404 compris : le garde
+ * `if (response.status === 404)` qui suivait ne s'appliquait donc jamais, et
+ * la première collection absente faisait mourir la sonde au lieu d'être
+ * listée — le contrôle des buckets et de la messagerie n'était jamais atteint.
+ */
+async function getOrNull(path) {
+  try {
+    const response = await request('GET', path)
+    return response.status === 200 ? response.payload : null
+  } catch (error) {
+    if (/\(404\)/.test(error.message)) return null
+    throw error
+  }
+}
+
 async function listCollection(collectionId) {
-  const response = await request('GET', `/databases/${databaseId}/collections/${collectionId}`)
-  if (response.status === 404) return null
-  return response.payload
+  return getOrNull(`/databases/${databaseId}/collections/${collectionId}`)
 }
 
 async function countDocuments(collectionId) {
-  const response = await request('GET', `/databases/${databaseId}/collections/${collectionId}/documents?queries%5B0%5D=${encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }))}`)
-  if (response.status !== 200) return null
-  return Number(response.payload.total ?? (response.payload.documents || []).length)
+  const payload = await getOrNull(`/databases/${databaseId}/collections/${collectionId}/documents?queries%5B0%5D=${encodeURIComponent(JSON.stringify({ method: 'limit', values: [1] }))}`)
+  if (!payload) return null
+  return Number(payload.total ?? (payload.documents || []).length)
 }
 
 async function checkCollections() {
   console.log('\n== Collections ==')
   const seen = new Set()
-  for (const schema of schemas) {
+  // `allSchemas`, pas `schemas` : les collections académiques, d'abonnement et
+  // d'équipe n'étaient jamais vérifiées, alors que le serveur en porte douze.
+  for (const schema of allSchemas) {
     // `users` apparaît une fois : le pseudo est vérifié à part, plus bas.
     if (seen.has(schema.id)) continue
     seen.add(schema.id)
@@ -144,7 +179,7 @@ async function checkCollections() {
     ok(`collection « ${schema.id} » — ${attributes.length} attribut(s), ${indexes.length} index, ${count ?? '?'} document(s)`)
   }
 
-  console.log('\n== Collections lues par les applications mais non provisionnées ici ==')
+  if (referencedCollections.length) console.log('\n== Collections lues par les applications mais non provisionnées ici ==')
   for (const collectionId of referencedCollections) {
     const live = await listCollection(collectionId)
     if (!live) {
@@ -167,12 +202,11 @@ async function checkCollections() {
 async function checkBuckets() {
   console.log('\n== Buckets de stockage ==')
   for (const definition of bucketDefinitions) {
-    const response = await request('GET', `/storage/buckets/${definition.bucketId}`)
-    if (response.status === 404) {
+    const live = await getOrNull(`/storage/buckets/${definition.bucketId}`)
+    if (!live) {
       fail(`bucket « ${definition.bucketId} » absent — les téléversements échoueront`)
       continue
     }
-    const live = response.payload
     if (Boolean(live.fileSecurity) !== Boolean(definition.fileSecurity)) {
       fail(`bucket « ${definition.bucketId} » — fileSecurity=${Boolean(live.fileSecurity)} au lieu de ${Boolean(definition.fileSecurity)}`)
     }

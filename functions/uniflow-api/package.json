@@ -1,5 +1,5 @@
 {
-  "name": "uniflow-team-roster-function",
+  "name": "uniflow-api-function",
   "private": true,
   "type": "module",
   "dependencies": {

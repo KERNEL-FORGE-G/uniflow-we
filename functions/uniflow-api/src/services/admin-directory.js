@@ -5,7 +5,12 @@ const DIRECTORY_COLLECTION = 'academic_directory'
 const PROFILE_COLLECTION = 'users'
 const UNIVERSITY = 'Université de Yaoundé I'
 const PROGRAM = 'ICT4D'
-const LEVEL = 'L1'
+// La filière ICT4D couvre la Licence 1 à la Licence 3 (demande du propriétaire).
+// Un compte est créé au niveau demandé par l'administration, L1 par défaut ;
+// le périmètre de l'administrateur couvre les trois niveaux.
+const LEVELS = ['L1', 'L2', 'L3']
+const levelOf = (value) => (LEVELS.includes(value) ? value : 'L1')
+const inScope = (document) => document?.university === UNIVERSITY && document?.program === PROGRAM && LEVELS.includes(document?.level)
 
 function json(res, body, status = 200) {
   return res.json(body, status, { 'content-type': 'application/json' })
@@ -57,7 +62,7 @@ function accountPayload(body, accountType = 'UNIVERSITY') {
     accountType,
     university: UNIVERSITY,
     program: PROGRAM,
-    level: LEVEL,
+    level: levelOf(body.level),
     matricule,
     status,
   }
@@ -65,7 +70,7 @@ function accountPayload(body, accountType = 'UNIVERSITY') {
 
 async function assertAdmin(databases, actorId) {
   const profile = await listOne(databases, DIRECTORY_COLLECTION, 'userId', actorId)
-  if (!profile || profile.role !== 'ADMIN' || profile.university !== UNIVERSITY || profile.program !== PROGRAM || profile.level !== LEVEL) {
+  if (!profile || profile.role !== 'ADMIN' || !inScope(profile)) {
     return null
   }
   return profile
@@ -90,10 +95,13 @@ export default async ({ req, res, log, error }) => {
   const actorId = normalizeUserId(req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user'])
   if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
 
+  // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
+  // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
+  // être stockée en variable ; celle-ci reste lue en premier si elle existe.
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(process.env.APPWRITE_FUNCTION_API_KEY)
+    .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
   const users = new Users(client)
   const body = parseBody(req)
@@ -105,7 +113,7 @@ export default async ({ req, res, log, error }) => {
         databases.listDocuments(DATABASE_ID, DIRECTORY_COLLECTION, [Query.limit(200)]),
         databases.listDocuments(DATABASE_ID, PROFILE_COLLECTION, [Query.limit(200)]),
       ])
-      const directoryEntries = directoryResult.documents.filter((entry) => entry.university === UNIVERSITY && entry.program === PROGRAM && entry.level === LEVEL)
+      const directoryEntries = directoryResult.documents.filter(inScope)
       const admin = directoryEntries.find((entry) => entry.userId === actorId && entry.role === 'ADMIN')
       if (!admin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Seul un administrateur UY1/ICT4D/L1 peut consulter les contacts.' }, 403)
       const profileById = new Map(profileResult.documents.map((profile) => [profile.$id, profile]))
@@ -133,14 +141,14 @@ export default async ({ req, res, log, error }) => {
       const password = requireText(body.password, 'password', 128)
       if (password.length < 8) throw new Error('Le mot de passe initial doit contenir au moins 8 caractères.')
       const account = await users.create(ID.unique(), payload.email, undefined, password, payload.name)
-      const profilePayload = { email: payload.email, name: payload.name, accountType: payload.accountType, role: payload.role, university: UNIVERSITY, program: PROGRAM, level: LEVEL, country: 'Cameroun' }
-      const directoryPayload = { userId: account.$id, name: payload.name, role: payload.role, university: UNIVERSITY, program: PROGRAM, level: LEVEL, matricule: payload.matricule, status: payload.status }
+      const profilePayload = { email: payload.email, name: payload.name, accountType: payload.accountType, role: payload.role, university: UNIVERSITY, program: PROGRAM, level: payload.level, country: 'Cameroun' }
+      const directoryPayload = { userId: account.$id, name: payload.name, role: payload.role, university: UNIVERSITY, program: PROGRAM, level: payload.level, matricule: payload.matricule, status: payload.status }
       try {
         await databases.createDocument(DATABASE_ID, PROFILE_COLLECTION, account.$id, profilePayload, permissions(account.$id))
         const directory = await databases.createDocument(DATABASE_ID, DIRECTORY_COLLECTION, `directory_${account.$id}`, directoryPayload, [Permission.read(Role.users()), ...permissions(account.$id).slice(1)])
         if (payload.role === 'STUDENT' || payload.role === 'DELEGATE') {
           const courses = await databases.listDocuments(DATABASE_ID, 'academic_courses', [Query.limit(100)])
-          const scopedCourses = courses.documents.filter((course) => course.university === UNIVERSITY && course.program === PROGRAM && course.level === LEVEL)
+          const scopedCourses = courses.documents.filter((course) => course.university === UNIVERSITY && course.program === PROGRAM && course.level === payload.level)
           await Promise.all(scopedCourses.map((course) => databases.createDocument(
             DATABASE_ID,
             'academic_enrollments',
@@ -160,15 +168,15 @@ export default async ({ req, res, log, error }) => {
     if (targetId === actorId && body.action === 'delete') return json(res, { ok: false, code: 'SELF_DELETE_DENIED', message: 'Un administrateur ne peut pas supprimer son propre compte.' }, 409)
     const directory = await listOne(databases, DIRECTORY_COLLECTION, 'userId', targetId)
     if (!directory) return json(res, { ok: false, code: 'DIRECTORY_NOT_FOUND', message: 'Profil académique introuvable.' }, 404)
-    if (directory.university !== UNIVERSITY || directory.program !== PROGRAM || directory.level !== LEVEL) return json(res, { ok: false, code: 'SCOPE_DENIED', message: 'Le compte ciblé est hors du périmètre UY1/ICT4D/L1.' }, 403)
+    if (!inScope(directory)) return json(res, { ok: false, code: 'SCOPE_DENIED', message: 'Le compte ciblé est hors du périmètre UY1/ICT4D (L1–L3).' }, 403)
 
     if (body.action === 'update') {
       const targetAccount = await users.get(targetId)
       const next = accountPayload({ ...directory, ...body, name: body.name ?? directory.name, email: body.email ?? targetAccount.email, role: body.role ?? directory.role, matricule: body.matricule ?? directory.matricule, status: body.status ?? directory.status })
       await users.updateName(targetId, next.name)
       if (next.email !== targetAccount.email) await users.updateEmail(targetId, next.email)
-      const profile = await databases.updateDocument(DATABASE_ID, PROFILE_COLLECTION, targetId, { email: next.email, name: next.name, accountType: next.accountType, role: next.role, university: UNIVERSITY, program: PROGRAM, level: LEVEL, country: 'Cameroun' })
-      const updatedDirectory = await databases.updateDocument(DATABASE_ID, DIRECTORY_COLLECTION, directory.$id, { name: next.name, role: next.role, matricule: next.matricule, status: next.status, university: UNIVERSITY, program: PROGRAM, level: LEVEL })
+      const profile = await databases.updateDocument(DATABASE_ID, PROFILE_COLLECTION, targetId, { email: next.email, name: next.name, accountType: next.accountType, role: next.role, university: UNIVERSITY, program: PROGRAM, level: next.level, country: 'Cameroun' })
+      const updatedDirectory = await databases.updateDocument(DATABASE_ID, DIRECTORY_COLLECTION, directory.$id, { name: next.name, role: next.role, matricule: next.matricule, status: next.status, university: UNIVERSITY, program: PROGRAM, level: next.level })
       if (next.status === 'SUSPENDED' || next.status === 'INACTIVE') await users.updateStatus(targetId, false)
       else await users.updateStatus(targetId, true)
       return json(res, { ok: true, action: 'update', userId: targetId, profileId: profile.$id, directoryId: updatedDirectory.$id, name: next.name, email: next.email, role: next.role, status: next.status })

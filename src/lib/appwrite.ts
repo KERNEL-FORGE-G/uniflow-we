@@ -1,19 +1,19 @@
-import { Account, Client, Databases, Functions, ID, Models, Permission, Query, Role, Storage } from 'appwrite'
+import { Account, Client, Databases, ExecutionMethod, Functions, ID, Models, Permission, Query, Role, Storage } from 'appwrite'
 import { readSessionSnapshot } from './sessionPersistence'
 
-// L’instance Appwrite UniFlow est servie par le domaine TLS certifié du VPS.
-// Une valeur Vercel historique (IP brute ou xip.com) ne peut jamais remplacer
-// le domaine certifié tant que les environnements n’ont pas été mis à jour.
-const CERTIFIED_APPWRITE_ENDPOINT = 'https://appwrite.kernelforge.codes/v1'
+// UniFlow est hébergé sur Appwrite Cloud (région Francfort) depuis septembre
+// 2026 : le serveur auto-hébergé `appwrite.kernelforge.codes` est mort avec sa
+// montée en 2.2.0 et n'est plus joignable. Toute valeur d'environnement
+// résiduelle qui pointe encore vers lui (domaine, IP brute, xip.com) est
+// remplacée par le Cloud, sinon un build ancien échoue silencieusement.
+const CLOUD_APPWRITE_ENDPOINT = 'https://fra.cloud.appwrite.io/v1'
 const configuredEndpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || '').replace(/\/+$/, '')
-const endpoint = /185\.181\.10\.106|eu-fr-cloud-xip\.com/i.test(configuredEndpoint)
-  ? CERTIFIED_APPWRITE_ENDPOINT
-  : (configuredEndpoint || CERTIFIED_APPWRITE_ENDPOINT)
-// Repli sur le projet auto-hébergé réellement utilisé par les quatre
-// applications UniFlow. L'ancien identifiant `6a885ccc000ddfbb3bb9` datait du
-// tout premier projet Appwrite et n'existe plus sur le VPS : un build sans
-// VITE_APPWRITE_PROJECT_ID pointait donc vers un projet injoignable.
-const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a959096002a64d9d4e6')
+const endpoint = /185\.181\.10\.106|eu-fr-cloud-xip\.com|appwrite\.kernelforge\.codes/i.test(configuredEndpoint)
+  ? CLOUD_APPWRITE_ENDPOINT
+  : (configuredEndpoint || CLOUD_APPWRITE_ENDPOINT)
+// L'identifiant du projet Cloud est lisible (« uniflow »), l'ancien
+// `6a959096002a64d9d4e6` appartenait au serveur auto-hébergé disparu.
+const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || 'uniflow').replace(/^6a959096002a64d9d4e6$/, 'uniflow')
 export const APPWRITE_ENDPOINT = endpoint
 export const APPWRITE_PROJECT_ID = projectId
 export const APPWRITE_DATABASE_ID = String(import.meta.env.VITE_APPWRITE_DATABASE_ID || 'uniflow')
@@ -21,9 +21,9 @@ export const APPWRITE_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_STORAGE_B
 // Bucket dédié aux photos de profil, distinct du bucket de documents : lecture
 // publique, écriture réservée aux comptes connectés. Les trois applications
 // (web, mobile, desktop) écrivent dans ce même bucket.
-export const APPWRITE_AVATAR_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_AVATAR_BUCKET_ID || 'uniflow_avatars')
-// Les Functions Appwrite auto-hébergées peuvent nécessiter un démarrage à
-// froid supérieur à 12 secondes. Le délai client reste borné, mais couvre
+export const APPWRITE_AVATAR_BUCKET_ID = String(import.meta.env.VITE_APPWRITE_AVATAR_BUCKET_ID || 'uniflow_assets')
+// Une Function Appwrite Cloud peut nécessiter un démarrage à froid de
+// plusieurs secondes. Le délai client reste borné, mais couvre
 // l’inscription académique et les appels sécurisés sans faux échec partiel.
 const APPWRITE_TIMEOUT_MS = 35_000
 
@@ -32,14 +32,33 @@ export const appwriteAccount = new Account(appwriteClient)
 export const appwriteDatabases = new Databases(appwriteClient)
 export const appwriteFunctions = new Functions(appwriteClient)
 export const appwriteStorage = new Storage(appwriteClient)
-export const APPWRITE_ATTENDANCE_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ATTENDANCE_FUNCTION_ID || 'attendance_secure')
+// Appwrite Cloud (offre gratuite) n'autorise que deux Functions par projet :
+// les neuf services HTTP (messagerie, présence, notes…) sont donc servis par
+// une seule Function `uniflow-api` qui aiguille sur le chemin de la requête.
+// Les anciens identifiants (`messaging`, `team-roster`…) deviennent des chemins.
+export const APPWRITE_API_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_API_FUNCTION_ID || 'uniflow-api')
+export type UniFlowServicePath =
+  | '/academic-grades'
+  | '/academic-registration'
+  | '/admin-directory'
+  | '/attendance-secure'
+  | '/contact-messages'
+  | '/forum-reactions'
+  | '/messaging'
+  | '/subscription-payments'
+  | '/team-roster'
+
+/** Exécute un service de `uniflow-api` : `path` choisit le service, le corps reste le JSON attendu par chacun. */
+export function executeService(path: UniFlowServicePath, payload: unknown) {
+  return appwriteFunctions.createExecution(APPWRITE_API_FUNCTION_ID, JSON.stringify(payload), false, path, ExecutionMethod.POST, { 'content-type': 'application/json' })
+}
 
 function normalizeAppwriteFailure(error: unknown, operation: string): Error {
   const message = error instanceof Error ? error.message : String(error || '')
   if (/failed to fetch|networkerror|err_cert_authority_invalid|certificate/i.test(message)) {
-    return new Error(`La connexion sécurisée à Appwrite KERNEL FORGE a été refusée pendant ${operation}. Le certificat TLS du domaine Appwrite doit être reconnu par le navigateur avant de pouvoir lire ou enregistrer des données.`)
+    return new Error(`La connexion à Appwrite Cloud a échoué pendant ${operation}. Vérifiez votre connexion internet puis réessayez.`)
   }
-  return error instanceof Error ? error : new Error(`Appwrite KERNEL FORGE a échoué pendant ${operation}.`)
+  return error instanceof Error ? error : new Error(`Appwrite a échoué pendant ${operation}.`)
 }
 
 async function awaitAppwrite<T>(promise: Promise<T>, operation: string): Promise<T> {
@@ -48,7 +67,7 @@ async function awaitAppwrite<T>(promise: Promise<T>, operation: string): Promise
     return await Promise.race([
       promise,
       new Promise<T>((_, reject) => {
-        timeout = setTimeout(() => reject(new Error(`Appwrite KERNEL FORGE ne répond pas pour ${operation}. Vérifiez l’endpoint configuré puis réessayez.`)), APPWRITE_TIMEOUT_MS)
+        timeout = setTimeout(() => reject(new Error(`Appwrite ne répond pas pour ${operation}. Vérifiez l’endpoint configuré puis réessayez.`)), APPWRITE_TIMEOUT_MS)
       }),
     ])
   } catch (error) {
@@ -98,7 +117,7 @@ export type AttendanceSecureResponse = {
 
 export async function executeAttendanceSecureAction(payload: AttendanceSecureRequest): Promise<AttendanceSecureResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_ATTENDANCE_FUNCTION_ID, JSON.stringify(payload), false),
+    executeService('/attendance-secure', payload),
     'le contrôle sécurisé de présence',
   )
   let response: AttendanceSecureResponse
@@ -148,11 +167,10 @@ export type AdminDirectoryResponse = {
   entries?: AdminDirectoryEntry[]
 }
 
-export const APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID || 'admin_directory')
 
 export async function executeAdminDirectoryAction(payload: AdminDirectoryRequest): Promise<AdminDirectoryResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_ADMIN_DIRECTORY_FUNCTION_ID, JSON.stringify(payload), false),
+    executeService('/admin-directory', payload),
     'la gestion sécurisée des comptes',
   )
   let response: AdminDirectoryResponse
@@ -175,11 +193,10 @@ export type AcademicRegistrationResponse = {
   totalCourses?: number
 }
 
-export const APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID || 'academic_registration')
 
 export async function provisionAcademicRegistration(matricule?: string): Promise<AcademicRegistrationResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_ACADEMIC_REGISTRATION_FUNCTION_ID, JSON.stringify({ action: 'provision', matricule: matricule || '' }), false),
+    executeService('/academic-registration', { action: 'provision', matricule: matricule || '' }),
     'le raccordement académique de l’inscription',
   )
   let response: AcademicRegistrationResponse
@@ -228,11 +245,10 @@ export type AcademicGradeRoster = {
   gradeId?: string
 }
 
-export const APPWRITE_ACADEMIC_GRADES_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_ACADEMIC_GRADES_FUNCTION_ID || 'academic_grades')
 
 export async function executeAcademicGradesAction(payload: AcademicGradeMutation): Promise<AcademicGradeRoster> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_ACADEMIC_GRADES_FUNCTION_ID, JSON.stringify(payload), false),
+    executeService('/academic-grades', payload),
     'la gestion sécurisée des notes',
   )
   let response: AcademicGradeRoster
@@ -292,11 +308,10 @@ export type MessagingResponse = {
   contacts?: MessagingContact[]
 }
 
-export const APPWRITE_MESSAGING_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_MESSAGING_FUNCTION_ID || 'messaging')
 
 export async function executeMessagingAction(payload: MessagingRequest): Promise<MessagingResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_MESSAGING_FUNCTION_ID, JSON.stringify(payload), false),
+    executeService('/messaging', payload),
     'la messagerie sécurisée',
   )
   let response: MessagingResponse
@@ -325,11 +340,10 @@ export type ForumReactionResponse = {
   reactedPostIds?: string[]
 }
 
-export const APPWRITE_FORUM_REACTIONS_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_FORUM_REACTIONS_FUNCTION_ID || 'forum_reactions')
 
 export async function executeForumReactionAction(payload: ForumReactionRequest): Promise<ForumReactionResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_FORUM_REACTIONS_FUNCTION_ID, JSON.stringify(payload), false),
+    executeService('/forum-reactions', payload),
     'la réaction sécurisée du forum',
   )
   let response: ForumReactionResponse
@@ -357,11 +371,10 @@ export type ContactMessageResponse = {
   reference?: string
 }
 
-export const APPWRITE_CONTACT_MESSAGES_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_CONTACT_MESSAGES_FUNCTION_ID || 'contact_messages')
 
 export async function executeContactMessageAction(payload: ContactMessageRequest): Promise<ContactMessageResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_CONTACT_MESSAGES_FUNCTION_ID, JSON.stringify({ action: 'create', ...payload }), false),
+    executeService('/contact-messages', { action: 'create', ...payload }),
     'l’envoi du message de contact',
   )
   let response: ContactMessageResponse
@@ -418,11 +431,10 @@ export type SubscriptionPaymentResponse = {
   subscriptionStatusId?: string | null
 }
 
-export const APPWRITE_SUBSCRIPTION_PAYMENTS_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_SUBSCRIPTION_PAYMENTS_FUNCTION_ID || 'subscription_payments')
 
 export async function executeSubscriptionPaymentAction(payload: SubscriptionPaymentRequest): Promise<SubscriptionPaymentResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_SUBSCRIPTION_PAYMENTS_FUNCTION_ID, JSON.stringify(payload), false),
+    executeService('/subscription-payments', payload),
     'la demande de paiement WhatsApp',
   )
   let response: SubscriptionPaymentResponse
@@ -716,7 +728,7 @@ export async function uploadAvatarImage(file: File): Promise<string> {
   } catch (error) {
     // Un bucket absent ou mal nommé produit ici un 404 peu explicite.
     if (Number((error as { code?: unknown })?.code) === 404) {
-      throw new Error("Le bucket « uniflow_avatars » est introuvable sur Appwrite. Lancez scripts/provision-appwrite-selfhosted.mjs pour le créer.")
+      throw new Error("Le bucket « uniflow_assets » est introuvable sur Appwrite. Lancez scripts/provision-appwrite-selfhosted.mjs pour le créer.")
     }
     throw error
   }
@@ -1279,7 +1291,6 @@ export async function deleteAppwriteNotification(id: string) {
 // connecté pourrait effacer la page publique de l'équipe.
 // ---------------------------------------------------------------------------
 
-export const APPWRITE_TEAM_ROSTER_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_TEAM_ROSTER_FUNCTION_ID || 'team-roster')
 
 /** Couleurs sémantiques : chaque client les traduit dans sa propre palette. */
 export const TEAM_ACCENTS = ['blue', 'purple', 'emerald', 'amber', 'rose', 'cyan', 'indigo'] as const
@@ -1341,7 +1352,7 @@ export async function listTeamMembers(): Promise<TeamMemberDocument[]> {
 
 export async function executeTeamRosterAction(payload: TeamMemberInput & { action: 'create' | 'update' | 'delete' }): Promise<TeamRosterResponse> {
   const execution = await awaitAppwrite(
-    appwriteFunctions.createExecution(APPWRITE_TEAM_ROSTER_FUNCTION_ID, JSON.stringify(payload), false),
+    executeService('/team-roster', payload),
     "la modification de l'équipe KERNEL FORGE",
   )
   let response: TeamRosterResponse

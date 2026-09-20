@@ -62,7 +62,10 @@ export default async ({ req, res, log, error }) => {
   const kind = eventType(event)
   if (!kind) return json(res, { ok: true, handled: false, reason: 'EVENT_NOT_RELEVANT' })
 
-  const client = new Client().setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT).setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID).setKey(process.env.APPWRITE_FUNCTION_API_KEY)
+  // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
+  // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
+  // être stockée en variable ; celle-ci reste lue en premier si elle existe.
+  const client = new Client().setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT).setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID).setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
 
   try {

@@ -18,11 +18,11 @@
 //
 //   APPWRITE_SELF_HOSTED_API_KEY=… node scripts/test-messaging-attachment.mjs
 
-const endpoint = String(process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
-const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || '6a959096002a64d9d4e6'
+const endpoint = String(process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://fra.cloud.appwrite.io/v1').replace(/\/+$/, '')
+const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || 'uniflow'
 const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY
 const databaseId = 'uniflow'
-const bucketId = 'uniflow_chat_files'
+const bucketId = 'uniflow_assets'
 
 if (!apiKey) throw new Error('APPWRITE_SELF_HOSTED_API_KEY est requise pour tester la messagerie.')
 
@@ -71,10 +71,10 @@ async function sessionDe(compte) {
 
 /** Exécute la Function et rend le corps applicatif, en refusant les échecs. */
 async function executer(cookie, body) {
-  const response = await fetch(`${endpoint}/functions/messaging/executions`, {
+  const response = await fetch(`${endpoint}/functions/uniflow-api/executions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Appwrite-Project': projectId, Cookie: cookie },
-    body: JSON.stringify({ body: JSON.stringify(body), async: false, method: 'POST' }),
+    body: JSON.stringify({ body: JSON.stringify(body), async: false, method: 'POST', path: '/messaging' }),
   })
   const { payload } = await responseOf(response)
   const corps = payload.responseBody ? JSON.parse(payload.responseBody) : {}

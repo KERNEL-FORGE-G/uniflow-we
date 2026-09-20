@@ -24,7 +24,9 @@ const DATABASE_ID = 'uniflow'
 const TEAM_COLLECTION = 'team_members'
 const PROFILE_COLLECTION = 'users'
 const DIRECTORY_COLLECTION = 'academic_directory'
-const AVATAR_BUCKET = '6aa81b840031e6a34dc3'
+// Unique bucket du projet (plan gratuit d'Appwrite Cloud : un seul bucket) ;
+// les photos y sont déposées avec `read("any")`, ce qui suffit à les rendre publiques.
+const AVATAR_BUCKET = 'uniflow_assets'
 
 const TEAMS = ['Leadership', 'Frontend', 'Backend']
 const ACCENTS = ['blue', 'purple', 'emerald', 'amber', 'rose', 'cyan', 'indigo']
@@ -119,10 +121,13 @@ export default async ({ req, res, log, error }) => {
   const actorId = normalizeUserId(req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user'])
   if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
 
+  // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
+  // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
+  // être stockée en variable ; celle-ci reste lue en premier si elle existe.
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(process.env.APPWRITE_FUNCTION_API_KEY)
+    .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
   const storage = new Storage(client)
   const body = parseBody(req)

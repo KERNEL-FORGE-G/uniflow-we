@@ -53,7 +53,7 @@ self.addEventListener('fetch', (event) => {
     event.request.url.includes('/api/') ||
     event.request.url.includes('appwrite.io') ||
     event.request.url.includes('api-uniflow') ||
-    event.request.url.includes('appwrite.kernelforge.codes')
+    event.request.url.includes('cloud.appwrite.io')
   ) return
 
   const isAppShellRequest = event.request.mode === 'navigate' || ['script', 'style'].includes(event.request.destination)

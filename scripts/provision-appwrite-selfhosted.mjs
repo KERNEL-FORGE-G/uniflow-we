@@ -1,5 +1,15 @@
+/**
+ * Provisionnement idempotent du projet Appwrite UniFlow.
+ *
+ * Le nom du fichier date de l'époque du serveur auto-hébergé ; depuis le
+ * 2026-09-20 il provisionne le projet Appwrite Cloud `uniflow` (région `fra`),
+ * exactement de la même façon — l'API Databases « legacy » (collections et
+ * documents), que les trois clients et les dix Functions utilisent, est celle
+ * qu'Appwrite Cloud 2.x continue de servir. Le fichier n'est pas renommé pour
+ * ne pas casser la documentation et les commandes déjà écrites.
+ */
 import { createClient, databaseId, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
-import { allSchemas, avatarBucketId, bucketDefinitions, membersExtraAttributes, usernameAttribute, usernameIndex } from './appwrite-schema.mjs'
+import { allSchemas, bucketDefinitions, membersExtraAttributes, usernameAttribute, usernameIndex } from './appwrite-schema.mjs'
 
 // La configuration (endpoint, projet, clé) vient de uniflow-backend/.env via le
 // module partagé, qui refuse de démarrer si elle est absente : ce script a
@@ -20,15 +30,38 @@ async function waitForAttribute(collectionId, key) {
   throw new Error(`L’attribut ${collectionId}.${key} n’est pas devenu disponible.`);
 }
 
+/**
+ * Existence d'une ressource, sans lever sur 404.
+ *
+ * Le schéma « créer, puis tenir le 409 pour un succès » ne suffit plus sur
+ * Appwrite Cloud : quand le plan gratuit est à son plafond (1 base, 1 bucket),
+ * la création d'une ressource **déjà existante** répond 403 « maximum number …
+ * for the selected plan has reached » avant même de constater le doublon. On
+ * interroge donc l'existant d'abord, et on ne crée que ce qui manque.
+ */
+async function exists(path) {
+  try {
+    const response = await request('GET', path);
+    return response.status === 200;
+  } catch (error) {
+    if (/\(404\)/.test(error.message)) return false;
+    throw error;
+  }
+}
+
 async function ensureDatabase() {
-  const result = await request('POST', '/databases', { databaseId, name: 'UniFlow' });
-  console.log(result.status === 201 ? 'Base UniFlow créée.' : 'Base UniFlow déjà présente.');
+  if (await exists(`/databases/${databaseId}`)) {
+    console.log('Base UniFlow déjà présente.');
+    return;
+  }
+  await request('POST', '/databases', { databaseId, name: 'UniFlow' });
+  console.log('Base UniFlow créée.');
 }
 
 async function ensureBuckets() {
   for (const definition of bucketDefinitions) {
-    const result = await request('POST', '/storage/buckets', definition);
-    if (result.status === 201) {
+    if (!(await exists(`/storage/buckets/${definition.bucketId}`))) {
+      await request('POST', '/storage/buckets', definition);
       console.log(`Bucket ${definition.bucketId} créé.`);
       continue;
     }

@@ -145,7 +145,12 @@ const slug = (value) => String(value).toLowerCase().replace(/[^a-z0-9_-]/g, '-')
 async function main() {
   const usersResponse = await request('GET', `/databases/${databaseId}/collections/users/documents?queries%5B0%5D=${encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] }))}`)
   const users = usersResponse.payload.documents || []
-  const students = users.filter((user) => (user.program || PROGRAM) === PROGRAM)
+  // Seuls les étudiants et délégués universitaires reçoivent notes, devoirs et
+  // inscriptions : le seed traitait aussi les administrateurs et enseignants,
+  // qui se retrouvaient avec des notes.
+  const students = users.filter((user) => user.accountType === 'UNIVERSITY'
+    && ['STUDENT', 'DELEGATE'].includes(user.role || 'STUDENT')
+    && (user.program || PROGRAM) === PROGRAM)
   console.log(`${users.length} compte(s) lu(s), ${students.length} en ${PROGRAM}.`)
 
   console.log('\n— Cours')
@@ -184,14 +189,19 @@ async function main() {
 
   console.log('\n— Annuaire')
   for (const [index, student] of students.entries()) {
-    const state = await upsert('academic_directory', slug(student.$id), {
+    // `userId` est unique dans l'annuaire : si `seed-accounts.mjs` a déjà
+    // inscrit ce compte (sous un autre identifiant de document), on met à jour
+    // l'entrée existante au lieu de heurter l'index.
+    const existing = await request('GET', `/databases/${databaseId}/collections/academic_directory/documents?queries%5B0%5D=${encodeURIComponent(JSON.stringify({ method: 'equal', attribute: 'userId', values: [student.$id] }))}`)
+    const documentId = existing.payload.documents?.[0]?.$id || slug(student.$id)
+    const state = await upsert('academic_directory', documentId, {
       userId: student.$id,
       name: student.name || student.username || student.email,
       role: student.role || 'STUDENT',
       university: student.university || UNIVERSITY,
       program: student.program || PROGRAM,
       level: student.level || LEVEL,
-      matricule: `UY1-${program_matricule(index)}`,
+      matricule: student.matricule || `UY1-${program_matricule(index)}`,
       status: 'ACTIVE',
     }, [`read("users")`])
     console.log(`  ${student.name || student.username} (${state})`)

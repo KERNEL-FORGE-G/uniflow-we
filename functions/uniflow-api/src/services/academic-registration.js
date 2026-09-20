@@ -4,7 +4,10 @@ import { Client, Databases, ID, Permission, Query, Role } from 'node-appwrite'
 const DATABASE_ID = 'uniflow'
 const UNIVERSITY = 'Université de Yaoundé I'
 const PROGRAM = 'ICT4D'
-const LEVEL = 'L1'
+// La filière ICT4D couvre la Licence 1 à la Licence 3 (demande du propriétaire) :
+// le périmètre n'est plus figé sur `L1`, un compte L2 ou L3 est dans le champ.
+const LEVELS = ['L1', 'L2', 'L3']
+const inScope = (document) => document?.university === UNIVERSITY && document?.program === PROGRAM && LEVELS.includes(document?.level)
 
 function json(res, body, status = 200) {
   return res.json(body, status, { 'content-type': 'application/json' })
@@ -41,17 +44,20 @@ function enrollmentPermissions(userId) {
 }
 
 function sameAcademicScope(document) {
-  return document?.university === UNIVERSITY && document?.program === PROGRAM && document?.level === LEVEL
+  return inScope(document)
 }
 
 export default async ({ req, res, log, error }) => {
   const userId = actorIdOf(req)
   if (!userId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
 
+  // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
+  // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
+  // être stockée en variable ; celle-ci reste lue en premier si elle existe.
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(process.env.APPWRITE_FUNCTION_API_KEY)
+    .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
   const body = bodyOf(req)
 
@@ -79,7 +85,8 @@ export default async ({ req, res, log, error }) => {
         role: profile.role,
         university: UNIVERSITY,
         program: PROGRAM,
-        level: LEVEL,
+        // Le niveau vient du profil `users` (L1, L2 ou L3) ; L1 par défaut.
+        level: LEVELS.includes(profile.level) ? profile.level : 'L1',
         matricule: cleanMatricule(body.matricule),
         status: 'ACTIVE',
       }

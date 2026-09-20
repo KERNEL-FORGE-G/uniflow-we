@@ -1,12 +1,10 @@
 import { readFile } from 'node:fs/promises'
 import { basename, resolve } from 'node:path'
 
-const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || '6a959096002a64d9d4e6'
-const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY
-const endpoint = (process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
-const bucketId = 'uniflow_assets'
+import { apiKey, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
 
-if (!apiKey) throw new Error('APPWRITE_SELF_HOSTED_API_KEY est requise pour téléverser les assets publics.')
+requireConfig()
+const bucketId = 'uniflow_assets'
 
 const assets = [
   {

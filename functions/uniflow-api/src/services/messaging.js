@@ -4,19 +4,26 @@ import { Client, Databases, ID, Permission, Query, Role, Storage } from 'node-ap
 const DATABASE_ID = 'uniflow'
 const UNIVERSITY = 'Université de Yaoundé I'
 const PROGRAM = 'ICT4D'
-const LEVEL = 'L1'
+// La filière ICT4D couvre la Licence 1 à la Licence 3 (demande du propriétaire) :
+// le périmètre n'est plus figé sur `L1`, un compte L2 ou L3 est dans le champ.
+const LEVELS = ['L1', 'L2', 'L3']
+const inScope = (document) => document?.university === UNIVERSITY && document?.program === PROGRAM && LEVELS.includes(document?.level)
 const ALLOWED_ROLES = ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN']
 
 /**
  * Bucket des pièces jointes de discussion.
  *
- * Le serveur plafonne tout fichier à `_APP_STORAGE_LIMIT` (30 Mo par défaut) ;
- * cette constante n'est qu'un garde-fou côté Function, la vraie limite restant
- * celle du bucket. Un fichier plus gros est refusé au téléversement par
- * Appwrite, avec un message que le client relaie.
+ * Appwrite Cloud plafonne tout fichier à 50 000 000 octets sur le plan
+ * gratuit ; cette constante n'est qu'un garde-fou côté Function, la vraie
+ * limite restant celle du bucket. Un fichier plus gros est refusé au
+ * téléversement par Appwrite, avec un message que le client relaie.
+ *
+ * Le bucket est l'unique bucket du projet (le plan gratuit n'en autorise
+ * qu'un) : l'isolement des pièces jointes repose sur les permissions par
+ * fichier, que cette Function pose elle-même sur les deux participants.
  */
-const CHAT_FILES_BUCKET = 'uniflow_chat_files'
-const MAX_ATTACHMENT_BYTES = 30_000_000
+const CHAT_FILES_BUCKET = 'uniflow_assets'
+const MAX_ATTACHMENT_BYTES = 50_000_000
 
 /** Types MIME affichés comme des images dans la conversation. */
 const IMAGE_MIME_PREFIX = 'image/'
@@ -52,7 +59,7 @@ function cleanText(value, field, limit) {
 function hasScope(document) {
   if (!document || !ALLOWED_ROLES.includes(document.role)) return false
   if (!STRICT_SCOPE) return true
-  return document.university === UNIVERSITY && document.program === PROGRAM && document.level === LEVEL
+  return inScope(document)
 }
 
 function pairFor(first, second) {
@@ -246,10 +253,13 @@ async function markConversationRead(databases, conversation, actorId) {
 export default async ({ req, res, error }) => {
   const actorId = actorIdOf(req)
   if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
+  // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
+  // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
+  // être stockée en variable ; celle-ci reste lue en premier si elle existe.
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
-    .setKey(process.env.APPWRITE_FUNCTION_API_KEY)
+    .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
   const storage = new Storage(client)
   const body = bodyOf(req)

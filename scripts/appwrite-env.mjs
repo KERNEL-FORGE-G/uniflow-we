@@ -32,13 +32,23 @@ function loadBackendEnv() {
 
 const backendEnv = loadBackendEnv()
 
+/**
+ * Depuis le 2026-09-20, UniFlow tourne sur Appwrite Cloud (projet `uniflow`,
+ * région `fra`). Le serveur auto-hébergé `appwrite.kernelforge.codes` est
+ * abandonné : il répondait 500 sur toutes les routes après sa montée en 2.2.0.
+ * Les variables `APPWRITE_SELF_HOSTED_*` restent lues pour ne pas casser les
+ * commandes déjà documentées ; les noms génériques `APPWRITE_*` sont préférés.
+ */
 export const endpoint = String(
-  process.env.APPWRITE_SELF_HOSTED_ENDPOINT || backendEnv.APPWRITE_ENDPOINT || 'https://appwrite.kernelforge.codes/v1',
+  process.env.APPWRITE_ENDPOINT
+  || process.env.APPWRITE_SELF_HOSTED_ENDPOINT
+  || backendEnv.APPWRITE_ENDPOINT
+  || 'https://fra.cloud.appwrite.io/v1',
 ).replace(/\/+$/, '')
 
-export const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || backendEnv.APPWRITE_PROJECT_ID || ''
+export const projectId = process.env.APPWRITE_PROJECT_ID || process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || backendEnv.APPWRITE_PROJECT_ID || ''
 
-export const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY || backendEnv.APPWRITE_API_KEY || ''
+export const apiKey = process.env.APPWRITE_API_KEY || process.env.APPWRITE_SELF_HOSTED_API_KEY || backendEnv.APPWRITE_API_KEY || ''
 
 export const databaseId = process.env.APPWRITE_DATABASE_ID || backendEnv.APPWRITE_DATABASE_ID || 'uniflow'
 
@@ -57,7 +67,7 @@ export const databaseId = process.env.APPWRITE_DATABASE_ID || backendEnv.APPWRIT
  * Les scripts de déploiement appellent [resolveFunctionRuntime], qui interroge
  * le serveur et retombe sur ce qu'il accepte réellement.
  */
-export const functionRuntime = process.env.UNIFLOW_FUNCTION_RUNTIME || 'node-18.0'
+export const functionRuntime = process.env.UNIFLOW_FUNCTION_RUNTIME || 'node-22'
 
 /**
  * Runtime Node réellement accepté par le serveur, du plus récent au plus ancien.
@@ -77,6 +87,9 @@ export async function resolveFunctionRuntime() {
       .map((runtime) => runtime.$id)
       .filter((id) => typeof id === 'string' && id.startsWith('node-'))
       .sort((a, b) => Number(b.split('-')[1]) - Number(a.split('-')[1]))
+    // La préférence (LTS) l'emporte si le serveur la propose : Appwrite Cloud
+    // expose jusqu'à node-26, sur lequel node-appwrite 12 n'a pas été éprouvé.
+    if (available.includes(functionRuntime)) return functionRuntime
     if (available.length > 0) return available[0]
   } catch {
     // Serveur injoignable ou endpoint absent : on retombe sur la préférence.
@@ -87,13 +100,11 @@ export async function resolveFunctionRuntime() {
 /**
  * URL absolue d'un avatar stocké dans le bucket des photos de profil.
  *
- * Le second paramètre est l'**identifiant** du bucket, pas son nom : celui
- * d'UniFlow s'appelle « uniflow_avatars » mais a été créé depuis la console
- * sous `6aa81b840031e6a34dc3`, et Appwrite résout les URL par identifiant.
- * La valeur par défaut reprend donc cet identifiant, sinon chaque appel sans
- * argument explicite produisait un 404.
+ * Le second paramètre est l'**identifiant** du bucket : Appwrite résout les
+ * URL par identifiant, pas par nom. Sur Cloud, le bucket est créé par le
+ * schéma sous `uniflow_avatars` (voir `appwrite-schema.mjs`).
  */
-export function avatarUrl(fileId, bucketId = '6aa81b840031e6a34dc3') {
+export function avatarUrl(fileId, bucketId = 'uniflow_assets') {
   if (!fileId) return ''
   return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`
 }
@@ -102,16 +113,20 @@ export function requireConfig() {
   if (!projectId) {
     throw new Error(
       'Identifiant de projet Appwrite introuvable. Renseigne APPWRITE_PROJECT_ID dans uniflow-backend/.env, '
-      + 'ou exporte APPWRITE_SELF_HOSTED_PROJECT_ID.',
+      + 'ou exporte APPWRITE_PROJECT_ID.',
     )
   }
   if (!apiKey) {
     throw new Error(
       'Clé API Appwrite introuvable. Renseigne APPWRITE_API_KEY dans uniflow-backend/.env, '
-      + 'ou exporte APPWRITE_SELF_HOSTED_API_KEY.',
+      + 'ou exporte APPWRITE_API_KEY.',
     )
   }
-  if (!/^[0-9a-f]{20}$/.test(projectId)) {
+  // Règle d'Appwrite pour un identifiant choisi : lettres, chiffres, point,
+  // tiret, souligné, 36 caractères au plus, sans caractère spécial en tête.
+  // L'ancienne vérification n'admettait que les identifiants générés
+  // (20 caractères hexadécimaux) et aurait refusé le projet Cloud « uniflow ».
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9._-]{0,35}$/.test(projectId)) {
     throw new Error(`Identifiant de projet Appwrite invalide : « ${projectId} ».`)
   }
 }

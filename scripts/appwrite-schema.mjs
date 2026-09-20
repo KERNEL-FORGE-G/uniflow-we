@@ -11,92 +11,66 @@
  * `node_modules` est absent ou incomplet.
  */
 
+/**
+ * Identifiant de la base. Les dix Functions le codent en dur (`DATABASE_ID`)
+ * et les trois clients le lisent dans leur `.env` : il vaut « uniflow » partout,
+ * y compris sur Appwrite Cloud. La base « uniflow-db » créée à la main dans la
+ * console Cloud le 2026-09-19 n'est lue par personne.
+ */
 export const databaseId = 'uniflow'
 
-/** Bucket historique : supports de cours, documents, médias. */
+/**
+ * L'unique bucket du projet : supports de cours, rendus, photos de profil et
+ * pièces jointes de discussion.
+ *
+ * Le plan gratuit d'Appwrite Cloud (`tier-0`) n'autorise qu'**un seul bucket**
+ * — la création d'un second répond « The maximum number of buckets allowed for
+ * the selected plan has reached ». Les trois buckets de l'ancien serveur
+ * (`uniflow_assets`, `uniflow_chat_files`, avatars) sont donc fusionnés en un,
+ * et la séparation des usages repose entièrement sur `fileSecurity` : chaque
+ * fichier porte ses propres permissions. Un avatar est déposé avec
+ * `read("any")` (c'est déjà ce que font les trois clients et `team-roster`),
+ * une pièce jointe avec les deux participants seulement, un rendu de devoir
+ * avec l'élève et l'enseignant. Le bucket lui-même n'accorde **aucune**
+ * lecture : lui donner `read("any")` rendrait chaque pièce jointe publique.
+ */
 export const bucketId = 'uniflow_assets'
 
-/**
- * Bucket dédié aux photos de profil. Lecture publique — un avatar doit
- * s'afficher dans les listes, les messages et les annuaires sans exiger de
- * session — mais écriture réservée aux comptes authentifiés. `fileSecurity`
- * fait que chaque fichier porte en plus ses propres permissions.
- *
- * L'identifiant est celui réellement présent sur le serveur
- * (`6aa81b840031e6a34dc3`) et non le nom « uniflow_avatars » : le bucket a été
- * créé depuis la console, qui attribue un identifiant aléatoire. Les
- * applications construisaient leurs URL avec le nom et recevaient un 404 à
- * chaque lecture de photo. Utiliser ici le nom ferait en plus créer un second
- * bucket, vide, que personne ne lit.
- */
-export const avatarBucketId = '6aa81b840031e6a34dc3'
+/** Alias conservés : tout pointe désormais sur le même bucket. */
+export const avatarBucketId = bucketId
+export const chatFilesBucketId = bucketId
 
 /**
- * Bucket des pièces jointes de discussion.
+ * Taille maximale d'un fichier.
  *
- * Séparé de `uniflow_assets` : la messagerie accepte n'importe quel type de
- * fichier, alors que le bucket de supports est limité à 10 Mo et à une liste
- * fermée d'extensions — un `.zip`, un `.xlsx` ou une archive de projet y
- * étaient refusés. `fileSecurity` est actif : chaque fichier reçoit les
- * permissions de ses deux participants, et personne d'autre ne peut le lire.
+ * 50 000 000 octets : c'est le plafond par fichier du plan gratuit d'Appwrite
+ * Cloud (`fileSize: 50`). L'ancien serveur auto-hébergé refusait tout au-dessus
+ * de 30 000 000 (`_APP_STORAGE_LIMIT`), d'où la valeur précédente. Le client
+ * lit la limite réelle du bucket avant d'envoyer et refuse le fichier avec un
+ * message explicite, donc cette constante n'a pas à être recopiée côté Flutter.
  */
-export const chatFilesBucketId = 'uniflow_chat_files'
-
-/**
- * Taille maximale d'une pièce jointe de discussion.
- *
- * 30 Mo et non 50 : le serveur Appwrite refuse toute valeur supérieure à
- * `_APP_STORAGE_LIMIT`, qui vaut 30 000 000 octets par défaut — la création du
- * bucket échoue avec « Value must be a valid range between 1 and 30,000,000 ».
- * Pour autoriser 50 Mo, il faut relever cette limite dans le `.env` du serveur
- * (`_APP_STORAGE_LIMIT=52428800`) puis redémarrer Appwrite, et mettre cette
- * constante à 50 * 1024 * 1024. Le client, lui, lit la limite réelle du bucket
- * avant d'envoyer et refuse le fichier avec un message explicite.
- */
-export const chatFilesMaxBytes = 30_000_000
+export const chatFilesMaxBytes = 50_000_000
 
 export const bucketDefinitions = [
   {
     bucketId,
-    name: 'UniFlow Assets',
-    permissions: [],
-    fileSecurity: true,
-    enabled: true,
-    maximumFileSize: 10 * 1024 * 1024,
-    allowedFileExtensions: ['jpg', 'jpeg', 'png', 'webp', 'gif', 'pdf', 'doc', 'docx', 'mp4', 'webm', 'mp3', 'wav'],
-    compression: 'none',
-    encryption: false,
-    antivirus: true,
-  },
-  {
-    bucketId: chatFilesBucketId,
-    name: 'UniFlow — fichiers de discussion',
+    name: 'UniFlow — fichiers',
     // `create("users")` est indispensable : les clients téléversent avec leur
     // propre session, pas avec une clé serveur. Sans cette permission, tout
-    // envoi de pièce jointe échouerait en 401. La lecture, elle, reste régie
-    // par les permissions de chaque fichier (`fileSecurity`).
+    // envoi échouerait en 401. La lecture, elle, reste régie par les
+    // permissions de chaque fichier (`fileSecurity`).
     permissions: ['create("users")'],
     fileSecurity: true,
     enabled: true,
     maximumFileSize: chatFilesMaxBytes,
-    // Liste vide = toutes les extensions. La limite de taille et les
-    // permissions par fichier sont les seules contraintes.
+    // Liste vide = toutes les extensions : la messagerie accepte n'importe
+    // quel type de fichier (`.zip`, `.xlsx`, archives de projet…).
     allowedFileExtensions: [],
     compression: 'none',
+    // Appwrite ne chiffre pas les fichiers de plus de 20 Mo : laisser le
+    // chiffrement actif produirait un bucket au comportement inégal.
     encryption: false,
     antivirus: true,
-  },
-  {
-    bucketId: avatarBucketId,
-    name: 'UniFlow Avatars',
-    permissions: ['read("any")', 'create("users")'],
-    fileSecurity: true,
-    enabled: true,
-    maximumFileSize: 5 * 1024 * 1024,
-    allowedFileExtensions: ['jpg', 'jpeg', 'png', 'webp'],
-    compression: 'none',
-    encryption: true,
-    antivirus: false,
   },
 ]
 
@@ -124,6 +98,15 @@ const enumeration = (key, elements, required = false, defaultValue) => ({
   type: 'enum',
   body: { key, elements, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false },
 })
+
+/**
+ * Niveaux d'études admis pour un compte universitaire. Demande du
+ * propriétaire : la filière ICT couvre les trois années de Licence.
+ */
+export const academicLevels = ['L1', 'L2', 'L3']
+
+/** Les quatre rôles lus par les trois clients et vérifiés par les Functions. */
+export const userRoles = ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN']
 
 /**
  * Collections académiques : cours, emploi du temps, annuaire, notes,
@@ -227,6 +210,152 @@ export const academicSchemas = [
     ],
     indexes: [{ key: 'library_course', type: 'key', attributes: ['courseId'] }],
   },
+  {
+    // Lue par cinq Functions (`academic-registration`, `academic-grades`,
+    // `attendance-secure`, `admin-directory`, `notification-alerts`), par le
+    // web et par le desktop — mais jamais provisionnée par ce module : elle
+    // répondait 404 sur l'ancien serveur, et la Function d'inscription
+    // échouait donc à rattacher un étudiant à ses cours.
+    id: 'academic_enrollments',
+    name: 'Inscriptions aux cours',
+    attributes: [
+      string('studentId', 36, true),
+      string('courseId', 64, true),
+      string('status', 32, false, 'ACTIVE'),
+    ],
+    indexes: [
+      { key: 'enrollment_student', type: 'key', attributes: ['studentId'] },
+      { key: 'enrollment_course', type: 'key', attributes: ['courseId'] },
+      { key: 'enrollment_student_course', type: 'unique', attributes: ['studentId', 'courseId'] },
+    ],
+  },
+  {
+    // Deux modèles cohabitent dans cette collection : le web et le mobile
+    // lisent un devoir « par étudiant » (`studentId`, `grade`, `submittedAt`…),
+    // le desktop un énoncé publié une fois par l'enseignant (`teacherId`,
+    // `type`, `quizJson`, `audience`…) dont les rendus vont dans
+    // `academic_submissions`. Le schéma porte l'union des deux, tout en
+    // facultatif hormis le titre et le cours, pour qu'aucun des trois clients
+    // ne soit refusé à l'écriture.
+    id: 'academic_assignments',
+    name: 'Devoirs',
+    attributes: [
+      string('courseId', 64, true),
+      string('courseCode', 64, false, ''),
+      string('title', 255, true),
+      string('description', 3000, false, ''),
+      string('dueDate', 64, true),
+      string('status', 32, false, 'À rendre'),
+      // Modèle « par étudiant » (web, mobile).
+      string('studentId', 36, false, ''),
+      string('grade', 32, false, ''),
+      string('feedback', 2000, false, ''),
+      string('submittedAt', 64, false, ''),
+      string('submittedFile', 255, false, ''),
+      string('submissionNote', 1000, false, ''),
+      // Modèle « énoncé publié » (desktop).
+      string('teacherId', 36, false, ''),
+      string('teacherName', 255, false, ''),
+      string('type', 32, false, ''),
+      string('publishedAt', 64, false, ''),
+      float('maxScore', false, 20),
+      boolean('allowLate', false, false),
+      string('quizJson', 20000, false, ''),
+      string('fileId', 64, false, ''),
+      string('fileName', 255, false, ''),
+      string('audience', 1000, false, ''),
+    ],
+    indexes: [
+      { key: 'assignment_student', type: 'key', attributes: ['studentId'] },
+      { key: 'assignment_course', type: 'key', attributes: ['courseId'] },
+      { key: 'assignment_teacher', type: 'key', attributes: ['teacherId'] },
+    ],
+  },
+  {
+    // Rendus d'élèves, un document par élève et par devoir (desktop). Le
+    // desktop la lit et l'écrit depuis `9b72a37`, elle n'existait nulle part.
+    id: 'academic_submissions',
+    name: 'Rendus de devoirs',
+    attributes: [
+      string('assignmentId', 36, true),
+      string('studentId', 36, true),
+      string('studentName', 255, false, ''),
+      string('submittedAt', 64, true),
+      string('answersJson', 20000, false, ''),
+      string('fileId', 64, false, ''),
+      string('fileName', 255, false, ''),
+      float('score', false),
+      string('feedback', 5000, false, ''),
+      string('status', 32, false, 'SUBMITTED'),
+      string('gradedAt', 64, false, ''),
+    ],
+    indexes: [
+      { key: 'submission_assignment', type: 'key', attributes: ['assignmentId'] },
+      { key: 'submission_student', type: 'key', attributes: ['studentId'] },
+      { key: 'submission_unique', type: 'unique', attributes: ['assignmentId', 'studentId'] },
+    ],
+  },
+  {
+    // Séances d'appel, créées par la Function `attendance-secure` et lues par
+    // le web et le desktop. Absente de ce module jusqu'ici.
+    id: 'attendance_sessions',
+    name: 'Séances de présence',
+    attributes: [
+      string('courseId', 64, true),
+      datetime('date', true),
+      string('createdBy', 36, false, ''),
+    ],
+    indexes: [{ key: 'attendance_session_course', type: 'key', attributes: ['courseId'] }],
+  },
+]
+
+/**
+ * Formules d'abonnement et état de souscription — lus par la page tarifaire
+ * du web (sans session, d'où `read("any")` sur les formules) et écrits par la
+ * Function `subscription-payments`. Ils étaient créés par un ancien script de
+ * démonstration et jamais décrits ici : la sonde les signalait donc « lus mais
+ * non provisionnés ».
+ */
+export const subscriptionSchemas = [
+  {
+    id: 'subscription_plans',
+    name: 'Formules UniFlow',
+    attributes: [
+      string('code', 64, true),
+      string('name', 255, true),
+      enumeration('category', ['PERSONAL', 'TEACHER', 'INSTITUTION', 'ACADEMIC'], true),
+      string('countryCode', 8, true),
+      enumeration('currency', ['XAF', 'EUR', 'USD'], true),
+      integer('priceMonthlyAmount', true),
+      integer('priceAnnuallyAmount', true),
+      string('period', 64, false, 'Accès académique'),
+      string('badge', 100, false, ''),
+      boolean('highlight', false, false),
+      string('description', 5000, true),
+      string('providers', 500, false, '[]'),
+      string('status', 32, true),
+    ],
+    indexes: [
+      { key: 'subscription_plan_code', type: 'unique', attributes: ['code'] },
+      { key: 'subscription_plan_status', type: 'key', attributes: ['status'] },
+    ],
+    permissions: ['read("any")'],
+  },
+  {
+    id: 'subscription_statuses',
+    name: 'Statuts de souscription',
+    attributes: [
+      string('userId', 36, true),
+      enumeration('status', ['NONE', 'ACTIVE'], true),
+      string('planCode', 64, false, ''),
+      string('countryCode', 8, false, 'CM'),
+      enumeration('currency', ['XAF', 'EUR', 'USD'], false, 'XAF'),
+      integer('monthlyAmount', false, 0),
+      datetime('currentPeriodEnd', false),
+      boolean('isAutoRenew', false, false),
+    ],
+    indexes: [{ key: 'subscription_status_user', type: 'unique', attributes: ['userId'] }],
+  },
 ]
 
 /**
@@ -311,10 +440,13 @@ export const schemas = [
       string('email', 255, true),
       string('name', 255, true),
       enumeration('accountType', ['UNIVERSITY', 'PERSONAL'], true),
-      enumeration('role', ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN'], false, 'STUDENT'),
+      enumeration('role', userRoles, false, 'STUDENT'),
       string('university', 255, false, ''),
       string('program', 100, false, ''),
-      enumeration('level', ['L1'], false),
+      // La filière ICT de l'UY1 va de la Licence 1 à la Licence 3 : le schéma
+      // n'admettait que `L1`, si bien qu'un compte L2 ou L3 aurait été refusé
+      // dès que l'énumération aurait été réellement appliquée par le serveur.
+      enumeration('level', academicLevels, false),
       string('country', 100, false, 'Cameroun'),
       // Identifiant du fichier dans le bucket uniflow_avatars. Vide tant que
       // l'utilisateur n'a pas téléversé de photo : les clients retombent alors
@@ -540,13 +672,25 @@ export const schemas = [
     id: 'attendance_records',
     name: 'Relevés de présence',
     attributes: [
+      // Cœur du relevé — ces quatre attributs n'étaient déclarés que dans un
+      // ancien script de démonstration ; ce module ne portait que les champs
+      // de vérification ajoutés ensuite, et une base provisionnée depuis lui
+      // seul aurait refusé tout enregistrement de présence.
+      string('sessionId', 64, true),
+      string('courseId', 64, true),
+      string('studentId', 36, true),
+      enumeration('status', ['PRESENT', 'ABSENT', 'RETARD', 'JUSTIFIE'], true),
       enumeration('verificationMethod', ['MANUAL', 'QR_GEOFENCE'], false, 'MANUAL'),
       enumeration('proximityStatus', ['NOT_REQUIRED', 'VERIFIED', 'DENIED', 'UNAVAILABLE'], false, 'NOT_REQUIRED'),
       integer('proximityDistanceMeters', false, -1),
       integer('locationAccuracyMeters', false, -1),
       datetime('verifiedAt', false),
     ],
-    indexes: [{ key: 'attendance_verification', type: 'key', attributes: ['verificationMethod'] }],
+    indexes: [
+      { key: 'attendance_record_student', type: 'key', attributes: ['studentId'] },
+      { key: 'attendance_record_session', type: 'key', attributes: ['sessionId'] },
+      { key: 'attendance_verification', type: 'key', attributes: ['verificationMethod'] },
+    ],
   },
   {
     id: 'subscription_payment_requests',
@@ -587,12 +731,16 @@ export const usernameAttribute = { key: 'username', size: 32, required: false }
 export const usernameIndex = { key: 'username_unique', type: 'unique', attributes: ['username'], orders: ['asc'] }
 
 /**
- * Collections que les applications lisent mais que ce dépôt ne provisionne pas,
- * parce qu'elles sont alimentées par les Functions ou par un seed externe.
- * Elles sont tout de même vérifiées : leur absence est la cause la plus probable
- * d'un « la messagerie ne marche pas ».
+ * Collections que les applications lisent mais que ce dépôt ne provisionne pas.
+ *
+ * Vide depuis le passage à Appwrite Cloud : `courses` et `enrollments`, qui y
+ * figuraient, n'étaient lues par aucun client ni aucune Function (les noms
+ * réels sont `academic_courses` et `academic_enrollments`), et leur absence
+ * faisait échouer la sonde avant tout le reste. `subscription_plans` est
+ * désormais décrite dans [subscriptionSchemas]. La liste est conservée pour que
+ * la sonde continue de fonctionner si une dépendance externe réapparaît.
  */
-export const referencedCollections = ['courses', 'enrollments', 'subscription_plans']
+export const referencedCollections = []
 
 /**
  * Tout ce que le provisionnement doit créer : les collections des applications
@@ -607,6 +755,7 @@ export const referencedCollections = ['courses', 'enrollments', 'subscription_pl
 export const allSchemas = [
   ...schemas,
   ...academicSchemas.map((schema) => ({ ...schema, permissions: ['read("users")', 'create("users")'] })),
+  ...subscriptionSchemas,
   teamSchema,
 ]
 

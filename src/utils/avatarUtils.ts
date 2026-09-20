@@ -82,9 +82,9 @@ export function resolveAvatarUrl(options: {
  */
 export function avatarFileUrl(fileId?: string | null): string {
   if (!fileId) return ''
-  const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://appwrite.kernelforge.codes/v1').replace(/\/+$/, '')
-  const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a959096002a64d9d4e6')
-  const bucketId = String(import.meta.env.VITE_APPWRITE_AVATAR_BUCKET_ID || 'uniflow_avatars')
+  const endpoint = String(import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1').replace(/\/+$/, '')
+  const projectId = String(import.meta.env.VITE_APPWRITE_PROJECT_ID || 'uniflow')
+  const bucketId = String(import.meta.env.VITE_APPWRITE_AVATAR_BUCKET_ID || 'uniflow_assets')
   return `${endpoint}/storage/buckets/${bucketId}/files/${fileId}/view?project=${projectId}`
 }
 

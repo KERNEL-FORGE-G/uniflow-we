@@ -20,9 +20,10 @@
  */
 
 import { apiKey, createClient, databaseId, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
+import { avatarBucketId } from './appwrite-schema.mjs'
 
 const COLLECTION = 'team_members'
-const AVATAR_BUCKET = '6aa81b840031e6a34dc3'
+const AVATAR_BUCKET = avatarBucketId
 
 /**
  * Comptes GitHub sans photo de profil : l'URL `github.com/<handle>.png`
