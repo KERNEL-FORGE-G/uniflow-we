@@ -7,13 +7,15 @@ import {
   Sparkles, Monitor, Youtube, Film
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { YouTubePlayer } from '../components/media/YouTubePlayer'
+import { youtubeWatchUrl } from '../lib/videoEmbed'
 
 interface VideoItem {
   id: string
   title: string
   description: string
   type: 'youtube' | 'local'
-  embedUrl?: string
+  youtubeId?: string
   videoSrc?: string
   linkUrl: string
   category: string
@@ -27,8 +29,8 @@ const VIDEOS: VideoItem[] = [
     title: 'UniFlow — La Plateforme qui Simplifie la Gestion Universitaire',
     description: 'Présentation officielle complète de la solution tout-en-un UniFlow pour moderniser la gestion académique et la vie de campus.',
     type: 'youtube',
-    embedUrl: 'https://www.youtube-nocookie.com/embed/cIXm0cJJH18?autoplay=0&rel=0',
-    linkUrl: 'https://youtu.be/cIXm0cJJH18',
+    youtubeId: 'cIXm0cJJH18',
+    linkUrl: youtubeWatchUrl('cIXm0cJJH18'),
     category: 'Présentation Principale',
     duration: '3:45',
     badgeColor: 'bg-blue-100 text-[#1e3a8a] border-blue-200'
@@ -171,14 +173,8 @@ export default function PresentationPage() {
 
             {/* Video Player Display */}
             <div className="relative aspect-video rounded-2xl overflow-hidden bg-black border border-slate-800 shadow-inner">
-              {currentVideo.type === 'youtube' ? (
-                <iframe
-                  src={currentVideo.embedUrl}
-                  title={currentVideo.title}
-                  className="w-full h-full border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen
-                />
+              {currentVideo.type === 'youtube' && currentVideo.youtubeId ? (
+                <YouTubePlayer videoId={currentVideo.youtubeId} title={currentVideo.title} className="rounded-none" />
               ) : videoErrorId === currentVideo.id ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-slate-900 p-6 text-center text-white">
                   <Film className="h-10 w-10 text-blue-300" />
