@@ -1,223 +1,143 @@
-import { useEffect, useMemo, useState } from 'react'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Code2, Smartphone, Server, Database, Crown, Laptop, Users, Github, ExternalLink, Sparkles, CheckCircle2, UsersRound, WifiOff } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { motion } from 'framer-motion'
+import { ExternalLink, Github, UsersRound, WifiOff } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
-import { TeamMemberCard, TeamMemberCardSkeleton } from '../components/team/TeamMemberCard'
+import { TeamGrid, TeamMemberCardSkeleton } from '../components/team/TeamMemberCard'
 import { ActionResult } from '../components/feedback/ActionResult'
-import { EmptyState } from '../components/ui/EmptyState'
-import { listTeamMembers, type TeamMemberDocument, type TeamName } from '../lib/appwrite'
+import { Container } from '../components/layout/Page'
+import { listTeamMembers, type TeamMemberDocument } from '../lib/appwrite'
 import { COVERAGE_UNIVERSITY } from '../lib/contactInfo'
 
-type FilterCategory = 'Tous' | TeamName
-
-const FILTERS: FilterCategory[] = ['Tous', 'Leadership', 'Frontend', 'Backend']
-
 /**
- * Icône de la pastille, déduite du rôle faute d'être stockée.
- *
- * L'ancienne liste codée en dur portait une icône par membre (`Crown`, `Server`,
- * `Database`…). Plutôt que d'ajouter un attribut en base pour un détail
- * purement décoratif — et qu'un administrateur devrait renseigner à la main —
- * on la retrouve depuis la sous-équipe, ce qui donne exactement les mêmes
- * icônes que la liste figée pour les neuf membres actuels.
+ * Page publique de l'équipe, reprise de la référence visuelle du propriétaire
+ * (2026-09-20) : section bleu profond décorée, titre en dégradé rose → jaune,
+ * cartes noires à pointe basse en escalier. Les membres viennent uniquement de
+ * `team_members` (photo dans `uniflow_assets`, silhouette sinon).
  */
-function memberIcon(member: TeamMemberDocument) {
-  const haystack = `${member.subTeam} ${member.role}`
-  if (/sgbd|base de donn|\bbdd?\b|database/i.test(haystack)) return Database
-  if (/mobile|android|ios/i.test(haystack)) return Smartphone
-  if (member.team === 'Leadership') return Crown
-  if (member.team === 'Backend') return Server
-  return Code2
-}
-
-/** Les neuf technologies du bandeau, qui ne dépendent pas de l'équipe. */
-const TECH_STACK = [
-  'React 18', 'TypeScript', 'Tailwind CSS', 'PWA Offline-First', 'Flutter (mobile et bureau)',
-  'Appwrite Cloud', 'Appwrite Functions', 'Appwrite Realtime', 'QR Code Engine',
-]
-
 export default function TeamsPage() {
   const [members, setMembers] = useState<TeamMemberDocument[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [activeFilter, setActiveFilter] = useState<FilterCategory>('Tous')
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
     setLoading(true)
     setError(null)
-    async function load() {
-      try {
-        const documents = await listTeamMembers()
-        if (!cancelled) setMembers(documents)
-      } catch (exception) {
-        if (!cancelled) setError(exception instanceof Error ? exception.message : "L'équipe n'a pas pu être chargée.")
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    }
-    load()
+    listTeamMembers()
+      .then((documents) => { if (!cancelled) setMembers(documents) })
+      .catch((exception) => { if (!cancelled) setError(exception instanceof Error ? exception.message : "L'équipe n'a pas pu être chargée.") })
+      .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
   }, [attempt])
 
-  // Les tuiles de statistiques étaient écrites en dur (« 9 », « 5 », « 3 »,
-  // « 1 ») : elles suivent maintenant la liste, sinon ajouter un membre depuis
-  // l'administration laisserait la page se contredire elle-même.
-  const stats = useMemo(() => ([
-    { label: 'Membres au total', val: members.length, icon: Users, color: 'text-[#1e3a8a] bg-blue-50' },
-    { label: 'Ingénieurs Frontend', val: members.filter(m => m.team === 'Frontend').length, icon: Laptop, color: 'text-purple-700 bg-purple-50' },
-    { label: 'Ingénieurs Backend & BD', val: members.filter(m => m.team === 'Backend').length, icon: Server, color: 'text-[#0d9488] bg-teal-50' },
-    { label: 'Lead & Architecture', val: members.filter(m => m.team === 'Leadership').length, icon: Crown, color: 'text-amber-700 bg-amber-50' },
-  ]), [members])
-
-  const filteredMembers = members.filter(m => activeFilter === 'Tous' || m.team === activeFilter)
-
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-blue-600 selection:text-white">
+    <div className="min-h-screen bg-[#f8fafc] font-sans text-slate-800 dark:bg-[#0b0f19]">
       <LandingNavbar />
 
-      {/* Hero Banner */}
-      <section className="relative bg-gradient-to-br from-[#1e3a8a] via-[#1e40af] to-[#0d9488] pt-28 pb-16 text-white overflow-hidden">
-        <div className="absolute inset-0 bg-[linear-[#ffffff08_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
-        <div className="relative mx-auto max-w-5xl px-6 text-center">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-white mb-6 border border-white/20">
-            <Code2 className="h-4 w-4 text-teal-300" /> KERNEL FORGE — {COVERAGE_UNIVERSITY}
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#1e3a8a] via-[#2d4fa8] to-[#0d9488] pb-28 pt-16 text-white sm:pt-20 lg:pb-36">
+        <TeamDecorations />
+
+        <Container className="relative">
+          <motion.header
+            initial={{ opacity: 0, x: -24 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className="max-w-2xl"
+          >
+            <h1 className="text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
+              Notre <span className="bg-gradient-to-r from-[#14b8a8] to-[#f59e0b] bg-clip-text text-transparent">équipe</span>
+            </h1>
+            <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-blue-100 sm:text-base">
+              KERNEL FORGE — {members.length > 0 ? `${members.length} ` : ''}étudiantes et étudiants de l’{COVERAGE_UNIVERSITY.replace(/^Université /, 'université ')} qui conçoivent UniFlow.
+            </p>
+          </motion.header>
+
+          <div className="mt-14 lg:mt-20">
+            {loading && (
+              <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 lg:gap-10" aria-busy="true" aria-label="Chargement de l’équipe">
+                {Array.from({ length: 6 }).map((_, index) => <TeamMemberCardSkeleton key={index} index={index} />)}
+              </div>
+            )}
+
+            {!loading && error && (
+              <div className="mx-auto max-w-xl rounded-3xl bg-white p-2 text-slate-800">
+                <ActionResult
+                  status="error"
+                  icon={WifiOff}
+                  title="L’équipe n’a pas pu être chargée"
+                  description="La collection team_members d’Appwrite ne répond pas pour le moment."
+                  detail={error}
+                  actions={[{ label: 'Réessayer', onClick: () => setAttempt((value) => value + 1) }]}
+                />
+              </div>
+            )}
+
+            {!loading && !error && members.length > 0 && <TeamGrid members={members} />}
+
+            {!loading && !error && members.length === 0 && (
+              <div className="mx-auto flex max-w-md flex-col items-center rounded-3xl border border-white/15 bg-white/10 px-6 py-14 text-center backdrop-blur">
+                <UsersRound className="h-12 w-12 text-[#14b8a8]" />
+                <h2 className="mt-4 text-xl font-black">L’équipe se présente bientôt</h2>
+                <p className="mt-2 text-sm text-blue-100">Les membres sont ajoutés depuis l’administration et apparaîtront ici.</p>
+              </div>
+            )}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-4">
-            L'Équipe KERNEL FORGE
-          </h1>
-          <p className="text-base sm:text-lg text-blue-100 max-w-2xl mx-auto leading-relaxed font-medium">
-            Les développeurs et ingénieurs passionnés qui ont conçu UniFlow pour transformer la gestion académique universitaire en Afrique.
-          </p>
-        </div>
+        </Container>
+
+        <ZigzagConnector />
       </section>
 
-      {/* Stats Summary Bar */}
-      <section className="border-b border-slate-200 bg-white py-8 shadow-xs">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center">
-            {stats.map(s => {
-              const Icon = s.icon
-              return (
-                <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.05 * stats.indexOf(s) }} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center">
-                  <div className={`mb-2 p-2 rounded-lg ${s.color}`}>
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className="text-2xl font-black text-slate-900 tabular-nums">{loading ? '…' : s.val}</span>
-                  <span className="text-xs font-medium text-slate-500 mt-0.5">{s.label}</span>
-                </motion.div>
-              )
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Filter Tabs & Members Grid */}
-      <section className="py-16 mx-auto max-w-7xl px-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-10 pb-4 border-b border-slate-200">
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Nos Talents</h2>
-            <p className="text-xs text-slate-500 font-medium">Découvrez l'équipe et leurs domaines d'expertise</p>
-          </div>
-
-          {/* Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2 bg-white p-1 rounded-xl border border-slate-200 shadow-xs">
-            {FILTERS.map(cat => (
-              <button
-                key={cat}
-                onClick={() => setActiveFilter(cat)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-extrabold transition-all ${
-                  activeFilter === cat
-                    ? 'bg-[#1e3a8a] text-white shadow-xs'
-                    : 'text-slate-600 hover:bg-slate-100'
-                }`}
-              >
-                {cat}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {loading && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Chargement de l’équipe">
-            {Array.from({ length: 6 }).map((_, index) => <TeamMemberCardSkeleton key={index} />)}
-          </div>
-        )}
-
-        {!loading && error && (
-          <ActionResult
-            status="error"
-            icon={WifiOff}
-            title="L’équipe n’a pas pu être chargée"
-            description="La collection team_members d’Appwrite ne répond pas pour le moment."
-            detail={error}
-            actions={[{ label: 'Réessayer', onClick: () => setAttempt((value) => value + 1) }]}
-          />
-        )}
-
-        {!loading && !error && (
-          <motion.div layout className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <AnimatePresence mode="popLayout">
-              {filteredMembers.map((m, index) => (
-                <TeamMemberCard key={m.$id} member={m} icon={memberIcon(m)} index={index} />
-              ))}
-            </AnimatePresence>
-          </motion.div>
-        )}
-
-        {!loading && !error && filteredMembers.length === 0 && (
-          <EmptyState
-            icon={UsersRound}
-            title={members.length === 0 ? 'L’équipe se présente bientôt' : 'Aucun membre dans cette équipe'}
-            description={members.length === 0 ? 'Les membres sont ajoutés depuis l’administration et apparaîtront ici.' : 'Choisissez une autre équipe ou revenez à « Tous ».'}
-            action={members.length > 0 ? { label: 'Voir toute l’équipe', onClick: () => setActiveFilter('Tous') } : undefined}
-          />
-        )}
-      </section>
-
-      {/* Tech Stack Banner */}
-      <section className="bg-white border-y border-slate-200 py-12">
-        <div className="mx-auto max-w-5xl px-6 text-center">
-          <span className="text-xs font-black uppercase text-blue-700 tracking-wider bg-blue-50 px-3 py-1 rounded-full inline-block mb-3">
-            Stack Technique Projet
-          </span>
-          <h2 className="text-2xl font-black text-slate-900 mb-6">Conçu avec les meilleures technologies web</h2>
-          <div className="flex flex-wrap items-center justify-center gap-3">
-            {TECH_STACK.map(tech => (
-              <span key={tech} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold border border-slate-200">
-                <CheckCircle2 className="h-3.5 w-3.5 text-teal-600" />
-                {tech}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] py-14 text-white text-center">
-        <div className="mx-auto max-w-2xl px-6">
-          <Sparkles className="mx-auto h-8 w-8 text-amber-300 mb-3" />
-          <h2 className="text-2xl sm:text-3xl font-black mb-3">Rejoignez l'organisation KERNEL FORGE</h2>
-          <p className="text-xs sm:text-sm text-blue-100 mb-6 font-medium">
-            Projet open source développé avec passion pour la communauté académique.
-          </p>
-          <div className="flex items-center justify-center gap-4">
-            <a
-              href="https://github.com/KERNEL-FORGE-G"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white text-[#1e3a8a] font-black text-xs hover:bg-blue-50 transition-all shadow-md"
-            >
-              <Github className="h-4 w-4" />
-              Organisation GitHub
-              <ExternalLink className="h-3.5 w-3.5" />
-            </a>
-          </div>
-        </div>
+      <section className="bg-[#0b0f19] py-14 text-center text-white">
+        <Container width="narrow">
+          <h2 className="text-2xl font-black sm:text-3xl">Rejoignez l’organisation KERNEL FORGE</h2>
+          <p className="mt-3 text-sm text-slate-300">Projet open source développé pour la communauté académique.</p>
+          <a
+            href="https://github.com/KERNEL-FORGE-G"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#14b8a8] px-6 py-3 text-xs font-black text-[#0b0f19] shadow-lg transition hover:translate-y-[-2px] hover:bg-[#f59e0b]"
+          >
+            <Github className="h-4 w-4" /> Organisation GitHub <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        </Container>
       </section>
 
       <LandingFooter />
     </div>
+  )
+}
+
+/** Disques, grille de points et rayures de la maquette, dans la palette UniFlow (teal et ambre translucides). */
+function TeamDecorations() {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <motion.div
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className="absolute -top-16 right-[18%] h-40 w-40 rounded-full bg-[#14b8a8]/60 sm:h-52 sm:w-52"
+      />
+      <motion.div
+        initial={{ scale: 0.6, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.8, delay: 0.15, ease: 'easeOut' }}
+        className="absolute -bottom-20 right-[-3rem] h-56 w-56 rounded-full bg-[#f59e0b]/55 sm:h-72 sm:w-72"
+      />
+      <div className="absolute left-4 top-40 h-32 w-32 bg-[radial-gradient(circle,rgba(255,255,255,0.9)_1.5px,transparent_1.5px)] bg-[size:12px_12px] opacity-15 sm:left-10" />
+      <div className="absolute right-6 top-[44%] h-40 w-24 bg-[repeating-linear-gradient(135deg,rgba(204,251,241,0.6)_0_2px,transparent_2px_12px)] opacity-60 sm:right-16" />
+      <div className="absolute right-[6%] top-8 h-20 w-20 bg-[radial-gradient(circle,rgba(255,255,255,0.9)_1.5px,transparent_1.5px)] bg-[size:10px_10px] opacity-15" />
+      <div className="absolute inset-y-0 right-[30%] w-px bg-white/10" />
+    </div>
+  )
+}
+
+/** Trait en zigzag qui relie les pointes des cartes, comme sur la maquette. */
+function ZigzagConnector() {
+  return (
+    <svg aria-hidden viewBox="0 0 1200 60" preserveAspectRatio="none" className="pointer-events-none absolute bottom-10 left-0 h-14 w-full text-white/25">
+      <polyline fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="6 8" points="0,30 150,30 200,52 300,8 400,52 500,8 600,52 700,8 800,52 900,8 1000,52 1050,30 1200,30" />
+      <circle cx="200" cy="52" r="4" fill="currentColor" /><circle cx="600" cy="52" r="4" fill="currentColor" /><circle cx="1000" cy="52" r="4" fill="currentColor" />
+    </svg>
   )
 }
