@@ -3,6 +3,7 @@ import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_FALLBACK_URL, UNIFLOW_PRIMARY_LOGO_URL } from '../../lib/brandAssets'
 import { useUserRole } from '../../utils/userRole'
+import { CONTACT_PHONE_DISPLAY, COVERAGE_LABEL, COVERAGE_SHORT } from '../../lib/contactInfo'
 
 const logo = UNIFLOW_PRIMARY_LOGO_URL
 const restoreOriginalLogo = (event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -121,7 +122,7 @@ export function LandingFooter() {
               />
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-xs">
-              Une plateforme académique UniFlow reliée à Appwrite, validée sur le périmètre UY1 / ICT4D / L1.
+              Une plateforme académique UniFlow reliée à Appwrite, déployée sur le périmètre {COVERAGE_LABEL} — toutes filières, de la L1 au M1.
             </p>
             <div className="mt-5 flex gap-3">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-300">
@@ -186,7 +187,7 @@ export function LandingFooter() {
 
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800 pt-8 text-xs text-slate-500">
-          <p>© 2026 UniFlow — KERNEL FORGE · Périmètre validé : UY1 / ICT4D / L1</p>
+          <p>© 2026 UniFlow — KERNEL FORGE · Périmètre : {COVERAGE_SHORT} · WhatsApp {CONTACT_PHONE_DISPLAY}</p>
           <div className="flex items-center gap-4">
             <Link to="/about" className="hover:text-slate-300 transition-colors">Confidentialité</Link>
             <Link to="/about" className="hover:text-slate-300 transition-colors">CGU</Link>

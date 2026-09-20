@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { executeContactMessageAction } from '../lib/appwrite'
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_URL, COVERAGE_LABEL, whatsappUrlWithMessage } from '../lib/contactInfo'
 
 export default function ContactPage() {
   const [fullName, setFullName] = useState('')
@@ -107,9 +108,25 @@ export default function ContactPage() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Téléphone & WhatsApp</p>
-                      <p className="text-xs sm:text-sm font-bold text-slate-900 truncate mt-0.5">Coordonnée en attente de confirmation</p>
-                      <p className="text-[11px] text-slate-500">Utilisez le formulaire ou l’adresse e-mail publiée ci-dessus.</p>
+                      <a href={CONTACT_PHONE_URL} className="block text-xs sm:text-sm font-bold text-slate-900 truncate mt-0.5 hover:text-[#1e3a8a]">
+                        {CONTACT_PHONE_DISPLAY}
+                      </a>
+                      <a
+                        href={whatsappUrlWithMessage('Bonjour KERNEL FORGE, je vous contacte au sujet d’UniFlow.')}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[11px] font-semibold text-teal-700 hover:underline"
+                      >
+                        Écrire sur WhatsApp — facturation et support
+                      </a>
                     </div>
+                    <button
+                      onClick={() => handleCopy(CONTACT_PHONE_DISPLAY, 'phone')}
+                      className="p-2 text-slate-400 hover:text-[#1e3a8a] transition-colors cursor-pointer"
+                      title="Copier le numéro"
+                    >
+                      {copiedText === 'phone' ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                    </button>
                   </div>
 
                   {/* Campus Address */}
@@ -146,7 +163,7 @@ export default function ContactPage() {
                 <div>
                   <h4 className="text-sm font-bold text-slate-900">KERNEL FORGE Labs</h4>
                   <p className="text-xs text-slate-600 mt-0.5 leading-relaxed">
-                    Projet UniFlow développé par KERNEL FORGE pour le périmètre UY1 / ICT4D / L1.
+                    Projet UniFlow développé par KERNEL FORGE, déployé sur le périmètre {COVERAGE_LABEL} (toutes filières, L1 à M1).
                   </p>
                 </div>
               </div>
