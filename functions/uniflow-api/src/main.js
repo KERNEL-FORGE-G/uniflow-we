@@ -7,6 +7,7 @@ import forumReactions from './services/forum-reactions.js'
 import messaging from './services/messaging.js'
 import subscriptionPayments from './services/subscription-payments.js'
 import teamRoster from './services/team-roster.js'
+import { resolveServicePath } from './lib/router.js'
 
 /**
  * Point d'entrée unique des services UniFlow côté serveur.
@@ -35,11 +36,9 @@ const services = {
   '/team-roster': teamRoster,
 }
 
-/** Normalise `/Messaging/` ou `messaging` en `/messaging`. */
-export function resolveServicePath(rawPath) {
-  const trimmed = String(rawPath || '').trim().toLowerCase().replace(/\/+$/, '')
-  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`
-}
+// `resolveServicePath` vit dans `lib/router.js` pour être testable avec
+// `node --test` sans charger `node-appwrite` (absent des environnements de test).
+export { resolveServicePath }
 
 export default async (context) => {
   const { req, res } = context

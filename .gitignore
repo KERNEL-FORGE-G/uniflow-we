@@ -1,5 +1,8 @@
 node_modules
 dist/
+# Le dépôt est verrouillé par pnpm-lock.yaml ; un npm install de dépannage
+# laisse ce fichier derrière lui et ferait diverger les deux lockfiles.
+package-lock.json
 
 # Configuration locale (ne jamais versionner : a déjà contenu un jeton serveur)
 .env

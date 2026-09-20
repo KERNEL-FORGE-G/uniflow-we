@@ -1,16 +1,28 @@
-import { Account, Client, Databases, ID, Permission, Query, Role, Users } from 'node-appwrite'
+import { Client, Databases, ID, Permission, Query, Role, Users } from 'node-appwrite'
+import { DATABASE_ID, ROLES, canAssignRole, isAdministrator, labelsForRole, resolveCaller, roleFromLabels } from '../lib/caller.js'
 
-const DATABASE_ID = 'uniflow'
+/**
+ * Gestion des comptes universitaires par l'administration.
+ *
+ * Règles du propriétaire :
+ * - le compte administrateur de la plateforme (label `superadmin`) crée et
+ *   modifie tout rôle, dans toute université ;
+ * - une administration (`role:ADMIN`) crée et modifie les enseignants,
+ *   délégués et étudiants **de sa propre université** ;
+ * - tout autre appelant est refusé.
+ *
+ * Le rôle est **posé sur les labels Appwrite** (`users.updateLabels`, clé
+ * serveur) et seulement recopié dans `users.role` et `academic_directory.role`
+ * pour l'affichage : ces documents appartiennent à l'utilisateur et ne valent
+ * pas preuve. Rien n'est figé sur une université, une filière ou un niveau :
+ * les vues d'administration filtrent par `program` + `level`, et d'autres
+ * filières de l'UY1 arrivent en base par un autre script.
+ */
+
 const DIRECTORY_COLLECTION = 'academic_directory'
 const PROFILE_COLLECTION = 'users'
-const UNIVERSITY = 'Université de Yaoundé I'
-const PROGRAM = 'ICT4D'
-// La filière ICT4D couvre la Licence 1 à la Licence 3 (demande du propriétaire).
-// Un compte est créé au niveau demandé par l'administration, L1 par défaut ;
-// le périmètre de l'administrateur couvre les trois niveaux.
 const LEVELS = ['L1', 'L2', 'L3']
-const levelOf = (value) => (LEVELS.includes(value) ? value : 'L1')
-const inScope = (document) => document?.university === UNIVERSITY && document?.program === PROGRAM && LEVELS.includes(document?.level)
+const STATUSES = ['ACTIVE', 'SUSPENDED', 'INACTIVE']
 
 function json(res, body, status = 200) {
   return res.json(body, status, { 'content-type': 'application/json' })
@@ -26,8 +38,8 @@ function requireText(value, field, max = 255) {
   return value.trim()
 }
 
-function normalizeUserId(value) {
-  return typeof value === 'string' ? value.replace(/^user:/, '') : ''
+function optionalText(value, max = 255) {
+  return typeof value === 'string' ? value.trim().slice(0, max) : ''
 }
 
 function permissions(userId) {
@@ -39,7 +51,7 @@ function academicPermissions(userId) {
 }
 
 function roleOf(value) {
-  return ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN'].includes(value) ? value : null
+  return typeof value === 'string' && ROLES.includes(value.toUpperCase()) ? value.toUpperCase() : null
 }
 
 async function listOne(databases, collectionId, attribute, value) {
@@ -47,33 +59,51 @@ async function listOne(databases, collectionId, attribute, value) {
   return result.documents[0] || null
 }
 
-function accountPayload(body, accountType = 'UNIVERSITY') {
-  const role = roleOf(body.role)
+/** Tous les comptes Appwrite, par pages de 100 : `users.list` refuse au-delà. */
+async function listAllAccounts(users) {
+  const accounts = []
+  let cursor = null
+  for (;;) {
+    const queries = [Query.limit(100)]
+    if (cursor) queries.push(Query.cursorAfter(cursor))
+    const page = await users.list(queries)
+    accounts.push(...page.users)
+    if (page.users.length < 100) return accounts
+    cursor = page.users[page.users.length - 1].$id
+  }
+}
+
+/**
+ * Charge utile normalisée d'un compte. L'université vient de l'appelant
+ * (une administration ne crée que chez elle) sauf pour le superadmin, qui
+ * peut la préciser ; filière et niveau viennent du formulaire.
+ */
+function accountPayload(body, caller, fallback = {}) {
+  const role = roleOf(body.role ?? fallback.role ?? 'STUDENT')
   if (!role) throw new Error('Rôle universitaire invalide.')
-  const name = requireText(body.name, 'name')
-  const email = requireText(body.email, 'email').toLowerCase()
+  const name = requireText(body.name ?? fallback.name, 'name')
+  const email = requireText(body.email ?? fallback.email, 'email').toLowerCase()
   if (!email.includes('@')) throw new Error('Adresse email invalide.')
-  const matricule = typeof body.matricule === 'string' ? body.matricule.trim().slice(0, 100) : ''
-  const status = typeof body.status === 'string' && body.status.trim() ? body.status.trim().toUpperCase() : 'ACTIVE'
+  const university = caller.isSuperAdmin
+    ? optionalText(body.university) || fallback.university || caller.university
+    : caller.university || fallback.university || ''
+  if (!university) throw new Error('Université manquante : renseignez l’université du compte.')
+  const program = optionalText(body.program, 100) || fallback.program || caller.program || ''
+  const rawLevel = optionalText(body.level, 8).toUpperCase() || fallback.level || ''
+  const level = LEVELS.includes(rawLevel) ? rawLevel : ''
+  const rawStatus = optionalText(body.status, 32).toUpperCase() || fallback.status || 'ACTIVE'
+  const status = STATUSES.includes(rawStatus) ? rawStatus : 'ACTIVE'
   return {
     name,
     email,
     role,
-    accountType,
-    university: UNIVERSITY,
-    program: PROGRAM,
-    level: levelOf(body.level),
-    matricule,
+    accountType: 'UNIVERSITY',
+    university,
+    program,
+    level,
+    matricule: optionalText(body.matricule ?? fallback.matricule, 100),
     status,
   }
-}
-
-async function assertAdmin(databases, actorId) {
-  const profile = await listOne(databases, DIRECTORY_COLLECTION, 'userId', actorId)
-  if (!profile || profile.role !== 'ADMIN' || !inScope(profile)) {
-    return null
-  }
-  return profile
 }
 
 async function ensureNoAcademicReferences(databases, userId, role) {
@@ -91,10 +121,27 @@ async function ensureNoAcademicReferences(databases, userId, role) {
   return null
 }
 
-export default async ({ req, res, log, error }) => {
-  const actorId = normalizeUserId(req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user'])
-  if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
+/** Inscrit un apprenant à tous les cours de sa filière et de son niveau. */
+async function enrollLearner(databases, userId, payload) {
+  if (!payload.program || !payload.level) return 0
+  // Index `course_program_level` ; l'université se filtre en mémoire (pas d'index).
+  const courses = await databases.listDocuments(DATABASE_ID, 'academic_courses', [
+    Query.equal('program', payload.program),
+    Query.equal('level', payload.level),
+    Query.limit(100),
+  ])
+  const scoped = courses.documents.filter((course) => course.university === payload.university)
+  await Promise.all(scoped.map((course) => databases.createDocument(
+    DATABASE_ID,
+    'academic_enrollments',
+    ID.unique(),
+    { studentId: userId, courseId: course.$id, status: 'ACTIVE' },
+    academicPermissions(userId),
+  )))
+  return scoped.length
+}
 
+export default async ({ req, res, log, error }) => {
   // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
   // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
   // être stockée en variable ; celle-ci reste lue en premier si elle existe.
@@ -107,57 +154,65 @@ export default async ({ req, res, log, error }) => {
   const body = parseBody(req)
 
   try {
-    log(`admin_directory action=${typeof body.action === 'string' ? body.action : 'unknown'}`)
+    const caller = await resolveCaller(req, users, databases)
+    if (!caller) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
+    log(`admin_directory action=${typeof body.action === 'string' ? body.action : 'unknown'} caller=${caller.userId} role=${caller.role}${caller.isSuperAdmin ? ' superadmin' : ''}`)
+
+    if (!isAdministrator(caller)) {
+      return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Seule l’administration de l’université peut gérer les comptes.' }, 403)
+    }
+    const inCallerScope = (document) => caller.isSuperAdmin || !caller.university || document?.university === caller.university
+
     if (body.action === 'list') {
-      const [directoryResult, profileResult] = await Promise.all([
-        databases.listDocuments(DATABASE_ID, DIRECTORY_COLLECTION, [Query.limit(200)]),
-        databases.listDocuments(DATABASE_ID, PROFILE_COLLECTION, [Query.limit(200)]),
+      const [directoryResult, profileResult, accounts] = await Promise.all([
+        databases.listDocuments(DATABASE_ID, DIRECTORY_COLLECTION, [Query.limit(500)]),
+        databases.listDocuments(DATABASE_ID, PROFILE_COLLECTION, [Query.limit(500)]),
+        listAllAccounts(users),
       ])
-      const directoryEntries = directoryResult.documents.filter(inScope)
-      const admin = directoryEntries.find((entry) => entry.userId === actorId && entry.role === 'ADMIN')
-      if (!admin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Seul un administrateur UY1/ICT4D/L1 peut consulter les contacts.' }, 403)
       const profileById = new Map(profileResult.documents.map((profile) => [profile.$id, profile]))
-      const entries = directoryEntries
-        .filter((entry) => roleOf(entry.role))
+      const accountById = new Map(accounts.map((account) => [account.$id, account]))
+      const program = optionalText(body.program, 100)
+      const level = optionalText(body.level, 8).toUpperCase()
+      const entries = directoryResult.documents
+        .filter(inCallerScope)
+        .filter((entry) => !program || entry.program === program)
+        .filter((entry) => !level || entry.level === level)
         .map((entry) => {
           const profile = profileById.get(entry.userId)
+          const account = accountById.get(entry.userId)
           return {
             userId: entry.userId,
             name: entry.name,
-            role: entry.role,
+            // Le rôle affiché est celui des labels : l'annuaire n'est qu'un miroir.
+            role: account ? roleFromLabels(account.labels) : roleOf(entry.role) || 'STUDENT',
+            isSuperAdmin: Boolean(account?.labels?.includes('superadmin')),
             matricule: entry.matricule || '',
             status: entry.status || 'ACTIVE',
-            email: typeof profile?.email === 'string' ? profile.email : '',
+            email: typeof account?.email === 'string' ? account.email : typeof profile?.email === 'string' ? profile.email : '',
+            university: entry.university || '',
+            program: entry.program || '',
+            level: entry.level || '',
           }
         })
-      return json(res, { ok: true, action: 'list', entries })
+      return json(res, { ok: true, action: 'list', entries, caller: { role: caller.role, isSuperAdmin: caller.isSuperAdmin, university: caller.university } })
     }
 
-    const admin = await assertAdmin(databases, actorId)
-    if (!admin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Seul un administrateur UY1/ICT4D/L1 peut gérer les comptes.' }, 403)
-
     if (body.action === 'create') {
-      const payload = accountPayload(body)
+      const payload = accountPayload(body, caller)
+      const allowed = canAssignRole(caller, payload.role, payload.university)
+      if (!allowed.ok) return json(res, { ok: false, code: allowed.code, message: allowed.message }, 403)
       const password = requireText(body.password, 'password', 128)
       if (password.length < 8) throw new Error('Le mot de passe initial doit contenir au moins 8 caractères.')
       const account = await users.create(ID.unique(), payload.email, undefined, password, payload.name)
-      const profilePayload = { email: payload.email, name: payload.name, accountType: payload.accountType, role: payload.role, university: UNIVERSITY, program: PROGRAM, level: payload.level, country: 'Cameroun' }
-      const directoryPayload = { userId: account.$id, name: payload.name, role: payload.role, university: UNIVERSITY, program: PROGRAM, level: payload.level, matricule: payload.matricule, status: payload.status }
+      const profilePayload = { email: payload.email, name: payload.name, accountType: payload.accountType, role: payload.role, university: payload.university, program: payload.program, level: payload.level || null, country: 'Cameroun' }
+      const directoryPayload = { userId: account.$id, name: payload.name, role: payload.role, university: payload.university, program: payload.program, level: payload.level || null, matricule: payload.matricule, status: payload.status }
       try {
+        await users.updateLabels(account.$id, labelsForRole([], payload.role))
         await databases.createDocument(DATABASE_ID, PROFILE_COLLECTION, account.$id, profilePayload, permissions(account.$id))
         const directory = await databases.createDocument(DATABASE_ID, DIRECTORY_COLLECTION, `directory_${account.$id}`, directoryPayload, [Permission.read(Role.users()), ...permissions(account.$id).slice(1)])
-        if (payload.role === 'STUDENT' || payload.role === 'DELEGATE') {
-          const courses = await databases.listDocuments(DATABASE_ID, 'academic_courses', [Query.limit(100)])
-          const scopedCourses = courses.documents.filter((course) => course.university === UNIVERSITY && course.program === PROGRAM && course.level === payload.level)
-          await Promise.all(scopedCourses.map((course) => databases.createDocument(
-            DATABASE_ID,
-            'academic_enrollments',
-            ID.unique(),
-            { studentId: account.$id, courseId: course.$id, status: 'ACTIVE' },
-            academicPermissions(account.$id),
-          )))
-        }
-        return json(res, { ok: true, action: 'create', userId: account.$id, directoryId: directory.$id, email: payload.email, name: payload.name, role: payload.role })
+        let enrollments = 0
+        if (payload.role === 'STUDENT' || payload.role === 'DELEGATE') enrollments = await enrollLearner(databases, account.$id, payload)
+        return json(res, { ok: true, action: 'create', userId: account.$id, directoryId: directory.$id, email: payload.email, name: payload.name, role: payload.role, enrollments })
       } catch (creationError) {
         try { await users.delete(account.$id) } catch { /* best effort rollback */ }
         throw creationError
@@ -165,28 +220,44 @@ export default async ({ req, res, log, error }) => {
     }
 
     const targetId = requireText(body.userId, 'userId', 64)
-    if (targetId === actorId && body.action === 'delete') return json(res, { ok: false, code: 'SELF_DELETE_DENIED', message: 'Un administrateur ne peut pas supprimer son propre compte.' }, 409)
+    if (targetId === caller.userId && body.action === 'delete') return json(res, { ok: false, code: 'SELF_DELETE_DENIED', message: 'Un administrateur ne peut pas supprimer son propre compte.' }, 409)
     const directory = await listOne(databases, DIRECTORY_COLLECTION, 'userId', targetId)
     if (!directory) return json(res, { ok: false, code: 'DIRECTORY_NOT_FOUND', message: 'Profil académique introuvable.' }, 404)
-    if (!inScope(directory)) return json(res, { ok: false, code: 'SCOPE_DENIED', message: 'Le compte ciblé est hors du périmètre UY1/ICT4D (L1–L3).' }, 403)
+    const targetAccount = await users.get(targetId)
+    const targetRole = roleFromLabels(targetAccount.labels)
+    if (targetAccount.labels?.includes('superadmin') && !caller.isSuperAdmin) {
+      return json(res, { ok: false, code: 'SUPERADMIN_REQUIRED', message: 'Le compte administrateur de la plateforme ne se modifie pas depuis une administration.' }, 403)
+    }
+    if (!inCallerScope(directory)) return json(res, { ok: false, code: 'UNIVERSITY_SCOPE_DENIED', message: 'Une administration ne gère que les comptes de sa propre université.' }, 403)
 
     if (body.action === 'update') {
-      const targetAccount = await users.get(targetId)
-      const next = accountPayload({ ...directory, ...body, name: body.name ?? directory.name, email: body.email ?? targetAccount.email, role: body.role ?? directory.role, matricule: body.matricule ?? directory.matricule, status: body.status ?? directory.status })
+      const next = accountPayload(body, caller, { ...directory, email: targetAccount.email, role: targetRole })
+      const allowed = canAssignRole(caller, next.role, next.university, targetRole)
+      if (!allowed.ok) return json(res, { ok: false, code: allowed.code, message: allowed.message }, 403)
       await users.updateName(targetId, next.name)
       if (next.email !== targetAccount.email) await users.updateEmail(targetId, next.email)
-      const profile = await databases.updateDocument(DATABASE_ID, PROFILE_COLLECTION, targetId, { email: next.email, name: next.name, accountType: next.accountType, role: next.role, university: UNIVERSITY, program: PROGRAM, level: next.level, country: 'Cameroun' })
-      const updatedDirectory = await databases.updateDocument(DATABASE_ID, DIRECTORY_COLLECTION, directory.$id, { name: next.name, role: next.role, matricule: next.matricule, status: next.status, university: UNIVERSITY, program: PROGRAM, level: next.level })
-      if (next.status === 'SUSPENDED' || next.status === 'INACTIVE') await users.updateStatus(targetId, false)
-      else await users.updateStatus(targetId, true)
-      return json(res, { ok: true, action: 'update', userId: targetId, profileId: profile.$id, directoryId: updatedDirectory.$id, name: next.name, email: next.email, role: next.role, status: next.status })
+      if (next.role !== targetRole) await users.updateLabels(targetId, labelsForRole(targetAccount.labels, next.role))
+      const mirror = { email: next.email, name: next.name, accountType: next.accountType, role: next.role, university: next.university, program: next.program, level: next.level || null, country: 'Cameroun' }
+      let profileId = targetId
+      try {
+        profileId = (await databases.updateDocument(DATABASE_ID, PROFILE_COLLECTION, targetId, mirror)).$id
+      } catch (updateError) {
+        // Compte créé sans document `users` (ancien seed) : on le crée au lieu d'échouer.
+        if (Number(updateError?.code) !== 404) throw updateError
+        profileId = (await databases.createDocument(DATABASE_ID, PROFILE_COLLECTION, targetId, mirror, permissions(targetId))).$id
+      }
+      const updatedDirectory = await databases.updateDocument(DATABASE_ID, DIRECTORY_COLLECTION, directory.$id, { name: next.name, role: next.role, matricule: next.matricule, status: next.status, university: next.university, program: next.program, level: next.level || null })
+      await users.updateStatus(targetId, next.status === 'ACTIVE')
+      return json(res, { ok: true, action: 'update', userId: targetId, profileId, directoryId: updatedDirectory.$id, name: next.name, email: next.email, role: next.role, status: next.status })
     }
 
     if (body.action === 'delete') {
-      const reference = await ensureNoAcademicReferences(databases, targetId, directory.role)
+      const allowed = canAssignRole(caller, targetRole, directory.university, targetRole)
+      if (!allowed.ok) return json(res, { ok: false, code: allowed.code, message: allowed.message }, 403)
+      const reference = await ensureNoAcademicReferences(databases, targetId, targetRole)
       if (reference) return json(res, { ok: false, code: 'ACCOUNT_HAS_ACADEMIC_DATA', message: 'Compte conservé pour protéger les historiques académiques. Désactivez-le avec le statut SUSPENDED.', collection: reference.collectionId }, 409)
       await databases.deleteDocument(DATABASE_ID, DIRECTORY_COLLECTION, directory.$id)
-      await databases.deleteDocument(DATABASE_ID, PROFILE_COLLECTION, targetId)
+      try { await databases.deleteDocument(DATABASE_ID, PROFILE_COLLECTION, targetId) } catch (deleteError) { if (Number(deleteError?.code) !== 404) throw deleteError }
       await users.delete(targetId)
       return json(res, { ok: true, action: 'delete', userId: targetId })
     }

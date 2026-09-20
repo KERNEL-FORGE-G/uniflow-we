@@ -9,6 +9,11 @@
  * un compte **indépendant** (`PERSONAL`), pour que les deux parcours de
  * connexion des trois clients soient réellement testables.
  *
+ * `kernel@forge.codes` est l'**admin de la plateforme** (label `superadmin`) :
+ * seul lui crée des comptes administration ; une administration crée les
+ * enseignants, délégués et étudiants de son université ; l'inscription libre
+ * ne produit que des étudiants.
+ *
  * Idempotent : les identifiants sont fixes, une seconde exécution met à jour
  * le profil et l'annuaire sans recréer le compte. Les mots de passe sont
  * générés à la première exécution et écrits dans
@@ -32,7 +37,7 @@ const CREDENTIALS_FILE = new URL('../../uniflow-backend/.comptes-demo.local', im
 
 /** `id` = identifiant Appwrite ET identifiant du document `users`. */
 export const accounts = [
-  { id: 'kernel-forge-admin', email: 'kernel@forge.codes', name: 'KERNEL FORGE', username: 'kernelforge', accountType: 'UNIVERSITY', role: 'ADMIN', level: 'L1', matricule: '' },
+  { id: 'kernel-forge-admin', email: 'kernel@forge.codes', name: 'KERNEL FORGE', username: 'kernelforge', accountType: 'UNIVERSITY', role: 'ADMIN', level: 'L1', matricule: '', superAdmin: true },
   { id: 'uy1-administration', email: 'administration.ict4d@uniflow.test', name: 'Administration ICT4D', username: 'administration', accountType: 'UNIVERSITY', role: 'ADMIN', level: 'L1', matricule: '' },
   { id: 'uy1-teacher-01', email: 'enseignant.ict4d@uniflow.test', name: 'Pr. Fouda', username: 'pr.fouda', accountType: 'UNIVERSITY', role: 'TEACHER', level: 'L1', matricule: '' },
   { id: 'uy1-delegate-l1', email: 'delegue.ict4d.l1@uniflow.test', name: 'Délégué ICT4D L1', username: 'delegue.l1', accountType: 'UNIVERSITY', role: 'DELEGATE', level: 'L1', matricule: 'UY1-ICT4D-L1-2026-001' },
@@ -79,11 +84,28 @@ async function upsertDocument(collectionId, documentId, data, permissions) {
   return 'créé'
 }
 
+/**
+ * Labels Appwrite = preuve du rôle. Le document `users` est modifiable par
+ * son propriétaire (un étudiant pourrait s'y écrire ADMIN) ; les labels, eux,
+ * ne se posent qu'avec la clé serveur, et les Functions comme les clients les
+ * lisent via `account.get().labels`. Appwrite n'accepte que des lettres et
+ * des chiffres dans un label (`role:ADMIN` est refusé en 400) : le label est
+ * le nom du rôle tel quel — `ADMIN`, `TEACHER`, `DELEGATE` — et l'absence de
+ * label de rôle vaut STUDENT.
+ */
+export function labelsFor(account) {
+  const labels = []
+  if (account.role !== 'STUDENT') labels.push(account.role)
+  if (account.superAdmin) labels.push('superadmin')
+  return labels
+}
+
 async function ensureAccount(account, password) {
   const created = await request('POST', '/users', { userId: account.id, email: account.email, password, name: account.name })
   if (created.status === 201) {
     await request('PATCH', `/users/${account.id}/prefs`, { prefs: { uniflowAccountType: account.accountType } })
   }
+  await request('PUT', `/users/${account.id}/labels`, { labels: labelsFor(account) })
 
   const profile = {
     email: account.email,
