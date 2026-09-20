@@ -5,9 +5,11 @@
  * seconde exécution met à jour les documents existants au lieu d'en créer des
  * doublons. Le seed peut être relancé après une modification de cette liste.
  *
- * Les données reprennent **à l'identique** les neuf membres qui étaient figés
- * dans `src/pages/TeamsPage.tsx` — le web en montrait neuf, le mobile six et le
- * desktop quatre, d'où trois pages différentes selon la plateforme.
+ * Les données reprennent les membres qui étaient figés dans
+ * `src/pages/TeamsPage.tsx` — le web en montrait neuf, le mobile six et le
+ * desktop quatre, d'où trois pages différentes selon la plateforme. L'équipe
+ * compte huit membres depuis le 2026-09-20 ; la liste ci-dessous fait foi et
+ * le seed supprime de la base ceux qui n'y figurent plus.
  *
  * Chaque document porte `read("any")` : la collection a
  * `documentSecurity: true`, donc ce sont les permissions du document qui
@@ -121,17 +123,8 @@ const members = [
     badge: 'Database Architect',
     accent: 'amber',
   },
-  {
-    slug: 'aristide',
-    name: 'EMTCHEU ARISTIDE BIENVENU',
-    github: 'paccotiktok37',
-    email: 'paccotiktok37@gmail.com',
-    team: 'Frontend',
-    subTeam: 'Frontend Interactif',
-    role: 'Full Frontend Developer',
-    badge: 'Full Frontend',
-    accent: 'cyan',
-  },
+  // EMTCHEU Aristide Bienvenu (slug `aristide`) a quitté l'équipe : retiré le
+  // 2026-09-20 sur demande du propriétaire, et supprimé de la base par le seed.
   {
     slug: 'juvenal',
     name: 'SINENG KENGNI JUVENAL',
@@ -211,6 +204,27 @@ const withPhotos = process.argv.includes('--photos')
 for (const member of members) {
   const action = await upsert(member.slug, member, ['read("any")'])
   console.log(`  ${action === 'created' ? 'Créé' : 'Mis à jour'} : ${member.name}`)
+}
+
+/**
+ * Retire de la base les membres qui ne figurent plus dans la liste ci-dessus.
+ *
+ * Sans cela, un départ (Aristide, 2026-09-20) restait affiché sur les trois
+ * clients : le seed ne faisait que créer ou mettre à jour. La photo attachée
+ * est supprimée du bucket avec le document.
+ */
+const kept = new Set(members.map((member) => member.slug))
+const existing = await request('GET', `/databases/${databaseId}/collections/${COLLECTION}/documents?queries[0]=${encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] }))}`)
+for (const document of existing.payload.documents || []) {
+  if (kept.has(document.$id)) continue
+  if (document.avatarFileId) {
+    await fetch(`${endpoint}/storage/buckets/${AVATAR_BUCKET}/files/${document.avatarFileId}`, {
+      method: 'DELETE',
+      headers: { 'X-Appwrite-Project': projectId, 'X-Appwrite-Key': apiKey },
+    })
+  }
+  await request('DELETE', `/databases/${databaseId}/collections/${COLLECTION}/documents/${document.$id}`)
+  console.log(`  Supprimé : ${document.name} (n'est plus dans l'équipe)`)
 }
 
 if (withPhotos) {
