@@ -3,3 +3,4 @@ dist/
 
 # Configuration locale (ne jamais versionner : a déjà contenu un jeton serveur)
 .env
+tsconfig.tsbuildinfo

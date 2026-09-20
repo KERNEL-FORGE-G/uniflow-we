@@ -1,48 +1,137 @@
-# 🌐 UniFlow Web — Le Portail Universitaire Central
+# UniFlow Web
 
-![UniFlow Logo](logo.png)
+Application web d'UniFlow (PWA installable, utilisable hors connexion) et
+**dépôt de référence du backend Appwrite** : le schéma, les Functions et les
+scripts de provisionnement des trois clients vivent ici.
 
-UniFlow Web est le cœur battant de l'écosystème UniFlow. Il s'agit d'une **PWA (Progressive Web App)** moderne, développée avec **React, TypeScript et Vite**, servant de point d'entrée universel pour tous les types de comptes (Étudiants, Enseignants, Indépendants et Administrateurs).
+- Production : https://uniflow.kernelforge.codes (Vercel)
+- Backend : Appwrite Cloud, projet `uniflow`, région Francfort
 
-## 💡 Concept "PWA & Offline-First"
-Le web UniFlow n'est pas un simple site, c'est une application installable qui fonctionne parfaitement hors-ligne grâce à une stratégie agressive de mise en cache et à l'utilisation d'**IndexedDB** pour la persistence locale des sessions et données.
+## Sommaire
 
-## 🚀 Architecture Cloud-Native (Appwrite)
-L'application repose intégralement sur **Appwrite** pour ses services backend :
-- **Realtime** : Mise à jour instantanée des notifications et messages.
-- **Functions** : Logique métier sécurisée pour l'émargement et les notes.
-- **Storage** : Gestion des ressources pédagogiques multimédias.
-- **Database** : Structure de données unifiée pour Mobile et Desktop.
+1. [Fonctionnalités](#fonctionnalités)
+2. [Installation](#installation)
+3. [Configuration](#configuration)
+4. [Backend Appwrite](#backend-appwrite)
+5. [Scripts](#scripts)
+6. [Tests](#tests)
+7. [Organisation du dépôt](#organisation-du-dépôt)
 
-## ✨ Modules de la Plateforme
+## Fonctionnalités
 
-### 1. Espaces Utilisateurs Personnalisés
-- **Dashboard Académique** : Vue d'ensemble pour les étudiants inscrits à l'Université de Yaoundé I.
-- **Espace Indépendant (UniFlow Personnel)** : Workspace dédié aux utilisateurs souhaitant gérer leurs études de manière autonome, hors cadre institutionnel.
-- **Portail Enseignant** : Gestion des cours et émargement par QR Code.
+| Espace | Pages |
+| --- | --- |
+| Public | Accueil, présentation, tarifs, à propos, contact, aide, pages SEO (présence QR, emploi du temps, gestion universitaire) |
+| Authentification | Connexion et inscription **universitaire** (université, filière, niveau L1–L3) ou **indépendante**, mot de passe oublié |
+| Étudiant / délégué | Tableau de bord, emploi du temps, cours et détail de cours, notes et relevé, devoirs (rendu de fichiers, quiz), bibliothèque, présence QR (scan), forum, messagerie, notifications, équipes, visioconférence |
+| Enseignant | Mes cours, saisie et publication des notes, création de devoirs, appel (émission du QR, liste, justificatifs) |
+| Administration | Annuaire (création, modification, suppression de comptes), structure académique, salles, abonnements, équipe KERNEL FORGE |
+| Indépendant | Espace de travail personnel (matières, tâches, documents, agenda) |
+| Compte | Profil, photo de profil, paramètres, notifications temps réel (Appwrite Realtime, sans Firebase) |
 
-### 2. Fonctionnalités Phares
-- **Visioconférence Intégrée** : Salles de cours virtuelles avec support LAN/Internet.
-- **Forum & Social** : Réseau social académique complet.
-- **Bibliothèque Interactive** : Visionneuse intégrée pour les supports de cours.
-- **Paiements WhatsApp** : Flux de souscription aux plans premium via validation manuelle.
+## Installation
 
-### 3. Sentinelle IoT Monitoring
-- Dashboard de monitoring des constantes vitales et des flux Vigie IA pour les responsables de sécurité.
+Prérequis : Node.js 22 ou plus récent, pnpm (`corepack enable`).
 
-## 🛠️ Stack Technique
-- **Frontend** : React 18, TypeScript, Tailwind CSS, Framer Motion.
-- **Build Tool** : Vite.
-- **BaaS** : Appwrite (Cloud & Self-Hosted).
-- **IA** : Intégration Gemini API pour l'assistance intelligente.
-- **3D** : Three.js (React Three Fiber) pour les éléments visuels immersifs.
-
-## 📦 Déploiement
-L'application est optimisée pour un déploiement sur **Vercel** ou tout serveur statique supportant les PWA.
 ```bash
-npm install
-npm run build
+pnpm install
+cp .env.example .env      # valeurs publiques d'Appwrite Cloud, déjà renseignées
+pnpm dev                   # http://localhost:3000
+pnpm build                 # tsc -b && vite build → dist/
 ```
 
----
-© 2026 **KERNEL FORGE** — Une plateforme, une infinité de possibilités.
+## Configuration
+
+`.env` n'est **pas versionné** (il a contenu un jeton serveur par le passé).
+`.env.example` contient les valeurs publiques attendues :
+
+```env
+VITE_APPWRITE_ENDPOINT=https://fra.cloud.appwrite.io/v1
+VITE_APPWRITE_PROJECT_ID=uniflow
+VITE_APPWRITE_DATABASE_ID=uniflow
+VITE_APPWRITE_STORAGE_BUCKET_ID=uniflow_assets
+VITE_APPWRITE_AVATAR_BUCKET_ID=uniflow_assets
+VITE_APPWRITE_API_FUNCTION_ID=uniflow-api
+VITE_APP_URL=https://uniflow.kernelforge.codes
+```
+
+Les scripts (`scripts/*.mjs`) lisent en plus une clé serveur depuis
+`../uniflow-backend/.env` (`APPWRITE_API_KEY`) ou depuis l'environnement
+(`APPWRITE_SELF_HOSTED_API_KEY`). Cette clé ne doit jamais entrer dans un
+fichier versionné.
+
+## Backend Appwrite
+
+L'offre gratuite d'Appwrite Cloud impose une base, un bucket et deux Functions.
+Le projet est donc organisé ainsi :
+
+- **Base `uniflow`** — une trentaine de collections : `users`,
+  `academic_courses`, `academic_schedules`, `academic_grades`,
+  `academic_assignments`, `academic_submissions`, `academic_library`,
+  `academic_directory`, `academic_enrollments`, `attendance_sessions`,
+  `attendance_records`, `conversations`, `messages`, `forum_*`,
+  `notifications`, `team_members`, `subscription_*`, `personal_*`…
+  Tout est déclaré dans `scripts/appwrite-schema.mjs`.
+- **Bucket `uniflow_assets`** — documents, photos de profil et pièces jointes ;
+  les droits sont posés fichier par fichier (`read("any")` pour un logo ou un
+  avatar, `read("user:…")` pour une pièce jointe).
+- **Function `uniflow-api`** (`functions/uniflow-api/`) — routeur HTTP : le
+  chemin de la requête choisit le service (`/academic-grades`,
+  `/academic-registration`, `/admin-directory`, `/attendance-secure`,
+  `/contact-messages`, `/forum-reactions`, `/messaging`,
+  `/subscription-payments`, `/team-roster`). Chaque service vérifie le rôle de
+  l'appelant côté serveur.
+- **Function `notification-alerts`** — déclenchée par les événements de la
+  base, crée les notifications.
+
+Déploiement des Functions (Appwrite CLI connecté au projet) :
+
+```bash
+appwrite push function          # lit appwrite.config.json
+```
+
+## Scripts
+
+| Commande | Effet |
+| --- | --- |
+| `node scripts/provision-appwrite-selfhosted.mjs` | Crée ou réconcilie base, collections, attributs, index et bucket depuis le schéma. Idempotent. |
+| `node scripts/verify-appwrite-schema.mjs` | Compare le serveur au schéma et signale toute divergence. |
+| `node scripts/seed-accounts.mjs` | Crée un compte par rôle (ADMIN, administration, enseignant, délégué, étudiants L1/L2) et un compte indépendant ; mots de passe dans `../uniflow-backend/.comptes-demo.local`. |
+| `node scripts/seed-academic-demo.mjs` | Cours, emploi du temps, notes, bibliothèque et devoirs de démonstration pour les étudiants ICT4D existants. |
+| `node scripts/seed-team-members.mjs` | Les neuf membres de l'équipe KERNEL FORGE (page Équipe). |
+| `node scripts/upload-public-appwrite-assets.mjs` | Téléverse le logo public (`assets/brand/`). |
+| `node scripts/test-team-roster-function.mjs` | Test de bout en bout du service Équipe (droits, photos, suppression). |
+| `node scripts/test-attendance-secure-function.mjs` | Émission, scan et audit d'une session de présence QR. |
+| `node scripts/test-messaging-attachment.mjs` | Pièce jointe de messagerie : droits par fichier. |
+| `pnpm test:e2e:uy1` | Parcours complet UY1 : inscription, appel, notes, relevé. |
+
+## Tests
+
+```bash
+pnpm typecheck                                   # TypeScript strict
+node functions/uniflow-api/src/main.test.js 2>/dev/null || node --test functions
+```
+
+Les tests des services (`functions/**/*.test.js`) s'exécutent avec `node --test`.
+Toute correction de logique ou de mise en page s'accompagne d'un test.
+
+## Organisation du dépôt
+
+```
+uniflow-we/
+├── src/                 pages, composants, hooks, lib/appwrite.ts (accès Appwrite)
+├── public/              PWA (manifest, sw.js), logos, pages SEO statiques
+├── functions/           Functions Appwrite : uniflow-api (routeur + services), notification-alerts
+├── scripts/             schéma, provisionnement, seeds, tests de bout en bout, outils
+├── assets/brand/        logo source
+├── docs/
+│   ├── technique/       diagnostics Appwrite, persistance de session IndexedDB
+│   ├── deploiement/     Vercel
+│   ├── audits/          audits et validations datés (sécurité, e2e, médias…)
+│   ├── seo/             recherches et plan SEO
+│   ├── communication/   fiche Devpost
+│   ├── historique/      suivi des améliorations
+│   └── legacy/          spécifications et schémas SQL de l'ancien backend
+├── appwrite.config.json configuration Appwrite CLI (projet uniflow, région fra)
+└── vercel.json          en-têtes et réécritures de production
+```

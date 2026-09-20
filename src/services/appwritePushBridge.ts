@@ -1,64 +1,65 @@
-import { ID } from 'appwrite'
-import { appwriteAccount } from '../lib/appwrite'
+import { appwriteClient, APPWRITE_DATABASE_ID } from '../lib/appwrite'
 
 export type AppwritePushRegistration = {
   state: 'registered' | 'not-configured' | 'unavailable'
   message: string
 }
 
-const targetStorageKey = 'uniflow_appwrite_push_target_id'
-
-function configured() {
-  return Boolean(
-    import.meta.env.VITE_APPWRITE_PUSH_PROVIDER_ID &&
-    import.meta.env.VITE_FIREBASE_API_KEY &&
-    import.meta.env.VITE_FIREBASE_AUTH_DOMAIN &&
-    import.meta.env.VITE_FIREBASE_PROJECT_ID &&
-    import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID &&
-    import.meta.env.VITE_FIREBASE_APP_ID &&
-    import.meta.env.VITE_FIREBASE_VAPID_KEY,
-  )
+/** Document de la collection `notifications` (voir `scripts/appwrite-schema.mjs`). */
+type RealtimeNotification = {
+  title?: string
+  message?: string
+  type?: string
+  link?: string
+  ownerId?: string
 }
 
-export async function registerAppwritePushTarget(registration?: ServiceWorkerRegistration | null): Promise<AppwritePushRegistration> {
-  if (!configured()) {
-    return {
-      state: 'not-configured',
-      message: 'Canal Appwrite distant non configuré : un fournisseur FCM et les paramètres web publics sont requis.',
-    }
+/**
+ * Canal de notification web d'UniFlow : **Appwrite Realtime, sans Firebase.**
+ *
+ * Le projet n'utilise qu'Appwrite. Le push web natif (Web Push via FCM)
+ * imposerait un projet Firebase et une clé VAPID Google ; il a été retiré.
+ * À la place, on s'abonne au flux temps réel de la collection `notifications`
+ * et on affiche une notification navigateur locale (via le Service Worker
+ * quand il est actif) à chaque document qui concerne l'utilisateur connecté.
+ * Le fonctionnement est identique pour l'utilisateur tant que l'onglet est
+ * ouvert, et n'exige aucun fournisseur tiers.
+ */
+let unsubscribe: (() => void) | null = null
+
+export async function registerAppwritePushTarget(
+  registration?: ServiceWorkerRegistration | null,
+  currentUserId?: string,
+): Promise<AppwritePushRegistration> {
+  if (typeof window === 'undefined' || typeof Notification === 'undefined') {
+    return { state: 'unavailable', message: 'Ce navigateur ne prend pas en charge les notifications.' }
+  }
+  if (Notification.permission !== 'granted') {
+    return { state: 'not-configured', message: 'Autorisez les notifications du navigateur pour recevoir les alertes UniFlow.' }
   }
 
+  unsubscribe?.()
   try {
-    const [{ getApps, initializeApp }, { getMessaging, getToken }] = await Promise.all([
-      import('firebase/app'),
-      import('firebase/messaging'),
-    ])
-    const app = getApps()[0] || initializeApp({
-      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-      appId: import.meta.env.VITE_FIREBASE_APP_ID,
-    })
-    const messaging = getMessaging(app)
-    const serviceWorkerRegistration = registration || await navigator.serviceWorker.ready
-    const token = await getToken(messaging, {
-      vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
-      serviceWorkerRegistration,
-    })
-    if (!token) return { state: 'unavailable', message: 'Le navigateur n’a pas fourni de jeton de notification FCM.' }
-
-    const providerId = String(import.meta.env.VITE_APPWRITE_PUSH_PROVIDER_ID)
-    const storedTarget = localStorage.getItem(targetStorageKey)
-    const targetId = storedTarget || ID.unique()
-    try {
-      await appwriteAccount.createPushTarget(targetId, token, providerId)
-    } catch {
-      await appwriteAccount.updatePushTarget(targetId, token)
-    }
-    localStorage.setItem(targetStorageKey, targetId)
-    return { state: 'registered', message: 'Appareil enregistré comme cible push Appwrite.' }
+    unsubscribe = appwriteClient.subscribe(
+      `databases.${APPWRITE_DATABASE_ID}.collections.notifications.documents`,
+      (event) => {
+        if (!event.events.some((name) => name.endsWith('.create'))) return
+        const payload = event.payload as RealtimeNotification
+        if (currentUserId && payload.ownerId && payload.ownerId !== currentUserId) return
+        const title = payload.title || 'UniFlow'
+        const body = payload.message || ''
+        const options: NotificationOptions = { body, icon: '/logo-principal.png', tag: payload.type || 'uniflow', data: { url: payload.link || '/notifications' } }
+        if (registration) void registration.showNotification(title, options)
+        else new Notification(title, options)
+      },
+    )
+    return { state: 'registered', message: 'Alertes temps réel Appwrite actives pour cet appareil.' }
   } catch {
-    return { state: 'unavailable', message: 'Impossible d’enregistrer cet appareil auprès du fournisseur push Appwrite.' }
+    return { state: 'unavailable', message: 'Impossible d’ouvrir le canal temps réel Appwrite.' }
   }
+}
+
+export function unregisterAppwritePushTarget() {
+  unsubscribe?.()
+  unsubscribe = null
 }

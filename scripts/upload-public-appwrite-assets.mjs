@@ -9,7 +9,7 @@ const bucketId = 'uniflow_assets'
 const assets = [
   {
     fileId: 'uniflow_primary_logo',
-    source: resolve('UniFlow_Logo_Principal.png'),
+    source: resolve('assets/brand/UniFlow_Logo_Principal.png'),
     contentType: 'image/png',
     name: 'uniflow-logo-principal.png',
   },
