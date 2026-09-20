@@ -1,7 +1,7 @@
 import { Client, Databases, ID, Permission, Query, Role, Users } from 'node-appwrite'
 import { DATABASE_ID, isAdministrator, resolveCaller } from '../lib/caller.js'
+import { REQUEST_STATUSES, customerWhatsappUrl, decisionOf, matchesAdminFilters, rejectionReasonError, whatsappUrl } from '../lib/payments.js'
 
-const WHATSAPP_NUMBER = '237657635644'
 const REQUEST_COLLECTION = 'subscription_payment_requests'
 
 function json(res, body, status = 200) {
@@ -55,19 +55,6 @@ function makeReference() {
   return `UF-${timestamp}-${random}`
 }
 
-function whatsappUrl(request) {
-  const text = [
-    'Bonjour UniFlow,',
-    'je souhaite régler mon abonnement.',
-    `Référence : ${request.reference}`,
-    `Formule : ${request.planName} (${request.billingCycle === 'ANNUALLY' ? 'annuel' : 'mensuel'})`,
-    `Montant : ${request.amount} ${request.currency}`,
-    `Compte : ${request.email}`,
-    'Je joins ma preuve de paiement à ce message.',
-  ].join('\n')
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`
-}
-
 function serializeRequest(document) {
   return {
     id: document.$id,
@@ -86,7 +73,11 @@ function serializeRequest(document) {
     processedAt: document.processedAt || null,
     processedBy: document.processedBy || null,
     adminNote: document.adminNote || '',
+    // Canal unique : le WhatsApp de facturation. Le schéma n'a pas d'attribut
+    // `channel` ; il est donc constant côté réponse.
+    channel: 'WHATSAPP',
     whatsappUrl: document.status === 'PENDING' ? whatsappUrl(document) : undefined,
+    customerWhatsappUrl: customerWhatsappUrl(document.phoneNumber) || undefined,
   }
 }
 
@@ -202,22 +193,26 @@ export default async ({ req, res, error }) => {
 
     if (body.action === 'admin-list') {
       if (!isAdmin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Action réservée à l’administration UniFlow.' }, 403)
-      const status = ['PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED'].includes(body.status) ? body.status : ''
-      const queries = [Query.orderDesc('requestedAt'), Query.limit(100)]
+      const status = REQUEST_STATUSES.includes(body.status) ? body.status : ''
+      const queries = [Query.orderDesc('requestedAt'), Query.limit(200)]
       if (status) queries.unshift(Query.equal('status', status))
       const response = await databases.listDocuments(DATABASE_ID, REQUEST_COLLECTION, queries)
-      return json(res, { ok: true, action: 'admin-list', requests: response.documents.map(serializeRequest) })
+      const filters = { planCode: cleanText(body.planCode, 'plan_code', 64, false), from: cleanText(body.from, 'from', 40, false), to: cleanText(body.to, 'to', 40, false), search: cleanText(body.search, 'search', 120, false) }
+      const requests = response.documents.map(serializeRequest).filter((request) => matchesAdminFilters(request, filters))
+      return json(res, { ok: true, action: 'admin-list', requests })
     }
 
-    if (body.action === 'review') {
+    if (['review', 'validate', 'reject'].includes(body.action)) {
       if (!isAdmin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Action réservée à l’administration UniFlow.' }, 403)
       const requestId = cleanText(body.requestId, 'request_id', 36)
-      const decision = body.decision === 'CONFIRMED' ? 'CONFIRMED' : body.decision === 'REJECTED' ? 'REJECTED' : ''
+      const decision = decisionOf(body.action, body)
       if (!decision) throw new Error('INVALID_DECISION')
+      const adminNote = cleanText(body.adminNote ?? body.reason, 'admin_note', 1000, false)
+      const reasonError = rejectionReasonError(decision, adminNote)
+      if (reasonError) throw new Error(reasonError)
       const paymentRequest = await databases.getDocument(DATABASE_ID, REQUEST_COLLECTION, requestId)
       if (paymentRequest.status !== 'PENDING') return json(res, { ok: false, code: 'REQUEST_ALREADY_REVIEWED', message: 'Cette demande a déjà été traitée.' }, 409)
       const processedAt = new Date().toISOString()
-      const adminNote = cleanText(body.adminNote, 'admin_note', 1000, false)
       const updated = await databases.updateDocument(DATABASE_ID, REQUEST_COLLECTION, requestId, {
         status: decision,
         processedAt,
@@ -226,13 +221,14 @@ export default async ({ req, res, error }) => {
       })
       let subscriptionStatusId = null
       if (decision === 'CONFIRMED') subscriptionStatusId = await activateSubscription(databases, updated, await planFor(databases, updated.planCode), actorId)
-      return json(res, { ok: true, action: 'review', request: serializeRequest(updated), subscriptionStatusId })
+      return json(res, { ok: true, action: body.action, decision, request: serializeRequest(updated), subscriptionStatusId })
     }
 
     return json(res, { ok: false, code: 'ACTION_UNKNOWN', message: 'Action de paiement inconnue.' }, 400)
   } catch (exception) {
     const code = String(exception?.message || 'PAYMENT_ERROR')
     if (['ACTOR_DENIED', 'PLAN_NOT_FOUND'].includes(code)) return json(res, { ok: false, code, message: code === 'PLAN_NOT_FOUND' ? 'La formule payante demandée est introuvable ou inactive.' : 'Profil UniFlow introuvable.' }, 404)
+    if (code === 'INVALID_ADMIN_NOTE') return json(res, { ok: false, code, message: 'Indiquez le motif du rejet : il sera transmis au client.' }, 400)
     if (code.startsWith('INVALID_')) return json(res, { ok: false, code, message: 'Les informations de la demande de paiement sont invalides.' }, 400)
     error(`subscription-payments action=${body.action || 'unknown'} failed=${code}`)
     return json(res, { ok: false, code: 'PAYMENT_ERROR', message: 'La demande de paiement Appwrite a échoué.' }, 400)
