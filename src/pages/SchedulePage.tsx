@@ -38,6 +38,10 @@ export default function SchedulePage() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const { data: schedules, loading, error, refetch } = useApi(() => schedulesApi.mine())
+  // Un étudiant ne voit que sa filière et son niveau : sans les deux sur son
+  // profil, la couche données ne renvoie rien — on le lui dit au lieu de
+  // montrer une grille vide sans explication.
+  const learnerWithoutScope = (currentRole === 'student' || currentRole === 'delegate') && currentUser.accountType === 'UNIVERSITY' && !(currentUser.program && currentUser.level)
 
   const { weekDays, grouped, firstHour, hours, totalMinutes, focusedDay, focusEntries, focusMinutes, weekRangeLabel } = useMemo(() => {
     const now = new Date()
@@ -92,6 +96,16 @@ export default function SchedulePage() {
         </div>
         <div className="grid divide-y divide-slate-100 sm:grid-cols-3 sm:divide-x sm:divide-y-0"><div className="flex items-center gap-3 p-4"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-[#1e3a8a]"><GraduationCap className="h-4 w-4" /></span><div><p className="text-lg font-black text-slate-900">{schedules?.length ?? 0}</p><p className="text-xs font-semibold text-slate-500">créneaux Appwrite</p></div></div><div className="flex items-center gap-3 p-4"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-[#0d9488]"><Clock className="h-4 w-4" /></span><div><p className="text-lg font-black text-slate-900">{Math.round(totalMinutes / 60)} h</p><p className="text-xs font-semibold text-slate-500">charge hebdomadaire</p></div></div><div className="flex items-center gap-3 p-4"><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-700"><Sparkles className="h-4 w-4" /></span><div><p className="text-sm font-black text-slate-900">{focusedDay?.label ?? 'Aucun jour'}</p><p className="text-xs font-semibold text-slate-500">{focusEntries.length} créneau(x) · {Math.round((focusMinutes / 60) * 10) / 10} h</p></div></div></div>
       </section>
+
+      {learnerWithoutScope && (
+        <section role="status" className="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          <GraduationCap className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
+          <div>
+            <p className="font-black">Filière ou niveau manquant sur votre profil</p>
+            <p className="mt-1 text-amber-800">L’emploi du temps ne montre que les séances de votre filière et de votre niveau. Votre compte n’en porte pas encore : demandez à l’administration de votre université de compléter votre rattachement.</p>
+          </div>
+        </section>
+      )}
 
       <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3"><div className="flex flex-wrap gap-3">{Object.entries(typeColors).map(([type, className]) => <span key={type} className="flex items-center gap-1.5 text-xs font-bold text-slate-600"><span className={`h-2.5 w-2.5 rounded-sm ${className.split(' ')[0]}`} /> {type}</span>)}</div><p className="text-xs font-semibold text-slate-500">Sélectionnez un jour pour le mettre en avant.</p></section>
 

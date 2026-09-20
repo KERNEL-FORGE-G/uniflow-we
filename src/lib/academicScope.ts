@@ -65,6 +65,21 @@ export function scopeOf(user: ScopedUser | null | undefined): AcademicScope {
   return scope
 }
 
+/** Étudiant ou délégué : un compte dont la grille est celle de sa filière et de son niveau, sans choix possible. */
+export function isLearnerRole(role: string | null | undefined): boolean {
+  return role === 'STUDENT' || role === 'DELEGATE'
+}
+
+/**
+ * Un étudiant ne doit voir que sa filière **et** son niveau, rien d'autre.
+ * Un profil sans l'un des deux ne retombe donc jamais sur « toute
+ * l'université » : il n'a pas d'emploi du temps affichable tant que son
+ * rattachement n'est pas complété par l'administration.
+ */
+export function isLearnerScopeComplete(scope: AcademicScope): boolean {
+  return Boolean(clean(scope.program) && clean(scope.level))
+}
+
 /** Fusionne le périmètre implicite et une sélection explicite (les champs choisis l'emportent). */
 export function mergeScope(base: AcademicScope, selection: Partial<AcademicScope> | null | undefined): AcademicScope {
   const merged: AcademicScope = { ...base }

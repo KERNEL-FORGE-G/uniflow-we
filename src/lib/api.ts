@@ -15,7 +15,7 @@ import {
   deleteAppwriteNotification,
   personalAppwriteApi,
 } from './appwrite'
-import { type AcademicScope, filterByScope, matchesScope, mergeScope, scopeOf, teacherMatches } from './academicScope'
+import { type AcademicScope, filterByScope, isLearnerRole, isLearnerScopeComplete, matchesScope, mergeScope, scopeOf, teacherMatches } from './academicScope'
 
 /**
  * Adaptateur de compatibilité UniFlow.
@@ -306,6 +306,9 @@ function courseBelongsToTeacher(course: { teacherId?: string; teacherName?: stri
 async function universityCourseDocuments(selection?: ScopeSelection) {
   const { current, scope } = await currentScope(selection)
   if (!current) return { current: null, courses: [] as import('./appwrite').AcademicCourseDocument[] }
+  // Même règle que l'emploi du temps : les UE d'un étudiant sont celles de sa
+  // filière et de son niveau, ou rien tant que son profil est incomplet.
+  if (isLearnerRole(current.role) && !isLearnerScopeComplete(scope)) return { current, courses: [] }
   const documents = filterByScope(await academicAppwriteApi.courses.list(scope), scope)
   // Un enseignant sans sélection explicite voit ses cours ; avec un sélecteur, la filière choisie.
   const courses = current.role === 'TEACHER' && !selection?.program
@@ -383,6 +386,9 @@ function splitName(name: string | undefined) {
 async function universitySchedules(selection?: ScopeSelection): Promise<Schedule[]> {
   const { current, scope } = await currentScope(selection)
   if (!current) return []
+  // Un étudiant ne voit que sa filière et son niveau — jamais « tout » parce
+  // que l'un des deux manque à son profil.
+  if (isLearnerRole(current.role) && !isLearnerScopeComplete(scope)) return []
   const rows = filterByScope(await academicAppwriteApi.schedules.list(scope), scope)
   const needsCourses = rows.some((row) => !row.courseName)
   const courses = needsCourses ? await academicAppwriteApi.courses.list(scope) : []

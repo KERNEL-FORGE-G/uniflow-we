@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { filterByScope, isPlatformAccount, matchesScope, mergeScope, scopeEqualities, scopeLabel, scopeOf, teacherMatches } from './academicScope.ts'
+import { filterByScope, isLearnerRole, isLearnerScopeComplete, isPlatformAccount, matchesScope, mergeScope, scopeEqualities, scopeLabel, scopeOf, teacherMatches } from './academicScope.ts'
 
 const UY1 = 'Université de Yaoundé I'
 const docs = [
@@ -47,6 +47,23 @@ test('libellés de périmètre lisibles, jamais ICT4D par défaut', () => {
   assert.equal(scopeLabel({ university: UY1, faculty: 'Faculté des Sciences' }), 'Faculté des Sciences')
   assert.equal(scopeLabel({ program: 'INF', level: 'L2' }), 'INF · L2')
   assert.equal(scopeLabel({ level: 'L1' }), 'Toutes les filières · L1')
+})
+
+test('un étudiant ne voit que sa filière et son niveau — rien sans les deux', () => {
+  assert.equal(isLearnerRole('STUDENT'), true)
+  assert.equal(isLearnerRole('DELEGATE'), true)
+  assert.equal(isLearnerRole('TEACHER'), false)
+  assert.equal(isLearnerRole('ADMIN'), false)
+
+  const complet = scopeOf({ accountType: 'UNIVERSITY', role: 'STUDENT', university: UY1, program: 'ICT4D', level: 'L1' })
+  assert.equal(isLearnerScopeComplete(complet), true)
+  assert.deepEqual(filterByScope(docs, complet).map((d) => d.$id), ['1'])
+
+  // Sans niveau, le périmètre retomberait sur toute la filière ; sans filière,
+  // sur toute l'université : dans les deux cas la grille doit rester vide.
+  assert.equal(isLearnerScopeComplete(scopeOf({ accountType: 'UNIVERSITY', role: 'STUDENT', university: UY1, program: 'ICT4D' })), false)
+  assert.equal(isLearnerScopeComplete(scopeOf({ accountType: 'UNIVERSITY', role: 'DELEGATE', university: UY1, level: 'L1' })), false)
+  assert.equal(isLearnerScopeComplete({ program: '  ', level: 'L1' }), false)
 })
 
 test('rattachement d’un enseignant par son nom', () => {
