@@ -1,8 +1,11 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { createAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowUser } from '@/lib/appwrite'
 import { clearSessionSnapshot, persistSessionSnapshot } from '@/lib/sessionPersistence'
 import { setAccountType, type BackendUser } from '@/lib/api'
+import { logoutNavigationState, terminateSession, type LogoutReason } from '@/lib/session'
+import { unregisterAppwritePushTarget } from '@/services/appwritePushBridge'
 import { useUserRole } from '@/utils/userRole'
 import type { Role } from '@/utils/userRole'
 
@@ -69,6 +72,7 @@ function toBackendUser(user: UniFlowUser): BackendUser {
 }
 
 export function useAuth() {
+  const queryClient = useQueryClient()
   const navigate = useNavigate()
   const { setCurrentRole, setAuthUser, authUser } = useUserRole()
   const [loading, setLoading] = useState(false)
@@ -128,18 +132,25 @@ export function useAuth() {
     }
   }, [navigate, setAuthUser, setCurrentRole])
 
-  const logout = useCallback(async () => {
-    await logoutAccount()
-    localStorage.removeItem('uniflow_account_type')
-    localStorage.removeItem('uniflow_user')
-    localStorage.removeItem('uniflow_access_token')
-    localStorage.removeItem('uniflow_refresh_token')
-    await clearSessionSnapshot()
+  /**
+   * Déconnexion unique pour toute l'application (voir `lib/session.ts`).
+   * `reason` choisit le message affiché sur la page de connexion ; `redirect`
+   * permet à la suppression de compte de renvoyer vers l'accueil.
+   */
+  const logout = useCallback(async (reason: LogoutReason = 'user', redirect = '/login') => {
+    await terminateSession({
+      deleteRemoteSession: logoutAccount,
+      clearSnapshot: clearSessionSnapshot,
+      unsubscribeRealtime: unregisterAppwritePushTarget,
+      clearQueryCache: () => queryClient.clear(),
+      // Événement distinct de « session expirée » : un clic volontaire ne doit
+      // pas déclencher la modale d'expiration ni son toast d'avertissement.
+      announce: (why) => { try { window.dispatchEvent(new CustomEvent('uniflow:logged-out', { detail: { reason: why } })) } catch { /* environnement sans window */ } },
+    }, reason)
     setAuthUser(null)
     setCurrentRole('student')
-    try { window.dispatchEvent(new CustomEvent('uniflow:session-expired')) } catch {}
-    navigate('/login')
-  }, [navigate, setAuthUser, setCurrentRole])
+    navigate(redirect, { replace: true, state: logoutNavigationState(reason) })
+  }, [navigate, queryClient, setAuthUser, setCurrentRole])
 
   const getCurrentUser = useCallback((): UniFlowUser | null => {
     if (!authUser) return null

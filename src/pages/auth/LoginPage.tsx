@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Lock, Mail, Sparkles, ShieldAlert, Building2, User } from 'lucide-react'
+import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Lock, Mail, Sparkles, ShieldAlert, Building2, User, CheckCircle2 } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { useAuth } from '../../hooks/useAuth'
 import { ActionResultSlot } from '../../components/feedback/ActionResult'
@@ -36,6 +36,8 @@ export default function LoginPage() {
   const [accountType, setAccountTypeSelection] = useState<'UNIVERSITY' | 'PERSONAL'>('UNIVERSITY')
 
   const isIdleTimeout = location.state?.reason === 'idle_timeout'
+  // Message posé par `logout()` (« Vous êtes déconnecté. », compte supprimé…).
+  const logoutNotice: string | null = !isIdleTimeout && typeof location.state?.notice === 'string' ? location.state.notice : null
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -150,6 +152,13 @@ export default function LoginPage() {
               <h2 className="text-3xl font-black text-[#111827]">Connexion</h2>
               <p className="mt-2 text-sm text-[#6b7280]">Accédez à votre espace de travail UniFlow</p>
             </div>
+
+            {logoutNotice && (
+              <div role="status" className="mb-6 flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 animate-slide-in-right">
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600" />
+                <p className="text-xs font-semibold leading-relaxed">{logoutNotice}</p>
+              </div>
+            )}
 
             {/* Idle Timeout Alert Banner */}
             {isIdleTimeout && (

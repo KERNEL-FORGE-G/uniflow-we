@@ -11,6 +11,7 @@ import { Suspense, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../motion/PageTransition'
 import { Skeleton } from '../ui/Skeleton'
+import { useAuth } from '../../hooks/useAuth'
 
 function AdminSidebar() {
   return (
@@ -127,8 +128,10 @@ function AdminBreadcrumb() {
 
 export function AdminLayout() {
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const [searchVal, setSearchVal] = useState('')
-  const [notifCount] = useState(3)
+  // Aucun compteur inventé : la pastille apparaîtra quand les notifications admin seront lues d'Appwrite.
+  const notifCount = 0
 
   return (
     <div className="flex min-h-screen bg-[#f3f4f6]">
@@ -187,7 +190,10 @@ export function AdminLayout() {
 
           {/* Logout */}
           <button
-            onClick={() => navigate('/login')}
+            type="button"
+            onClick={() => void logout()}
+            title="Se déconnecter"
+            aria-label="Se déconnecter"
             className="rounded-xl p-2 text-[#6b7280] hover:bg-red-50 hover:text-red-600 transition-all"
           >
             <LogOut className="h-5 w-5" />

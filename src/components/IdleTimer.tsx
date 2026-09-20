@@ -1,18 +1,16 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
-import { clearTokens } from '../lib/api'
-import { logoutAccount } from '../lib/appwrite'
-import { clearSessionSnapshot } from '../lib/sessionPersistence'
+import { useLocation } from 'react-router-dom'
 import { useUserRole } from '../utils/userRole'
+import { useAuth } from '../hooks/useAuth'
 import { LogOut, ShieldAlert } from 'lucide-react'
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes in milliseconds
 const WARNING_THRESHOLD_MS = 28 * 60 * 1000 // Show warning at 28 minutes (2 minutes remaining)
 
 export function IdleTimer() {
-  const navigate = useNavigate()
   const location = useLocation()
-  const { setAuthUser, authUser, isSessionReady } = useUserRole()
+  const { authUser, isSessionReady } = useUserRole()
+  const { logout } = useAuth()
   const lastActivityRef = useRef<number>(Date.now())
   const [showWarning, setShowWarning] = useState<boolean>(false)
   const [showAutoLogoutToast, setShowAutoLogoutToast] = useState<boolean>(false)
@@ -22,12 +20,6 @@ export function IdleTimer() {
   const isAuthenticatedRoute = location.pathname.startsWith('/app') || location.pathname.startsWith('/admin')
   const isLoggedIn = isSessionReady && Boolean(authUser)
 
-  const clearPersistentSession = () => {
-    clearTokens()
-    void logoutAccount()
-    void clearSessionSnapshot()
-    setAuthUser(null)
-  }
 
   // Une nouvelle session Appwrite peut être restaurée dans le même arbre React
   // après une expiration précédente. Le point de départ doit alors être remis à
@@ -67,10 +59,10 @@ export function IdleTimer() {
 
       if (elapsed >= IDLE_TIMEOUT_MS) {
         // Auto-logout user after 30 minutes of inactivity
-        clearPersistentSession()
         setShowWarning(false)
         setShowAutoLogoutToast(true)
-        navigate('/login', { replace: true, state: { reason: 'idle_timeout' } })
+        // Même déconnexion que le bouton : session Appwrite supprimée, état et caches vidés.
+        void logout('idle_timeout')
       } else if (elapsed >= WARNING_THRESHOLD_MS) {
         // Show warning popup during the last 2 minutes
         setShowWarning(true)
@@ -86,7 +78,7 @@ export function IdleTimer() {
       })
       clearInterval(intervalId)
     }
-  }, [isAuthenticatedRoute, isLoggedIn, navigate, setAuthUser, showWarning])
+  }, [isAuthenticatedRoute, isLoggedIn, logout, showWarning])
 
   const handleStayLoggedIn = () => {
     lastActivityRef.current = Date.now()
@@ -94,9 +86,8 @@ export function IdleTimer() {
   }
 
   const handleLogoutNow = () => {
-    clearPersistentSession()
     setShowWarning(false)
-    navigate('/login', { replace: true })
+    void logout()
   }
 
   return (

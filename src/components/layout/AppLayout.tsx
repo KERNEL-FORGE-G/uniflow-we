@@ -279,9 +279,11 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
 
         {/* Logout */}
         <button
-          onClick={logout}
+          type="button"
+          onClick={() => void logout()}
           className="hidden sm:flex rounded-xl p-2 text-[#6b7280] hover:bg-red-50 hover:text-red-600 transition-all touch-target items-center justify-center"
           title="Se déconnecter"
+          aria-label="Se déconnecter"
         >
           <LogOut className="h-5 w-5" />
         </button>
@@ -339,6 +341,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 function MobileSidebar({ onClose }: { onClose: () => void }) {
   const { currentRole, setCurrentRole, currentUser, isOfflineMode, setIsOfflineMode, language, setLanguage } = useUserRole()
   const navigate = useNavigate()
+  const { logout } = useAuth()
   const isIndependent = currentUser.accountType === 'PERSONAL'
   const filteredNav = visibleNavItems(currentRole, isIndependent ? 'PERSONAL' : 'UNIVERSITY')
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
@@ -441,6 +444,15 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
             <span className={cn('absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all', isOfflineMode ? 'left-[24px]' : 'left-1')} />
           </button>
         </div>
+
+        {/* Le bouton de déconnexion du bandeau est masqué sous sm : le menu mobile doit en porter un. */}
+        <button
+          type="button"
+          onClick={() => { onClose(); void logout() }}
+          className="mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
+        >
+          <LogOut className="h-4 w-4" /> Se déconnecter
+        </button>
       </div>
     </aside>
   )
