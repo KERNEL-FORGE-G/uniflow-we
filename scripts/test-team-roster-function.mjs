@@ -96,6 +96,10 @@ async function televerserPhoto(cookie) {
 
 async function provisionner(compte) {
   await admin('POST', '/users', { userId: compte.userId, email: compte.email, password: compte.password, name: compte.userId })
+  // La Function lit le rôle dans les labels Appwrite, pas dans le document
+  // `users` (que son propriétaire peut réécrire) : sans ce label, l'ADMIN de
+  // test recevrait ADMIN_REQUIRED et le script conclurait à tort à une panne.
+  await admin('PUT', `/users/${compte.userId}/labels`, { labels: compte.role === 'STUDENT' ? [] : [compte.role] })
   await admin('POST', `/databases/${databaseId}/collections/${profileCollectionId}/documents`, {
     documentId: compte.userId,
     data: {
