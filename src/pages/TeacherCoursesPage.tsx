@@ -198,7 +198,7 @@ export default function TeacherCoursesPage() {
                 </div>
                 <div className="flex justify-between text-xs text-[#6b7280]">
                   <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {students.length} inscrits</span>
-                  <span className="font-semibold text-indigo-600">ICT4D · L1</span>
+                  <span className="font-semibold text-indigo-600">{[course.program, course.level].filter(Boolean).join(' · ') || 'Cours universitaire'}</span>
                 </div>
               </div>
             </div>

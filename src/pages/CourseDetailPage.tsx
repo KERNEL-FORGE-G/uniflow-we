@@ -15,6 +15,7 @@ const syllabus: SyllabusItem[] = []
 
 interface UiCourse {
   id: string; code: string; name: string; description?: string
+  program?: string; level?: string
   type: 'CM' | 'TD' | 'TP'; credits: number; hours: number
   title: string
   teacher: string
@@ -26,6 +27,8 @@ interface UiCourse {
 }
 
 const mapToUiCourse = (c: Course): UiCourse => ({
+  program: c.program,
+  level: c.level,
   ...c,
   title: c.name,
   teacher: c.teacher ? `${c.teacher.firstName} ${c.teacher.lastName}` : 'N/A',
@@ -141,7 +144,7 @@ export default function CourseDetailPage() {
               <ul className="space-y-2 text-sm text-[#6b7280]">
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />
-                  Ressources et créneaux proposés par le parcours ICT4D L1 dans Appwrite
+                  Ressources et créneaux du parcours {[course.program, course.level].filter(Boolean).join(' · ') || 'universitaire'} dans Appwrite
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />

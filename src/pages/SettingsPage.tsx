@@ -411,7 +411,7 @@ export default function SettingsPage() {
               <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
                 <h2 className="text-lg font-bold text-slate-900 dark:text-white">Inscriptions aux unités d’enseignement</h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Référentiel universitaire actif : Université de Yaoundé I · ICT4D · L1.
+                  Référentiel universitaire actif : {[user.university, user.scopeLabel].filter(Boolean).join(' · ') || 'périmètre non renseigné'}.
                 </p>
               </div>
               <div className="rounded-xl border border-dashed border-[#0d9488]/40 bg-teal-50/60 dark:bg-teal-950/20 p-5">

@@ -1,6 +1,10 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { Building2, Calendar, Clock, Loader2, MapPin, Users } from 'lucide-react'
-import { coursesApi, schedulesApi, type Course, type Schedule } from '../../lib/api'
+import { schedulesApi } from '../../lib/api'
+import { useAcademicScope } from '../../hooks/useAcademicScope'
+import { AcademicScopeSelect } from '../../components/academic/AcademicScopeSelect'
+import { structureScopeTitle } from '../../components/admin/StructureView'
 
 const DAYS: Record<string, string> = {
   LUNDI: 'Lundi',
@@ -21,41 +25,28 @@ interface RoomSlot {
   startTime: string
   endTime: string
   teacher: string
+  scope: string
 }
 
 export default function ClassroomsPage() {
-  const [slots, setSlots] = useState<RoomSlot[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [roomFilter, setRoomFilter] = useState('Toutes les salles')
-
-  useEffect(() => {
-    let active = true
-    void Promise.all([coursesApi.list(), schedulesApi.list()])
-      .then(([courses, schedules]) => {
-        if (!active) return
-        const byId = new Map((courses as Course[]).map((course) => [course.id, course]))
-        setSlots((schedules as Schedule[]).map((schedule) => {
-          const course = byId.get(schedule.course?.id || '')
-          const teacher = course?.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}`.trim() : ''
-          return {
-            id: schedule.id,
-            courseCode: schedule.course?.code || course?.code || '—',
-            courseName: schedule.course?.name || course?.name || 'Cours académique',
-            classroom: schedule.course?.classroom?.name || course?.classroom?.name || 'Salle non renseignée',
-            day: DAYS[schedule.dayOfWeek] || schedule.dayOfWeek,
-            startTime: schedule.startTime,
-            endTime: schedule.endTime,
-            teacher: teacher || 'Non renseigné',
-          }
-        }))
-      })
-      .catch((reason: unknown) => {
-        if (active) setError(reason instanceof Error ? reason.message : 'Impossible de charger le planning Appwrite.')
-      })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [])
+  const { selection, setSelection, isPlatform, universityName, facultyName, label } = useAcademicScope()
+  // 527 séances en base : la page charge le périmètre choisi (filtre serveur filière/niveau),
+  // et la séance porte elle-même cours, enseignant et salle.
+  const schedules = useQuery({ queryKey: ['admin', 'classrooms', selection], queryFn: () => schedulesApi.listScoped(selection) })
+  const slots = useMemo<RoomSlot[]>(() => (schedules.data ?? []).map((schedule) => ({
+    id: schedule.id,
+    courseCode: schedule.course.code || '—',
+    courseName: schedule.course.name || 'Cours académique',
+    classroom: schedule.course.classroom.name || 'Salle non renseignée',
+    day: DAYS[schedule.dayOfWeek] || schedule.dayOfWeek,
+    startTime: schedule.startTime,
+    endTime: schedule.endTime,
+    teacher: `${schedule.course.teacher.firstName} ${schedule.course.teacher.lastName}`.trim() || 'Non renseigné',
+    scope: schedule.semesterId.replace(/-/g, ' · '),
+  })), [schedules.data])
+  const loading = schedules.isLoading
+  const error = schedules.error instanceof Error ? schedules.error.message : null
 
   const rooms = useMemo(() => ['Toutes les salles', ...Array.from(new Set(slots.map((slot) => slot.classroom))).sort()], [slots])
   const visibleSlots = roomFilter === 'Toutes les salles' ? slots : slots.filter((slot) => slot.classroom === roomFilter)
@@ -76,11 +67,19 @@ export default function ClassroomsPage() {
           <div>
             <p className="mb-2 inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold"><Building2 className="h-3.5 w-3.5" /> RÉFÉRENTIEL APPWRITE</p>
             <h1 className="text-2xl font-black sm:text-3xl">Planning des salles</h1>
-            <p className="mt-1 max-w-2xl text-sm text-blue-100">Occupation réellement planifiée pour Université de Yaoundé I · ICT4D · L1. Les créneaux sont lus depuis `academic_schedules`.</p>
+            <p className="mt-1 max-w-2xl text-sm text-blue-100">Occupation planifiée pour {structureScopeTitle({ isPlatform, university: universityName, faculty: facultyName })} · {label}. Les créneaux sont lus depuis `academic_schedules`.</p>
           </div>
           <span className="rounded-xl bg-white/15 px-3 py-2 text-xs font-bold">Lecture synchronisée · pas de réservation simulée</span>
         </div>
       </header>
+
+      <AcademicScopeSelect
+        universityName={isPlatform ? undefined : universityName}
+        facultyName={isPlatform ? undefined : facultyName}
+        value={selection}
+        onChange={setSelection}
+        compact
+      />
 
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
 
@@ -113,7 +112,7 @@ export default function ClassroomsPage() {
             <tbody className="divide-y divide-[#f1f5f9]">
               {visibleSlots.map((slot) => (
                 <tr key={slot.id} className="hover:bg-[#f8fafc]">
-                  <td className="px-5 py-4"><p className="font-mono text-xs font-bold text-[#1e3a8a]">{slot.courseCode}</p><p className="mt-1 font-semibold text-[#1e293b]">{slot.courseName}</p></td>
+                  <td className="px-5 py-4"><p className="font-mono text-xs font-bold text-[#1e3a8a]">{slot.courseCode}</p><p className="mt-1 font-semibold text-[#1e293b]">{slot.courseName}</p><p className="mt-0.5 text-xs text-[#64748b]">{slot.scope}</p></td>
                   <td className="px-5 py-4 font-medium text-[#334155]">{slot.classroom}</td>
                   <td className="px-5 py-4"><p className="font-semibold text-[#334155]">{slot.day}</p><p className="mt-1 font-mono text-xs text-[#64748b]">{slot.startTime} — {slot.endTime}</p></td>
                   <td className="px-5 py-4 text-[#475569]">{slot.teacher}</td>

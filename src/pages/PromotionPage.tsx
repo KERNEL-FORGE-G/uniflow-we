@@ -24,7 +24,8 @@ interface Candidacy {
 export default function PromotionPage() {
   const { currentUser, currentRole: role } = useUserRole()
   const navigate = useNavigate()
-  const userLevel = currentUser.level || 'L1'
+  // Rien n'est présumé : un profil sans filière ou niveau affiche « niveau non renseigné ».
+  const userScope = [currentUser.program, currentUser.level].filter(Boolean).join(' · ') || 'niveau non renseigné'
 
   const [availableUEs, setAvailableUEs] = useState<{ code: string; name: string }[]>([])
   const [sessionCount, setSessionCount] = useState<number | null>(null)
@@ -56,7 +57,7 @@ export default function PromotionPage() {
       setSessionCount(null)
     }
     return () => { active = false }
-  }, [role, userLevel])
+  }, [role, userScope])
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -84,7 +85,7 @@ export default function PromotionPage() {
               Postuler pour être Délégué
             </h1>
             <p className="mt-1.5 text-sm text-slate-100 font-medium leading-relaxed">
-              Représentez votre niveau (<strong className="text-amber-300">ICT4D · {userLevel}</strong>) ou consultez les responsabilités attribuées par l’administration académique.
+              Représentez votre niveau (<strong className="text-amber-300">{userScope}</strong>) ou consultez les responsabilités attribuées par l’administration académique.
             </p>
           </div>
 
@@ -147,7 +148,7 @@ export default function PromotionPage() {
                     </div>
                     <span className="font-bold text-sm text-slate-900 dark:text-white">Délégué Global</span>
                     <span className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-snug">
-                      Représente la totalité du niveau ({userLevel}) auprès de l'administration et gère les plannings généraux.
+                      Représente la totalité du niveau ({currentUser.level || 'non renseigné'}) auprès de l'administration et gère les plannings généraux.
                     </span>
                   </button>
 
@@ -192,7 +193,7 @@ export default function PromotionPage() {
                     ))}
                   </select>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Les cours affichés proviennent de la collection académique Appwrite ICT4D L1.
+                    Les cours affichés proviennent de la collection académique Appwrite de votre filière et de votre niveau.
                   </p>
                 </div>
               )}
@@ -285,7 +286,7 @@ export default function PromotionPage() {
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800 mb-4">
               <h3 className="font-bold text-slate-900 dark:text-white text-base">Vos Candidatures ({candidacies.length})</h3>
-              <span className="text-xs font-bold text-slate-400">ICT4D · {userLevel}</span>
+              <span className="text-xs font-bold text-slate-400">{userScope}</span>
             </div>
 
             {candidacies.length === 0 ? (

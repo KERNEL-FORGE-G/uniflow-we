@@ -90,7 +90,7 @@ export const PushNotificationControl: React.FC<PushNotificationControlProps> = (
       setStatusMessage('Notification de devoir envoyée via ServiceWorker !')
     } else if (type === 'annonce') {
       await pushNotificationService.notifyNewAnnouncement({
-        title: 'Modification d\'emploi du temps ICT4D L1',
+        title: 'Modification d\'emploi du temps',
         author: 'Chef de Département',
         content: 'Le cours de Sécurité Informatique aura lieu en Amphi 250 ce vendredi.'
       })

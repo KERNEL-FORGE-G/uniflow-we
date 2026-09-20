@@ -249,6 +249,9 @@ export const authApi = {
 }
 
 export interface Course {
+  /** Filière et niveau du cours universitaire (absents pour un cours personnel). */
+  program?: string
+  level?: string
   id: string; name: string; code: string; description?: string
   type: 'CM' | 'TD' | 'TP'; credits: number; hours: number
   teachingUnit?: { id: string; name: string; code: string; credits: number }
@@ -285,6 +288,8 @@ function asAcademicCourse(course: import('./appwrite').AcademicCourseDocument): 
     id: course.$id,
     code: course.code,
     name: course.name,
+    program: course.program,
+    level: course.level,
     description: course.description || '',
     type: (course.type || 'CM') as Course['type'],
     credits: course.credits || 0,

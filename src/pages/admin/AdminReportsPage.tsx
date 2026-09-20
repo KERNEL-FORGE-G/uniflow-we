@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { BarChart3, BookOpen, Download, Loader2, TrendingUp, UserCheck, Users } from 'lucide-react'
 import { attendanceApi, coursesApi, studentsApi, teachersApi, type AttendanceSession } from '../../lib/api'
+import { useAcademicScope } from '../../hooks/useAcademicScope'
+import { structureScopeTitle } from '../../components/admin/StructureView'
 
 export default function AdminReportsPage() {
+  const { isPlatform, universityName, facultyName, label } = useAcademicScope()
   const [sessions, setSessions] = useState<AttendanceSession[]>([])
   const [studentCount, setStudentCount] = useState(0)
   const [teacherCount, setTeacherCount] = useState(0)
@@ -57,7 +60,7 @@ export default function AdminReportsPage() {
 
       <section className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm"><h2 className="font-bold text-[#111827]">Assiduité consolidée</h2><p className="mt-1 text-sm text-[#64748b]">Calculée à partir de {attendance.records} relevé(s) de présence réellement enregistrés.</p><div className="mt-5 h-3 overflow-hidden rounded-full bg-[#e5e7eb]"><div className="h-full rounded-full bg-[#0d9488]" style={{ width: `${attendance.rate}%` }} /></div><div className="mt-3 flex justify-between text-sm"><span className="font-bold text-[#0f766e]">{attendance.rate}% de présence</span><span className="text-[#64748b]">{sessions.length} séance(s)</span></div></div>
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm"><h2 className="font-bold text-[#111827]">Périmètre de référence</h2><dl className="mt-4 divide-y divide-[#eef2f7] text-sm"><Row label="Université" value="Université de Yaoundé I" /><Row label="Filière" value="ICT4D" /><Row label="Niveau" value="L1" /><Row label="Enseignants du répertoire" value={`${teacherCount}`} /></dl></div>
+        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm"><h2 className="font-bold text-[#111827]">Périmètre de référence</h2><dl className="mt-4 divide-y divide-[#eef2f7] text-sm"><Row label="Périmètre" value={structureScopeTitle({ isPlatform, university: universityName, faculty: facultyName })} /><Row label="Filière · niveau" value={label} /><Row label="Enseignants du répertoire" value={`${teacherCount}`} /></dl></div>
       </section>
     </div>
   )
