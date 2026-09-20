@@ -17,7 +17,7 @@ export function OptimizedImage({
   alt, 
   className, 
   loading = 'lazy',
-  fallbackSrc = 'https://i.imgur.com/GAiZ7WY.png',
+  fallbackSrc = '/logos/uniflow-wordmark.png',
   onLoad,
   onError
 }: OptimizedImageProps) {

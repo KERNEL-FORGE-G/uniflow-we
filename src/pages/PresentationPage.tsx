@@ -106,7 +106,7 @@ export default function PresentationPage() {
 
           <div className="mx-auto mb-5 flex justify-center">
             <img 
-              src="https://i.imgur.com/GAiZ7WY.png" 
+              src="/logos/uniflow-wordmark.png" 
               alt="Mascotte UniFlow" 
               loading="eager"
               decoding="async"

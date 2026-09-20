@@ -150,7 +150,7 @@ export default function RegisterPage() {
           {/* Logo */}
           <motion.div variants={fadeInUp} className="text-center">
             <img
-              src="https://i.imgur.com/GAiZ7WY.png"
+              src="/logos/uniflow-wordmark.png"
               alt="UniFlow"
               className="mx-auto h-20 mb-6 object-contain drop-shadow-lg"
               onError={(e) => {
@@ -605,7 +605,7 @@ export default function RegisterPage() {
           {/* Mobile logo */}
           <div className="lg:hidden mt-8 text-center">
             <img
-              src="https://i.imgur.com/GAiZ7WY.png"
+              src="/logos/uniflow-wordmark.png"
               alt="UniFlow"
               className="mx-auto h-12 object-contain opacity-70"
               onError={(e) => {

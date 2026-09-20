@@ -28,7 +28,7 @@ export function EmptyState({
         {mascot ? (
           <div className="flex h-24 w-24 items-center justify-center rounded-2xl overflow-hidden">
             <img 
-              src="https://i.imgur.com/GAiZ7WY.png" 
+              src="/logos/uniflow-wordmark.png" 
               alt="UniFlow Mascotte" 
               className="h-full w-full object-contain opacity-60" 
               onError={(e) => {

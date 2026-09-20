@@ -5,7 +5,7 @@
 
 // Bump à chaque changement du shell d’authentification afin d’éviter qu’une
 // ancienne version conserve des règles de session obsolètes dans le navigateur.
-const CACHE_NAME = 'uniflow-pwa-cache-v8'
+const CACHE_NAME = 'uniflow-pwa-cache-v9'
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -48,13 +48,15 @@ self.addEventListener('message', (event) => {
 // 3. Fetch Strategy: Network First with Cache Fallback for offline resilience
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
+  // Les requêtes vers d'autres origines (Google Fonts, Appwrite, avatars…) sont
+  // laissées au navigateur : un fetch() relancé depuis le worker est soumis à la
+  // directive connect-src de la page, ce qui produisait en production
+  // « Fetch API cannot load https://fonts.googleapis.com/… Refused to connect »
+  // et des réponses 408 fabriquées ici. Le navigateur, lui, applique img-src /
+  // style-src / font-src, qui autorisent déjà ces ressources.
+  if (new URL(event.request.url).origin !== self.location.origin) return
   // Appwrite/API requests must always reach the network; never cache user data.
-  if (
-    event.request.url.includes('/api/') ||
-    event.request.url.includes('appwrite.io') ||
-    event.request.url.includes('api-uniflow') ||
-    event.request.url.includes('cloud.appwrite.io')
-  ) return
+  if (event.request.url.includes('/api/')) return
 
   const isAppShellRequest = event.request.mode === 'navigate' || ['script', 'style'].includes(event.request.destination)
   const networkRequest = isAppShellRequest

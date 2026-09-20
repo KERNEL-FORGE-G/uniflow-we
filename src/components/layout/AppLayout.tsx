@@ -5,7 +5,7 @@ import {
   ChevronRight, Sparkles, Home
 } from 'lucide-react'
 import { useUserRole } from '../../utils/userRole'
-import { navItems } from '../../data/navigation'
+import { visibleNavItems } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
 import { Footer } from './Footer'
 import { GlobalSearch } from './GlobalSearch'
@@ -39,11 +39,7 @@ export function Sidebar() {
   const { currentRole, setCurrentRole, currentUser, isOfflineMode, setIsOfflineMode, language, setLanguage } = useUserRole()
   const navigate = useNavigate()
   const isIndependent = currentUser.accountType === 'PERSONAL'
-  const filteredNav = navItems.filter(item => {
-    if (!item.roles?.includes(currentRole)) return false
-    if (!isIndependent) return true
-    return ['/app', '/app/independent', '/app/cours', '/app/emploi-du-temps', '/app/devoirs', '/app/notes', '/app/profil', '/app/parametres', '/app/messages', '/app/bibliotheque', '/app/presences', '/app/notifications', '/app/visio', '/app/aide', '/pricing'].includes(item.to)
-  })
+  const filteredNav = visibleNavItems(currentRole, isIndependent ? 'PERSONAL' : 'UNIVERSITY')
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
   const RoleIcon = role.icon
   // Aucun compteur backend : les notifications seront alimentées par Appwrite Messaging lorsque le push sera actif.
@@ -56,7 +52,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between gap-3">
           <button onClick={() => navigate('/')} title="Retour à l’accueil — session conservée" className="rounded-lg p-1 text-left hover:bg-[#f3f4f6] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/30">
             <img
-              src="https://i.imgur.com/GAiZ7WY.png"
+              src="/logos/uniflow-wordmark.png"
               alt="Accueil UniFlow"
               loading="eager"
               decoding="async"
@@ -344,11 +340,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
   const { currentRole, setCurrentRole, currentUser, isOfflineMode, setIsOfflineMode, language, setLanguage } = useUserRole()
   const navigate = useNavigate()
   const isIndependent = currentUser.accountType === 'PERSONAL'
-  const filteredNav = navItems.filter(item => {
-    if (!item.roles?.includes(currentRole)) return false
-    if (!isIndependent) return true
-    return ['/app', '/app/independent', '/app/cours', '/app/emploi-du-temps', '/app/devoirs', '/app/notes', '/app/profil', '/app/parametres', '/app/messages', '/app/bibliotheque', '/app/presences', '/app/notifications', '/app/visio', '/app/aide', '/pricing'].includes(item.to)
-  })
+  const filteredNav = visibleNavItems(currentRole, isIndependent ? 'PERSONAL' : 'UNIVERSITY')
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
   const RoleIcon = role.icon
 
@@ -359,7 +351,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-3">
           <button onClick={() => { navigate('/'); onClose() }} title="Retour à l’accueil — session conservée" className="rounded-lg p-1 text-left hover:bg-[#f3f4f6]">
             <img
-              src="https://i.imgur.com/GAiZ7WY.png"
+              src="/logos/uniflow-wordmark.png"
               alt="Accueil UniFlow"
               className="h-8 w-auto object-contain"
               onError={(e) => {

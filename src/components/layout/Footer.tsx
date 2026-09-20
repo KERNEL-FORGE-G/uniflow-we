@@ -27,7 +27,7 @@ export function Footer() {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <img
-                src="https://i.imgur.com/GAiZ7WY.png"
+                src="/logos/uniflow-wordmark.png"
                 alt="UniFlow"
                 className="h-8 w-auto object-contain"
                 onError={(e) => {
