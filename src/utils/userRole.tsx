@@ -19,7 +19,7 @@ export interface UserProfile {
   address?: string
   level?: string
   matricule?: string
-  accountType?: 'UNIVERSITY' | 'PERSONAL'
+  accountType?: 'UNIVERSITY' | 'PERSONAL' | 'PLATFORM'
   countryCode?: string
   /** Pseudo unique : c'est lui que la messagerie utilise pour adresser un contact. */
   username?: string
@@ -30,7 +30,10 @@ export interface UserProfile {
   /** Rôle normalisé UniFlow, tel que résolu depuis les labels. */
   uniflowRole?: UniFlowRole
   university?: string
+  faculty?: string
   program?: string
+  /** Libellé du périmètre : « Faculté des Sciences », « INF · L2 », « Toute la plateforme ». */
+  scopeLabel?: string
 }
 
 const EMPTY_PROFILE: UserProfile = {
@@ -83,19 +86,30 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
   const studentLevel = user.student?.level ?? user.level
   const studentSpecialty = user.student?.specialty ?? user.program
   const uniflowRole: UniFlowRole = isUniFlowRole(user.role) ? user.role : 'STUDENT'
-  const accountType = user.accountType === 'PERSONAL' || user.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
+  const accountType: UserProfile['accountType'] = user.accountType === 'PERSONAL' || user.accountCategory === 'PERSONAL'
+    ? 'PERSONAL'
+    : user.accountType === 'PLATFORM' || user.isSuperAdmin ? 'PLATFORM' : 'UNIVERSITY'
   const learner = role === 'student' || role === 'delegate'
+  const scopeLabel = accountType === 'PLATFORM'
+    ? 'Toute la plateforme'
+    : accountType === 'PERSONAL'
+      ? undefined
+      : learner
+        ? [user.program, studentLevel].filter(Boolean).join(' · ') || undefined
+        : user.faculty || user.university || undefined
 
   return {
     name: `${firstName}${lastName ? ` ${lastName}` : ''}`,
     email: user.email,
-    roleLabel: accountType === 'PERSONAL' ? 'Compte indépendant' : user.isSuperAdmin ? 'Administrateur de la plateforme' : ROLE_LABELS_FR[uniflowRole],
+    roleLabel: accountType === 'PERSONAL' ? 'Compte indépendant' : accountType === 'PLATFORM' ? 'Administrateur de la plateforme' : ROLE_LABELS_FR[uniflowRole],
     status: 'En ligne',
     role,
     uniflowRole,
     isSuperAdmin: Boolean(user.isSuperAdmin),
     university: user.university,
+    faculty: user.faculty,
     program: user.program,
+    scopeLabel,
     // Filière et niveau viennent du profil ; rien n'est présumé quand ils manquent.
     filiere: learner && accountType === 'UNIVERSITY' ? [studentLevel, studentSpecialty].filter(Boolean).join(' · ') || undefined : undefined,
     level: learner ? studentLevel : undefined,
@@ -110,7 +124,7 @@ function buildUserProfile(user: BackendUser | null): UserProfile {
   }
 }
 
-function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role' | 'accountType'> & Partial<Pick<UniFlowUser, 'email' | 'username' | 'avatarFileId' | 'labels' | 'isSuperAdmin' | 'university' | 'program' | 'level'>>): BackendUser {
+function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role' | 'accountType'> & Partial<Pick<UniFlowUser, 'email' | 'username' | 'avatarFileId' | 'labels' | 'isSuperAdmin' | 'university' | 'faculty' | 'program' | 'level'>>): BackendUser {
   return {
     id: user.id,
     email: user.email || '',
@@ -122,6 +136,7 @@ function appwriteUserToBackendUser(user: Pick<UniFlowUser, 'id' | 'name' | 'role
     labels: user.labels,
     isSuperAdmin: Boolean(user.isSuperAdmin),
     university: user.university,
+    faculty: user.faculty,
     program: user.program,
     level: user.level,
   }

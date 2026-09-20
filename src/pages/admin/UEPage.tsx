@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { BookMarked, CalendarClock, Download, FileText, Printer, Search, Users } from 'lucide-react'
 import { Button } from '../../components/ui/Button'
-import { ueApi, type UE } from '../../lib/api'
+import { ueApi } from '../../lib/api'
+import { useAcademicScope } from '../../hooks/useAcademicScope'
+import { AcademicScopeSelect } from '../../components/academic/AcademicScopeSelect'
+import { structureScopeTitle } from '../../components/admin/StructureView'
 
 function csvCell(value: string | number) {
   return `"${String(value).replace(/"/g, '""')}"`
@@ -9,18 +13,12 @@ function csvCell(value: string | number) {
 
 export default function UEPage() {
   const [searchTerm, setSearchTerm] = useState('')
-  const [units, setUnits] = useState<UE[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let mounted = true
-    ueApi.list()
-      .then((data) => { if (mounted) setUnits(data) })
-      .catch((error) => { if (mounted) setLoadError(error instanceof Error ? error.message : 'Impossible de charger le référentiel Appwrite.') })
-      .finally(() => { if (mounted) setLoading(false) })
-    return () => { mounted = false }
-  }, [])
+  const { selection, setSelection, isPlatform, universityName, facultyName, label } = useAcademicScope()
+  // Filtre serveur par filière et niveau : 296 UE en base, la page n'en charge que le périmètre choisi.
+  const unitsQuery = useQuery({ queryKey: ['admin', 'ue', selection], queryFn: () => ueApi.listScoped(selection) })
+  const units = unitsQuery.data ?? []
+  const loading = unitsQuery.isLoading
+  const loadError = unitsQuery.error instanceof Error ? unitsQuery.error.message : null
 
   const filtered = useMemo(() => {
     const needle = searchTerm.trim().toLocaleLowerCase()
@@ -46,7 +44,7 @@ export default function UEPage() {
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = 'uniflow-uy1-ict4d-l1-referentiel.csv'
+    link.download = `uniflow-referentiel-${[selection.program, selection.level].filter(Boolean).join('-').toLowerCase() || 'toutes-filieres'}.csv`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -63,7 +61,7 @@ export default function UEPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-[#111827]">Référentiel pédagogique</h1>
-          <p className="mt-0.5 text-sm text-[#6b7280]">Université de Yaoundé I · ICT4D · L1 · Lecture Appwrite</p>
+          <p className="mt-0.5 text-sm text-[#6b7280]">{structureScopeTitle({ isPlatform, university: universityName, faculty: facultyName })} · {label}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={loading || filtered.length === 0}>
@@ -77,8 +75,16 @@ export default function UEPage() {
         </div>
       </div>
 
+      <AcademicScopeSelect
+        universityName={isPlatform ? undefined : universityName}
+        facultyName={isPlatform ? undefined : facultyName}
+        value={selection}
+        onChange={setSelection}
+        compact
+      />
+
       <div className="rounded-xl border border-[#c7d2fe] bg-[#eff3ff] px-4 py-3 text-sm text-[#1e3a8a]">
-        Les cours, créneaux et inscriptions ci-dessous proviennent des collections académiques Appwrite. Aucune collection d’unités d’enseignement ni flux de création sécurisé n’est provisionné : les actions de CRUD restent volontairement indisponibles.
+        Les UE, créneaux et inscriptions ci-dessous proviennent des collections académiques Appwrite (`academic_courses`, `academic_schedules`, `academic_enrollments`). Leur création passe par les scripts de référentiel.
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -121,7 +127,7 @@ export default function UEPage() {
               {filtered.map((unit) => (
                 <tr key={unit.id} className="hover:bg-[#f9fafb]">
                   <td className="px-4 py-3 font-mono text-sm font-semibold text-[#1e3a8a]">{unit.code}</td>
-                  <td className="px-4 py-3"><p className="text-sm font-medium text-[#111827]">{unit.name}</p><p className="mt-0.5 text-xs text-[#6b7280]">ICT4D · L1</p></td>
+                  <td className="px-4 py-3"><p className="text-sm font-medium text-[#111827]">{unit.name}</p><p className="mt-0.5 text-xs text-[#6b7280]">{[unit.program, unit.level].filter(Boolean).join(' · ')}</p></td>
                   <td className="px-4 py-3 text-sm text-[#374151]">{unit.teacherName}</td>
                   <td className="px-4 py-3"><span className="inline-flex rounded-full bg-[#eff3ff] px-2.5 py-0.5 text-xs font-semibold text-[#1e3a8a]">{unit.type}</span></td>
                   <td className="px-4 py-3 text-sm font-semibold text-[#111827]">{unit.credits}</td>
@@ -134,7 +140,7 @@ export default function UEPage() {
           </table>
         </div>
         {loading && <div className="py-12 text-center text-sm text-[#6b7280]">Chargement du référentiel Appwrite…</div>}
-        {!loading && filtered.length === 0 && <div className="py-12 text-center text-sm text-[#6b7280]">{loadError || 'Aucun cours ICT4D L1 ne correspond à la recherche.'}</div>}
+        {!loading && filtered.length === 0 && <div className="py-12 text-center text-sm text-[#6b7280]">{loadError || `Aucune UE (${label}) ne correspond à la recherche.`}</div>}
       </div>
 
       {!loading && units.length > 0 && <p className="text-xs text-[#6b7280]">{totals.scheduledHours.toFixed(1)} heure(s) planifiée(s) calculée(s) depuis {totals.schedules} créneau(x) Appwrite.</p>}

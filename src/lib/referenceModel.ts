@@ -94,6 +94,13 @@ export function universityByName(universities: University[] | undefined, name?: 
   return universities.find((university) => university.name.trim().toLowerCase() === needle || university.code.toLowerCase() === needle)
 }
 
+/** Retrouve la faculté d'un profil (stockée par son nom) parmi celles d'une université. */
+export function facultyByName(faculties: Faculty[] | undefined, name?: string | null): Faculty | undefined {
+  if (!faculties || !name) return undefined
+  const needle = name.trim().toLowerCase()
+  return faculties.find((faculty) => faculty.name.trim().toLowerCase() === needle || faculty.code.toLowerCase() === needle)
+}
+
 /** Retrouve la filière d'un profil (stockée par son code ou son nom). */
 export function programByCodeOrName(programs: AcademicProgram[] | undefined, value?: string | null): AcademicProgram | undefined {
   if (!programs || !value) return undefined

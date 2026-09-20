@@ -1,5 +1,5 @@
 import { GraduationCap, Layers } from 'lucide-react'
-import { levelLabel, levelsOf, universityByName, usePrograms, useUniversities } from '@/lib/referenceData'
+import { facultyByName, levelLabel, levelsOf, universityByName, useFaculties, usePrograms, useUniversities } from '@/lib/referenceData'
 import { cn } from '@/utils/cn'
 
 export interface AcademicScope {
@@ -15,6 +15,7 @@ export interface AcademicScope {
  */
 export function AcademicScopeSelect({
   universityName,
+  facultyName,
   value,
   onChange,
   allowAll = true,
@@ -22,6 +23,8 @@ export function AcademicScopeSelect({
   compact = false,
 }: {
   universityName?: string | null
+  /** Une administration est rattachée à une faculté : ses filières s'y limitent. */
+  facultyName?: string | null
   value: AcademicScope
   onChange: (next: AcademicScope) => void
   /** Propose « Toutes » / « Tous » (filtres) ; sinon un choix est obligatoire (formulaires). */
@@ -31,8 +34,11 @@ export function AcademicScopeSelect({
 }) {
   const universities = useUniversities()
   const university = universityByName(universities.data, universityName)
-  // Sans université connue (superadmin sans rattachement), on lit toutes les filières.
-  const programs = usePrograms(university?.code)
+  const faculties = useFaculties(university?.code ?? (universityName ? '' : undefined))
+  const faculty = facultyByName(faculties.data, facultyName)
+  // Sans université connue (compte PLATFORM), on lit toutes les filières ; une
+  // administration ne voit que celles de sa faculté.
+  const programs = usePrograms(universityName ? (university?.code ?? '') : undefined, facultyName ? (faculty?.code ?? '') : undefined)
   const selectedProgram = programs.data?.find((program) => program.code === value.program)
   const levels = selectedProgram ? selectedProgram.levels : levelsOf(programs.data)
   const selectClass = cn(

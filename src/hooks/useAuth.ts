@@ -28,6 +28,7 @@ export interface RegisterPayload {
   levelId?: string
   specialtyId?: string
   university?: string
+  faculty?: string
   program?: string
   level?: string
 }
@@ -111,6 +112,7 @@ export function useAuth() {
         // le serveur l'impose aussi.
         {
           university: payload.university,
+          faculty: payload.faculty,
           program: payload.program,
           level: payload.level,
           matricule: payload.matricule,
@@ -154,9 +156,11 @@ export function useAuth() {
 
   const getCurrentUser = useCallback((): UniFlowUser | null => {
     if (!authUser) return null
-    const accountType = authUser.accountType === 'PERSONAL' || authUser.accountCategory === 'PERSONAL' ? 'PERSONAL' : 'UNIVERSITY'
+    const accountType: UniFlowAccountType = authUser.accountType === 'PERSONAL' || authUser.accountCategory === 'PERSONAL'
+      ? 'PERSONAL'
+      : authUser.accountType === 'PLATFORM' ? 'PLATFORM' : 'UNIVERSITY'
     const role = authUser.role === 'ADMIN' || authUser.role === 'DELEGATE' || authUser.role === 'TEACHER' ? authUser.role : 'STUDENT'
-    return { id: authUser.id, email: authUser.email, name: authUser.fullName || authUser.email, accountType, role, isSuperAdmin: Boolean(authUser.isSuperAdmin), labels: authUser.labels, university: authUser.university, program: authUser.program, level: authUser.level }
+    return { id: authUser.id, email: authUser.email, name: authUser.fullName || authUser.email, accountType, role, isSuperAdmin: Boolean(authUser.isSuperAdmin), labels: authUser.labels, university: authUser.university, faculty: authUser.faculty, program: authUser.program, level: authUser.level }
   }, [authUser])
 
   const isAuthenticated = useCallback(() => Boolean(authUser), [authUser])

@@ -108,6 +108,7 @@ export default function RegisterPage() {
         countryCode: accountType === 'PERSONAL' ? countryCode : undefined,
         matricule: form.matricule || undefined,
         university: accountType === 'UNIVERSITY' ? selectedUniversity?.name : undefined,
+        faculty: accountType === 'UNIVERSITY' ? faculties.data?.find((item) => item.code === facultyCode)?.name : undefined,
         program: accountType === 'UNIVERSITY' ? selectedProgram?.code : undefined,
         level: accountType === 'UNIVERSITY' ? level : undefined,
       })
