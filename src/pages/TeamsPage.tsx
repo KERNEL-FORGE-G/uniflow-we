@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Mail, Code2, Smartphone, Server, Database, Crown, Laptop, Users, Github, ExternalLink, Sparkles, CheckCircle2, Loader2 } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { Code2, Smartphone, Server, Database, Crown, Laptop, Users, Github, ExternalLink, Sparkles, CheckCircle2, UsersRound, WifiOff } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
-import { TeamMemberAvatar } from '../components/team/TeamMemberAvatar'
+import { TeamMemberCard, TeamMemberCardSkeleton } from '../components/team/TeamMemberCard'
+import { ActionResult } from '../components/feedback/ActionResult'
+import { EmptyState } from '../components/ui/EmptyState'
 import { listTeamMembers, type TeamMemberDocument, type TeamName } from '../lib/appwrite'
-import { teamAccentClasses } from '../utils/teamAccent'
+import { COVERAGE_UNIVERSITY } from '../lib/contactInfo'
 
 type FilterCategory = 'Tous' | TeamName
 
@@ -29,8 +32,8 @@ function memberIcon(member: TeamMemberDocument) {
 
 /** Les neuf technologies du bandeau, qui ne dépendent pas de l'équipe. */
 const TECH_STACK = [
-  'React 18', 'TypeScript', 'Tailwind CSS', 'PWA Offline-First', 'SQLite / IndexedDB',
-  'NestJS API', 'Express Backend', 'WebSockets', 'QR Code Engine',
+  'React 18', 'TypeScript', 'Tailwind CSS', 'PWA Offline-First', 'Flutter (mobile et bureau)',
+  'Appwrite Cloud', 'Appwrite Functions', 'Appwrite Realtime', 'QR Code Engine',
 ]
 
 export default function TeamsPage() {
@@ -38,9 +41,12 @@ export default function TeamsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [activeFilter, setActiveFilter] = useState<FilterCategory>('Tous')
+  const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
     let cancelled = false
+    setLoading(true)
+    setError(null)
     async function load() {
       try {
         const documents = await listTeamMembers()
@@ -53,7 +59,7 @@ export default function TeamsPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [])
+  }, [attempt])
 
   // Les tuiles de statistiques étaient écrites en dur (« 9 », « 5 », « 3 »,
   // « 1 ») : elles suivent maintenant la liste, sinon ajouter un membre depuis
@@ -76,7 +82,7 @@ export default function TeamsPage() {
         <div className="absolute inset-0 bg-[linear-[#ffffff08_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
         <div className="relative mx-auto max-w-5xl px-6 text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-4 py-1.5 text-xs font-bold text-white mb-6 border border-white/20">
-            <Code2 className="h-4 w-4 text-teal-300" /> KERNEL FORGE — Université de Yaoundé I
+            <Code2 className="h-4 w-4 text-teal-300" /> KERNEL FORGE — {COVERAGE_UNIVERSITY}
           </div>
           <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tight mb-4">
             L'Équipe KERNEL FORGE
@@ -94,13 +100,13 @@ export default function TeamsPage() {
             {stats.map(s => {
               const Icon = s.icon
               return (
-                <div key={s.label} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center">
+                <motion.div key={s.label} initial={{ opacity: 0, y: 12 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.4, delay: 0.05 * stats.indexOf(s) }} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 flex flex-col items-center justify-center">
                   <div className={`mb-2 p-2 rounded-lg ${s.color}`}>
                     <Icon className="h-5 w-5" />
                   </div>
-                  <span className="text-2xl font-black text-slate-900">{s.val}</span>
+                  <span className="text-2xl font-black text-slate-900 tabular-nums">{loading ? '…' : s.val}</span>
                   <span className="text-xs font-medium text-slate-500 mt-0.5">{s.label}</span>
-                </div>
+                </motion.div>
               )
             })}
           </div>
@@ -134,82 +140,39 @@ export default function TeamsPage() {
         </div>
 
         {loading && (
-          <div className="flex justify-center py-16">
-            <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" />
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3" aria-busy="true" aria-label="Chargement de l’équipe">
+            {Array.from({ length: 6 }).map((_, index) => <TeamMemberCardSkeleton key={index} />)}
           </div>
         )}
 
         {!loading && error && (
-          <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
-            L'équipe n'a pas pu être chargée : {error}
-          </div>
+          <ActionResult
+            status="error"
+            icon={WifiOff}
+            title="L’équipe n’a pas pu être chargée"
+            description="La collection team_members d’Appwrite ne répond pas pour le moment."
+            detail={error}
+            actions={[{ label: 'Réessayer', onClick: () => setAttempt((value) => value + 1) }]}
+          />
         )}
 
-        {/* Member Cards Grid */}
         {!loading && !error && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredMembers.map(m => {
-              const Icon = memberIcon(m)
-              const accent = teamAccentClasses(m.accent)
-              return (
-                <div
-                  key={m.$id}
-                  className="bg-white rounded-2xl border border-slate-200/90 shadow-xs hover:shadow-md hover:border-blue-400 transition-all p-6 flex flex-col justify-between"
-                >
-                  <div>
-                    {/* Header Row */}
-                    <div className="flex items-start justify-between gap-3 mb-4">
-                      <TeamMemberAvatar
-                        avatarFileId={m.avatarFileId}
-                        name={m.name}
-                        className={`w-16 h-16 rounded-2xl border-2 border-slate-100 shadow-xs ring-2 ring-offset-1 ${accent.ring}`}
-                      />
-                      {m.badge && (
-                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-lg border ${accent.badge}`}>
-                          <Icon className="h-3 w-3" />
-                          {m.badge}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Title & Info */}
-                    <h3 className="text-base font-extrabold text-slate-900 leading-snug mb-1">{m.name}</h3>
-                    <p className="text-xs font-semibold text-[#1e3a8a] mb-0.5">{m.role}</p>
-                    <p className="text-[11px] font-medium text-slate-400 mb-6">{m.subTeam}</p>
-                  </div>
-
-                  {/* Footer Buttons */}
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-2">
-                    {m.github ? (
-                      <a
-                        href={`https://github.com/${m.github}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-800 hover:text-white text-slate-700 text-xs font-bold transition-all"
-                      >
-                        <Github className="h-3.5 w-3.5" />
-                        <span>@{m.github}</span>
-                      </a>
-                    ) : <span />}
-
-                    {m.email && (
-                      <a
-                        href={`mailto:${m.email}`}
-                        title={m.email}
-                        className="p-2 rounded-lg border border-slate-200 hover:border-blue-600 hover:text-blue-600 text-slate-500 transition-colors"
-                      >
-                        <Mail className="h-4 w-4" />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          <motion.div layout className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <AnimatePresence mode="popLayout">
+              {filteredMembers.map((m, index) => (
+                <TeamMemberCard key={m.$id} member={m} icon={memberIcon(m)} index={index} />
+              ))}
+            </AnimatePresence>
+          </motion.div>
         )}
 
         {!loading && !error && filteredMembers.length === 0 && (
-          <p className="py-12 text-center text-sm text-slate-400">Aucun membre dans cette catégorie.</p>
+          <EmptyState
+            icon={UsersRound}
+            title={members.length === 0 ? 'L’équipe se présente bientôt' : 'Aucun membre dans cette équipe'}
+            description={members.length === 0 ? 'Les membres sont ajoutés depuis l’administration et apparaîtront ici.' : 'Choisissez une autre équipe ou revenez à « Tous ».'}
+            action={members.length > 0 ? { label: 'Voir toute l’équipe', onClick: () => setActiveFilter('Tous') } : undefined}
+          />
         )}
       </section>
 

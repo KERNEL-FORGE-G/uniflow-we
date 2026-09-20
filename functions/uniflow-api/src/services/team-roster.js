@@ -77,7 +77,17 @@ function memberPayload(body) {
     accent,
     avatarFileId: optionalText(body.avatarFileId, 36),
     displayOrder: Number.isFinite(Number(body.displayOrder)) ? Number(body.displayOrder) : 0,
+    bio: optionalText(body.bio, 600),
+    // Les liens sont stockés en URL complète ; on tolère un simple identifiant LinkedIn.
+    linkedin: normalizeLink(optionalText(body.linkedin, 255), 'https://www.linkedin.com/in/'),
+    website: normalizeLink(optionalText(body.website, 255)),
   }
+}
+
+function normalizeLink(value, prefix = '') {
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value)) return value
+  return prefix ? `${prefix}${value.replace(/^@|^\//, '')}` : `https://${value}`
 }
 
 /** Supprime un fichier du bucket des avatars sans faire échouer l'action. */

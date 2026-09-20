@@ -1353,6 +1353,9 @@ export interface TeamMemberDocument {
   accent: TeamAccent
   avatarFileId: string
   displayOrder: number
+  bio?: string
+  linkedin?: string
+  website?: string
 }
 
 /** Champs modifiables d'un membre. `memberId` est absent à la création. */
@@ -1369,6 +1372,9 @@ export type TeamMemberInput = {
   accent?: TeamAccent
   avatarFileId?: string
   displayOrder?: number
+  bio?: string
+  linkedin?: string
+  website?: string
 }
 
 export type TeamRosterResponse = {

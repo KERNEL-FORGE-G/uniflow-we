@@ -400,6 +400,11 @@ export const teamSchema = {
     // neutre, jamais une image portant des initiales.
     string('avatarFileId', 36, false, ''),
     integer('displayOrder', false, 0),
+    // Demande du propriétaire (2026-09-20) : la page Équipe présente une bio
+    // courte et des liens ; sans ces attributs, les cartes n'avaient que le poste.
+    string('bio', 600, false, ''),
+    string('linkedin', 255, false, ''),
+    string('website', 255, false, ''),
   ],
   indexes: [
     { key: 'team_slug', type: 'unique', attributes: ['slug'] },

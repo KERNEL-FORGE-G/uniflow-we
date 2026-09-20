@@ -41,6 +41,9 @@ type FormState = {
   email: string
   displayOrder: number
   avatarFileId: string
+  bio: string
+  linkedin: string
+  website: string
 }
 
 const EMPTY_FORM: FormState = {
@@ -56,6 +59,9 @@ const EMPTY_FORM: FormState = {
   email: '',
   displayOrder: 0,
   avatarFileId: '',
+  bio: '',
+  linkedin: '',
+  website: '',
 }
 
 /** Clé stable dérivée du nom, comme le fait la Function côté serveur. */
@@ -133,6 +139,9 @@ export default function AdminTeamPage() {
       email: member.email || '',
       displayOrder: Number(member.displayOrder) || 0,
       avatarFileId: member.avatarFileId || '',
+      bio: member.bio || '',
+      linkedin: member.linkedin || '',
+      website: member.website || '',
     })
     setPhoto(null)
     setPreview('')
@@ -184,6 +193,9 @@ export default function AdminTeamPage() {
         email: form.email.trim(),
         displayOrder: Number(form.displayOrder) || 0,
         avatarFileId,
+        bio: form.bio.trim(),
+        linkedin: form.linkedin.trim(),
+        website: form.website.trim(),
       }
 
       try {
@@ -474,6 +486,36 @@ export default function AdminTeamPage() {
                     type="email" value={form.email}
                     onChange={e => setForm({ ...form, email: e.target.value })}
                     className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">LinkedIn</label>
+                  <input
+                    type="text" value={form.linkedin}
+                    onChange={e => setForm({ ...form, linkedin: e.target.value })}
+                    placeholder="URL du profil ou identifiant"
+                    className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Site web</label>
+                  <input
+                    type="text" value={form.website}
+                    onChange={e => setForm({ ...form, website: e.target.value })}
+                    placeholder="https://…"
+                    className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Bio courte <span className="font-medium normal-case text-[#9ca3af]">({form.bio.length}/600)</span></label>
+                  <textarea
+                    value={form.bio} maxLength={600} rows={3}
+                    onChange={e => setForm({ ...form, bio: e.target.value })}
+                    placeholder="Deux ou trois phrases : parcours, rôle dans UniFlow, ce qui l’anime."
+                    className="w-full resize-none rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm focus:border-[#1e3a8a]"
                   />
                 </div>
 
