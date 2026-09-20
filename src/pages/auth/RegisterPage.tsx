@@ -3,10 +3,9 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, Loader2, CheckCircle, User, Mail, Lock, GraduationCap, BookOpen, Award, ArrowRight, ArrowLeft, Sparkles, ShieldCheck, Building2, UserCheck, FileText } from 'lucide-react'
 import { useAuth } from '../../hooks/useAuth'
-type AcademicLevel = { id: string; name: string; programName?: string }
-type SpecialtyOption = { id: string; name: string; levelId?: string }
 import { fadeInUp, staggerContainer } from '../../utils/animations'
-import { UNIVERSITIES } from '../../data/universities'
+import { levelLabel, useFaculties, usePrograms, useUniversities } from '../../lib/referenceData'
+import { ActionResultSlot } from '../../components/feedback/ActionResult'
 
 const benefits = [
   {
@@ -35,50 +34,46 @@ const benefits = [
   },
 ]
 
-type BackendRole = 'ETUDIANT' | 'DELEGUE' | 'ENSEIGNANT'
-
-const ICT4D_LEVELS: AcademicLevel[] = [
-  { id: 'L1', name: 'Licence 1', programName: 'ICT4D' },
-]
-
-const roleMap: Record<string, BackendRole> = {
-  student: 'ETUDIANT',
-  teacher: 'ENSEIGNANT',
-}
-
 export default function RegisterPage() {
   const { register, loading, error, setError } = useAuth()
   const [accountType, setAccountTypeSelection] = useState<'UNIVERSITY' | 'PERSONAL'>('UNIVERSITY')
-  const [universityCode, setUniversityCode] = useState('UY1')
   const [countryCode, setCountryCode] = useState('CM')
 
-  const [form, setForm] = useState({ 
-    firstName: '', 
-    lastName: '', 
-    email: '', 
-    password: '', 
-    confirm: '', 
-    role: 'student', 
-    levelId: 'L1', 
-    specialtyId: 'ICT4D',
+  const [form, setForm] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    confirm: '',
     matricule: '',
   })
-  const [levels, setLevels] = useState<AcademicLevel[]>([])
-  const [specialties, setSpecialties] = useState<SpecialtyOption[]>([])
-  const [academicLoading, setAcademicLoading] = useState(true)
-  const [academicError, setAcademicError] = useState<string | null>(null)
+  // Référentiel académique lu en base : université → faculté → filière → niveau.
+  const [universityCode, setUniversityCode] = useState('')
+  const [facultyCode, setFacultyCode] = useState('')
+  const [programCode, setProgramCode] = useState('')
+  const [level, setLevel] = useState('')
+  const universities = useUniversities()
+  const faculties = useFaculties(universityCode)
+  const programs = usePrograms(universityCode, facultyCode)
+  const selectedUniversity = universities.data?.find((item) => item.code === universityCode)
+  const selectedProgram = programs.data?.find((item) => item.code === programCode)
   const [showPwd, setShowPwd] = useState(false)
   const [step, setStep] = useState<1 | 2>(1)
 
   const set = (k: string, v: string) => setForm(f => ({ ...f, [k]: v }))
 
+  // Chaque choix amont invalide les choix aval : une filière d'une autre
+  // faculté ne doit jamais rester sélectionnée en silence.
+  useEffect(() => { setFacultyCode(''); setProgramCode(''); setLevel('') }, [universityCode])
+  useEffect(() => { setProgramCode(''); setLevel('') }, [facultyCode])
+  useEffect(() => { setLevel('') }, [programCode])
   useEffect(() => {
-    setAcademicLoading(false)
-    setAcademicError(null)
-    setLevels(ICT4D_LEVELS)
-    setSpecialties(ICT4D_LEVELS.map((level) => ({ id: 'ICT4D', name: 'ICT4D', levelId: level.id })))
-    setForm(f => ({ ...f, levelId: accountType === 'UNIVERSITY' ? 'L1' : '', specialtyId: accountType === 'UNIVERSITY' ? 'ICT4D' : '', matricule: accountType === 'PERSONAL' ? '' : f.matricule }))
-  }, [accountType])
+    // Une seule université en base : on la présélectionne, l'utilisateur n'a rien à chercher.
+    if (!universityCode && universities.data?.length === 1) setUniversityCode(universities.data[0].code)
+  }, [universities.data, universityCode])
+  useEffect(() => {
+    if (!facultyCode && faculties.data?.length === 1) setFacultyCode(faculties.data[0].code)
+  }, [faculties.data, facultyCode])
 
   const handleNext = (e: React.FormEvent) => {
     e.preventDefault()
@@ -96,23 +91,25 @@ export default function RegisterPage() {
       setError('Les mots de passe ne correspondent pas.')
       return
     }
+    if (accountType === 'UNIVERSITY' && (!selectedUniversity || !selectedProgram || !level)) {
+      setError('Choisissez votre université, votre filière et votre niveau.')
+      return
+    }
     try {
+      // Aucun rôle n'est transmis : un auto-inscrit universitaire est STUDENT.
+      // Les comptes enseignant, délégué et administration sont créés par l'administration.
       await register({
         email: form.email,
         password: form.password,
         firstName: form.firstName,
         lastName: form.lastName,
-        role: accountType === 'PERSONAL' 
-          ? (form.role === 'teacher' ? 'INDEPENDENT_TEACHER' : 'INDEPENDENT_STUDENT')
-          : (roleMap[form.role] || 'ETUDIANT'),
+        role: 'STUDENT',
         accountType,
         countryCode: accountType === 'PERSONAL' ? countryCode : undefined,
         matricule: form.matricule || undefined,
-        levelId: form.levelId || undefined,
-        specialtyId: form.specialtyId || undefined,
-        university: accountType === 'UNIVERSITY' ? 'Université de Yaoundé I' : undefined,
-        program: accountType === 'UNIVERSITY' ? 'ICT4D' : undefined,
-        level: accountType === 'UNIVERSITY' ? 'L1' : undefined,
+        university: accountType === 'UNIVERSITY' ? selectedUniversity?.name : undefined,
+        program: accountType === 'UNIVERSITY' ? selectedProgram?.code : undefined,
+        level: accountType === 'UNIVERSITY' ? level : undefined,
       })
     } catch {
       // L’erreur est affichée par useAuth ; aucune inscription locale n’est créée.
@@ -257,11 +254,7 @@ export default function RegisterPage() {
                   onSubmit={handleNext} 
                   className="space-y-5"
                 >
-                  {error && (
-                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
-                      {error}
-                    </div>
-                  )}
+                  <ActionResultSlot result={error ? { status: 'error', title: 'Inscription impossible', description: error } : null} />
 
                   {/* Account Type Selector */}
                   <div>
@@ -276,7 +269,7 @@ export default function RegisterPage() {
                             : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
-                        <Building2 className="h-4 w-4" /> Université (BD)
+                        <Building2 className="h-4 w-4" /> Compte universitaire
                       </button>
                       <button
                         type="button"
@@ -287,43 +280,15 @@ export default function RegisterPage() {
                             : 'text-slate-600 hover:text-slate-900'
                         }`}
                       >
-                        <User className="h-4 w-4" /> Indépendant
+                        <User className="h-4 w-4" /> Compte indépendant
                       </button>
                     </div>
                   </div>
 
-                  {/* University Selection Dropdown if University Account */}
-                  {accountType === 'UNIVERSITY' && (
-                    <motion.div 
-                      initial={{ opacity: 0, height: 0 }} 
-                      animate={{ opacity: 1, height: 'auto' }}
-                    >
-                      <label className="block text-sm font-bold text-[#374151] mb-2">Sélectionnez votre Université dans la Base de Données</label>
-                      <div className="relative">
-                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
-                          <Building2 className="h-5 w-5" />
-                        </div>
-                        <select
-                          value={universityCode}
-                          onChange={(e) => setUniversityCode(e.target.value)}
-                          className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-[#0d9488] focus:bg-white transition-all appearance-none cursor-pointer"
-                        >
-                          {UNIVERSITIES.map((univ) => (
-                            <option key={univ.code} value={univ.code}>
-                              {univ.name} ({univ.city})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* Server Connection Info */}
-                  <div className="p-3 bg-teal-50/80 rounded-xl border border-teal-200 text-xs text-[#0d9488] flex items-center gap-2">
-                    <Building2 className="h-4 w-4 shrink-0" />
-                    <div className="leading-tight">
-                      <span>Destination : <strong>Appwrite KERNEL FORGE</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
-                    </div>
+                  <div className="p-3 bg-teal-50/80 rounded-xl border border-teal-200 text-xs text-[#0f766e] leading-relaxed">
+                    {accountType === 'UNIVERSITY'
+                      ? 'Un compte universitaire créé ici est un compte étudiant. Les comptes enseignant, délégué et administration sont ouverts par l’administration de votre université.'
+                      : 'Un compte indépendant gère ses propres matières, horaires et devoirs, sans rattachement à une université.'}
                   </div>
 
                   {/* Name fields */}
@@ -375,36 +340,6 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Role selection cards */}
-                  <div>
-                    <label className="block text-sm font-bold text-[#374151] dark:text-slate-200 mb-2">Votre rôle sur la plateforme</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { id: 'student', label: 'Étudiant', icon: GraduationCap, desc: 'Cours, Devoirs & Notes' },
-                        { id: 'teacher', label: 'Enseignant', icon: BookOpen, desc: 'Espace Cours & Évaluations' },
-                      ].map(r => {
-                        const Icon = r.icon
-                        const isSelected = form.role === r.id
-                        return (
-                          <button
-                            key={r.id}
-                            type="button"
-                            onClick={() => set('role', r.id)}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all text-center ${
-                              isSelected
-                                ? 'border-[#0d9488] bg-[#0d9488]/10 text-[#0d9488] font-bold shadow-xs'
-                                : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:border-slate-300'
-                            }`}
-                          >
-                            <Icon className={`h-5 w-5 mb-1 ${isSelected ? 'text-[#0d9488]' : 'text-slate-400'}`} />
-                            <span className="text-xs font-bold leading-tight">{r.label}</span>
-                            <span className="text-[10px] text-slate-400 mt-0.5 leading-tight">{r.desc}</span>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-
                   {/* Submit */}
                   <motion.button 
                     type="submit"
@@ -425,11 +360,7 @@ export default function RegisterPage() {
                   onSubmit={handleSubmit} 
                   className="space-y-5"
                 >
-                  {error && (
-                    <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
-                      {error}
-                    </div>
-                  )}
+                  <ActionResultSlot result={error ? { status: 'error', title: 'Inscription impossible', description: error } : null} />
 
                   {/* Information compte personnel / indépendant vs Université */}
                   {accountType === 'PERSONAL' ? (
@@ -445,7 +376,7 @@ export default function RegisterPage() {
                     <>
                       {/* Matricule pour compte Université */}
                       <div>
-                        <label className="block text-sm font-bold text-[#374151] mb-2">Matricule Étudiant / Enseignant</label>
+                        <label className="block text-sm font-bold text-[#374151] mb-2">Matricule étudiant (facultatif)</label>
                         <div className="relative">
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
                             <FileText className="h-5 w-5" />
@@ -455,45 +386,64 @@ export default function RegisterPage() {
                             value={form.matricule} 
                             onChange={e => set('matricule', e.target.value)} 
                             className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium outline-none focus:border-[#0d9488] focus:bg-white transition-all"
-                            placeholder="Ex: 22U1234 (Optionnel)" 
+                            placeholder="Ex : 22U1234" 
                           />
                         </div>
                       </div>
 
-                      {/* Academic info */}
-                      <div>
-                        <label className="block text-sm font-bold text-[#374151] mb-2">Niveau d'études — ICT4D</label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
-                            <BookOpen className="h-5 w-5" />
+                      <ReferenceSelect
+                        icon={Building2}
+                        label="Université"
+                        value={universityCode}
+                        onChange={setUniversityCode}
+                        placeholder="Choisir une université"
+                        loading={universities.isLoading}
+                        error={universities.error ? 'Le référentiel des universités est indisponible.' : undefined}
+                        options={(universities.data ?? []).map((item) => ({ value: item.code, label: item.city ? `${item.name} (${item.city})` : item.name }))}
+                      />
+                      <ReferenceSelect
+                        icon={BookOpen}
+                        label="Faculté ou école"
+                        value={facultyCode}
+                        onChange={setFacultyCode}
+                        placeholder={universityCode ? 'Choisir une faculté' : 'Choisissez d’abord une université'}
+                        disabled={!universityCode}
+                        loading={faculties.isLoading}
+                        error={faculties.error ? 'Les facultés n’ont pas pu être chargées.' : undefined}
+                        options={(faculties.data ?? []).map((item) => ({ value: item.code, label: item.name }))}
+                      />
+                      <ReferenceSelect
+                        icon={GraduationCap}
+                        label="Filière"
+                        value={programCode}
+                        onChange={setProgramCode}
+                        placeholder={facultyCode ? 'Choisir une filière' : 'Choisissez d’abord une faculté'}
+                        disabled={!facultyCode}
+                        loading={programs.isLoading}
+                        error={programs.error ? 'Les filières n’ont pas pu être chargées.' : undefined}
+                        options={(programs.data ?? []).map((item) => ({ value: item.code, label: item.name === item.code ? item.name : `${item.name} (${item.code})` }))}
+                      />
+                      {selectedProgram && (
+                        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}>
+                          <label className="block text-sm font-bold text-[#374151] mb-2">Niveau</label>
+                          <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Niveau d’études">
+                            {selectedProgram.levels.map((option) => (
+                              <button
+                                key={option}
+                                type="button"
+                                role="radio"
+                                aria-checked={level === option}
+                                onClick={() => setLevel(option)}
+                                className={`rounded-xl border-2 px-3 py-2.5 text-center transition-all ${level === option ? 'border-[#0d9488] bg-[#0d9488]/10 text-[#0d9488]' : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300'}`}
+                              >
+                                <span className="block text-sm font-black">{option}</span>
+                                <span className="block text-[10px] leading-tight text-slate-400">{levelLabel(option)}</span>
+                              </button>
+                            ))}
                           </div>
-                          <input
-                            value="ICT4D · Licence 1 (L1)"
-                            readOnly
-                            className="w-full rounded-xl border-2 border-slate-200 bg-slate-100 pl-12 pr-4 py-3 text-sm font-medium text-slate-700 outline-none"
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-bold text-[#374151] mb-2">Filière</label>
-                        <div className="relative">
-                          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
-                            <GraduationCap className="h-5 w-5" />
-                          </div>
-                          {academicLoading ? (
-                            <div className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium text-slate-500">
-                              Chargement des spécialités...
-                            </div>
-                          ) : (
-                            <input
-                              value="ICT4D"
-                              readOnly
-                              className="w-full rounded-xl border-2 border-slate-200 bg-slate-100 pl-12 pr-4 py-3 text-sm font-medium text-slate-700 outline-none"
-                            />
-                          )}
-                        </div>
-                      </div>
+                          {selectedProgram.levels.length === 0 && <p className="mt-2 text-xs text-amber-700">Aucun niveau n’est ouvert pour cette filière. Contactez votre administration.</p>}
+                        </motion.div>
+                      )}
                     </>
                   )}
 
@@ -619,6 +569,42 @@ export default function RegisterPage() {
           </div>
         </motion.div>
       </div>
+    </div>
+  )
+}
+
+function ReferenceSelect({ icon: Icon, label, value, onChange, options, placeholder, disabled, loading, error }: {
+  icon: typeof Building2
+  label: string
+  value: string
+  onChange: (value: string) => void
+  options: { value: string; label: string }[]
+  placeholder: string
+  disabled?: boolean
+  loading?: boolean
+  error?: string
+}) {
+  const empty = !loading && !disabled && !error && options.length === 0
+  return (
+    <div>
+      <label className="block text-sm font-bold text-[#374151] mb-2">{label}</label>
+      <div className="relative">
+        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <Icon className="h-5 w-5" />}
+        </div>
+        <select
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled || loading || Boolean(error)}
+          aria-invalid={Boolean(error)}
+          className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-sm font-medium text-slate-800 outline-none focus:border-[#0d9488] focus:bg-white transition-all appearance-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <option value="">{loading ? 'Chargement…' : placeholder}</option>
+          {options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+        </select>
+      </div>
+      {error && <p className="mt-1.5 text-xs font-medium text-rose-700">{error}</p>}
+      {empty && <p className="mt-1.5 text-xs text-amber-700">Aucune entrée n’est encore enregistrée à ce niveau du référentiel.</p>}
     </div>
   )
 }

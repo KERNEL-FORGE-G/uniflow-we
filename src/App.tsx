@@ -1,20 +1,24 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { lazy, Suspense, useEffect } from 'react'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { lazy, Suspense, useEffect, type ReactNode } from 'react'
+import { AnimatePresence } from 'framer-motion'
 import SEOHead from './components/SEOHead'
 import { AppLayout } from './components/layout/AppLayout'
 import { AdminLayout } from './components/layout/AdminLayout'
-import { RoleProvider, useUserRole } from './utils/userRole'
+import { RoleProvider, useUserRole, type Role } from './utils/userRole'
 import { IdleTimer } from './components/IdleTimer'
 import { GlobalNetworkToast } from './components/GlobalNetworkToast'
 import { Skeleton } from './components/ui/Skeleton'
+import { ErrorBoundary } from './components/feedback/ErrorBoundary'
+import { PageTransition } from './components/motion/PageTransition'
 import { pushNotificationService } from './services/pushNotificationService'
 import { initTheme } from './utils/theme'
-import { getAccountType, getToken } from './lib/api'
 
 // Pages chargées immédiatement (landing, auth)
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
+import NotFoundPage from './pages/NotFoundPage'
+import AccessDeniedPage from './pages/AccessDeniedPage'
 
 // Lazy loading pour les pages de l'app
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
@@ -25,8 +29,6 @@ const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
 const SchedulePage = lazy(() => import('./pages/SchedulePage'))
 const AttendancePage = lazy(() => import('./pages/AttendancePage'))
-const VideoLobbyPage = lazy(() => import('./pages/VideoLobbyPage'))
-const VideoConfPage = lazy(() => import('./pages/VideoConfPage'))
 const NotificationsPage = lazy(() => import('./pages/NotificationsPage'))
 const AssignmentsPage = lazy(() => import('./pages/AssignmentsPage'))
 const GradesPage = lazy(() => import('./pages/GradesPage'))
@@ -48,6 +50,8 @@ const ForumPage = lazy(() => import('./pages/ForumPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
 const PromotionPage = lazy(() => import('./pages/PromotionPage'))
 const PersonalAccountPage = lazy(() => import('./pages/PersonalAccountPages'))
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 
 // Admin pages lazy loaded
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
@@ -83,37 +87,66 @@ function PageLoader() {
   )
 }
 
-function StudentApp({ children }: { children: React.ReactNode }) {
-  return <AppLayout>{children}</AppLayout>
+/**
+ * Le rôle ADMIN (et le `superadmin` de la plateforme) a son propre espace :
+ * toute redirection « chez soi » passe par ici pour ne pas renvoyer un
+ * administrateur vers le tableau de bord étudiant.
+ */
+function homeOf(user: { role: string; isSuperAdmin?: boolean } | null) {
+  if (!user) return '/login'
+  return user.role === 'ADMIN' || user.isSuperAdmin ? '/admin' : '/app'
 }
 
-function AuthenticatedRoute({ children }: { children: React.ReactNode }) {
+function AuthenticatedRoute({ children }: { children: ReactNode }) {
+  const { authUser, isSessionReady } = useUserRole()
+  const location = useLocation()
+  if (!isSessionReady) return <PageLoader />
+  return authUser ? <>{children}</> : <Navigate to="/login" replace state={{ from: location.pathname }} />
+}
+
+function GuestRoute({ children }: { children: ReactNode }) {
   const { authUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
-  return authUser ? <>{children}</> : <Navigate to="/login" replace />
+  return authUser ? <Navigate to={homeOf(authUser)} replace /> : <>{children}</>
 }
 
-function GuestRoute({ children }: { children: React.ReactNode }) {
+function AdminRoute({ children }: { children: ReactNode }) {
   const { authUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
-  return authUser ? <Navigate to={authUser.role === 'ADMIN' ? '/admin' : '/app'} replace /> : <>{children}</>
+  if (!authUser) return <Navigate to="/login" replace />
+  const allowed = authUser.role === 'ADMIN' || authUser.isSuperAdmin
+  return allowed ? <>{children}</> : <AccessDeniedPage reason="L’administration est réservée aux comptes ADMIN de l’université et à l’administrateur de la plateforme." />
 }
 
-function AdminRoute({ children }: { children: React.ReactNode }) {
-  const { authUser, isSessionReady } = useUserRole()
+/** Écran universitaire : refuse les comptes indépendants et, si précisé, les rôles non listés. */
+function UniversityRoute({ roles, children }: { roles?: Role[]; children: ReactNode }) {
+  const { authUser, currentUser, currentRole, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
-  return authUser?.role === 'ADMIN' ? <>{children}</> : <Navigate to="/app" replace />
+  if (!authUser) return <Navigate to="/login" replace />
+  if (currentUser.accountType === 'PERSONAL') {
+    return <AccessDeniedPage reason="Cet écran fait partie de l’espace universitaire. Votre compte indépendant dispose de sa propre gestion personnelle." />
+  }
+  if (roles && !roles.includes(currentRole)) {
+    return <AccessDeniedPage reason={`Cet écran est réservé aux rôles : ${roles.map(roleLabel).join(', ')}.`} />
+  }
+  return <>{children}</>
 }
 
-function PersonalAwareRoute({ kind, children }: { kind: 'profile' | 'settings' | 'messages' | 'library' | 'attendance' | 'notifications' | 'video' | 'classrooms' | 'help'; children: React.ReactNode }) {
-  return getAccountType() === 'PERSONAL' ? <PersonalAccountPage kind={kind} /> : <>{children}</>
+function roleLabel(role: Role) {
+  return { student: 'étudiant', delegate: 'délégué', teacher: 'enseignant', admin: 'administration' }[role]
+}
+
+/** Écran commun aux deux types de compte, avec une version personnelle dédiée. */
+function AccountAwareRoute({ kind, children }: { kind: 'profile' | 'settings' | 'help'; children: ReactNode }) {
+  const { currentUser, isSessionReady } = useUserRole()
+  if (!isSessionReady) return <PageLoader />
+  return currentUser.accountType === 'PERSONAL' ? <PersonalAccountPage kind={kind} /> : <>{children}</>
 }
 
 function AccountHomePage() {
   const { currentUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
-  const isIndependent = currentUser.accountType === 'PERSONAL'
-  return isIndependent ? <IndependentWorkspacePage /> : <DashboardPage />
+  return currentUser.accountType === 'PERSONAL' ? <IndependentWorkspacePage /> : <DashboardPage />
 }
 
 /**
@@ -122,30 +155,40 @@ function AccountHomePage() {
  * la vue, au lieu de s’appuyer sur une valeur localStorage potentiellement
  * absente pendant le premier rendu.
  */
-function PersonalLearningRoute({
-  tab,
-  scheduleOnly = false,
-  children,
-}: {
-  tab: 'courses' | 'schedule' | 'assignments' | 'grades'
-  scheduleOnly?: boolean
-  children: React.ReactNode
-}) {
+function PersonalLearningRoute({ tab, scheduleOnly = false, children }: { tab: 'courses' | 'schedule' | 'assignments' | 'grades'; scheduleOnly?: boolean; children: ReactNode }) {
   const { currentUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
+  return currentUser.accountType === 'PERSONAL' ? <IndependentWorkspacePage initialTab={tab} scheduleOnly={scheduleOnly} /> : <>{children}</>
+}
 
+/** Espace connecté : layout + transition de page animée sur le contenu seulement. */
+function Shell({ children }: { children: ReactNode }) {
+  const location = useLocation()
   return (
     <AuthenticatedRoute>
-      <StudentApp>
-        {currentUser.accountType === 'PERSONAL'
-          ? <IndependentWorkspacePage initialTab={tab} scheduleOnly={scheduleOnly} />
-          : children}
-      </StudentApp>
+      <AppLayout>
+        <AnimatePresence mode="wait" initial={false}>
+          <PageTransition key={location.pathname}>
+            <Suspense fallback={<PageLoader />}>{children}</Suspense>
+          </PageTransition>
+        </AnimatePresence>
+      </AppLayout>
     </AuthenticatedRoute>
   )
 }
 
+function PublicPage({ children }: { children: ReactNode }) {
+  const location = useLocation()
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <PageTransition key={location.pathname}>{children}</PageTransition>
+    </AnimatePresence>
+  )
+}
+
 export default function App() {
+  const location = useLocation()
+
   useEffect(() => {
     initTheme()
     let disposed = false
@@ -175,82 +218,81 @@ export default function App() {
       <SEOHead />
       <IdleTimer />
       <GlobalNetworkToast />
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/subscribe" element={<SubscriptionFlowPage />} />
-          <Route path="/subscribe/:planId" element={<SubscriptionFlowPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/presentation" element={<PresentationPage />} />
-          <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-          <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
-          <Route path="/sentinelle" element={<SentinellePage />} />
-          <Route path="/forum" element={<ForumPage />} />
-          <Route path="/teams" element={<TeamsPage />} />
+      <ErrorBoundary resetKey={location.pathname}>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/about" element={<PublicPage><AboutPage /></PublicPage>} />
+            <Route path="/pricing" element={<PublicPage><PricingPage /></PublicPage>} />
+            <Route path="/subscribe" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
+            <Route path="/subscribe/:planId" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
+            <Route path="/contact" element={<PublicPage><ContactPage /></PublicPage>} />
+            <Route path="/presentation" element={<PublicPage><PresentationPage /></PublicPage>} />
+            <Route path="/login" element={<GuestRoute><PublicPage><LoginPage /></PublicPage></GuestRoute>} />
+            <Route path="/register" element={<GuestRoute><PublicPage><RegisterPage /></PublicPage></GuestRoute>} />
+            <Route path="/mot-de-passe-oublie" element={<GuestRoute><PublicPage><ForgotPasswordPage /></PublicPage></GuestRoute>} />
+            <Route path="/reinitialiser-mot-de-passe" element={<PublicPage><ResetPasswordPage /></PublicPage>} />
+            <Route path="/sentinelle" element={<PublicPage><SentinellePage /></PublicPage>} />
+            <Route path="/forum" element={<PublicPage><ForumPage /></PublicPage>} />
+            <Route path="/teams" element={<PublicPage><TeamsPage /></PublicPage>} />
 
-          {/* Partie 1 — Dashboard */}
-          <Route path="/app" element={<AuthenticatedRoute><StudentApp><AccountHomePage /></StudentApp></AuthenticatedRoute>} />
-          <Route path="/app/independent" element={<AuthenticatedRoute><StudentApp><IndependentWorkspacePage /></StudentApp></AuthenticatedRoute>} />
-          <Route path="/app/accueil-compact" element={<StudentApp>{getAccountType() === 'PERSONAL' ? <IndependentWorkspacePage /> : <DashboardCompactPage />}</StudentApp>} />
+            {/* Accueil — tableau de bord universitaire ou espace indépendant */}
+            <Route path="/app" element={<Shell><AccountHomePage /></Shell>} />
+            <Route path="/app/independent" element={<Navigate to="/app" replace />} />
+            <Route path="/app/accueil-compact" element={<Shell><UniversityRoute><DashboardCompactPage /></UniversityRoute></Shell>} />
 
-          {/* Partie 2 — Cours, Profil, Emploi du temps */}
-          <Route path="/app/cours" element={<PersonalLearningRoute tab="courses"><CoursesPage /></PersonalLearningRoute>} />
-          <Route path="/app/cours/:courseId" element={<PersonalLearningRoute tab="courses"><CourseDetailPage /></PersonalLearningRoute>} />
-          <Route path="/app/profil" element={<StudentApp><PersonalAwareRoute kind="profile"><ProfilePage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/emploi-du-temps" element={<PersonalLearningRoute tab="schedule" scheduleOnly><SchedulePage /></PersonalLearningRoute>} />
+            {/* Apprentissage — commun, avec version personnelle */}
+            <Route path="/app/cours" element={<Shell><PersonalLearningRoute tab="courses"><CoursesPage /></PersonalLearningRoute></Shell>} />
+            <Route path="/app/cours/:courseId" element={<Shell><PersonalLearningRoute tab="courses"><CourseDetailPage /></PersonalLearningRoute></Shell>} />
+            <Route path="/app/emploi-du-temps" element={<Shell><PersonalLearningRoute tab="schedule" scheduleOnly><SchedulePage /></PersonalLearningRoute></Shell>} />
+            <Route path="/app/devoirs" element={<Shell><PersonalLearningRoute tab="assignments"><AssignmentsPage /></PersonalLearningRoute></Shell>} />
+            <Route path="/app/notes" element={<Shell><PersonalLearningRoute tab="grades"><GradesPage /></PersonalLearningRoute></Shell>} />
 
-          {/* Partie 3 — Présences, Visioconf, Notifications */}
-          <Route path="/app/presences" element={<StudentApp><PersonalAwareRoute kind="attendance"><AttendancePage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/visio" element={<StudentApp><PersonalAwareRoute kind="video"><VideoLobbyPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/visioconference" element={<StudentApp><PersonalAwareRoute kind="video"><VideoConfPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/visioconference/:id" element={<StudentApp><PersonalAwareRoute kind="video"><VideoConfPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/visio/room/:id" element={<StudentApp><PersonalAwareRoute kind="video"><VideoConfPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/notifications" element={<StudentApp><PersonalAwareRoute kind="notifications"><NotificationsPage /></PersonalAwareRoute></StudentApp>} />
+            {/* Commun aux deux types de compte */}
+            <Route path="/app/profil" element={<Shell><AccountAwareRoute kind="profile"><ProfilePage /></AccountAwareRoute></Shell>} />
+            <Route path="/app/parametres" element={<Shell><AccountAwareRoute kind="settings"><SettingsPage /></AccountAwareRoute></Shell>} />
+            <Route path="/app/aide" element={<Shell><AccountAwareRoute kind="help"><HelpPage /></AccountAwareRoute></Shell>} />
 
-          {/* Partie 4 — Devoirs, Notes, Messagerie */}
-          <Route path="/app/devoirs" element={<PersonalLearningRoute tab="assignments"><AssignmentsPage /></PersonalLearningRoute>} />
-          <Route path="/app/notes" element={<PersonalLearningRoute tab="grades"><GradesPage /></PersonalLearningRoute>} />
-          <Route path="/app/messages" element={<StudentApp><PersonalAwareRoute kind="messages"><MessagingPage /></PersonalAwareRoute></StudentApp>} />
+            {/* Universitaire uniquement */}
+            <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />
+            <Route path="/app/gestion-presences" element={<Shell><UniversityRoute roles={['delegate', 'teacher']}><AttendanceManagePage /></UniversityRoute></Shell>} />
+            <Route path="/app/notifications" element={<Shell><UniversityRoute><NotificationsPage /></UniversityRoute></Shell>} />
+            <Route path="/app/messages" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
+            <Route path="/app/messages/:conversationId" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
+            <Route path="/app/bibliotheque" element={<Shell><UniversityRoute><LibraryPage /></UniversityRoute></Shell>} />
+            <Route path="/app/salles" element={<Shell><UniversityRoute><ClassroomsPage /></UniversityRoute></Shell>} />
+            <Route path="/app/promotion" element={<Shell><UniversityRoute roles={['student', 'delegate']}><PromotionPage /></UniversityRoute></Shell>} />
+            <Route path="/app/mes-cours-enseignant" element={<Shell><UniversityRoute roles={['teacher']}><TeacherCoursesPage /></UniversityRoute></Shell>} />
+            <Route path="/app/demo" element={<Shell><UniversityRoute><DemoPage /></UniversityRoute></Shell>} />
 
-          {/* Partie 5 — Délégué & Promotion */}
-          <Route path="/app/gestion-presences" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <AuthenticatedRoute><StudentApp><AttendanceManagePage /></StudentApp></AuthenticatedRoute>} />
-          <Route path="/app/promotion" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><PromotionPage /></StudentApp>} />
+            {/* Anciennes adresses de la visioconférence : elle vit désormais dans l'application de bureau */}
+            <Route path="/app/visio/*" element={<Navigate to="/app/aide" replace />} />
+            <Route path="/app/visioconference/*" element={<Navigate to="/app/aide" replace />} />
 
-          {/* Partie 8 — Enseignant Spécifique */}
-          <Route path="/app/mes-cours-enseignant" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><TeacherCoursesPage /></StudentApp>} />
+            {/* Administration */}
+            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="utilisateurs" element={<AdminUsersPage />} />
+              <Route path="etudiants" element={<StudentsPage />} />
+              <Route path="enseignants" element={<TeachersPage />} />
+              <Route path="equipe" element={<AdminTeamPage />} />
+              <Route path="structure" element={<AcademicStructurePage />} />
+              <Route path="cours" element={<AdminCoursesPage />} />
+              <Route path="ue" element={<UEPage />} />
+              <Route path="salles" element={<AdminClassroomsPage />} />
+              <Route path="parametres" element={<AdminSettingsPage />} />
+              <Route path="rapports" element={<AdminReportsPage />} />
+              <Route path="paiements" element={<AdminPaymentsPage />} />
+              <Route path="historique-presences" element={<AttendanceHistoryPage />} />
+              <Route path="activite" element={<AdminActivityPage />} />
+              <Route path="securite" element={<AdminSecurityPage />} />
+              <Route path="*" element={<NotFoundPage />} />
+            </Route>
 
-          {/* Partie 6 — Paramètres, Bibliothèque, Aide, Salles */}
-          <Route path="/app/parametres" element={<StudentApp><PersonalAwareRoute kind="settings"><SettingsPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/bibliotheque" element={<StudentApp><PersonalAwareRoute kind="library"><LibraryPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/salles" element={<StudentApp><PersonalAwareRoute kind="classrooms"><ClassroomsPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/aide" element={<StudentApp><PersonalAwareRoute kind="help"><HelpPage /></PersonalAwareRoute></StudentApp>} />
-          <Route path="/app/demo" element={getAccountType() === 'PERSONAL' ? <Navigate to="/app" replace /> : <StudentApp><DemoPage /></StudentApp>} />
-
-          {/* Partie 5 — Administration */}
-          <Route path="/admin" element={<AuthenticatedRoute><AdminRoute><AdminLayout /></AdminRoute></AuthenticatedRoute>}>
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="utilisateurs" element={<AdminUsersPage />} />
-            <Route path="etudiants" element={<StudentsPage />} />
-            <Route path="enseignants" element={<TeachersPage />} />
-            <Route path="equipe" element={<AdminTeamPage />} />
-            <Route path="structure" element={<AcademicStructurePage />} />
-            <Route path="cours" element={<AdminCoursesPage />} />
-            <Route path="ue" element={<UEPage />} />
-            <Route path="salles" element={<AdminClassroomsPage />} />
-            <Route path="parametres" element={<AdminSettingsPage />} />
-            <Route path="rapports" element={<AdminReportsPage />} />
-            <Route path="paiements" element={<AdminPaymentsPage />} />
-            <Route path="historique-presences" element={<AttendanceHistoryPage />} />
-            <Route path="activite" element={<AdminActivityPage />} />
-            <Route path="securite" element={<AdminSecurityPage />} />
-            <Route path="*" element={<AdminDashboardPage />} />
-          </Route>
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </Suspense>
+      </ErrorBoundary>
     </RoleProvider>
   )
 }

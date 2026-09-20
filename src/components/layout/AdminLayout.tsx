@@ -7,7 +7,10 @@ import {
 import { adminNavGroups } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
 import { cn } from '../../utils/cn'
-import { useState } from 'react'
+import { Suspense, useState } from 'react'
+import { AnimatePresence } from 'framer-motion'
+import { PageTransition } from '../motion/PageTransition'
+import { Skeleton } from '../ui/Skeleton'
 
 function AdminSidebar() {
   return (
@@ -192,7 +195,13 @@ export function AdminLayout() {
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
-          <Outlet />
+          <AnimatePresence mode="wait" initial={false}>
+            <PageTransition key={location.pathname}>
+              <Suspense fallback={<div className="space-y-4 animate-fade-in"><Skeleton className="h-10 w-64" /><Skeleton className="h-64" /></div>}>
+                <Outlet />
+              </Suspense>
+            </PageTransition>
+          </AnimatePresence>
         </main>
       </div>
     </div>

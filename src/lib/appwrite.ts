@@ -676,6 +676,23 @@ export async function logoutAccount() {
   try { await awaitAppwrite(appwriteAccount.deleteSession('current'), 'la fermeture de session') } catch { /* already logged out */ }
 }
 
+/**
+ * Adresse de la page de réinitialisation. Appwrite y ajoute `userId` et
+ * `secret` en paramètres de requête ; avec le HashRouter ils atterrissent
+ * après le `#`, là où `useSearchParams` les lit.
+ */
+export function passwordResetUrl() {
+  return `${window.location.origin}${window.location.pathname}#/reinitialiser-mot-de-passe`
+}
+
+export async function requestPasswordRecovery(email: string) {
+  await awaitAppwrite(appwriteAccount.createRecovery(email.trim(), passwordResetUrl()), 'l’envoi du lien de réinitialisation')
+}
+
+export async function completePasswordRecovery(userId: string, secret: string, password: string) {
+  await awaitAppwrite(appwriteAccount.updateRecovery(userId, secret, password), 'la réinitialisation du mot de passe')
+}
+
 // ---------------------------------------------------------------------------
 // Photo de profil
 //

@@ -967,8 +967,6 @@ export const statsApi = {
   },
 }
 
-export interface VideoRoom { roomName: string; token: string; serverUrl: string }
-export const videoApi = { create: async (_dto: { courseId?: string; roomName?: string }) => unavailable<VideoRoom>('La visioconférence') }
 export interface Enrollment { id: string; status: string; teachingUnitId: string; teachingUnit?: { name: string; code: string; credits: number } }
 export const enrollmentsApi = {
   mine: async (): Promise<Enrollment[]> => [], list: async (): Promise<Enrollment[]> => [], byStudent: async (_studentId: string): Promise<Enrollment[]> => [], byUe: async (_ueId: string): Promise<Enrollment[]> => [],

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import App from './App'
 import './index.css'
 import SessionExpiredModal from './components/SessionExpiredModal'
@@ -33,11 +34,19 @@ if (typeof window !== 'undefined') {
 
 initGlobalSoundListeners()
 
+// Le réseau vers Appwrite Cloud est lent : on garde les lectures en cache et on
+// ne retente qu'une fois pour ne pas empiler les requêtes en cas de coupure.
+const queryClient = new QueryClient({
+  defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false, staleTime: 30_000 } },
+})
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <HashRouter>
-      <App />
-      <SessionExpiredModal />
-    </HashRouter>
+    <QueryClientProvider client={queryClient}>
+      <HashRouter>
+        <App />
+        <SessionExpiredModal />
+      </HashRouter>
+    </QueryClientProvider>
   </StrictMode>,
 )

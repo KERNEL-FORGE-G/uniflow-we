@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Lock, Mail, Sparkles, ShieldAlert, Building2, User } from 'lucide-react'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { useAuth } from '../../hooks/useAuth'
-import { UNIVERSITIES } from '../../data/universities'
+import { ActionResultSlot } from '../../components/feedback/ActionResult'
 
 const features = [
   { 
@@ -34,7 +34,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [accountType, setAccountTypeSelection] = useState<'UNIVERSITY' | 'PERSONAL'>('UNIVERSITY')
-  const [universityCode, setUniversityCode] = useState('UY1')
 
   const isIdleTimeout = location.state?.reason === 'idle_timeout'
 
@@ -43,12 +42,9 @@ export default function LoginPage() {
     setError(null)
     if (!email || !password) { setError('Veuillez remplir tous les champs.'); return }
     try {
-      await login({
-        email,
-        password,
-        accountType,
-        universityCode: accountType === 'UNIVERSITY' ? universityCode : undefined,
-      })
+      // Le type choisi n'est qu'une indication : le serveur résout le type
+      // réel depuis le profil, un client ne peut pas se déclarer universitaire.
+      await login({ email, password, accountType })
     } catch {
       // Le hook expose déjà un message utilisateur Appwrite précis dans `error`.
     }
@@ -169,21 +165,13 @@ export default function LoginPage() {
             {/* Divider */}
             <div className="flex items-center gap-3 mb-8">
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-              <span className="text-xs font-medium text-[#9ca3af]">ou avec email</span>
+              <span className="text-xs font-medium text-[#9ca3af]">avec votre email</span>
               <div className="flex-1 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
             </div>
 
             {/* Form */}
             <form onSubmit={handleLogin} className="space-y-5">
-              {error && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium"
-                >
-                  {error}
-                </motion.div>
-              )}
+              <ActionResultSlot result={error ? { status: 'error', title: 'Connexion refusée', description: error } : null} />
 
               {/* Sélection Type de compte */}
               <div>
@@ -200,7 +188,7 @@ export default function LoginPage() {
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <Building2 className="h-4 w-4" /> Université (BD)
+                    <Building2 className="h-4 w-4" /> Compte universitaire
                   </button>
                   <button
                     type="button"
@@ -213,42 +201,8 @@ export default function LoginPage() {
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <User className="h-4 w-4" /> Indépendant
+                    <User className="h-4 w-4" /> Compte indépendant
                   </button>
-                </div>
-              </div>
-
-              {/* Sélection Université dans la BD si Université */}
-              {accountType === 'UNIVERSITY' && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }} 
-                  animate={{ opacity: 1, height: 'auto' }}
-                >
-                  <label className="block text-sm font-bold text-[#374151] mb-2">Université (Base de données)</label>
-                  <div className="relative">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9ca3af]">
-                      <Building2 className="h-5 w-5" />
-                    </div>
-                    <select
-                      value={universityCode}
-                      onChange={(e) => setUniversityCode(e.target.value)}
-                      className="w-full rounded-xl border-2 border-slate-200 bg-slate-50 pl-12 pr-4 py-3 text-xs font-bold text-slate-800 outline-none focus:border-[#1e3a8a] focus:bg-white transition-all appearance-none cursor-pointer"
-                    >
-                      {UNIVERSITIES.map((univ) => (
-                        <option key={univ.code} value={univ.code}>
-                          {univ.name} ({univ.city})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Information Badge du Backend */}
-              <div className="p-3 bg-blue-50/80 rounded-xl border border-blue-200 text-xs text-[#1e3a8a] flex items-center gap-2">
-                <Building2 className="h-4 w-4 shrink-0 text-[#1e3a8a]" />
-                <div className="leading-tight">
-                  <span>Source : <strong>Appwrite KERNEL FORGE</strong> — projet UniFlow ({accountType === 'UNIVERSITY' ? universityCode : 'Compte indépendant'})</span>
                 </div>
               </div>
 
@@ -294,9 +248,9 @@ export default function LoginPage() {
                   </button>
                 </div>
                 <div className="mt-2 text-right">
-                  <button type="button" className="text-xs font-semibold text-[#1e3a8a] hover:underline">
+                  <Link to="/mot-de-passe-oublie" className="text-xs font-semibold text-[#1e3a8a] hover:underline">
                     Mot de passe oublié ?
-                  </button>
+                  </Link>
                 </div>
               </div>
 

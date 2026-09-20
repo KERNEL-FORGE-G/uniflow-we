@@ -25,17 +25,18 @@ import {
   Code2,
   type LucideIcon,
 } from 'lucide-react'
+import { visibleNavEntries, type NavEntry, type NavRole } from './navigationModel'
 
-export type Role = 'student' | 'delegate' | 'teacher' | 'admin'
+export type Role = NavRole
 
-export interface NavItem {
-  to: string
+export interface NavItem extends NavEntry {
   icon: LucideIcon
-  labelFr: string
-  labelEn: string
-  end?: boolean
-  roles?: Role[]
   badge?: string
+}
+
+/** Menus visibles pour un rôle et un type de compte (logique pure dans navigationModel). */
+export function visibleNavItems(role: Role, accountType: 'UNIVERSITY' | 'PERSONAL'): NavItem[] {
+  return visibleNavEntries(navItems, role, accountType)
 }
 
 export interface AdminNavGroup {
@@ -44,29 +45,26 @@ export interface AdminNavGroup {
 }
 
 export const navItems: NavItem[] = [
-  // Common
-  { to: '/app',                    icon: Home,          labelFr: 'Tableau de bord',   labelEn: 'Dashboard',       end: true, roles: ['student', 'delegate', 'teacher'] },
-  { to: '/app/independent',        icon: ClipboardList, labelFr: 'Gestion personnelle', labelEn: 'Personal workspace', roles: ['student', 'teacher'] },
-  { to: '/app/cours',              icon: BookOpen,      labelFr: 'Mes cours',          labelEn: 'My Courses',      roles: ['student', 'delegate'] },
-  { to: '/app/emploi-du-temps',    icon: Calendar,      labelFr: 'Emploi du temps',    labelEn: 'Schedule',        roles: ['student', 'delegate', 'teacher'] },
+  // Commun aux deux types de compte
+  { to: '/app',                    icon: Home,          labelFr: 'Tableau de bord',    labelEn: 'Dashboard',       end: true, roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/app/cours',              icon: BookOpen,      labelFr: 'Mes cours',          labelEn: 'My Courses',      roles: ['student', 'delegate'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/app/emploi-du-temps',    icon: Calendar,      labelFr: 'Emploi du temps',    labelEn: 'Schedule',        roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/app/devoirs',            icon: ClipboardList, labelFr: 'Devoirs',            labelEn: 'Assignments',     roles: ['student', 'delegate'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/app/notes',              icon: GraduationCap, labelFr: 'Mes notes',          labelEn: 'My Grades',       roles: ['student', 'delegate'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  // Universitaire uniquement
   { to: '/app/presences',          icon: UserCheck,     labelFr: 'Présences',          labelEn: 'My Attendance',   roles: ['student', 'delegate'] },
-  { to: '/app/devoirs',            icon: ClipboardList, labelFr: 'Devoirs',            labelEn: 'Assignments',     roles: ['student', 'delegate'] },
-  { to: '/app/notes',              icon: GraduationCap, labelFr: 'Mes notes',          labelEn: 'My Grades',       roles: ['student', 'delegate'] },
-  // Delegate specific
-  { to: '/app/gestion-presences',  icon: UserCheck,     labelFr: 'Gérer Présences',    labelEn: 'Manage Attendance', roles: ['delegate'] },
-  // Teacher specific
-  { to: '/app/mes-cours-enseignant', icon: BookMarked,  labelFr: 'Espace Pédagogique', labelEn: 'Teacher Space',   roles: ['teacher'] },
+  { to: '/app/gestion-presences',  icon: UserCheck,     labelFr: 'Gérer les présences', labelEn: 'Manage Attendance', roles: ['delegate', 'teacher'] },
+  { to: '/app/mes-cours-enseignant', icon: BookMarked,  labelFr: 'Espace pédagogique', labelEn: 'Teacher Space',   roles: ['teacher'] },
   { to: '/app/notes',              icon: TrendingUp,    labelFr: 'Évaluations',        labelEn: 'Grades',          roles: ['teacher'] },
-  // Common
-  { to: '/app/visio',              icon: Video,         labelFr: 'Visioconférence',    labelEn: 'Video Conf.',     roles: ['student', 'delegate', 'teacher'] },
   { to: '/app/messages',           icon: MessageSquare, labelFr: 'Messages',           labelEn: 'Messages',        roles: ['student', 'delegate', 'teacher'] },
   { to: '/app/notifications',      icon: Bell,          labelFr: 'Notifications',      labelEn: 'Notifications',   roles: ['student', 'delegate', 'teacher'] },
-  { to: '/app/bibliotheque',       icon: BookMarked,    labelFr: 'Bibliothèque',       labelEn: 'Library',         roles: ['student', 'delegate'] },
+  { to: '/app/bibliotheque',       icon: BookMarked,    labelFr: 'Bibliothèque',       labelEn: 'Library',         roles: ['student', 'delegate', 'teacher'] },
   { to: '/app/salles',             icon: MapPin,        labelFr: 'Salles',             labelEn: 'Classrooms',      roles: ['student', 'delegate', 'teacher'] },
-  { to: '/app/promotion',          icon: Award,         labelFr: 'Postuler Délégué',   labelEn: 'Delegate Candidacy', roles: ['student', 'delegate'] },
-    { to: '/app/parametres',         icon: Settings,         labelFr: 'Paramètres',         labelEn: 'Settings',          roles: ['student', 'delegate', 'teacher', 'admin'] },
-  { to: '/pricing',                icon: CircleDollarSign, labelFr: 'Tarifs personnels',    labelEn: 'Personal pricing',     roles: ['student', 'teacher'] },
-  { to: '/app/aide',               icon: HelpCircle,    labelFr: 'Aide & FAQ',         labelEn: 'Help & FAQ',      roles: ['student', 'delegate', 'teacher'] },
+  { to: '/app/promotion',          icon: Award,         labelFr: 'Candidature délégué', labelEn: 'Delegate Candidacy', roles: ['student', 'delegate'] },
+  // Commun
+  { to: '/app/parametres',         icon: Settings,      labelFr: 'Paramètres',         labelEn: 'Settings',        roles: ['student', 'delegate', 'teacher', 'admin'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/pricing',                icon: CircleDollarSign, labelFr: 'Abonnement',      labelEn: 'Subscription',    roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/app/aide',               icon: HelpCircle,    labelFr: 'Aide & FAQ',         labelEn: 'Help & FAQ',      roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
 ]
 
 export const adminNavGroups: AdminNavGroup[] = [

@@ -706,6 +706,9 @@ export const schemas = [
       string('fullName', 255, true),
       string('email', 255, true),
       string('phoneNumber', 64, false, ''),
+      // Canal par lequel le client règle : la facturation passe par le
+      // WhatsApp +237 657 635 644 (consigne du 2026-09-20), pas de paiement en ligne.
+      string('channel', 32, false, 'WHATSAPP'),
       enumeration('status', ['PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED'], true),
       datetime('requestedAt', true),
       datetime('processedAt', false),
@@ -752,10 +755,98 @@ export const referencedCollections = []
  * liste vide alors que les documents existent — c'est exactement le symptôme
  * « la connexion marche mais il n'y a pas de données ».
  */
+/**
+ * Référentiel académique : universités, facultés, filières (avec leurs
+ * niveaux) et salles.
+ *
+ * Demande du propriétaire (2026-09-20) : les listes des formulaires
+ * d'inscription et des vues d'administration doivent **venir de la base**,
+ * plus jamais d'un tableau codé en dur dans un client — les trois applications
+ * lisaient chacune leur propre liste et ne proposaient que « Université de
+ * Yaoundé I / ICT4D / L1 ». Ces collections sont lisibles **sans session**
+ * (`read("any")`) : le formulaire d'inscription les consulte avant qu'un compte
+ * existe. Elles ne s'écrivent qu'avec la clé serveur (seeds, Functions).
+ */
+export const referenceSchemas = [
+  {
+    id: 'universities',
+    name: 'Universités',
+    attributes: [
+      string('code', 32, true),
+      string('name', 255, true),
+      string('shortName', 64, false, ''),
+      string('city', 128, false, ''),
+      string('country', 128, false, 'Cameroun'),
+      string('website', 255, false, ''),
+      boolean('active', false, true),
+    ],
+    indexes: [{ key: 'university_code', type: 'unique', attributes: ['code'] }],
+    permissions: ['read("any")'],
+  },
+  {
+    id: 'faculties',
+    name: 'Facultés et établissements',
+    attributes: [
+      string('universityCode', 32, true),
+      string('code', 32, true),
+      string('name', 255, true),
+      boolean('active', false, true),
+    ],
+    indexes: [
+      { key: 'faculty_university', type: 'key', attributes: ['universityCode'] },
+      { key: 'faculty_code', type: 'unique', attributes: ['universityCode', 'code'] },
+    ],
+    permissions: ['read("any")'],
+  },
+  {
+    id: 'academic_programs',
+    name: 'Filières',
+    attributes: [
+      string('universityCode', 32, true),
+      string('facultyCode', 32, true),
+      // Code court utilisé par `users.program`, `academic_courses.program`
+      // et les emplois du temps (« ICT4D », « PHYS », « ENR »…).
+      string('code', 32, true),
+      string('name', 255, true),
+      // Niveaux ouverts, séparés par des virgules (« L1,L2,L3 » ou « M1,M2 ») :
+      // un attribut tableau compliquerait les requêtes des clients Flutter.
+      string('levels', 64, true),
+      string('description', 1000, false, ''),
+      boolean('active', false, true),
+    ],
+    indexes: [
+      { key: 'program_university', type: 'key', attributes: ['universityCode', 'facultyCode'] },
+      { key: 'program_code', type: 'unique', attributes: ['universityCode', 'code'] },
+    ],
+    permissions: ['read("any")'],
+  },
+  {
+    id: 'classrooms',
+    name: 'Salles',
+    attributes: [
+      string('universityCode', 32, true),
+      string('facultyCode', 32, false, ''),
+      string('code', 32, true),
+      string('name', 255, false, ''),
+      // « AMPHI », « SALLE », « LABO », « TD »… libre, pour les filtres.
+      string('kind', 32, false, 'SALLE'),
+      integer('capacity', false, 0),
+      string('building', 128, false, ''),
+      boolean('active', false, true),
+    ],
+    indexes: [
+      { key: 'classroom_university', type: 'key', attributes: ['universityCode'] },
+      { key: 'classroom_code', type: 'unique', attributes: ['universityCode', 'code'] },
+    ],
+    permissions: ['read("any")'],
+  },
+]
+
 export const allSchemas = [
   ...schemas,
   ...academicSchemas.map((schema) => ({ ...schema, permissions: ['read("users")', 'create("users")'] })),
   ...subscriptionSchemas,
+  ...referenceSchemas,
   teamSchema,
 ]
 
