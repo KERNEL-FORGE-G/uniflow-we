@@ -10,20 +10,17 @@
  * les écritures passent donc par ici, et le rôle ADMIN est vérifié côté serveur
  * — jamais accepté du client.
  *
- * Le rôle est lu dans la collection `users`, avec `academic_directory` en
- * second recours : `admin-directory` écrit le rôle dans les deux, mais un
- * compte créé avant cette double écriture n'existe que dans l'une des deux.
- * On ne reprend volontairement pas le contrôle de périmètre UY1/ICT4D/L1 de
- * `admin-directory` : l'équipe KERNEL FORGE est un objet du projet, pas d'une
- * filière, et un administrateur d'une autre filière doit pouvoir la gérer.
+ * Le rôle est lu dans les **labels Appwrite** du compte (`resolveCaller`) :
+ * la collection `users`, consultée auparavant, appartient à son propriétaire
+ * et ne vaut pas preuve. On ne reprend volontairement pas de contrôle de
+ * périmètre universitaire : l'équipe KERNEL FORGE est un objet du projet, pas
+ * d'une filière, et toute administration doit pouvoir la gérer.
  */
 
-import { Client, Databases, ID, Permission, Query, Role, Storage } from 'node-appwrite'
+import { Client, Databases, ID, Permission, Role, Storage, Users } from 'node-appwrite'
+import { DATABASE_ID, isAdministrator, resolveCaller } from '../lib/caller.js'
 
-const DATABASE_ID = 'uniflow'
 const TEAM_COLLECTION = 'team_members'
-const PROFILE_COLLECTION = 'users'
-const DIRECTORY_COLLECTION = 'academic_directory'
 // Unique bucket du projet (plan gratuit d'Appwrite Cloud : un seul bucket) ;
 // les photos y sont déposées avec `read("any")`, ce qui suffit à les rendre publiques.
 const AVATAR_BUCKET = 'uniflow_assets'
@@ -50,10 +47,6 @@ function optionalText(value, max = 255) {
   if (value === undefined || value === null) return ''
   if (typeof value !== 'string') return ''
   return value.trim().slice(0, max)
-}
-
-function normalizeUserId(value) {
-  return typeof value === 'string' ? value.replace(/^user:/, '') : ''
 }
 
 /** Les documents doivent porter eux-mêmes leur permission : la collection a
@@ -87,22 +80,6 @@ function memberPayload(body) {
   }
 }
 
-/** L'appelant est-il administrateur ? Renvoie son identifiant, ou `null`. */
-async function assertAdmin(databases, actorId) {
-  try {
-    const profile = await databases.getDocument(DATABASE_ID, PROFILE_COLLECTION, actorId)
-    if (profile.role === 'ADMIN') return actorId
-  } catch {
-    // Document absent de `users` : on tente `academic_directory` ci-dessous.
-  }
-  const directory = await databases.listDocuments(DATABASE_ID, DIRECTORY_COLLECTION, [
-    Query.equal('userId', actorId),
-    Query.limit(1),
-  ])
-  if (directory.documents[0]?.role === 'ADMIN') return actorId
-  return null
-}
-
 /** Supprime un fichier du bucket des avatars sans faire échouer l'action. */
 async function deletePhoto(storage, fileId, log) {
   if (!fileId) return
@@ -118,9 +95,6 @@ async function deletePhoto(storage, fileId, log) {
 }
 
 export default async ({ req, res, log, error }) => {
-  const actorId = normalizeUserId(req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user'])
-  if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
-
   // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
   // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
   // être stockée en variable ; celle-ci reste lue en premier si elle existe.
@@ -130,6 +104,7 @@ export default async ({ req, res, log, error }) => {
     .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
   const storage = new Storage(client)
+  const users = new Users(client)
   const body = parseBody(req)
 
   try {
@@ -139,8 +114,9 @@ export default async ({ req, res, log, error }) => {
       return json(res, { ok: false, code: 'ACTION_UNKNOWN', message: 'Action d’équipe inconnue.' }, 400)
     }
 
-    const admin = await assertAdmin(databases, actorId)
-    if (!admin) {
+    const caller = await resolveCaller(req, users, null)
+    if (!caller) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
+    if (!isAdministrator(caller)) {
       return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Seul un administrateur peut modifier l’équipe.' }, 403)
     }
 

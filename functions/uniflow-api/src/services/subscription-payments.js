@@ -1,6 +1,6 @@
-import { Client, Databases, ID, Permission, Query, Role } from 'node-appwrite'
+import { Client, Databases, ID, Permission, Query, Role, Users } from 'node-appwrite'
+import { DATABASE_ID, isAdministrator, resolveCaller } from '../lib/caller.js'
 
-const DATABASE_ID = 'uniflow'
 const WHATSAPP_NUMBER = '237657635644'
 const REQUEST_COLLECTION = 'subscription_payment_requests'
 
@@ -11,11 +11,6 @@ function json(res, body, status = 200) {
 function bodyOf(req) {
   if (req.bodyJson && typeof req.bodyJson === 'object') return req.bodyJson
   try { return JSON.parse(req.bodyText || '{}') } catch { return {} }
-}
-
-function actorIdOf(req) {
-  const raw = req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user']
-  return typeof raw === 'string' ? raw.replace(/^user:/, '') : ''
 }
 
 function cleanText(value, field, limit, required = true) {
@@ -44,13 +39,10 @@ async function one(databases, collection, queries) {
 }
 
 async function actor(databases, userId) {
+  // Le profil doit exister : la demande de paiement porte nom et email du compte.
   const profile = await databases.getDocument(DATABASE_ID, 'users', userId)
   if (!profile) throw new Error('ACTOR_DENIED')
   return profile
-}
-
-function isAdmin(profile) {
-  return profile?.role === 'ADMIN'
 }
 
 function requestPermissions(userId) {
@@ -152,8 +144,6 @@ async function activateSubscription(databases, request, plan, adminId) {
 }
 
 export default async ({ req, res, error }) => {
-  const actorId = actorIdOf(req)
-  if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
   // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
   // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
   // être stockée en variable ; celle-ci reste lue en premier si elle existe.
@@ -162,10 +152,17 @@ export default async ({ req, res, error }) => {
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
     .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
+  const users = new Users(client)
   const body = bodyOf(req)
 
   try {
-    const profile = await actor(databases, actorId)
+    // Le rôle vient des labels Appwrite : `users.role` (document) est un
+    // miroir que son propriétaire peut réécrire, il ne vaut pas preuve.
+    const caller = await resolveCaller(req, users, null)
+    if (!caller) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
+    const actorId = caller.userId
+    const isAdmin = isAdministrator(caller)
+    await actor(databases, actorId)
     if (body.action === 'create') {
       const planCode = cleanText(body.planCode, 'plan_code', 64)
       const billingCycle = body.billingCycle === 'ANNUALLY' ? 'ANNUALLY' : body.billingCycle === 'MONTHLY' ? 'MONTHLY' : ''
@@ -204,7 +201,7 @@ export default async ({ req, res, error }) => {
     }
 
     if (body.action === 'admin-list') {
-      if (!isAdmin(profile)) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Action réservée à l’administration UniFlow.' }, 403)
+      if (!isAdmin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Action réservée à l’administration UniFlow.' }, 403)
       const status = ['PENDING', 'CONFIRMED', 'REJECTED', 'CANCELLED'].includes(body.status) ? body.status : ''
       const queries = [Query.orderDesc('requestedAt'), Query.limit(100)]
       if (status) queries.unshift(Query.equal('status', status))
@@ -213,7 +210,7 @@ export default async ({ req, res, error }) => {
     }
 
     if (body.action === 'review') {
-      if (!isAdmin(profile)) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Action réservée à l’administration UniFlow.' }, 403)
+      if (!isAdmin) return json(res, { ok: false, code: 'ADMIN_REQUIRED', message: 'Action réservée à l’administration UniFlow.' }, 403)
       const requestId = cleanText(body.requestId, 'request_id', 36)
       const decision = body.decision === 'CONFIRMED' ? 'CONFIRMED' : body.decision === 'REJECTED' ? 'REJECTED' : ''
       if (!decision) throw new Error('INVALID_DECISION')

@@ -1,7 +1,10 @@
-import { Client, Databases, ID, Permission, Query, Role } from 'node-appwrite'
+import { Client, Databases, ID, Permission, Query, Role, Users } from 'node-appwrite'
 import { createHash, randomUUID } from 'node:crypto'
+import { DATABASE_ID, inCallerUniversity, isAdministrator, resolveCaller } from '../lib/caller.js'
 
-const DATABASE_ID = 'uniflow'
+// Le rôle vient des labels Appwrite (`resolveCaller`), plus de l'annuaire :
+// celui-ci est un miroir que son propriétaire peut modifier. L'annuaire reste
+// consulté pour exiger un profil académique (un compte PERSONAL ne pointe pas).
 const TOKEN_LIFETIME_MS = 15 * 60 * 1000
 const MAX_LOCATION_ACCURACY_METERS = 100
 
@@ -57,10 +60,7 @@ function duplicateCount(documents, keyOf) {
 }
 
 export default async ({ req, res, log, error }) => {
-  const rawUserId = req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user']
-  const userId = typeof rawUserId === 'string' ? rawUserId.replace(/^user:/, '') : ''
-  if (!userId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
-
+  let userId = ''
   // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
   // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
   // être stockée en variable ; celle-ci reste lue en premier si elle existe.
@@ -69,15 +69,21 @@ export default async ({ req, res, log, error }) => {
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
     .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
+  const users = new Users(client)
   const body = parseBody(req)
 
   try {
+    const caller = await resolveCaller(req, users, databases)
+    if (!caller) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
+    userId = caller.userId
     const directory = await databases.listDocuments(DATABASE_ID, 'academic_directory', [Query.equal('userId', userId), Query.limit(1)])
-    const profile = directory.documents[0]
-    if (!profile) return json(res, { ok: false, code: 'PROFILE_REQUIRED', message: 'Profil académique introuvable.' }, 403)
+    if (!directory.documents[0] && !caller.isSuperAdmin) return json(res, { ok: false, code: 'PROFILE_REQUIRED', message: 'Profil académique introuvable.' }, 403)
+    const isAdmin = isAdministrator(caller)
+    // Le rôle « métier » : un superadmin sans label universitaire agit en administration.
+    const role = isAdmin ? 'ADMIN' : caller.role
 
     if (body.action === 'audit') {
-      if (profile.role !== 'ADMIN') return json(res, { ok: false, code: 'AUDIT_ROLE_DENIED', message: 'Seul un administrateur peut lancer un audit d’intégrité.' }, 403)
+      if (!isAdmin) return json(res, { ok: false, code: 'AUDIT_ROLE_DENIED', message: 'Seul un administrateur peut lancer un audit d’intégrité.' }, 403)
       const [courses, enrollments, schedules, sessions, records, tokens, locations] = await Promise.all([
         databases.listDocuments(DATABASE_ID, 'academic_courses', [Query.limit(200)]),
         databases.listDocuments(DATABASE_ID, 'academic_enrollments', [Query.limit(200)]),
@@ -115,7 +121,7 @@ export default async ({ req, res, log, error }) => {
     }
 
     if (body.action === 'roll') {
-      if (!['DELEGATE', 'TEACHER', 'ADMIN'].includes(profile.role)) return json(res, { ok: false, code: 'ROLE_DENIED', message: 'Seul un délégué, enseignant ou administrateur peut enregistrer un appel.' }, 403)
+      if (!['DELEGATE', 'TEACHER', 'ADMIN'].includes(role)) return json(res, { ok: false, code: 'ROLE_DENIED', message: 'Seul un délégué, enseignant ou administrateur peut enregistrer un appel.' }, 403)
       const courseId = requireValue(body.courseId, 'courseId')
       const date = requireValue(body.date, 'date')
       const dateKey = new Date(date).toISOString().slice(0, 10)
@@ -126,8 +132,11 @@ export default async ({ req, res, log, error }) => {
         databases.listDocuments(DATABASE_ID, 'attendance_sessions', [Query.equal('courseId', courseId), Query.limit(200)]),
       ])
       const course = courses.documents[0]
-      if (!course || course.university !== 'Université de Yaoundé I' || course.program !== 'ICT4D' || course.level !== 'L1') return json(res, { ok: false, code: 'COURSE_INVALID', message: 'Cours académique invalide.' }, 404)
-      if (profile.role === 'TEACHER' && course.teacherId !== userId) return json(res, { ok: false, code: 'COURSE_ASSIGNMENT_DENIED', message: 'Cet enseignant n’est pas affecté à ce cours.' }, 403)
+      // Plus de périmètre UY1/ICT4D/L1 en dur : un appel L2 ou d'une autre
+      // filière tombait en 404 « cours invalide ». Le cours doit exister et
+      // appartenir à l'université de l'appelant.
+      if (!course || !inCallerUniversity(caller, course)) return json(res, { ok: false, code: 'COURSE_INVALID', message: 'Cours académique invalide.' }, 404)
+      if (role === 'TEACHER' && course.teacherId !== userId) return json(res, { ok: false, code: 'COURSE_ASSIGNMENT_DENIED', message: 'Cet enseignant n’est pas affecté à ce cours.' }, 403)
       const rows = Array.isArray(body.rows) ? body.rows : []
       if (rows.some((row) => !row || typeof row.studentId !== 'string' || !['PRESENT', 'ABSENT', 'RETARD', 'JUSTIFIE'].includes(row.status))) return json(res, { ok: false, code: 'ROLL_INVALID', message: 'La liste d’appel contient un statut ou un apprenant invalide.' }, 400)
       const studentIds = [...new Set(rows.map((row) => row.studentId))]
@@ -169,13 +178,13 @@ export default async ({ req, res, log, error }) => {
     }
 
     if (body.action === 'issue') {
-      if (!['DELEGATE', 'TEACHER', 'ADMIN'].includes(profile.role)) return json(res, { ok: false, code: 'ROLE_DENIED', message: 'Seul un délégué, enseignant ou administrateur peut émettre un QR.' }, 403)
+      if (!['DELEGATE', 'TEACHER', 'ADMIN'].includes(role)) return json(res, { ok: false, code: 'ROLE_DENIED', message: 'Seul un délégué, enseignant ou administrateur peut émettre un QR.' }, 403)
       const sessionId = requireValue(body.sessionId, 'sessionId')
       const courseId = requireValue(body.courseId, 'courseId')
       const sessions = await databases.listDocuments(DATABASE_ID, 'attendance_sessions', [Query.equal('$id', sessionId), Query.limit(1)])
       const session = sessions.documents[0]
       if (!session || session.courseId !== courseId) return json(res, { ok: false, code: 'SESSION_INVALID', message: 'Séance Appwrite invalide.' }, 404)
-      if (profile.role !== 'ADMIN' && session.createdBy !== userId) return json(res, { ok: false, code: 'SESSION_OWNER_REQUIRED', message: 'Vous ne pouvez émettre un QR que pour votre séance.' }, 403)
+      if (!isAdmin && session.createdBy !== userId) return json(res, { ok: false, code: 'SESSION_OWNER_REQUIRED', message: 'Vous ne pouvez émettre un QR que pour votre séance.' }, 403)
 
       const origin = positionFrom(body.origin)
       const radiusMeters = Math.min(250, Math.max(20, Number(body.radiusMeters) || 80))
@@ -200,13 +209,13 @@ export default async ({ req, res, log, error }) => {
       const matches = await databases.listDocuments(DATABASE_ID, 'attendance_qr_tokens', [Query.equal('token', token), Query.limit(1)])
       const qr = matches.documents[0]
       if (!qr) return json(res, { ok: false, code: 'TOKEN_NOT_FOUND', message: 'Jeton QR introuvable.' }, 404)
-      if (profile.role !== 'ADMIN' && qr.createdBy !== userId) return json(res, { ok: false, code: 'REVOKE_DENIED', message: 'Vous ne pouvez révoquer que vos propres QR.' }, 403)
+      if (!isAdmin && qr.createdBy !== userId) return json(res, { ok: false, code: 'REVOKE_DENIED', message: 'Vous ne pouvez révoquer que vos propres QR.' }, 403)
       await databases.updateDocument(DATABASE_ID, 'attendance_qr_tokens', qr.$id, { revoked: true })
       return json(res, { ok: true, token, revoked: true })
     }
 
     if (body.action === 'scan') {
-      if (!['STUDENT', 'DELEGATE'].includes(profile.role)) return json(res, { ok: false, code: 'SCAN_ROLE_DENIED', message: 'Seul un apprenant inscrit peut émarger.' }, 403)
+      if (!['STUDENT', 'DELEGATE'].includes(role)) return json(res, { ok: false, code: 'SCAN_ROLE_DENIED', message: 'Seul un apprenant inscrit peut émarger.' }, 403)
       const token = requireValue(body.token, 'token')
       const matches = await databases.listDocuments(DATABASE_ID, 'attendance_qr_tokens', [Query.equal('token', token), Query.limit(1)])
       const qr = matches.documents[0]

@@ -1,13 +1,14 @@
 import { createHash } from 'node:crypto'
-import { Client, Databases, ID, Permission, Query, Role } from 'node-appwrite'
+import { Client, Databases, Permission, Query, Role, Users } from 'node-appwrite'
+import { DATABASE_ID, inCallerUniversity, resolveCaller } from '../lib/caller.js'
 
-const DATABASE_ID = 'uniflow'
-const UNIVERSITY = 'Université de Yaoundé I'
-const PROGRAM = 'ICT4D'
-// La filière ICT4D couvre la Licence 1 à la Licence 3 (demande du propriétaire) :
-// le périmètre n'est plus figé sur `L1`, un compte L2 ou L3 est dans le champ.
-const LEVELS = ['L1', 'L2', 'L3']
-const inScope = (document) => document?.university === UNIVERSITY && document?.program === PROGRAM && LEVELS.includes(document?.level)
+/**
+ * Saisie des notes par un enseignant (ses cours) ou une administration (les
+ * cours de son université). Le rôle vient des labels Appwrite, jamais de
+ * l'annuaire : celui-ci est un miroir modifiable par son propriétaire. Aucun
+ * périmètre UY1/ICT4D/L1 en dur : le cours doit être de l'université de
+ * l'appelant, et les élèves listés sont ceux inscrits au cours.
+ */
 
 function json(res, body, status = 200) {
   return res.json(body, status, { 'content-type': 'application/json' })
@@ -16,15 +17,6 @@ function json(res, body, status = 200) {
 function bodyOf(req) {
   if (req.bodyJson && typeof req.bodyJson === 'object') return req.bodyJson
   try { return JSON.parse(req.bodyText || '{}') } catch { return {} }
-}
-
-function actorIdOf(req) {
-  const raw = req.headers['x-appwrite-user-id'] || req.headers['x-appwrite-user']
-  return typeof raw === 'string' ? raw.replace(/^user:/, '') : ''
-}
-
-function sameAcademicScope(document) {
-  return inScope(document)
 }
 
 function gradeId(studentId, courseId, title) {
@@ -47,13 +39,12 @@ async function one(databases, collection, attribute, value) {
   return rows.documents[0] || null
 }
 
-async function assertTeacherCourse(databases, actorId, courseId) {
-  const actor = await one(databases, 'academic_directory', 'userId', actorId)
-  if (!actor || !sameAcademicScope(actor) || !['TEACHER', 'ADMIN'].includes(actor.role)) throw new Error('ROLE_DENIED')
+async function assertTeacherCourse(databases, caller, courseId) {
+  if (!caller.isSuperAdmin && !['TEACHER', 'ADMIN'].includes(caller.role)) throw new Error('ROLE_DENIED')
   const course = await databases.getDocument(DATABASE_ID, 'academic_courses', courseId)
-  if (!sameAcademicScope(course)) throw new Error('COURSE_SCOPE_DENIED')
-  if (actor.role === 'TEACHER' && course.teacherId !== actorId) throw new Error('COURSE_ASSIGNMENT_DENIED')
-  return { actor, course }
+  if (!inCallerUniversity(caller, course)) throw new Error('COURSE_SCOPE_DENIED')
+  if (caller.role === 'TEACHER' && course.teacherId !== caller.userId) throw new Error('COURSE_ASSIGNMENT_DENIED')
+  return { course }
 }
 
 function gradePermissions(studentId, teacherId) {
@@ -66,9 +57,6 @@ function gradePermissions(studentId, teacherId) {
 }
 
 export default async ({ req, res, log, error }) => {
-  const actorId = actorIdOf(req)
-  if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
-
   // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
   // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
   // être stockée en variable ; celle-ci reste lue en premier si elle existe.
@@ -77,11 +65,15 @@ export default async ({ req, res, log, error }) => {
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
     .setKey(process.env.APPWRITE_FUNCTION_API_KEY || req.headers['x-appwrite-key'] || '')
   const databases = new Databases(client)
+  const users = new Users(client)
   const body = bodyOf(req)
 
   try {
+    const caller = await resolveCaller(req, users, databases)
+    if (!caller) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
+    const actorId = caller.userId
     const courseId = text(body.courseId, 'courseId', 64)
-    const { course } = await assertTeacherCourse(databases, actorId, courseId)
+    const { course } = await assertTeacherCourse(databases, caller, courseId)
 
     if (body.action === 'roster') {
       const [enrollments, directory, grades] = await Promise.all([
@@ -93,7 +85,7 @@ export default async ({ req, res, log, error }) => {
       const students = enrollments.documents
         .filter((enrollment) => enrollment.status !== 'INACTIVE')
         .map((enrollment) => directoryByUser.get(enrollment.studentId))
-        .filter((entry) => entry && ['STUDENT', 'DELEGATE'].includes(entry.role) && sameAcademicScope(entry))
+        .filter((entry) => entry && ['STUDENT', 'DELEGATE'].includes(entry.role))
         .map((entry) => ({ userId: entry.userId, name: entry.name, matricule: entry.matricule || '', role: entry.role }))
       const validStudentIds = new Set(students.map((student) => student.userId))
       const entries = grades.documents
