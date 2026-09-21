@@ -10,25 +10,11 @@ import { Avatar } from '../ui/Avatar'
 import { Footer } from './Footer'
 import { GlobalSearch } from './GlobalSearch'
 import { cn } from '../../utils/cn'
-import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 
-// Flo remplace le compagnon scripté « Nova » (2026-09-21) : un vrai assistant,
-// servi par `/assistant` de la Function, chargé à part pour ne pas alourdir le
-// premier rendu de l'espace connecté.
-const CompanionAssistant = lazy(() => import('../assistant/UniAssistant').then((module) => ({ default: module.UniAssistant })))
-
-class CompanionBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
-  state = { failed: false }
-
-  static getDerivedStateFromError() {
-    return { failed: true }
-  }
-
-  render() {
-    return this.state.failed ? null : this.props.children
-  }
-}
+// Uni (l'assistant) est monté une seule fois dans `App.tsx`, pour le site
+// public comme pour l'espace connecté : plus rien à charger ici.
 
 const roleConfig = {
   student:  { badge: 'Étudiant',    icon: GraduationCap, gradient: 'from-[#1e3a8a] to-[#2d4fa8]', bg: 'bg-[#eff3ff]', text: 'text-[#1e3a8a]', dot: 'bg-[#1e3a8a]' },
@@ -297,12 +283,6 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const [canLoadCompanion, setCanLoadCompanion] = useState(false)
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => setCanLoadCompanion(true), 900)
-    return () => window.clearTimeout(timer)
-  }, [])
 
   return (
     <div className="flex min-h-screen bg-[#f3f4f6]">
@@ -332,11 +312,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         <main className="flex-1 overflow-y-auto p-4 sm:p-6">{children}</main>
         <Footer />
       </div>
-      {canLoadCompanion && (
-        <CompanionBoundary>
-          <Suspense fallback={null}><CompanionAssistant /></Suspense>
-        </CompanionBoundary>
-      )}
     </div>
   )
 }

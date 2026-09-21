@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { cn } from '../../utils/cn'
+import { UniMascot, type UniPose } from '@/components/mascot/UniMascot'
 
 interface EmptyStateProps {
   icon?: LucideIcon
@@ -9,7 +10,8 @@ interface EmptyStateProps {
     label: string
     onClick: () => void
   }
-  mascot?: boolean
+  /** Uni illustre l'état vide : `true` = loupe, ou une pose explicite. */
+  mascot?: boolean | UniPose
   className?: string
 }
 
@@ -26,20 +28,7 @@ export function EmptyState({
       {/* Icon or Mascot */}
       <div className="mb-4 animate-bounce-in">
         {mascot ? (
-          <div className="flex h-24 w-24 items-center justify-center rounded-2xl overflow-hidden">
-            <img 
-              src="/logos/uniflow-wordmark.png" 
-              alt="UniFlow Mascotte" 
-              className="h-full w-full object-contain opacity-60" 
-              onError={(e) => {
-                const target = e.currentTarget
-                if (!target.dataset.triedFallback) {
-                  target.dataset.triedFallback = 'true'
-                  target.src = '/logo_1.png'
-                }
-              }}
-            />
-          </div>
+          <UniMascot pose={mascot === true ? 'search' : mascot} size={128} />
         ) : Icon ? (
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#f3f4f6]">
             <Icon className="h-8 w-8 text-[#9ca3af]" strokeWidth={1.5} />

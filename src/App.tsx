@@ -1,5 +1,5 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { lazy, Suspense, useEffect, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import SEOHead from './components/SEOHead'
 import { AppLayout } from './components/layout/AppLayout'
@@ -9,6 +9,11 @@ import { IdleTimer } from './components/IdleTimer'
 import { GlobalNetworkToast } from './components/GlobalNetworkToast'
 import { Skeleton } from './components/ui/Skeleton'
 import { ErrorBoundary } from './components/feedback/ErrorBoundary'
+import { UniLoading, UniOfflineBanner } from './components/mascot/UniScenes'
+
+// Uni est monté une seule fois, pour le site public comme pour l'espace connecté.
+const UniAssistant = lazy(() => import('./components/assistant/UniAssistant').then((module) => ({ default: module.UniAssistant })))
+import { trackPageView } from './lib/metrics'
 import { PageTransition } from './components/motion/PageTransition'
 import { LEGAL_DOCUMENTS } from './data/legal'
 import { pushNotificationService } from './services/pushNotificationService'
@@ -72,10 +77,19 @@ const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'))
 const AdminPaymentsPage = lazy(() => import('./pages/admin/AdminPaymentsPage'))
 const AdminTeamPage = lazy(() => import('./pages/admin/AdminTeamPage'))
 
-// Loading fallback
+/**
+ * Écran d'attente : squelette immédiat, puis Uni « réfléchit » si l'attente
+ * dépasse un instant — un chargement rapide ne doit pas faire clignoter la
+ * mascotte, un chargement long ne doit pas laisser un écran gris muet.
+ */
 function PageLoader() {
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSlow(true), 450)
+    return () => window.clearTimeout(timer)
+  }, [])
   return (
-    <div className="min-h-screen bg-[#f3f4f6] p-6 animate-fade-in">
+    <div className="relative min-h-screen bg-[#f3f4f6] p-6 animate-fade-in dark:bg-slate-950">
       <div className="max-w-[1920px] mx-auto space-y-6">
         <Skeleton className="h-12 w-64" />
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -85,8 +99,26 @@ function PageLoader() {
         </div>
         <Skeleton className="h-96" />
       </div>
+      {slow && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="rounded-3xl bg-white/85 px-8 shadow-xl backdrop-blur dark:bg-slate-900/85">
+            <UniLoading label="Uni prépare la page" size={132} />
+          </div>
+        </div>
+      )}
     </div>
   )
+}
+
+/** Compte les pages vues (service `/metrics`) ; doit vivre sous `RoleProvider` pour savoir si la personne est connectée. */
+function AudienceTracker() {
+  const { pathname } = useLocation()
+  const { authUser, isSessionReady } = useUserRole()
+  useEffect(() => {
+    if (!isSessionReady) return
+    void trackPageView(pathname, Boolean(authUser))
+  }, [pathname, authUser, isSessionReady])
+  return null
 }
 
 /**
@@ -220,6 +252,9 @@ export default function App() {
       <SEOHead />
       <IdleTimer />
       <GlobalNetworkToast />
+      <AudienceTracker />
+      <UniOfflineBanner />
+      <Suspense fallback={null}><UniAssistant /></Suspense>
       <ErrorBoundary resetKey={location.pathname}>
         <Suspense fallback={<PageLoader />}>
           <Routes>

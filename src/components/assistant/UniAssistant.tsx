@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { RotateCcw, SendHorizontal, Sparkles, Trash2, Volume2, VolumeX, X } from 'lucide-react'
-import { useLocation } from 'react-router-dom'
+import { Link, useLocation } from 'react-router-dom'
 import { executeAssistantAction } from '@/lib/appwrite'
+import { GUEST_GREETING, GUEST_SUGGESTIONS, guestReply, type GuestLink } from '@/lib/assistantGuest'
+import { UniMascot } from '@/components/mascot/UniMascot'
 import {
   ASSISTANT_NAME,
   clearMessages,
@@ -18,8 +20,10 @@ import { useUserRole } from '@/utils/userRole'
 import { UniAvatar, type UniMood } from './UniAvatar'
 
 /**
- * Uni, l'assistant UniFlow — bulle flottante disponible sur tout l'espace
- * connecté (étudiant, enseignant, administration, compte indépendant).
+ * Uni, l'assistant UniFlow — bulle flottante disponible partout : espace
+ * connecté (étudiant, enseignant, administration, compte indépendant) et site
+ * public. Sans compte, Uni est un guide scripté (`assistantGuest.ts`) : il
+ * présente, oriente et invite à se connecter, sans consommer la clé Gemini.
  *
  * Remplace le compagnon « Nova » (scripté, scène 3D three.js de 870 Ko qui
  * ne répondait à rien). Uni parle vraiment : le service `/assistant` de la
@@ -30,6 +34,7 @@ import { UniAvatar, type UniMood } from './UniAvatar'
 
 const DEFAULT_GREETING = `Bonjour ! Je suis ${ASSISTANT_NAME}, l'assistant UniFlow. Pose-moi une question sur tes cours, ton emploi du temps ou la plateforme.`
 const DEFAULT_SUGGESTIONS = ["Quels cours ai-je aujourd'hui ?", 'Comment scanner ma présence ?', 'Que fait UniFlow ?']
+const HELLO_KEY = 'uniflow:uni-hello'
 
 function MessageBody({ content }: { content: string }) {
   const blocks = useMemo(() => renderMarkdownLite(content), [content])
@@ -64,7 +69,7 @@ function TypingDots() {
 }
 
 export function UniAssistant() {
-  const { authUser } = useUserRole()
+  const { authUser, currentUser } = useUserRole()
   const { pathname } = useLocation()
   const reduceMotion = useReducedMotion() ?? false
   const userId = authUser?.id ?? ''
@@ -80,12 +85,31 @@ export function UniAssistant() {
   const [voiceOn, setVoiceOn] = useState(() => loadVoicePreference(storage))
   const [speaking, setSpeaking] = useState(false)
   const [justGreeted, setJustGreeted] = useState(false)
+  const [links, setLinks] = useState<GuestLink[]>([])
+  const [hello, setHello] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
   const greeted = useRef(false)
   const canSpeak = speechSupported()
+  const guest = !userId
 
   const mood: UniMood = pending ? 'thinking' : speaking ? 'speaking' : justGreeted ? 'happy' : 'idle'
+
+  // Bulle d'accueil : une fois par session, quelques secondes, jamais si le panneau est ouvert.
+  useEffect(() => {
+    if (isOpen) { setHello(false); return }
+    try { if (window.sessionStorage.getItem(HELLO_KEY)) return } catch { /* stockage indisponible */ }
+    const show = window.setTimeout(() => {
+      setHello(true)
+      try { window.sessionStorage.setItem(HELLO_KEY, '1') } catch { /* ignoré */ }
+    }, 5000)
+    return () => window.clearTimeout(show)
+  }, [isOpen])
+  useEffect(() => {
+    if (!hello) return
+    const hide = window.setTimeout(() => setHello(false), 7000)
+    return () => window.clearTimeout(hide)
+  }, [hello])
 
   // La conversation suit le compte : changer d'utilisateur recharge la sienne.
   useEffect(() => {
@@ -121,6 +145,12 @@ export function UniAssistant() {
     setJustGreeted(true)
     const timer = window.setTimeout(() => setJustGreeted(false), 1000)
     if (messages.length > 0) return () => window.clearTimeout(timer)
+    if (guest) {
+      setMessages([makeMessage('assistant', GUEST_GREETING, { local: true })])
+      setSuggestions(GUEST_SUGGESTIONS)
+      say(GUEST_GREETING)
+      return () => window.clearTimeout(timer)
+    }
     let cancelled = false
     ;(async () => {
       let greeting = DEFAULT_GREETING
@@ -136,7 +166,7 @@ export function UniAssistant() {
       say(greeting)
     })()
     return () => { cancelled = true; window.clearTimeout(timer) }
-  }, [isOpen, messages.length, say])
+  }, [guest, isOpen, messages.length, say])
 
   const send = useCallback(async (text: string) => {
     const content = text.trim()
@@ -147,6 +177,19 @@ export function UniAssistant() {
     const userTurn = makeMessage('user', content)
     const next = [...messages, userTurn]
     setMessages(next)
+    if (guest) {
+      // Guide local : petite pause pour que la réponse « arrive », comme une vraie.
+      setPending(true)
+      const reply = guestReply(content)
+      window.setTimeout(() => {
+        setMessages((current) => [...current, makeMessage('assistant', reply.text, { local: true })])
+        setLinks(reply.links)
+        setSuggestions(GUEST_SUGGESTIONS.filter((item) => item !== content))
+        setPending(false)
+        say(reply.text)
+      }, 450)
+      return
+    }
     setPending(true)
     try {
       const response = await executeAssistantAction({ action: 'chat', messages: historyForServer(next), platform: 'web', voice: voiceOn && canSpeak })
@@ -163,7 +206,7 @@ export function UniAssistant() {
       setPending(false)
       inputRef.current?.focus()
     }
-  }, [canSpeak, isOpen, messages, pending, say, voiceOn])
+  }, [canSpeak, guest, isOpen, messages, pending, say, voiceOn])
 
   const retryLast = useCallback(() => {
     const failed = [...messages].reverse().find((m) => m.failed && m.role === 'user')
@@ -177,12 +220,13 @@ export function UniAssistant() {
     clearMessages(storage, userId)
     setMessages([])
     setError(null)
-    setSuggestions(DEFAULT_SUGGESTIONS)
+    setLinks([])
+    setSuggestions(guest ? GUEST_SUGGESTIONS : DEFAULT_SUGGESTIONS)
     greeted.current = false
     // Relance l'accueil (et les suggestions du rôle) sans fermer le panneau.
     setIsOpen(false)
     window.setTimeout(() => setIsOpen(true), 0)
-  }, [storage, userId])
+  }, [guest, storage, userId])
 
   const toggleVoice = useCallback(() => {
     setVoiceOn((current) => {
@@ -207,10 +251,13 @@ export function UniAssistant() {
   // La grille de l'emploi du temps garde tout l'écran ; Uni reste accessible partout ailleurs.
   if (pathname === '/app/emploi-du-temps' && !isOpen) return null
 
-  const showSuggestions = !pending && messages.filter((m) => !m.local).length === 0
+  const showSuggestions = !pending && (guest ? suggestions.length > 0 : messages.filter((m) => !m.local).length === 0)
+  const stagePose = pending ? 'thinking' : error ? 'sorry' : guest ? 'wave' : justGreeted ? 'celebrate' : 'headset'
+  const showStage = messages.filter((m) => m.role === 'user').length === 0
 
   return (
     <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+      {/* Le panneau au-dessus ; en bas, la bulle d'accueil à gauche du bouton. */}
       <AnimatePresence>
         {isOpen && (
           <motion.section
@@ -229,7 +276,7 @@ export function UniAssistant() {
                 <p className="truncate text-sm font-bold leading-tight">{ASSISTANT_NAME} · Assistant UniFlow</p>
                 <p className="flex items-center gap-1 text-[11px] text-cyan-100">
                   <span className={`inline-block h-1.5 w-1.5 rounded-full ${pending ? 'bg-amber-300' : speaking ? 'bg-cyan-200' : 'bg-emerald-300'}`} aria-hidden="true" />
-                  {pending ? 'Réfléchit…' : speaking ? 'Parle…' : 'En ligne · Gemini 3.1 Flash-Lite'}
+                  {pending ? 'Réfléchit…' : speaking ? 'Parle…' : guest ? 'Guide visiteur · connectez-vous pour plus' : 'En ligne · Gemini 3.1 Flash-Lite'}
                 </p>
               </div>
               {canSpeak && (
@@ -253,6 +300,12 @@ export function UniAssistant() {
             </header>
 
             <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto bg-[#f3f4f6] px-3 py-4" aria-live="polite">
+              {showStage && (
+                <div className="flex justify-center pb-1 pt-2">
+                  {/* Uni en pied, animé : il salue le visiteur, écoute l'utilisateur, réfléchit, s'excuse. */}
+                  <UniMascot pose={stagePose} size={118} />
+                </div>
+              )}
               {messages.map((message) => {
                 const mine = message.role === 'user'
                 return (
@@ -282,10 +335,20 @@ export function UniAssistant() {
               )}
               {error && (
                 <div className="flex items-center justify-between gap-2 rounded-xl border border-[#fecaca] bg-[#fef2f2] px-3 py-2 text-xs text-[#991b1b]" role="alert">
+                  {!showStage && <UniMascot pose="sorry" size={44} safe effects={false} />}
                   <span className="min-w-0 flex-1">{error}</span>
                   <button type="button" onClick={retryLast} className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-white px-2 py-1 font-semibold text-[#991b1b] ring-1 ring-[#fecaca] transition hover:bg-[#fee2e2]">
                     <RotateCcw className="h-3 w-3" />Réessayer
                   </button>
+                </div>
+              )}
+              {guest && links.length > 0 && !pending && (
+                <div className="flex flex-wrap gap-2" aria-label="Liens proposés par Uni">
+                  {links.map((link) => link.to.startsWith('http') ? (
+                    <a key={link.to} href={link.to} target="_blank" rel="noreferrer" className="rounded-full bg-[#1e3a8a] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#0d9488]">{link.label}</a>
+                  ) : (
+                    <Link key={link.to} to={link.to} onClick={() => setIsOpen(false)} className="rounded-full bg-[#1e3a8a] px-3 py-1.5 text-xs font-bold text-white shadow-sm transition hover:bg-[#0d9488]">{link.label}</Link>
+                  ))}
                 </div>
               )}
               {showSuggestions && (
@@ -332,11 +395,30 @@ export function UniAssistant() {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {hello && !isOpen && (
+          <motion.button
+            type="button"
+            onClick={() => { setHello(false); setIsOpen(true) }}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 24, scale: 0.9 }}
+            animate={{ opacity: 1, x: 0, scale: 1, transition: { type: 'spring', stiffness: 320, damping: 22 } }}
+            exit={{ opacity: 0, x: 16, transition: { duration: 0.2 } }}
+            className="relative mr-1 max-w-[230px] rounded-2xl border border-[#dce5fd] bg-white px-4 py-2.5 text-left text-[13px] font-semibold leading-5 text-[#111827] shadow-[0_14px_30px_rgba(30,58,138,0.18)]"
+          >
+            {guest ? `Salut ! Je suis ${ASSISTANT_NAME}. Une question sur UniFlow ?` : `Salut ${currentUser.name.split(' ')[0]} ! Besoin d’un coup de main ?`}
+            <span aria-hidden className="absolute -bottom-1.5 right-6 h-3 w-3 rotate-45 border-b border-r border-[#dce5fd] bg-white" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+
       <motion.button
         type="button"
-        onClick={() => setIsOpen((value) => !value)}
+        onClick={() => { setHello(false); setIsOpen((value) => !value) }}
         whileHover={reduceMotion ? undefined : { y: -2, scale: 1.03 }}
         whileTap={reduceMotion ? undefined : { scale: 0.97 }}
+        // Toutes les ~18 s, un petit sursaut : la mascotte vit, elle n'est pas un bouton de plus.
+        animate={isOpen || reduceMotion ? undefined : { rotate: [0, 0, -8, 8, -5, 5, 0, 0], y: [0, 0, -4, 0, -2, 0, 0, 0] }}
+        transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 18, ease: 'easeInOut' }}
         aria-label={isOpen ? `Fermer ${ASSISTANT_NAME}` : `Ouvrir ${ASSISTANT_NAME}, l’assistant UniFlow`}
         aria-expanded={isOpen}
         className="group relative flex h-16 w-16 items-center justify-center rounded-2xl border border-white/60 bg-gradient-to-br from-[#eff3ff] via-white to-[#ccfbf1] shadow-[0_12px_30px_rgba(30,58,138,0.28)] ring-1 ring-[#c7d2fe] transition focus:outline-none focus-visible:ring-4 focus-visible:ring-[#93c5fd]"

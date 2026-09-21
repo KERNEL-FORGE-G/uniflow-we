@@ -42,15 +42,8 @@ export function GlobalNetworkToast() {
       })
     }
 
-    // Écouteur pour la perte de connexion Internet (Navigateur Offline)
-    const handleOffline = () => {
-      addToast({
-        type: 'error',
-        title: 'Connexion réseau interrompue',
-        message: 'Vous êtes actuellement hors-ligne. Les actions nécessitant Appwrite sont suspendues jusqu’au retour du réseau.',
-        duration: 8000,
-      })
-    }
+    // La perte de réseau est portée par le bandeau persistant `UniOfflineBanner`
+    // (Uni qui dort) : un toast en plus faisait doublon.
 
     // Écouteur pour le rétablissement de la connexion Internet
     const handleOnline = () => {
@@ -74,13 +67,11 @@ export function GlobalNetworkToast() {
 
     window.addEventListener('uniflow:network-error', handleNetworkError)
     window.addEventListener('uniflow:session-expired', handleSessionExpired)
-    window.addEventListener('offline', handleOffline)
     window.addEventListener('online', handleOnline)
 
     return () => {
       window.removeEventListener('uniflow:network-error', handleNetworkError)
       window.removeEventListener('uniflow:session-expired', handleSessionExpired)
-      window.removeEventListener('offline', handleOffline)
       window.removeEventListener('online', handleOnline)
     }
   }, [addToast])

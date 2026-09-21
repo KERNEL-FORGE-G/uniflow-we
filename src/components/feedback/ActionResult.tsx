@@ -4,6 +4,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { cn } from '@/utils/cn'
 import { EASE } from '@/components/motion/PageTransition'
+import { UniMascot, type UniPose } from '@/components/mascot/UniMascot'
 
 export type ActionResultStatus = 'success' | 'error' | 'warning' | 'pending'
 
@@ -25,9 +26,17 @@ export interface ActionResultProps {
   icon?: LucideIcon
   /** `inline` : encart dans une page ; `screen` : écran plein centré. */
   layout?: 'inline' | 'screen'
+  /**
+   * Uni accompagne le résultat : `true` choisit la pose selon le statut
+   * (fête, désolé, loupe, réflexion), une pose explicite l'impose, `false`
+   * garde l'icône seule. Par défaut : Uni sur les écrans pleins.
+   */
+  mascot?: boolean | UniPose
   className?: string
   children?: ReactNode
 }
+
+const MASCOT_FOR: Record<ActionResultStatus, UniPose> = { success: 'celebrate', error: 'sorry', warning: 'search', pending: 'thinking' }
 
 const PALETTE: Record<ActionResultStatus, { ring: string; bg: string; text: string; icon: LucideIcon }> = {
   success: { ring: 'ring-emerald-200', bg: 'bg-emerald-50 text-emerald-600', text: 'text-emerald-800', icon: CheckCircle2 },
@@ -42,11 +51,12 @@ const PALETTE: Record<ActionResultStatus, { ring: string; bg: string; text: stri
  * bandeau (`inline`) ou d'écran (`screen`) pour que succès et échecs aient
  * partout la même signature visuelle.
  */
-export function ActionResult({ status, title, description, detail, actions = [], icon, layout = 'inline', className, children }: ActionResultProps) {
+export function ActionResult({ status, title, description, detail, actions = [], icon, layout = 'inline', mascot, className, children }: ActionResultProps) {
   const reduced = useReducedMotion()
   const palette = PALETTE[status]
   const Icon = icon ?? palette.icon
   const isScreen = layout === 'screen'
+  const pose: UniPose | null = mascot === false ? null : typeof mascot === 'string' ? mascot : (mascot === true || isScreen) ? MASCOT_FOR[status] : null
 
   return (
     <motion.div
@@ -61,13 +71,23 @@ export function ActionResult({ status, title, description, detail, actions = [],
         className,
       )}
     >
-      <motion.div
-        initial={reduced ? false : { scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1, transition: { delay: 0.1, duration: 0.45, ease: [0.34, 1.56, 0.64, 1] } }}
-        className={cn('flex shrink-0 items-center justify-center rounded-2xl ring-8', palette.bg, palette.ring, isScreen ? 'mx-auto h-20 w-20' : 'h-11 w-11')}
-      >
-        <Icon className={cn(isScreen ? 'h-10 w-10' : 'h-6 w-6', status === 'pending' && 'animate-spin')} strokeWidth={2} />
-      </motion.div>
+      {pose ? (
+        <div className={cn('relative shrink-0', isScreen ? 'mx-auto flex justify-center' : '')}>
+          {/* Les écrans d'erreur utilisent la pose inlinée : elle s'affiche même sans réseau. */}
+          <UniMascot pose={pose} size={isScreen ? 168 : 72} safe={status !== 'success'} effects={isScreen} />
+          <span className={cn('absolute flex items-center justify-center rounded-full ring-4 ring-white dark:ring-slate-900', palette.bg, isScreen ? 'bottom-1 right-[calc(50%-92px)] h-10 w-10' : '-bottom-1 -right-1 h-7 w-7')}>
+            <Icon className={cn(isScreen ? 'h-5 w-5' : 'h-4 w-4', status === 'pending' && 'animate-spin')} strokeWidth={2.5} />
+          </span>
+        </div>
+      ) : (
+        <motion.div
+          initial={reduced ? false : { scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1, transition: { delay: 0.1, duration: 0.45, ease: [0.34, 1.56, 0.64, 1] } }}
+          className={cn('flex shrink-0 items-center justify-center rounded-2xl ring-8', palette.bg, palette.ring, isScreen ? 'mx-auto h-20 w-20' : 'h-11 w-11')}
+        >
+          <Icon className={cn(isScreen ? 'h-10 w-10' : 'h-6 w-6', status === 'pending' && 'animate-spin')} strokeWidth={2} />
+        </motion.div>
+      )}
       <div className={cn('min-w-0 flex-1', isScreen && 'mt-6')}>
         <h2 className={cn('font-black tracking-tight text-slate-900 dark:text-white', isScreen ? 'text-2xl' : 'text-base')}>{title}</h2>
         {description && <p className={cn('mt-1.5 text-sm leading-6 text-slate-600 dark:text-slate-300', isScreen && 'mx-auto max-w-md')}>{description}</p>}

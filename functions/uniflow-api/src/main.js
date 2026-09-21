@@ -7,6 +7,7 @@ import attendanceSecure from './services/attendance-secure.js'
 import contactMessages from './services/contact-messages.js'
 import forumReactions from './services/forum-reactions.js'
 import messaging from './services/messaging.js'
+import metrics from './services/metrics.js'
 import subscriptionPayments from './services/subscription-payments.js'
 import teamRoster from './services/team-roster.js'
 import { resolveServicePath } from './lib/router.js'
@@ -40,6 +41,8 @@ const services = {
   '/contact-messages': contactMessages,
   '/forum-reactions': forumReactions,
   '/messaging': messaging,
+  // Mesure d'audience (landing + administration), sans service tiers — 2026-09-21.
+  '/metrics': metrics,
   '/subscription-payments': subscriptionPayments,
   '/team-roster': teamRoster,
 }

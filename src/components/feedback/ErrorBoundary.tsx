@@ -15,7 +15,9 @@ interface ErrorBoundaryState {
 /**
  * Filet de sécurité global : une exception de rendu affichait auparavant une
  * page blanche sans explication. On montre un écran d'erreur animé avec la
- * cause et deux issues (réessayer, retour à l'accueil).
+ * cause et deux issues (réessayer, retour à l'accueil). Uni y est dessiné
+ * depuis une image inlinée dans le bundle : l'écran reste complet même si le
+ * réseau ou le CDN est la cause de l'erreur.
  */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   state: ErrorBoundaryState = { error: null }
@@ -38,7 +40,8 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       <div className="flex min-h-screen items-center justify-center bg-slate-50 p-6 dark:bg-slate-950">
         <ErrorScreen
           icon={Bug}
-          title="Quelque chose s’est mal passé"
+          mascot="sorry"
+          title="Oups… Uni est désolé"
           description="L’écran n’a pas pu s’afficher. Vos données ne sont pas perdues : réessayez, ou revenez à l’accueil."
           detail={this.state.error.message}
           actions={[

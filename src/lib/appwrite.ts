@@ -48,6 +48,7 @@ export type UniFlowServicePath =
   | '/contact-messages'
   | '/forum-reactions'
   | '/messaging'
+  | '/metrics'
   | '/subscription-payments'
   | '/team-roster'
 

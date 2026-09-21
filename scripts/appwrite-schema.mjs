@@ -886,11 +886,78 @@ export const referenceSchemas = [
   },
 ]
 
+/**
+ * Mesure d'audience maison (demande du propriétaire du 2026-09-21 : « un
+ * véritable système de métriques pour voir le nombre de visiteurs »), sans
+ * service tiers — uniquement Appwrite.
+ *
+ * - `site_visits` : une ligne par session de visite (visiteur anonyme,
+ *   plateforme, type d'appareil, première page, provenance). C'est ce que
+ *   l'administration lit pour « qui visite depuis le mobile, le desktop… ».
+ * - `site_metrics_daily` : un document par jour (`$id` = AAAA-MM-JJ) avec les
+ *   compteurs cumulés. Appwrite plafonne `total` à 5 000 sur une liste : les
+ *   totaux affichés sur la landing se calculent donc en sommant ces documents
+ *   (au plus 365 par an), jamais en comptant les lignes brutes.
+ *
+ * Aucune permission client : seul le service `/metrics` de la Function écrit
+ * et lit, avec la clé serveur. L'identifiant du visiteur est un UUID tiré par
+ * le client et gardé en local ; il ne permet pas de retrouver une personne.
+ */
+export const visitPlatforms = ['web', 'mobile', 'desktop']
+export const visitDevices = ['mobile', 'tablet', 'desktop', 'other']
+export const metricsSchemas = [
+  {
+    id: 'site_visits',
+    name: 'Audience — visites',
+    attributes: [
+      string('visitorId', 36, true),
+      enumeration('platform', visitPlatforms, true),
+      enumeration('device', visitDevices, true),
+      string('day', 10, true),
+      string('path', 255, false, '/'),
+      string('referrer', 255, false, ''),
+      string('browser', 64, false, ''),
+      string('os', 64, false, ''),
+      string('language', 16, false, ''),
+      boolean('authenticated', false, false),
+      integer('pageViews', false, 1),
+    ],
+    indexes: [
+      { key: 'visit_day', type: 'key', attributes: ['day'] },
+      { key: 'visit_visitor_day', type: 'key', attributes: ['visitorId', 'day'] },
+      { key: 'visit_platform', type: 'key', attributes: ['platform'] },
+      { key: 'visit_device', type: 'key', attributes: ['device'] },
+    ],
+    permissions: [],
+  },
+  {
+    id: 'site_metrics_daily',
+    name: 'Audience — compteurs journaliers',
+    attributes: [
+      string('day', 10, true),
+      integer('visits', false, 0),
+      integer('uniqueVisitors', false, 0),
+      integer('pageViews', false, 0),
+      integer('authenticated', false, 0),
+      integer('deviceMobile', false, 0),
+      integer('deviceTablet', false, 0),
+      integer('deviceDesktop', false, 0),
+      integer('deviceOther', false, 0),
+      integer('platformWeb', false, 0),
+      integer('platformMobile', false, 0),
+      integer('platformDesktop', false, 0),
+    ],
+    indexes: [{ key: 'metrics_day', type: 'unique', attributes: ['day'] }],
+    permissions: [],
+  },
+]
+
 export const allSchemas = [
   ...schemas,
   ...academicSchemas.map((schema) => ({ ...schema, permissions: ['read("users")', 'create("users")'] })),
   ...subscriptionSchemas,
   ...referenceSchemas,
+  ...metricsSchemas,
   teamSchema,
 ]
 

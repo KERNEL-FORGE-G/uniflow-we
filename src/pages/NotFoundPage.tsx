@@ -24,8 +24,9 @@ export default function NotFoundPage() {
           status="warning"
           layout="screen"
           icon={Compass}
-          title="Cette page n’existe pas"
-          description="Le lien est peut-être ancien, ou l’adresse a été mal saisie."
+          mascot="search"
+          title="Uni a cherché partout…"
+          description="Cette page n’existe pas : le lien est peut-être ancien, ou l’adresse a été mal saisie."
           detail={pathname}
           actions={[
             { label: authUser ? 'Retour à mon espace' : 'Retour à l’accueil', to: home },
