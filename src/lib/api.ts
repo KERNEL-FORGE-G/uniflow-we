@@ -18,6 +18,7 @@ import {
 } from './appwrite'
 import { type AcademicScope, filterByScope, isLearnerRole, isLearnerScopeComplete, matchesScope, mergeScope, scopeOf, teacherMatches } from './academicScope'
 import { attendanceRate, formatSubmissionGrade, isPublishedStatement, learnerStatus, matchesAudience } from './assignmentModel'
+import { fileKind, humanFileSize } from './teacherCourseModel'
 
 /**
  * Adaptateur de compatibilité UniFlow.
@@ -853,6 +854,83 @@ export const assignmentsApi = {
   },
 }
 
+/** Énoncé publié par un enseignant, avec ses rendus (`academic_submissions`). */
+export interface PublishedStatement {
+  id: string
+  courseId: string
+  title: string
+  description: string
+  dueDate: string
+  type: string
+  maxScore: number
+  allowLate: boolean
+  publishedAt: string
+  teacherId: string
+  submissions: Array<{ id: string; studentId: string; studentName: string; submittedAt: string; score: number | null; status: string }>
+}
+
+export interface PublishStatementInput {
+  courseId: string
+  courseCode: string
+  title: string
+  description?: string
+  /** ISO UTC. */
+  dueDate: string
+  type?: string
+  maxScore?: number
+  allowLate?: boolean
+}
+
+/**
+ * Côté enseignant : les énoncés d'un cours et leurs rendus. Remplace la liste
+ * codée en dur de l'onglet « Devoirs » de l'espace pédagogique (« 45
+ * soumissions, 23 corrigés » affichés quel que soit le cours).
+ */
+export const teacherStatementsApi = {
+  forCourse: async (courseId: string): Promise<PublishedStatement[]> => {
+    const rows = (await academicAppwriteApi.assignments.byCourse(courseId)).filter(isPublishedStatement)
+    const submissions = await academicAppwriteApi.submissions.byAssignments(rows.map((row) => row.$id))
+    return rows
+      .map((row) => ({
+        id: row.$id,
+        courseId: row.courseId,
+        title: row.title,
+        description: row.description || '',
+        dueDate: row.dueDate,
+        type: row.type || 'DEVOIR',
+        maxScore: Number(row.maxScore ?? 20),
+        allowLate: Boolean(row.allowLate),
+        publishedAt: row.publishedAt || '',
+        teacherId: row.teacherId || '',
+        submissions: submissions
+          .filter((submission) => submission.assignmentId === row.$id)
+          .map((submission) => ({ id: submission.$id, studentId: submission.studentId, studentName: submission.studentName || '', submittedAt: submission.submittedAt, score: submission.score ?? null, status: submission.status || 'SUBMITTED' })),
+      }))
+      .sort((a, b) => b.dueDate.localeCompare(a.dueDate))
+  },
+  publish: async (input: PublishStatementInput): Promise<PublishedStatement> => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new Error('Session expirée : reconnectez-vous pour publier un devoir.')
+    if (current.role !== 'TEACHER' && current.role !== 'ADMIN') throw new Error('Seul un enseignant peut publier un devoir.')
+    const created = await academicAppwriteApi.assignments.publish({
+      courseId: input.courseId,
+      courseCode: input.courseCode,
+      title: input.title.trim(),
+      description: (input.description || '').trim(),
+      dueDate: input.dueDate,
+      status: 'À rendre',
+      teacherId: current.id,
+      teacherName: current.name,
+      type: input.type || 'DEVOIR',
+      maxScore: input.maxScore ?? 20,
+      allowLate: Boolean(input.allowLate),
+      publishedAt: new Date().toISOString(),
+    }, current.id)
+    return { id: created.$id, courseId: created.courseId, title: created.title, description: created.description || '', dueDate: created.dueDate, type: created.type || 'DEVOIR', maxScore: Number(created.maxScore ?? 20), allowLate: Boolean(created.allowLate), publishedAt: created.publishedAt || '', teacherId: created.teacherId || '', submissions: [] }
+  },
+  remove: (id: string) => academicAppwriteApi.assignments.remove(id),
+}
+
 export interface Grade { id: string; studentId?: string; ue: string; code: string; title: string; type: string; coef: number; grade: number; maxScore: number; classAvg: number; rank: number; maxRank: number }
 async function personalGrades(): Promise<Grade[]> {
   if (getAccountType() !== 'PERSONAL') return []
@@ -963,23 +1041,48 @@ export const messagingApi = {
   markRead: async (convId: string): Promise<number> => (await executeMessagingAction({ action: 'read', conversationId: convId })).markedRead || 0,
 }
 
-export interface LibraryResource { id: string; courseId: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string }
+export interface LibraryResource { id: string; courseId: string; title: string; course: string; type: string; size: string; date: string; category: string; duration?: string; fileId?: string; description?: string }
+const asLibraryResource = (resource: Awaited<ReturnType<typeof academicAppwriteApi.library.list>>[number]): LibraryResource => ({
+  id: resource.$id,
+  courseId: resource.courseId,
+  title: resource.title,
+  course: resource.course,
+  type: resource.type,
+  size: resource.size || '',
+  date: resource.publishedAt,
+  category: resource.category,
+  fileId: resource.fileId || undefined,
+  description: resource.description || undefined,
+})
 export const libraryApi = {
   list: async (): Promise<LibraryResource[]> => {
     if (getAccountType() === 'PERSONAL') return []
-    const resources = await academicAppwriteApi.library.list()
-    return resources.map((resource) => ({
-      id: resource.$id,
-      courseId: resource.courseId,
-      title: resource.title,
-      course: resource.course,
-      type: resource.type,
-      size: resource.size || '',
-      date: resource.publishedAt,
-      category: resource.category,
-    }))
+    return (await academicAppwriteApi.library.list()).map(asLibraryResource)
   },
-  upload: async (_dto: Partial<LibraryResource>) => unavailable<LibraryResource>('La bibliothèque universitaire'),
+  forCourse: async (courseId: string): Promise<LibraryResource[]> =>
+    (await academicAppwriteApi.library.byCourse(courseId)).map(asLibraryResource).sort((a, b) => (b.date || '').localeCompare(a.date || '')),
+  /**
+   * Publication d'un support par l'enseignant : le fichier part dans le bucket
+   * et la fiche dans `academic_library`, comme sur le desktop. Le formulaire
+   * web simulait jusqu'ici un téléversement (barre de progression sur minuterie)
+   * sans rien enregistrer.
+   */
+  upload: async (file: File, course: Pick<Course, 'id' | 'code' | 'name'>, meta: { title: string; category: string; description?: string }): Promise<LibraryResource> => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current) throw new Error('Session expirée : reconnectez-vous pour publier une ressource.')
+    const created = await academicAppwriteApi.library.publish(file, {
+      title: meta.title.trim() || file.name,
+      courseId: course.id,
+      course: `${course.code} · ${course.name}`,
+      type: fileKind(file.name),
+      category: meta.category,
+      size: humanFileSize(file.size),
+      description: (meta.description || '').trim(),
+    }, current.id)
+    return asLibraryResource(created)
+  },
+  remove: (resource: LibraryResource) => academicAppwriteApi.library.remove({ $id: resource.id, fileId: resource.fileId || '' }),
+  downloadUrl: (resource: LibraryResource) => (resource.fileId ? academicAppwriteApi.library.downloadUrl(resource.fileId) : null),
 }
 
 export interface UE {

@@ -1,13 +1,32 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Users, Download, UploadCloud, Trash2, Save, Video, Check, Code2, Database, Network, Brain, GraduationCap, UserCheck, Calendar, Upload, CheckCircle, AlertTriangle, BookOpen, Loader2 } from 'lucide-react'
+import { Plus, Users, Download, UploadCloud, Trash2, Save, Video, Check, Code2, Database, Network, Brain, GraduationCap, UserCheck, Calendar, Upload, CheckCircle, AlertTriangle, BookOpen, Loader2, Paperclip, X } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
-import { coursesApi, gradesApi, Course } from '../lib/api'
+import { coursesApi, gradesApi, libraryApi, teacherStatementsApi, type Course, type LibraryResource, type PublishedStatement } from '../lib/api'
 import type { LucideIcon } from 'lucide-react'
 import { ExportButtons } from '../components/exports/ExportButtons'
 import { courseGradesDocument } from '../lib/exports'
+import { evaluationProgress, humanFileSize, localInputToIso, summarizeStatement } from '../lib/teacherCourseModel'
+
+const RESOURCE_CATEGORIES = ['Support de cours', 'TD', 'TP', 'Syllabus', 'Correction']
+const STATEMENT_TYPES: Array<{ value: string; label: string }> = [
+  { value: 'DEVOIR', label: 'Devoir maison' },
+  { value: 'TP', label: 'Travaux pratiques' },
+  { value: 'EXPOSE', label: 'Exposé' },
+  { value: 'QUIZ', label: 'Quiz' },
+]
+const MAX_RESOURCE_BYTES = 50 * 1024 * 1024
+
+const formatDue = (iso: string) => {
+  const date = new Date(iso)
+  return Number.isFinite(date.getTime()) ? date.toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : iso
+}
+const formatDate = (iso: string) => {
+  const date = new Date(iso)
+  return Number.isFinite(date.getTime()) ? date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : ''
+}
 
 const CC_COEFFICIENT = 3
 const EXAM_COEFFICIENT = 7
@@ -48,16 +67,30 @@ export default function TeacherCoursesPage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [selCode, setSelCode] = useState<string | null>(null)
   const [students, setStudents] = useState<CourseLearner[]>([])
-  const [resources, setResources] = useState<any[]>([])
+  const [resources, setResources] = useState<LibraryResource[]>([])
+  const [resourcesError, setResourcesError] = useState<string | null>(null)
+  const [statements, setStatements] = useState<PublishedStatement[]>([])
+  const [statementsError, setStatementsError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [newName, setNewName] = useState('')
-  const [newType, setNewType] = useState('Cours')
+  const [newType, setNewType] = useState(RESOURCE_CATEGORIES[0])
+  const [newFile, setNewFile] = useState<File | null>(null)
   const [uploading, setUploading] = useState(false)
-  const [uploadPct, setUploadPct] = useState(0)
-  const [saved, setSaved] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [saved, setSaved] = useState<string | null>(null)
   const [gradeError, setGradeError] = useState<string | null>(null)
   const [savingGrades, setSavingGrades] = useState(false)
   const [activeTab, setActiveTab] = useState<'contenu'|'participants'|'devoirs'|'notes'>('contenu')
+  const [statementForm, setStatementForm] = useState<{ open: boolean; title: string; description: string; due: string; type: string; maxScore: string; allowLate: boolean }>({ open: false, title: '', description: '', due: '', type: 'DEVOIR', maxScore: '20', allowLate: false })
+  const [publishing, setPublishing] = useState(false)
+  const [publishError, setPublishError] = useState<string | null>(null)
+  const [now, setNow] = useState(() => new Date())
+
+  const flashSaved = (message: string) => {
+    setSaved(message)
+    setTimeout(() => setSaved(null), 3500)
+  }
 
   useEffect(() => {
     coursesApi.mine().then(data => {
@@ -65,6 +98,34 @@ export default function TeacherCoursesPage() {
       if (data.length > 0) setSelCode(data[0].id)
     }).finally(() => setLoading(false))
   }, [])
+
+  const reloadResources = useCallback(async (courseId: string) => {
+    setResourcesError(null)
+    try {
+      setResources(await libraryApi.forCourse(courseId))
+    } catch (error) {
+      setResources([])
+      setResourcesError(error instanceof Error ? error.message : 'Impossible de charger les ressources du cours.')
+    }
+  }, [])
+
+  const reloadStatements = useCallback(async (courseId: string) => {
+    setStatementsError(null)
+    try {
+      setStatements(await teacherStatementsApi.forCourse(courseId))
+      setNow(new Date())
+    } catch (error) {
+      setStatements([])
+      setStatementsError(error instanceof Error ? error.message : 'Impossible de charger les devoirs du cours.')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!selCode) return
+    setStatementForm((form) => ({ ...form, open: false }))
+    void reloadResources(selCode)
+    void reloadStatements(selCode)
+  }, [selCode, reloadResources, reloadStatements])
 
   useEffect(() => {
     if (!selCode) return
@@ -111,27 +172,72 @@ export default function TeacherCoursesPage() {
     setStudents(prev => prev.map(s => s.id === id ? { ...s, [field]: Number.isFinite(value) ? value : undefined } : s))
   }
 
-  const handleUpload = (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newName.trim()) return
-    setUploading(true); setUploadPct(10)
-    const iv = setInterval(() => setUploadPct(p => {
-      if (p >= 100) {
-        clearInterval(iv)
-        setTimeout(() => {
-          setResources(r => [{ id: Date.now(), name: newName.endsWith('.pdf') ? newName : `${newName}.pdf`, type: newType, size: '1.8 Mo', date: "Aujourd'hui", courseId: selCode }, ...r])
-          setNewName(''); setUploading(false); setUploadPct(0)
-        }, 400)
-        return 100
-      }
-      return p + 25
-    }), 220)
+    if (!course || !newFile) { setUploadError('Choisissez un fichier à publier.'); return }
+    if (newFile.size > MAX_RESOURCE_BYTES) { setUploadError(`Fichier trop lourd (${humanFileSize(newFile.size)}) : 50 Mo maximum.`); return }
+    setUploading(true)
+    setUploadError(null)
+    try {
+      const created = await libraryApi.upload(newFile, course, { title: newName, category: newType })
+      setResources((current) => [created, ...current])
+      setNewName(''); setNewFile(null)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+      flashSaved(`« ${created.title} » est publié : vos étudiants le voient dans la bibliothèque.`)
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Téléversement refusé.')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  const handleRemoveResource = async (resource: LibraryResource) => {
+    if (!window.confirm(`Retirer « ${resource.title} » de la bibliothèque ? Le fichier sera supprimé pour tous les étudiants.`)) return
+    try {
+      await libraryApi.remove(resource)
+      setResources((current) => current.filter((item) => item.id !== resource.id))
+    } catch (error) {
+      setResourcesError(error instanceof Error ? error.message : 'Suppression impossible.')
+    }
+  }
+
+  const handlePublishStatement = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!course) return
+    const dueDate = localInputToIso(statementForm.due)
+    if (!statementForm.title.trim()) { setPublishError('Donnez un titre au devoir.'); return }
+    if (!dueDate) { setPublishError('Indiquez une date et une heure limite de remise.'); return }
+    const maxScore = Number(statementForm.maxScore)
+    if (!Number.isFinite(maxScore) || maxScore <= 0) { setPublishError('Le barème doit être un nombre positif.'); return }
+    setPublishing(true)
+    setPublishError(null)
+    try {
+      const created = await teacherStatementsApi.publish({ courseId: course.id, courseCode: course.code, title: statementForm.title, description: statementForm.description, dueDate, type: statementForm.type, maxScore, allowLate: statementForm.allowLate })
+      setStatements((current) => [created, ...current])
+      setStatementForm({ open: false, title: '', description: '', due: '', type: 'DEVOIR', maxScore: '20', allowLate: false })
+      flashSaved(`« ${created.title} » est publié : les étudiants du cours le voient dans leurs devoirs.`)
+    } catch (error) {
+      setPublishError(error instanceof Error ? error.message : 'Publication impossible.')
+    } finally {
+      setPublishing(false)
+    }
+  }
+
+  const handleRemoveStatement = async (statement: PublishedStatement) => {
+    const warning = statement.submissions.length ? ` ${statement.submissions.length} rendu${statement.submissions.length > 1 ? 's' : ''} resteront orphelins.` : ''
+    if (!window.confirm(`Supprimer le devoir « ${statement.title} » ?${warning}`)) return
+    try {
+      await teacherStatementsApi.remove(statement.id)
+      setStatements((current) => current.filter((item) => item.id !== statement.id))
+    } catch (error) {
+      setStatementsError(error instanceof Error ? error.message : 'Suppression impossible.')
+    }
   }
 
   const handleSaveGrades = async (studentIds = students.map((student) => student.id)) => {
     if (!course) return
     setSavingGrades(true)
-    setSaved(false)
+    setSaved(null)
     setGradeError(null)
     try {
       const targetStudents = students.filter((student) => studentIds.includes(student.id))
@@ -141,8 +247,7 @@ export default function TeacherCoursesPage() {
         if (typeof student.exam === 'number') writes.push(gradesApi.upsertUniversity({ courseId: course.id, studentId: student.id, evaluationTitle: 'Examen final', type: 'EXAM', score: Math.round(student.exam), maxScore: 20, coefficient: EXAM_COEFFICIENT }))
         return writes
       }))
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      flashSaved('Évaluations enregistrées dans Appwrite et visibles dans le relevé des apprenants.')
     } catch (error) {
       setGradeError(error instanceof Error ? error.message : 'Enregistrement des notes impossible.')
     } finally {
@@ -185,8 +290,8 @@ export default function TeacherCoursesPage() {
       </div>
 
       {saved && (
-        <div className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
-          <Check className="h-4 w-4 text-[#0d9488]" /> Évaluations enregistrées dans Appwrite et visibles dans le relevé des apprenants.
+        <div role="status" className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
+          <Check className="h-4 w-4 text-[#0d9488]" /> {saved}
         </div>
       )}
       {gradeError && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{gradeError}</div>}
@@ -206,11 +311,11 @@ export default function TeacherCoursesPage() {
               <div className="p-4 space-y-3">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span className="text-[#6b7280]">Progression</span>
-                    <span className="font-semibold">0%</span>
+                    <span className="text-[#6b7280]">Apprenants évalués</span>
+                    <span className="font-semibold">{evaluationProgress(students.length, availableAverages.length)}%</span>
                   </div>
                   <div className="h-1.5 rounded-full bg-[#f3f4f6] overflow-hidden">
-                    <div className="h-full rounded-full bg-indigo-600" style={{ width: `0%` }} />
+                    <div className="h-full rounded-full bg-indigo-600 transition-all duration-500" style={{ width: `${evaluationProgress(students.length, availableAverages.length)}%` }} />
                   </div>
                 </div>
                 <div className="flex justify-between text-xs text-[#6b7280]">
@@ -258,56 +363,67 @@ export default function TeacherCoursesPage() {
               {/* Upload form */}
               <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
                 <h2 className="text-sm font-bold text-[#111827] mb-3 flex items-center gap-2"><UploadCloud className="h-4 w-4 text-indigo-600" /> Ajouter une ressource</h2>
-                <form onSubmit={handleUpload} className="space-y-3">
-                  <input value={newName} onChange={e => setNewName(e.target.value)} required
-                    placeholder="Nom du document (ex: TD2_Arbres)"
+                <form onSubmit={(e) => void handleUpload(e)} className="space-y-3">
+                  <input value={newName} onChange={e => setNewName(e.target.value)}
+                    placeholder="Titre affiché (ex : TD2 — Arbres binaires) · par défaut le nom du fichier"
                     className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
+                  <label className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 text-sm transition-colors ${newFile ? 'border-indigo-300 bg-indigo-50/60' : 'border-[#e5e7eb] hover:border-indigo-300 hover:bg-[#f9fafb]'}`}>
+                    <Paperclip className="h-4 w-4 shrink-0 text-indigo-600" />
+                    <span className="min-w-0 flex-1 truncate">
+                      {newFile ? <><span className="font-semibold text-[#111827]">{newFile.name}</span> <span className="text-[#6b7280]">· {humanFileSize(newFile.size)}</span></> : <span className="text-[#6b7280]">Choisir un fichier (PDF, diaporama, archive…) · 50 Mo max.</span>}
+                    </span>
+                    {newFile && (
+                      <button type="button" onClick={(e) => { e.preventDefault(); setNewFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }} aria-label="Retirer le fichier" className="rounded p-1 text-[#9ca3af] hover:bg-white hover:text-[#374151]">
+                        <X className="h-4 w-4" />
+                      </button>
+                    )}
+                    <input ref={fileInputRef} type="file" className="sr-only" onChange={(e) => { setNewFile(e.target.files?.[0] ?? null); setUploadError(null) }} />
+                  </label>
                   <div className="flex gap-2">
-                    <select value={newType} onChange={e => setNewType(e.target.value)}
+                    <select value={newType} onChange={e => setNewType(e.target.value)} aria-label="Catégorie de la ressource"
                       className="flex-1 rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm outline-none focus:border-indigo-600">
-                      {['Cours','TP','TD','Syllabus'].map(t => <option key={t}>{t}</option>)}
+                      {RESOURCE_CATEGORIES.map(t => <option key={t}>{t}</option>)}
                     </select>
-                    <button type="submit" disabled={uploading}
-                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-                      <Plus className="h-4 w-4" /> Publier
+                    <button type="submit" disabled={uploading || !newFile}
+                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
+                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {uploading ? 'Publication…' : 'Publier'}
                     </button>
                   </div>
-                  {uploading && (
-                    <div className="rounded-lg bg-[#f9fafb] border border-[#e5e7eb] p-2.5 text-xs space-y-1 animate-pulse">
-                      <div className="flex justify-between font-medium text-[#374151]"><span>Téléversement...</span><span>{uploadPct}%</span></div>
-                      <div className="h-1.5 w-full bg-[#e5e7eb] rounded-full overflow-hidden">
-                        <div className="h-full bg-[#0d9488] transition-all" style={{ width: `${uploadPct}%` }} />
-                      </div>
-                    </div>
-                  )}
+                  {uploadError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{uploadError}</p>}
                 </form>
               </div>
               {/* Resources list */}
               <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-bold text-[#111827] flex items-center gap-1.5"><BookOpen className="h-4 w-4 text-indigo-600" /> Supports & Ressources</h2>
-                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">{resources.length} fichiers</span>
+                  <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">{resources.length} fichier{resources.length > 1 ? 's' : ''}</span>
                 </div>
+                {resourcesError && <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{resourcesError}</p>}
                 <div className="divide-y divide-[#f9fafb]">
-                  {resources.length === 0 && <p className="text-sm text-[#9ca3af] py-4 text-center">Aucune ressource. Ajoutez votre premier fichier.</p>}
-                  {resources.map(f => (
-                    <div key={f.id} className="flex items-center justify-between py-3">
-                      <div className="flex items-start gap-2.5">
-                        <div className="h-8 w-8 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-bold shrink-0">PDF</div>
-                        <div>
-                          <p className="text-sm font-semibold text-[#111827]">{f.name}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <Badge variant="primary" className="text-[9px] py-0">{f.type}</Badge>
-                            <span className="text-[10px] text-[#9ca3af]">{f.size} · {f.date}</span>
+                  {resources.length === 0 && !resourcesError && <p className="text-sm text-[#9ca3af] py-4 text-center">Aucune ressource pour {course.code}. Publiez votre premier support ci-dessus.</p>}
+                  {resources.map(f => {
+                    const downloadUrl = libraryApi.downloadUrl(f)
+                    return (
+                      <div key={f.id} className="flex items-center justify-between gap-3 py-3">
+                        <div className="flex min-w-0 items-start gap-2.5">
+                          <div className="h-8 w-8 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-bold shrink-0">{f.type || 'DOC'}</div>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-[#111827]">{f.title}</p>
+                            <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                              <Badge variant="primary" className="text-[9px] py-0">{f.category || 'Support'}</Badge>
+                              <span className="text-[10px] text-[#9ca3af]">{[f.size, formatDate(f.date)].filter(Boolean).join(' · ')}</span>
+                            </div>
                           </div>
                         </div>
+                        <div className="flex shrink-0 gap-1">
+                          {downloadUrl
+                            ? <a href={downloadUrl} target="_blank" rel="noreferrer" title="Télécharger" className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#374151]"><Download className="h-4 w-4" /></a>
+                            : <span title="Fiche sans fichier" className="rounded p-1 text-[#d1d5db]"><Download className="h-4 w-4" /></span>}
+                          <button onClick={() => void handleRemoveResource(f)} title="Retirer de la bibliothèque" className="rounded p-1 hover:bg-red-50 text-[#9ca3af] hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <button className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#374151]"><Download className="h-4 w-4" /></button>
-                        <button onClick={() => setResources(r => r.filter(x => x.id !== f.id))} className="rounded p-1 hover:bg-red-50 text-[#9ca3af] hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
@@ -343,27 +459,83 @@ export default function TeacherCoursesPage() {
           {activeTab === 'devoirs' && (
             <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm space-y-3">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-bold text-[#111827]">Devoirs publiés — {course.code}</h3>
-                <button className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8]">
-                  <Plus className="h-3.5 w-3.5" /> Nouveau devoir
+                <div>
+                  <h3 className="text-sm font-bold text-[#111827]">Devoirs publiés — {course.code}</h3>
+                  <p className="text-xs text-[#9ca3af]">{statements.length ? `${statements.length} énoncé${statements.length > 1 ? 's' : ''} · ${students.length} inscrit${students.length > 1 ? 's' : ''}` : 'Les énoncés publiés ici apparaissent chez vos étudiants (web, mobile, desktop).'}</p>
+                </div>
+                <button onClick={() => { setPublishError(null); setStatementForm((form) => ({ ...form, open: !form.open })) }} aria-expanded={statementForm.open}
+                  className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8]">
+                  {statementForm.open ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />} {statementForm.open ? 'Annuler' : 'Nouveau devoir'}
                 </button>
               </div>
-              {[
-                { title: 'TP Bases de données — Requêtes SQL complexes', due: '18 sept.', submitted: 45, corrected: 23, status: 'En cours' },
-                { title: 'Quiz Algorithmique', due: '20 sept.', submitted: 52, corrected: 52, status: 'Terminé' },
-              ].map(d => (
-                <div key={d.title} className="rounded-lg border border-[#e5e7eb] p-4 hover:bg-[#f9fafb]">
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="font-semibold text-[#111827] text-sm">{d.title}</p>
-                    <Badge variant={d.status === 'Terminé' ? 'success' : 'warning'}>{d.status}</Badge>
+
+              {statementForm.open && (
+                <form onSubmit={(e) => void handlePublishStatement(e)} className="space-y-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-4 animate-fade-in">
+                  <input value={statementForm.title} onChange={(e) => setStatementForm((form) => ({ ...form, title: e.target.value }))} required maxLength={255}
+                    placeholder="Titre du devoir (ex : TP2 — Requêtes SQL complexes)"
+                    className="w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
+                  <textarea value={statementForm.description} onChange={(e) => setStatementForm((form) => ({ ...form, description: e.target.value }))} rows={3} maxLength={3000}
+                    placeholder="Consignes, format attendu, critères de notation…"
+                    className="w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <label className="text-xs font-semibold text-[#374151]">Date limite
+                      <input type="datetime-local" value={statementForm.due} onChange={(e) => setStatementForm((form) => ({ ...form, due: e.target.value }))} required
+                        className="mt-1 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600" />
+                    </label>
+                    <label className="text-xs font-semibold text-[#374151]">Type
+                      <select value={statementForm.type} onChange={(e) => setStatementForm((form) => ({ ...form, type: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600">
+                        {STATEMENT_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
+                      </select>
+                    </label>
+                    <label className="text-xs font-semibold text-[#374151]">Barème (/…)
+                      <input type="number" min="1" max="100" step="1" value={statementForm.maxScore} onChange={(e) => setStatementForm((form) => ({ ...form, maxScore: e.target.value }))}
+                        className="mt-1 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600" />
+                    </label>
                   </div>
-                  <div className="mt-2 flex gap-4 text-xs text-[#6b7280]">
-                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-[#9ca3af]" /> {d.due}</span>
-                    <span className="flex items-center gap-1"><Upload className="h-3.5 w-3.5 text-[#9ca3af]" /> {d.submitted} soumissions</span>
-                    <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-600" /> {d.corrected} corrigés</span>
+                  <label className="flex items-center gap-2 text-xs text-[#374151]">
+                    <input type="checkbox" checked={statementForm.allowLate} onChange={(e) => setStatementForm((form) => ({ ...form, allowLate: e.target.checked }))} className="h-4 w-4 rounded border-[#d1d5db] text-indigo-600" />
+                    Accepter les rendus en retard (signalés comme tels)
+                  </label>
+                  {publishError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{publishError}</p>}
+                  <div className="flex justify-end">
+                    <button type="submit" disabled={publishing}
+                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+                      {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {publishing ? 'Publication…' : 'Publier le devoir'}
+                    </button>
                   </div>
-                </div>
-              ))}
+                </form>
+              )}
+
+              {statementsError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{statementsError}</p>}
+              {statements.length === 0 && !statementsError && !statementForm.open && (
+                <p className="rounded-lg border border-dashed border-[#e5e7eb] px-4 py-6 text-center text-sm text-[#9ca3af]">Aucun devoir publié pour {course.code}. Cliquez sur « Nouveau devoir » pour en créer un.</p>
+              )}
+              {statements.map((statement) => {
+                const summary = summarizeStatement(statement, statement.submissions, students.length, now)
+                const typeLabel = STATEMENT_TYPES.find((type) => type.value === statement.type)?.label ?? statement.type
+                return (
+                  <div key={statement.id} className="rounded-lg border border-[#e5e7eb] p-4 hover:bg-[#f9fafb] transition-colors">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-[#111827] text-sm">{statement.title}</p>
+                        <p className="text-[11px] text-[#9ca3af]">{typeLabel} · barème /{statement.maxScore}{statement.allowLate ? ' · retards acceptés' : ''}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Badge variant={summary.phase === 'Corrigé' ? 'success' : summary.phase === 'Échéance passée' ? 'danger' : 'warning'}>{summary.phase}</Badge>
+                        <button onClick={() => void handleRemoveStatement(statement)} title="Supprimer le devoir" className="rounded p-1 text-[#9ca3af] hover:bg-red-50 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                      </div>
+                    </div>
+                    {statement.description && <p className="mt-1.5 line-clamp-2 text-xs text-[#6b7280]">{statement.description}</p>}
+                    <div className="mt-2 flex flex-wrap gap-4 text-xs text-[#6b7280]">
+                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-[#9ca3af]" /> {formatDue(statement.dueDate)}</span>
+                      <span className="flex items-center gap-1"><Upload className="h-3.5 w-3.5 text-[#9ca3af]" /> {summary.submitted} rendu{summary.submitted > 1 ? 's' : ''}{students.length ? ` / ${students.length}` : ''}</span>
+                      <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-600" /> {summary.corrected} corrigé{summary.corrected > 1 ? 's' : ''}</span>
+                      {summary.missing > 0 && summary.phase !== 'En cours' && <span className="flex items-center gap-1 text-amber-700"><AlertTriangle className="h-3.5 w-3.5" /> {summary.missing} sans rendu</span>}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
 

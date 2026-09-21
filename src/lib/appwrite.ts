@@ -1134,9 +1134,46 @@ export const academicAppwriteApi = {
   },
   library: {
     list: () => listDocuments<AcademicLibraryDocument>('academic_library', [Query.limit(200)]),
+    byCourse: (courseId: string) => listDocuments<AcademicLibraryDocument>('academic_library', [Query.equal('courseId', courseId), Query.limit(200)]),
+    /**
+     * Dépose le fichier dans `uniflow_assets` puis crée la fiche, exactement
+     * comme le desktop (`academic_management_screens.dart`) : les deux clients
+     * lisent la même liste. La collection accorde `create("users")`, la fiche
+     * reste modifiable/supprimable par son auteur seulement.
+     */
+    publish: async (file: File, data: Omit<AcademicLibraryDocument, '$id' | 'fileId' | 'publishedAt'>, ownerId: string) => {
+      const ownerPermissions = [Permission.read(Role.users()), Permission.update(Role.user(ownerId)), Permission.delete(Role.user(ownerId))]
+      const stored = await appwriteStorage.createFile(APPWRITE_BUCKET_ID, ID.unique(), file, ownerPermissions)
+      try {
+        return await appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'academic_library', ID.unique(), { ...data, fileId: stored.$id, publishedAt: new Date().toISOString() }, ownerPermissions) as unknown as AcademicLibraryDocument
+      } catch (error) {
+        // Sans fiche, le fichier serait orphelin dans le bucket (et compterait
+        // dans le quota de l'offre gratuite) : on le retire avant de remonter l'erreur.
+        await appwriteStorage.deleteFile(APPWRITE_BUCKET_ID, stored.$id).catch(() => undefined)
+        throw error
+      }
+    },
+    remove: async (resource: Pick<AcademicLibraryDocument, '$id' | 'fileId'>) => {
+      await appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'academic_library', resource.$id)
+      if (resource.fileId) await appwriteStorage.deleteFile(APPWRITE_BUCKET_ID, resource.fileId).catch(() => undefined)
+    },
+    downloadUrl: (fileId: string) => String(appwriteStorage.getFileDownload(APPWRITE_BUCKET_ID, fileId)),
   },
   assignments: {
     list: () => listDocuments<AcademicAssignmentDocument>('academic_assignments', [Query.limit(200)]),
+    byCourse: (courseId: string) => listDocuments<AcademicAssignmentDocument>('academic_assignments', [Query.equal('courseId', courseId), Query.limit(200)]),
+    /**
+     * Énoncé publié « une fois par l'enseignant » (modèle du desktop et des
+     * scripts de démonstration) : lisible par tous les connectés — les
+     * étudiants doivent voir le sujet —, modifiable par son auteur seulement.
+     */
+    publish: (data: Omit<AcademicAssignmentDocument, '$id' | 'studentId' | 'courseCode'> & { courseCode?: string }, teacherId: string) =>
+      appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'academic_assignments', ID.unique(), data, [
+        Permission.read(Role.users()),
+        Permission.update(Role.user(teacherId)),
+        Permission.delete(Role.user(teacherId)),
+      ]) as unknown as Promise<AcademicAssignmentDocument>,
+    remove: (id: string) => appwriteDatabases.deleteDocument(APPWRITE_DATABASE_ID, 'academic_assignments', id),
   },
   submissions: {
     // Un étudiant ne lit que ses rendus (permission par document) ; la requête
