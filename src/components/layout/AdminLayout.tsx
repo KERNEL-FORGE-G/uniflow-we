@@ -7,12 +7,14 @@ import {
 import { adminNavGroups } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
 import { cn } from '../../utils/cn'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../motion/PageTransition'
 import { Skeleton } from '../ui/Skeleton'
 import { useAuth } from '../../hooks/useAuth'
 import { useUserRole } from '../../utils/userRole'
+import { appwriteClient } from '../../lib/appwrite'
+import { useOnlineStatus } from '../../lib/offline/networkStatus'
 
 /**
  * Libellés du compte : « Super Admin » n'est vrai que pour l'administrateur
@@ -99,17 +101,52 @@ function AdminSidebar() {
         ))}
       </nav>
 
-      {/* System status */}
-      <div className="border-t border-[#e5e7eb] p-3">
-        <div className="rounded-xl bg-emerald-50 border border-emerald-100 px-3 py-2.5">
-          <div className="flex items-center gap-2">
-            <Activity className="h-3.5 w-3.5 text-emerald-600" />
-            <span className="text-xs font-semibold text-emerald-700">Système opérationnel</span>
-          </div>
-          <p className="text-[10px] text-emerald-600 mt-0.5 ml-5.5">Tous les services actifs · 99.9% uptime</p>
-        </div>
-      </div>
+      <BackendStatus />
     </aside>
+  )
+}
+
+/**
+ * État réel du backend, à la place de l'ancien « 99,9 % uptime » codé en dur
+ * (aucune mesure ne le soutenait). On interroge Appwrite au montage puis
+ * toutes les deux minutes ; hors ligne, le navigateur le dit avant Appwrite.
+ */
+function BackendStatus() {
+  const online = useOnlineStatus()
+  const [ping, setPing] = useState<{ ok: boolean; ms?: number } | null>(null)
+  useEffect(() => {
+    if (!online) { setPing(null); return }
+    let cancelled = false
+    const check = async () => {
+      const started = performance.now()
+      try {
+        await appwriteClient.ping()
+        if (!cancelled) setPing({ ok: true, ms: Math.round(performance.now() - started) })
+      } catch {
+        if (!cancelled) setPing({ ok: false })
+      }
+    }
+    void check()
+    const timer = window.setInterval(() => { void check() }, 120_000)
+    return () => { cancelled = true; window.clearInterval(timer) }
+  }, [online])
+
+  const tone = !online || ping?.ok === false
+    ? { box: 'bg-amber-50 border-amber-100', icon: 'text-amber-600', title: 'text-amber-700', text: 'text-amber-600' }
+    : { box: 'bg-emerald-50 border-emerald-100', icon: 'text-emerald-600', title: 'text-emerald-700', text: 'text-emerald-600' }
+  const title = !online ? 'Hors ligne' : ping == null ? 'Vérification…' : ping.ok ? 'Appwrite Cloud joignable' : 'Appwrite ne répond pas'
+  const detail = !online ? 'Données locales uniquement' : ping?.ok ? `Réponse en ${ping.ms} ms · Francfort` : ping == null ? 'Mesure du temps de réponse' : 'Nouvel essai dans 2 min'
+
+  return (
+    <div className="border-t border-[#e5e7eb] p-3">
+      <div className={cn('rounded-xl border px-3 py-2.5', tone.box)} role="status">
+        <div className="flex items-center gap-2">
+          <Activity className={cn('h-3.5 w-3.5', tone.icon)} />
+          <span className={cn('text-xs font-semibold', tone.title)}>{title}</span>
+        </div>
+        <p className={cn('text-[10px] mt-0.5 ml-5.5', tone.text)}>{detail}</p>
+      </div>
+    </div>
   )
 }
 

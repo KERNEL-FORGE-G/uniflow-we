@@ -1,595 +1,264 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import {
-  Settings, Bell, Shield, Database, Globe, Mail, Palette,
-  Save, Check, AlertTriangle, Server, RefreshCw, Trash2,
-  Download, Upload, Eye, EyeOff, Lock, Unlock, ToggleLeft, ToggleRight,
-  Clock, Users, BookOpen, Activity
+  Settings, Shield, Database, Server, RefreshCw, Trash2, Users, BookOpen, Activity,
+  CalendarDays, FileText, Eye, ExternalLink, CheckCircle2, AlertTriangle, Loader2, MessageCircle, Bell, KeyRound, Globe2,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
+import { APPWRITE_BUCKET_ID, APPWRITE_DATABASE_ID, APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, appwriteClient } from '../../lib/appwrite'
+import { usePublicStats } from '../../lib/publicStats'
+import { clearPersistedQueries } from '../../lib/offline/queryPersistence'
+import { CONTACT_EMAIL_SECONDARY, CONTACT_PHONE_DISPLAY, CONTACT_WHATSAPP_URL, COVERAGE_LABEL } from '../../lib/contactInfo'
+import { useUserRole } from '../../utils/userRole'
 
-interface ToggleProps {
-  value: boolean
-  onChange: (v: boolean) => void
-  label: string
-  description?: string
-}
+/**
+ * Paramètres de la plateforme, côté administration.
+ *
+ * L'ancienne page était une maquette : « Uptime 99,9 % », « 2 847 utilisateurs »,
+ * configuration SMTP, sauvegardes, cache Redis, « redémarrer les services »…
+ * rien de tout cela n'existe — le backend est Appwrite Cloud, sans serveur à
+ * nous. La page ne montre plus que ce qui est vrai : les compteurs réels
+ * (Function `/public-stats`), l'infrastructure Appwrite et son temps de
+ * réponse mesuré, les règles de la plateforme telles qu'elles sont codées, et
+ * les seules actions qui ont un effet (vider le cache local, recharger).
+ */
 
-function Toggle({ value, onChange, label, description }: ToggleProps) {
-  return (
-    <div className="flex items-center justify-between py-3">
-      <div className="flex-1">
-        <p className="text-sm font-semibold text-[#111827]">{label}</p>
-        {description && <p className="text-xs text-[#6b7280] mt-0.5">{description}</p>}
-      </div>
-      <button
-        onClick={() => onChange(!value)}
-        className={`relative h-6 w-11 rounded-full transition-all duration-300 flex-shrink-0 ml-4 ${value ? 'bg-[#1e3a8a]' : 'bg-[#d1d5db]'}`}
-      >
-        <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all duration-300 ${value ? 'left-[24px]' : 'left-1'}`} />
-      </button>
-    </div>
-  )
-}
+type Section = 'overview' | 'infra' | 'rules' | 'maintenance'
 
-const sections = [
-  { id: 'general',    label: 'Général',         icon: Settings },
-  { id: 'notifs',     label: 'Notifications',   icon: Bell },
-  { id: 'security',   label: 'Sécurité',        icon: Shield },
-  { id: 'academic',   label: 'Académique',      icon: BookOpen },
-  { id: 'email',      label: 'Email & SMTP',    icon: Mail },
-  { id: 'backup',     label: 'Sauvegarde',      icon: Database },
-  { id: 'appearance', label: 'Apparence',       icon: Palette },
-  { id: 'system',     label: 'Système',         icon: Server },
+const sections: Array<{ id: Section; label: string; icon: LucideIcon }> = [
+  { id: 'overview', label: 'Vue d’ensemble', icon: Activity },
+  { id: 'infra', label: 'Infrastructure', icon: Server },
+  { id: 'rules', label: 'Règles de la plateforme', icon: Shield },
+  { id: 'maintenance', label: 'Maintenance locale', icon: Database },
 ]
 
+const APP_VERSION = String(import.meta.env.VITE_APP_VERSION || '1.0.0')
+
+function formatNumber(value: number | undefined) {
+  return value == null ? '…' : value.toLocaleString('fr-FR')
+}
+
 export default function AdminSettingsPage() {
-  const [section, setSection] = useState('general')
-  const [saved, setSaved] = useState(false)
-  const [showApiKey, setShowApiKey] = useState(false)
+  const { currentUser } = useUserRole()
+  const queryClient = useQueryClient()
+  const [section, setSection] = useState<Section>('overview')
+  const { data: stats, isLoading: statsLoading, isError: statsError, refetch, dataUpdatedAt } = usePublicStats()
 
-  const [general, setGeneral] = useState({
-    platformName: 'UniFlow',
-    platformUrl: 'https://uniflow.kernelforge.codes',
-    supportEmail: 'support@uniflow.edu',
-    timezone: 'Africa/Douala',
-    language: 'Français',
-    maintenanceMode: false,
-  })
+  const [ping, setPing] = useState<{ state: 'idle' | 'checking' | 'ok' | 'error'; ms?: number; message?: string }>({ state: 'idle' })
+  const measurePing = useCallback(async () => {
+    setPing({ state: 'checking' })
+    const started = performance.now()
+    try {
+      await appwriteClient.ping()
+      setPing({ state: 'ok', ms: Math.round(performance.now() - started) })
+    } catch (error) {
+      setPing({ state: 'error', message: error instanceof Error ? error.message : 'Appwrite ne répond pas.' })
+    }
+  }, [])
+  useEffect(() => { void measurePing() }, [measurePing])
 
-  const [notifs, setNotifs] = useState({
-    emailNotifs: true,
-    smsNotifs: true,
-    pushNotifs: true,
-    absenceAlerts: true,
-    gradeAlerts: true,
-    systemAlerts: true,
-    weeklyReport: true,
-    monthlyReport: false,
-    alertThreshold: '3',
-  })
+  const [cacheInfo, setCacheInfo] = useState<{ caches: number; swActive: boolean } | null>(null)
+  const inspectCaches = useCallback(async () => {
+    try {
+      const names = typeof caches === 'undefined' ? [] : await caches.keys()
+      const registrations = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistrations() : []
+      setCacheInfo({ caches: names.filter((name) => name.startsWith('uniflow-')).length, swActive: registrations.some((registration) => Boolean(registration.active)) })
+    } catch {
+      setCacheInfo({ caches: 0, swActive: false })
+    }
+  }, [])
+  useEffect(() => { void inspectCaches() }, [inspectCaches])
 
-  const [security, setSecurity] = useState({
-    twoFactor: false,
-    sessionTimeout: '60',
-    maxLoginAttempts: '5',
-    passwordExpiry: '90',
-    ipWhitelist: false,
-    auditLog: true,
-    dataEncryption: true,
-  })
-
-  const [academic, setAcademic] = useState({
-    currentYear: '2025-2026',
-    currentSemester: 'Semestre 2',
-    passGrade: '10',
-    creditSystem: 'LMD',
-    autoGrading: false,
-    attendanceThreshold: '75',
-    lateGracePeriod: '15',
-  })
-
-  const handleSave = () => {
-    setSaved(true)
-    setTimeout(() => setSaved(false), 3000)
+  const [maintenance, setMaintenance] = useState<{ busy: boolean; message?: string }>({ busy: false })
+  const clearLocalCaches = async () => {
+    if (!window.confirm('Vider le cache local de cette machine ? Les écritures en attente de synchronisation sont conservées ; les données seront rechargées depuis Appwrite.')) return
+    setMaintenance({ busy: true })
+    try {
+      await clearPersistedQueries(queryClient)
+      if (typeof caches !== 'undefined') {
+        const names = await caches.keys()
+        await Promise.all(names.filter((name) => name.startsWith('uniflow-')).map((name) => caches.delete(name)))
+      }
+      if ('serviceWorker' in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations()
+        await Promise.all(registrations.map((registration) => registration.update()))
+      }
+      await inspectCaches()
+      setMaintenance({ busy: false, message: 'Cache local vidé. Les prochaines pages se rechargent depuis Appwrite Cloud.' })
+    } catch (error) {
+      setMaintenance({ busy: false, message: error instanceof Error ? error.message : 'Le nettoyage a échoué.' })
+    }
   }
 
-  const systemStats = [
-    { label: 'Uptime', value: '99.9%', icon: Activity, color: 'text-emerald-600 bg-emerald-50' },
-    { label: 'Utilisateurs actifs', value: '2 847', icon: Users, color: 'text-[#1e3a8a] bg-[#eff3ff]' },
-    { label: 'Cours actifs', value: '124', icon: BookOpen, color: 'text-[#0d9488] bg-[#f0fdfa]' },
-    { label: 'Stockage utilisé', value: '67%', icon: Database, color: 'text-[#d97706] bg-[#fef3c7]' },
+  const overviewCards: Array<{ label: string; value: string; icon: LucideIcon; color: string; to?: string }> = [
+    { label: 'Comptes utilisateurs', value: formatNumber(stats?.users), icon: Users, color: 'text-[#1e3a8a] bg-[#eff3ff]', to: '/admin/utilisateurs' },
+    { label: 'Étudiants · enseignants', value: stats ? `${formatNumber(stats.students)} · ${formatNumber(stats.teachers)}` : '…', icon: BookOpen, color: 'text-[#0d9488] bg-[#f0fdfa]', to: '/admin/etudiants' },
+    { label: 'Cours référencés', value: formatNumber(stats?.courses), icon: FileText, color: 'text-[#7c3aed] bg-[#ede9fe]', to: '/admin/ue' },
+    { label: 'Créneaux planifiés', value: formatNumber(stats?.sessions), icon: CalendarDays, color: 'text-[#d97706] bg-[#fef3c7]', to: '/admin/cours' },
+    { label: 'Visites aujourd’hui', value: formatNumber(stats?.visitsToday), icon: Eye, color: 'text-emerald-600 bg-emerald-50', to: '/admin/audience' },
+    { label: 'Documents publiés', value: formatNumber(stats?.documents), icon: Database, color: 'text-slate-600 bg-slate-100' },
   ]
+
+  const consoleUrl = `https://cloud.appwrite.io/console/project-fra-${APPWRITE_PROJECT_ID}`
 
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex items-center justify-between rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Settings className="h-5 w-5 text-[#1e3a8a]" />
-            <h1 className="text-xl font-bold text-[#111827]">Paramètres système</h1>
+            <h1 className="text-xl font-bold text-[#111827]">Plateforme UniFlow</h1>
           </div>
-          <p className="text-sm text-[#6b7280]">Configuration globale de la plateforme UniFlow</p>
+          <p className="text-sm text-[#6b7280]">État réel de la plateforme : compteurs Appwrite, infrastructure, règles en vigueur et maintenance locale.</p>
         </div>
-        <button
-          onClick={handleSave}
-          className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
-        >
-          {saved ? (
-            <><Check className="h-4 w-4" /> Enregistré !</>
-          ) : (
-            <><Save className="h-4 w-4" /> Enregistrer</>
-          )}
+        <button onClick={() => { void refetch(); void measurePing() }}
+          className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-colors">
+          <RefreshCw className={`h-4 w-4 ${statsLoading || ping.state === 'checking' ? 'animate-spin' : ''}`} /> Actualiser
         </button>
       </div>
 
-      {saved && (
-        <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 animate-slide-down">
-          <Check className="h-4 w-4" />
-          Paramètres enregistrés avec succès.
-        </div>
-      )}
-
-      {/* System stats */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {systemStats.map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm card-hover">
-            <div className={`inline-flex items-center justify-center h-9 w-9 rounded-xl mb-3 ${color}`}>
-              <Icon className="h-4.5 w-4.5" />
-            </div>
-            <p className="text-2xl font-extrabold text-[#111827] stat-number">{value}</p>
-            <p className="text-xs text-[#6b7280] mt-0.5">{label}</p>
-          </div>
-        ))}
-      </div>
-
       <div className="grid gap-5 lg:grid-cols-4">
-        {/* Sidebar */}
         <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3 shadow-sm h-fit">
           {sections.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setSection(id)}
-              className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-left transition-all mb-0.5 ${
-                section === id
-                  ? 'bg-[#1e3a8a] text-white shadow-md'
-                  : 'text-[#374151] hover:bg-[#f9fafb]'
-              }`}
-            >
+            <button key={id} onClick={() => setSection(id)}
+              className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-left transition-all mb-0.5 ${section === id ? 'bg-[#1e3a8a] text-white shadow-md' : 'text-[#374151] hover:bg-[#f9fafb]'}`}>
               <Icon className={`h-4 w-4 flex-shrink-0 ${section === id ? 'text-white' : 'text-[#6b7280]'}`} />
               {label}
             </button>
           ))}
         </div>
 
-        {/* Content */}
         <div className="lg:col-span-3 space-y-4">
+          {section === 'overview' && (
+            <>
+              <div className="grid gap-4 grid-cols-2 lg:grid-cols-3">
+                {overviewCards.map(({ label, value, icon: Icon, color, to }) => {
+                  const body = (
+                    <>
+                      <div className={`inline-flex items-center justify-center h-9 w-9 rounded-xl mb-3 ${color}`}><Icon className="h-4 w-4" /></div>
+                      <p className="text-2xl font-extrabold text-[#111827]">{value}</p>
+                      <p className="text-xs text-[#6b7280] mt-0.5">{label}</p>
+                    </>
+                  )
+                  return to
+                    ? <Link key={label} to={to} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm card-hover block">{body}</Link>
+                    : <div key={label} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">{body}</div>
+                })}
+              </div>
+              <p className="text-xs text-[#9ca3af]">
+                {statsError ? 'Compteurs indisponibles : la Function /public-stats n’a pas répondu.' : dataUpdatedAt ? `Compteurs calculés côté serveur par la Function uniflow-api (/public-stats) · actualisés ${new Date(dataUpdatedAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}.` : 'Chargement des compteurs…'}
+              </p>
+            </>
+          )}
 
-          {/* ── General ── */}
-          {section === 'general' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-              <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                <Settings className="h-4.5 w-4.5 text-[#1e3a8a]" /> Configuration générale
-              </h2>
-              <div className="space-y-4">
+          {section === 'infra' && (
+            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm space-y-5">
+              <h2 className="text-base font-bold text-[#111827] flex items-center gap-2"><Server className="h-4 w-4 text-[#1e3a8a]" /> Appwrite Cloud</h2>
+              <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${ping.state === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : ping.state === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-[#e5e7eb] bg-[#f9fafb] text-[#6b7280]'}`}>
+                {ping.state === 'checking' && <Loader2 className="h-4 w-4 animate-spin" />}
+                {ping.state === 'ok' && <CheckCircle2 className="h-4 w-4" />}
+                {ping.state === 'error' && <AlertTriangle className="h-4 w-4" />}
+                <span className="font-semibold">
+                  {ping.state === 'checking' && 'Mesure du temps de réponse…'}
+                  {ping.state === 'ok' && `Appwrite répond en ${ping.ms} ms depuis ce navigateur.`}
+                  {ping.state === 'error' && `Appwrite injoignable : ${ping.message}`}
+                  {ping.state === 'idle' && 'Temps de réponse non mesuré.'}
+                </span>
+                <button onClick={() => void measurePing()} className="ml-auto rounded-lg bg-white/70 px-2.5 py-1 text-xs font-semibold hover:bg-white">Re-mesurer</button>
+              </div>
+              <dl className="grid gap-3 sm:grid-cols-2 text-sm">
                 {[
-                  { label: 'Nom de la plateforme', key: 'platformName', type: 'text' },
-                  { label: 'URL de la plateforme', key: 'platformUrl', type: 'url' },
-                  { label: 'Email de support', key: 'supportEmail', type: 'email' },
-                ].map(({ label, key, type }) => (
-                  <div key={key}>
-                    <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">{label}</label>
-                    <input
-                      type={type}
-                      value={general[key as keyof typeof general] as string}
-                      onChange={e => setGeneral(g => ({ ...g, [key]: e.target.value }))}
-                      className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all"
-                    />
+                  ['Point d’accès', APPWRITE_ENDPOINT],
+                  ['Projet', APPWRITE_PROJECT_ID],
+                  ['Région', 'Francfort (fra) — offre gratuite'],
+                  ['Base de données', APPWRITE_DATABASE_ID],
+                  ['Bucket de fichiers', `${APPWRITE_BUCKET_ID} (droits par fichier)`],
+                  ['Functions', 'uniflow-api (routeur HTTP) · notification-alerts (événements)'],
+                  ['Hébergement web', 'Vercel — uniflow.kernelforge.codes'],
+                  ['Version de l’application', `${APP_VERSION} · ${import.meta.env.MODE}`],
+                ].map(([label, value]) => (
+                  <div key={label} className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-3">
+                    <dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">{label}</dt>
+                    <dd className="mt-1 break-all font-medium text-[#111827]">{value}</dd>
                   </div>
                 ))}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Fuseau horaire</label>
-                    <select
-                      value={general.timezone}
-                      onChange={e => setGeneral(g => ({ ...g, timezone: e.target.value }))}
-                      className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                    >
-                      <option>Africa/Douala</option>
-                      <option>Africa/Lagos</option>
-                      <option>Europe/Paris</option>
-                      <option>UTC</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Langue par défaut</label>
-                    <select
-                      value={general.language}
-                      onChange={e => setGeneral(g => ({ ...g, language: e.target.value }))}
-                      className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                    >
-                      <option>Français</option>
-                      <option>English</option>
-                    </select>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between rounded-xl bg-amber-50 border border-amber-200 p-4">
-                  <div>
-                    <p className="text-sm font-bold text-amber-800">Mode maintenance</p>
-                    <p className="text-xs text-amber-600 mt-0.5">Rend la plateforme inaccessible aux utilisateurs</p>
-                  </div>
-                  <button
-                    onClick={() => setGeneral(g => ({ ...g, maintenanceMode: !g.maintenanceMode }))}
-                    className={`relative h-6 w-11 rounded-full transition-all ${general.maintenanceMode ? 'bg-amber-500' : 'bg-[#d1d5db]'}`}
-                  >
-                    <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all ${general.maintenanceMode ? 'left-[24px]' : 'left-1'}`} />
-                  </button>
-                </div>
-              </div>
+              </dl>
+              {currentUser.isSuperAdmin && (
+                <a href={consoleUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-colors">
+                  <ExternalLink className="h-4 w-4" /> Ouvrir la console Appwrite
+                </a>
+              )}
+              <p className="text-xs text-[#9ca3af]">Les quotas de stockage et d’exécution ne sont pas exposés aux clients ; ils se consultent dans la console Appwrite.</p>
             </div>
           )}
 
-          {/* ── Notifications ── */}
-          {section === 'notifs' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-              <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                <Bell className="h-4.5 w-4.5 text-[#1e3a8a]" /> Paramètres de notifications
-              </h2>
-              <div className="divide-y divide-[#f3f4f6]">
-                <Toggle value={notifs.emailNotifs}  onChange={v => setNotifs(n => ({...n, emailNotifs: v}))}  label="Notifications par email"   description="Envoyer des emails aux utilisateurs pour les événements importants" />
-                <Toggle value={notifs.smsNotifs}    onChange={v => setNotifs(n => ({...n, smsNotifs: v}))}    label="Notifications par SMS"    description="Alertes SMS pour les absences et notes critiques" />
-                <Toggle value={notifs.pushNotifs}   onChange={v => setNotifs(n => ({...n, pushNotifs: v}))}   label="Notifications push"       description="Notifications en temps réel dans l'application" />
-                <Toggle value={notifs.absenceAlerts}onChange={v => setNotifs(n => ({...n, absenceAlerts: v}))} label="Alertes absences"         description="Notifier l'étudiant et les parents lors d'absences répétées" />
-                <Toggle value={notifs.gradeAlerts}  onChange={v => setNotifs(n => ({...n, gradeAlerts: v}))}  label="Alertes notes"            description="Notifier lors de la publication de nouvelles notes" />
-                <Toggle value={notifs.weeklyReport} onChange={v => setNotifs(n => ({...n, weeklyReport: v}))} label="Rapport hebdomadaire"     description="Rapport d'activité envoyé chaque vendredi" />
-                <Toggle value={notifs.monthlyReport}onChange={v => setNotifs(n => ({...n, monthlyReport: v}))} label="Rapport mensuel"          description="Bilan mensuel complet pour les administrateurs" />
-              </div>
-              <div className="mt-4">
-                <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Seuil alerte absence (nb de jours)</label>
-                <input
-                  type="number" min="1" max="30"
-                  value={notifs.alertThreshold}
-                  onChange={e => setNotifs(n => ({...n, alertThreshold: e.target.value}))}
-                  className="w-32 rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                />
-              </div>
+          {section === 'rules' && (
+            <div className="space-y-4">
+              {[
+                {
+                  icon: KeyRound, title: 'Comptes et rôles',
+                  lines: [
+                    'L’inscription libre ne crée que des étudiants (compte universitaire) ou des comptes indépendants.',
+                    'Les comptes administration sont créés par l’administrateur de la plateforme ; une administration crée ses enseignants, délégués et étudiants.',
+                    'La preuve du rôle est le label Appwrite (ADMIN, TEACHER, DELEGATE, superadmin), posé côté serveur par la Function ; le champ users.role n’est qu’un miroir.',
+                  ],
+                },
+                {
+                  icon: Bell, title: 'Alertes automatiques',
+                  lines: [
+                    'Chaque absence ou retard relevé déclenche une notification à l’étudiant (Function notification-alerts, sur événement de création de relevé).',
+                    'Les notifications sont poussées en temps réel dans le web par Appwrite Realtime ; aucun service tiers (pas de Firebase).',
+                  ],
+                },
+                {
+                  icon: MessageCircle, title: 'Facturation',
+                  lines: [
+                    `Aucun paiement en ligne : toute demande se règle par WhatsApp au ${CONTACT_PHONE_DISPLAY}, avec un message pré-rempli reprenant la référence.`,
+                    'Les demandes en attente se valident dans Administration → Paiements.',
+                  ],
+                  action: { label: 'Ouvrir WhatsApp', href: CONTACT_WHATSAPP_URL },
+                },
+                {
+                  icon: Globe2, title: 'Périmètre couvert',
+                  lines: [
+                    `Référentiel académique actuel : ${COVERAGE_LABEL}. Toutes les filières et niveaux enregistrés en base sont proposés à l’inscription.`,
+                    `Contact plateforme : ${CONTACT_EMAIL_SECONDARY}.`,
+                  ],
+                },
+              ].map(({ icon: Icon, title, lines, action }) => (
+                <div key={title} className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+                  <h2 className="text-base font-bold text-[#111827] flex items-center gap-2 mb-3"><Icon className="h-4 w-4 text-[#1e3a8a]" /> {title}</h2>
+                  <ul className="space-y-2 text-sm text-[#374151]">
+                    {lines.map((line) => <li key={line} className="flex gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" /> <span>{line}</span></li>)}
+                  </ul>
+                  {action && <a href={action.href} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] px-3.5 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff]"><ExternalLink className="h-3.5 w-3.5" /> {action.label}</a>}
+                </div>
+              ))}
             </div>
           )}
 
-          {/* ── Security ── */}
-          {section === 'security' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-              <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                <Shield className="h-4.5 w-4.5 text-[#1e3a8a]" /> Sécurité & Accès
-              </h2>
-              <div className="divide-y divide-[#f3f4f6] mb-5">
-                <Toggle value={security.twoFactor}       onChange={v => setSecurity(s => ({...s, twoFactor: v}))}       label="Authentification 2 facteurs" description="Exiger 2FA pour les comptes administrateurs" />
-                <Toggle value={security.ipWhitelist}     onChange={v => setSecurity(s => ({...s, ipWhitelist: v}))}     label="Liste blanche IP"            description="Restreindre l'accès admin à des IPs spécifiques" />
-                <Toggle value={security.auditLog}        onChange={v => setSecurity(s => ({...s, auditLog: v}))}        label="Journal d'audit complet"     description="Enregistrer toutes les actions administrateurs" />
-                <Toggle value={security.dataEncryption}  onChange={v => setSecurity(s => ({...s, dataEncryption: v}))} label="Chiffrement des données"     description="Chiffrer les données sensibles en base" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: 'Timeout session (min)', key: 'sessionTimeout' },
-                  { label: 'Tentatives connexion max', key: 'maxLoginAttempts' },
-                  { label: 'Expiration mdp (jours)', key: 'passwordExpiry' },
-                ].map(({ label, key }) => (
-                  <div key={key}>
-                    <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">{label}</label>
-                    <input
-                      type="number"
-                      value={security[key as keyof typeof security] as string}
-                      onChange={e => setSecurity(s => ({...s, [key]: e.target.value}))}
-                      className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                    />
-                  </div>
-                ))}
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Clé API système</label>
-                  <div className="relative">
-                    <input
-                      type={showApiKey ? 'text' : 'password'}
-                      value="sk-uniflow-prod-a8f2b9c3d4e5f6a7b8c9d0e1f2a3b4c5"
-                      readOnly
-                      className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 pr-10 text-sm outline-none bg-[#f9fafb] font-mono text-xs"
-                    />
-                    <button onClick={() => setShowApiKey(!showApiKey)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6b7280] hover:text-[#111827]">
-                      {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Academic ── */}
-          {section === 'academic' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-              <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                <BookOpen className="h-4.5 w-4.5 text-[#1e3a8a]" /> Configuration académique
-              </h2>
-              <div className="grid grid-cols-2 gap-4 mb-5">
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Année universitaire</label>
-                  <select
-                    value={academic.currentYear}
-                    onChange={e => setAcademic(a => ({...a, currentYear: e.target.value}))}
-                    className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                  >
-                    <option>2025-2026</option>
-                    <option>2024-2025</option>
-                    <option>2023-2024</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Semestre actif</label>
-                  <select
-                    value={academic.currentSemester}
-                    onChange={e => setAcademic(a => ({...a, currentSemester: e.target.value}))}
-                    className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                  >
-                    <option>Semestre 1</option>
-                    <option>Semestre 2</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Note de passage (/20)</label>
-                  <input
-                    type="number" min="5" max="15"
-                    value={academic.passGrade}
-                    onChange={e => setAcademic(a => ({...a, passGrade: e.target.value}))}
-                    className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Seuil présence obligatoire (%)</label>
-                  <input
-                    type="number" min="50" max="100"
-                    value={academic.attendanceThreshold}
-                    onChange={e => setAcademic(a => ({...a, attendanceThreshold: e.target.value}))}
-                    className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Délai de retard autorisé (min)</label>
-                  <input
-                    type="number" min="0" max="60"
-                    value={academic.lateGracePeriod}
-                    onChange={e => setAcademic(a => ({...a, lateGracePeriod: e.target.value}))}
-                    className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">Système de crédits</label>
-                  <select
-                    value={academic.creditSystem}
-                    onChange={e => setAcademic(a => ({...a, creditSystem: e.target.value}))}
-                    className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
-                  >
-                    <option>LMD</option>
-                    <option>ECTS</option>
-                    <option>Classique</option>
-                  </select>
-                </div>
-              </div>
-              <Toggle
-                value={academic.autoGrading}
-                onChange={v => setAcademic(a => ({...a, autoGrading: v}))}
-                label="Calcul automatique des moyennes"
-                description="Calculer automatiquement les moyennes UE lors de la saisie de notes"
-              />
-            </div>
-          )}
-
-          {/* ── Email ── */}
-          {section === 'email' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-              <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                <Mail className="h-4.5 w-4.5 text-[#1e3a8a]" /> Configuration Email & SMTP
-              </h2>
-              <div className="space-y-4">
-                {[
-                  { label: 'Serveur SMTP', val: 'smtp.uniflow.edu', type: 'text' },
-                  { label: 'Port SMTP', val: '587', type: 'number' },
-                  { label: 'Nom expéditeur', val: 'UniFlow Notifications', type: 'text' },
-                  { label: 'Email expéditeur', val: 'no-reply@uniflow.edu', type: 'email' },
-                  { label: 'Nom utilisateur SMTP', val: 'smtp_uniflow', type: 'text' },
-                  { label: 'Mot de passe SMTP', val: '••••••••••••', type: 'password' },
-                ].map(({ label, val, type }) => (
-                  <div key={label}>
-                    <label className="block text-xs font-bold text-[#374151] mb-1.5 uppercase tracking-wider">{label}</label>
-                    <input
-                      type={type}
-                      defaultValue={val}
-                      className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
-                    />
-                  </div>
-                ))}
-                <button className="flex items-center gap-2 rounded-xl bg-[#0d9488] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#0a7167] transition-all">
-                  <Mail className="h-4 w-4" /> Tester la connexion SMTP
+          {section === 'maintenance' && (
+            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm space-y-5">
+              <h2 className="text-base font-bold text-[#111827] flex items-center gap-2"><Database className="h-4 w-4 text-[#1e3a8a]" /> Cache de ce navigateur</h2>
+              <p className="text-sm text-[#6b7280]">UniFlow garde une copie locale des dernières données (IndexedDB) et des fichiers de l’application (service worker) pour fonctionner hors ligne. Si une page affiche des données visiblement périmées après une correction en base, videz ce cache.</p>
+              <dl className="grid gap-3 sm:grid-cols-2 text-sm">
+                <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-3"><dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">Caches applicatifs</dt><dd className="mt-1 font-medium text-[#111827]">{cacheInfo ? `${cacheInfo.caches} cache${cacheInfo.caches > 1 ? 's' : ''} UniFlow` : '…'}</dd></div>
+                <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-3"><dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">Service worker</dt><dd className="mt-1 font-medium text-[#111827]">{cacheInfo ? (cacheInfo.swActive ? 'Actif (mode hors ligne disponible)' : 'Inactif') : '…'}</dd></div>
+              </dl>
+              {maintenance.message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{maintenance.message}</p>}
+              <div className="flex flex-wrap gap-2">
+                <button onClick={() => void clearLocalCaches()} disabled={maintenance.busy}
+                  className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-60 transition-colors">
+                  {maintenance.busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Vider le cache local
+                </button>
+                <button onClick={() => window.location.reload()} className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm font-bold text-[#374151] hover:bg-[#f9fafb] transition-colors">
+                  <RefreshCw className="h-4 w-4" /> Recharger l’application
                 </button>
               </div>
+              <p className="text-xs text-[#9ca3af]">Les écritures faites hors ligne et non encore synchronisées ne sont pas supprimées par ce nettoyage.</p>
             </div>
           )}
-
-          {/* ── Backup ── */}
-          {section === 'backup' && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                  <Database className="h-4.5 w-4.5 text-[#1e3a8a]" /> Sauvegarde & Restauration
-                </h2>
-                <div className="space-y-3 mb-5">
-                  {[
-                    { date: '06/08/2026 02:00', size: '847 MB', type: 'Automatique', status: 'success' },
-                    { date: '05/08/2026 02:00', size: '831 MB', type: 'Automatique', status: 'success' },
-                    { date: '04/08/2026 02:00', size: '829 MB', type: 'Automatique', status: 'success' },
-                    { date: '03/08/2026 14:32', size: '825 MB', type: 'Manuelle',   status: 'success' },
-                  ].map((bk, i) => (
-                    <div key={i} className="flex items-center gap-4 rounded-xl border border-[#e5e7eb] p-3.5 bg-[#f9fafb]">
-                      <div className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${bk.status === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`} />
-                      <div className="flex-1">
-                        <p className="text-sm font-semibold text-[#111827]">{bk.date}</p>
-                        <p className="text-xs text-[#6b7280]">{bk.size} · {bk.type}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#374151] hover:bg-[#f3f4f6] transition-colors flex items-center gap-1.5">
-                          <Download className="h-3.5 w-3.5" /> Télécharger
-                        </button>
-                        <button className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-100 transition-colors flex items-center gap-1.5">
-                          <RefreshCw className="h-3.5 w-3.5" /> Restaurer
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="flex gap-3">
-                  <button className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
-                    <Database className="h-4 w-4" /> Créer une sauvegarde
-                  </button>
-                  <button className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-5 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all">
-                    <Upload className="h-4 w-4" /> Importer
-                  </button>
-                </div>
-              </div>
-
-              {/* Danger zone */}
-              <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
-                <h3 className="text-sm font-bold text-red-800 mb-4 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" /> Zone de danger
-                </h3>
-                <div className="space-y-3">
-                  {[
-                    { label: 'Purger les logs anciens', desc: 'Supprimer les logs de plus de 6 mois', action: 'Purger' },
-                    { label: 'Réinitialiser la base de cache', desc: 'Vider le cache Redis et relancer', action: 'Réinitialiser' },
-                    { label: 'Réinitialiser la plateforme', desc: 'ATTENTION : Supprime toutes les données', action: 'Réinitialiser' },
-                  ].map(({ label, desc, action }) => (
-                    <div key={label} className="flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-red-800">{label}</p>
-                        <p className="text-xs text-red-600">{desc}</p>
-                      </div>
-                      <button className="rounded-xl border border-red-300 bg-white px-4 py-2 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors flex items-center gap-1.5">
-                        <Trash2 className="h-3.5 w-3.5" /> {action}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Appearance ── */}
-          {section === 'appearance' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-              <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                <Palette className="h-4.5 w-4.5 text-[#1e3a8a]" /> Apparence & Thème
-              </h2>
-              <div className="space-y-5">
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-3 uppercase tracking-wider">Couleur principale</label>
-                  <div className="flex gap-3">
-                    {['#1e3a8a', '#0d9488', '#7c3aed', '#dc2626', '#059669', '#d97706'].map(color => (
-                      <button
-                        key={color}
-                        className="h-10 w-10 rounded-xl shadow-sm border-2 hover:scale-110 transition-transform"
-                        style={{ background: color, borderColor: color === '#1e3a8a' ? '#111827' : 'transparent' }}
-                      />
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-3 uppercase tracking-wider">Logo de la plateforme</label>
-                  <div className="flex items-center gap-4">
-                    <img
-                      src="/logos/uniflow-wordmark.svg"
-                      alt="Logo"
-                      className="h-12 w-auto object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        if (!target.dataset.triedFallback) {
-                          target.dataset.triedFallback = 'true'
-                          target.src = '/logo_1.png'
-                        }
-                      }}
-                    />
-                    <button className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all">
-                      <Upload className="h-4 w-4" /> Changer le logo
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-[#374151] mb-3 uppercase tracking-wider">Thème</label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { name: 'Clair', bg: 'bg-white border-[#1e3a8a]', selected: true },
-                      { name: 'Sombre', bg: 'bg-slate-900', selected: false },
-                      { name: 'Système', bg: 'bg-gradient-to-r from-white to-slate-900', selected: false },
-                    ].map(({ name, bg, selected }) => (
-                      <button key={name} className={`rounded-xl border-2 p-4 text-sm font-semibold transition-all ${selected ? 'border-[#1e3a8a]' : 'border-[#e5e7eb] hover:border-[#9ca3af]'} ${bg}`}>
-                        <span className={selected ? 'text-[#1e3a8a]' : name === 'Sombre' ? 'text-white' : 'text-[#111827]'}>{name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── System ── */}
-          {section === 'system' && (
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                <h2 className="text-base font-bold text-[#111827] mb-5 flex items-center gap-2">
-                  <Server className="h-4.5 w-4.5 text-[#1e3a8a]" /> État du système
-                </h2>
-                <div className="space-y-3">
-                  {[
-                    { service: 'API Server',          status: 'En ligne',   uptime: '99.9%', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-                    { service: 'Base de données',     status: 'En ligne',   uptime: '99.8%', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-                    { service: 'Serveur email',       status: 'En ligne',   uptime: '99.5%', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-                    { service: 'Service SMS',         status: 'En ligne',   uptime: '98.9%', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-                    { service: 'Stockage fichiers',   status: 'En ligne',   uptime: '99.9%', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-                    { service: 'Visioconférence',     status: 'En ligne',   uptime: '99.2%', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-                  ].map(({ service, status, uptime, color }) => (
-                    <div key={service} className="flex items-center justify-between rounded-xl p-3 bg-[#f9fafb] border border-[#e5e7eb]">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                        <p className="text-sm font-semibold text-[#111827]">{service}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-[#6b7280]">Uptime: {uptime}</span>
-                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg border ${color}`}>{status}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-                <h3 className="text-sm font-bold text-[#111827] mb-4">Actions système</h3>
-                <div className="flex flex-wrap gap-3">
-                  <button className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all">
-                    <RefreshCw className="h-4 w-4" /> Redémarrer les services
-                  </button>
-                  <button className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all">
-                    <Activity className="h-4 w-4 text-[#0d9488]" /> Voir les logs
-                  </button>
-                  <button className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all">
-                    <Download className="h-4 w-4 text-[#1e3a8a]" /> Exporter la config
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Action buttons */}
-          <div className="flex justify-end gap-3">
-            <button className="rounded-xl border border-[#e5e7eb] bg-white px-5 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all">
-              Annuler
-            </button>
-            <button onClick={handleSave} className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
-              {saved ? <><Check className="h-4 w-4" /> Enregistré !</> : <><Save className="h-4 w-4" /> Enregistrer les modifications</>}
-            </button>
-          </div>
         </div>
       </div>
     </div>
