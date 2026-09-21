@@ -21,6 +21,7 @@ import { UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL } from '../lib/brandAssets'
 import { usePublicStats } from '../lib/publicStats'
 import { CountUp } from '../components/ui/CountUp'
 import { UniMascot } from '../components/mascot/UniMascot'
+import { MascotDialogue } from '../components/mascot/ArchlordMascot'
 
 const landingImg = UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL
 
@@ -709,13 +710,31 @@ export default function LandingPage() {
       </AnimatedSection>
 
       {/* ── Verified feedback Section ── */}
+      {/* ── Le fondateur et Uni en parlent ; les vrais retours viendront des comptes réels ── */}
       <section className="bg-[#f8fafc] py-20 border-b border-slate-200">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-10 shadow-sm">
+        <div className="mx-auto grid max-w-6xl items-center gap-10 px-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+            <span className="inline-block rounded-full bg-blue-50 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">Deux mots du fondateur</span>
+            <h2 className="mt-3 text-2xl font-black text-slate-900 sm:text-3xl">Pourquoi UniFlow, et pourquoi maintenant ?</h2>
+            <p className="mt-2 text-sm text-slate-600">Cliquez sur la scène pour passer à la réplique suivante.</p>
+            <div className="mt-6">
+              <MascotDialogue
+                size={140}
+                lines={[
+                  { who: 'archlord', text: 'Avant UniFlow, l’emploi du temps était une photo floue sur WhatsApp qui changeait trois fois par semaine.', archlordPose: 'explain' },
+                  { who: 'uni', text: 'Maintenant tu ne vois que ta filière et ton niveau, mis à jour par l’administration — rien d’autre.', uniPose: 'pointing' },
+                  { who: 'archlord', text: 'Et le réseau coupe souvent sur le campus. Alors tout doit continuer à marcher hors ligne.', archlordPose: 'thinking' },
+                  { who: 'uni', text: 'Un mois sans connexion, et tes cours, notes et messages restent là. Je synchronise quand ça revient.', uniPose: 'shield' },
+                  { who: 'archlord', text: 'C’est pour ça qu’on l’a fait. Par des étudiants, pour des étudiants — et pour les enseignants qui les accompagnent.', archlordPose: 'thumbs' },
+                ]}
+              />
+            </div>
+          </div>
+          <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm">
             <Award className="mx-auto h-10 w-10 text-[#0d9488]" />
-            <h2 className="mt-4 text-2xl font-black text-slate-900">Retours utilisateurs vérifiés</h2>
+            <h3 className="mt-4 text-xl font-black text-slate-900">Retours utilisateurs vérifiés</h3>
             <p className="mt-3 text-sm leading-relaxed text-slate-600">
-              Cette section sera alimentée uniquement par des retours consentis et vérifiables depuis des comptes UniFlow réels.
+              Cette section ne montrera que des retours consentis et vérifiables, publiés depuis des comptes UniFlow réels — pas de témoignages inventés.
             </p>
           </div>
         </div>

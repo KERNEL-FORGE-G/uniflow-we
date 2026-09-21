@@ -7,6 +7,7 @@ import {
   Sparkles, Monitor, Youtube, Film
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { MascotDialogue } from '../components/mascot/ArchlordMascot'
 import { YouTubePlayer } from '../components/media/YouTubePlayer'
 import { youtubeWatchUrl } from '../lib/videoEmbed'
 
@@ -127,6 +128,17 @@ export default function PresentationPage() {
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
             Parcourez les présentations vidéo, le tutoriel complet de la plateforme et la démonstration des innovations IoT.
           </p>
+
+          <div className="mx-auto mt-8 max-w-xl">
+            <MascotDialogue
+              size={120}
+              lines={[
+                { who: 'archlord', text: 'La vidéo montre la plateforme telle qu’elle tourne aujourd’hui, pas une maquette.', archlordPose: 'pointing' },
+                { who: 'uni', text: 'Et si elle ne se lance pas, le lien « Ouvrir sur YouTube » est juste en dessous du lecteur.', uniPose: 'headset' },
+                { who: 'archlord', text: 'Des questions après le visionnage ? Le forum ou WhatsApp, on vous répond.', archlordPose: 'explain' },
+              ]}
+            />
+          </div>
         </div>
       </section>
 

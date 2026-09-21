@@ -4,6 +4,7 @@ import {
   Copy, ExternalLink, Sparkles, Building2, Globe, Shield
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { ArchlordMascot } from '../components/mascot/ArchlordMascot'
 import { executeContactMessageAction } from '../lib/appwrite'
 import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_URL, COVERAGE_LABEL, KERNEL_FORGE_WHATSAPP_GROUP_URL, whatsappUrlWithMessage } from '../lib/contactInfo'
 
@@ -65,6 +66,15 @@ export default function ContactPage() {
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
             Une question sur le déploiement, une demande de démonstration personnalisée ou un projet de partenariat ? Enregistrez votre demande auprès de l’équipe UniFlow.
           </p>
+
+          <div className="mt-8 flex justify-center">
+            <ArchlordMascot
+              pose="wave"
+              size={150}
+              bubble={<span>Moi c’est <strong>Archlord</strong>, le fondateur. Le plus rapide pour nous joindre, c’est WhatsApp : on répond nous-mêmes, en général dans la journée.</span>}
+              bubbleSide="right"
+            />
+          </div>
         </div>
       </section>
 

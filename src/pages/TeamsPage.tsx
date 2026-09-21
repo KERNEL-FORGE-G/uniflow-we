@@ -7,6 +7,7 @@ import { ActionResult } from '../components/feedback/ActionResult'
 import { Container } from '../components/layout/Page'
 import { listTeamMembers, type TeamMemberDocument } from '../lib/appwrite'
 import { COVERAGE_UNIVERSITY, KERNEL_FORGE_GITHUB_URL, KERNEL_FORGE_WHATSAPP_GROUP_URL } from '../lib/contactInfo'
+import { MascotDialogue } from '../components/mascot/ArchlordMascot'
 
 /**
  * Page publique de l'équipe, reprise de la référence visuelle du propriétaire
@@ -39,19 +40,40 @@ export default function TeamsPage() {
         <TeamDecorations />
 
         <Container className="relative">
-          <motion.header
-            initial={{ opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="max-w-2xl"
-          >
-            <h1 className="text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
-              Notre <span className="bg-gradient-to-r from-[#14b8a8] to-[#f59e0b] bg-clip-text text-transparent">équipe</span>
-            </h1>
-            <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-blue-100 sm:text-base">
-              KERNEL FORGE — {members.length > 0 ? `${members.length} ` : ''}étudiantes et étudiants de l’{COVERAGE_UNIVERSITY.replace(/^Université /, 'université ')} qui conçoivent UniFlow.
-            </p>
-          </motion.header>
+          <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
+            <motion.header
+              initial={{ opacity: 0, x: -24 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="max-w-2xl"
+            >
+              <h1 className="text-5xl font-black tracking-tight text-white sm:text-6xl lg:text-7xl">
+                Notre <span className="bg-gradient-to-r from-[#14b8a8] to-[#f59e0b] bg-clip-text text-transparent">équipe</span>
+              </h1>
+              <p className="mt-4 max-w-xl text-sm font-medium leading-6 text-blue-100 sm:text-base">
+                KERNEL FORGE — {members.length > 0 ? `${members.length} ` : ''}étudiantes et étudiants de l’{COVERAGE_UNIVERSITY.replace(/^Université /, 'université ')} qui conçoivent UniFlow.
+              </p>
+            </motion.header>
+
+            {/* Le fondateur présente l'équipe avec Uni : les cartes, elles, viennent d'Appwrite */}
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-md self-center rounded-3xl border border-white/15 bg-white/10 p-4 backdrop-blur-sm lg:self-end"
+            >
+              <MascotDialogue
+                tone="dark"
+                size={120}
+                lines={[
+                  { who: 'archlord', text: 'Voici l’équipe. Chaque carte vient directement de notre base Appwrite, comme tout le reste du site.', archlordPose: 'pointing' },
+                  { who: 'uni', text: 'Et moi je suis le seul membre qui ne dort jamais ! Enfin… sauf hors ligne.', uniPose: 'wave' },
+                  { who: 'archlord', text: 'On est étudiants à l’UY1, et KERNEL FORGE est la startup qu’on construit ensemble.', archlordPose: 'explain' },
+                  { who: 'uni', text: 'Envie de nous rejoindre ? Le groupe WhatsApp est juste en bas de la page.', uniPose: 'pointing' },
+                ]}
+              />
+            </motion.div>
+          </div>
 
           <div className="mt-14 lg:mt-20">
             {loading && (

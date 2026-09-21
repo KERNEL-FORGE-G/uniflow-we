@@ -9,6 +9,7 @@ import { AnimatedSection, AnimatedItem } from '../components/ui/AnimatedSection'
 import { ScrollFloat } from '../components/ui/ScrollFloat'
 import { CountUp } from '../components/ui/CountUp'
 import { UniMascot } from '../components/mascot/UniMascot'
+import { ArchlordAndUni, MascotDialogue } from '../components/mascot/ArchlordMascot'
 import { usePublicStats } from '../lib/publicStats'
 import { fadeInUp, staggerContainer } from '../utils/animations'
 import { COVERAGE_LABEL, CONTACT_WHATSAPP_URL } from '../lib/contactInfo'
@@ -422,7 +423,23 @@ export default function AboutPage() {
               </Link>
             </motion.div>
           </div>
-          <Illustration src={teamLab} alt="L'équipe KERNEL FORGE travaille en laboratoire devant un tableau de bord UniFlow" className="aspect-square" />
+          <div className="space-y-8">
+            <motion.div variants={fadeInUp} className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+              <p className="mb-2 text-center text-[11px] font-black uppercase tracking-widest text-teal-200">Le fondateur et Uni</p>
+              <MascotDialogue
+                tone="dark"
+                size={140}
+                lines={[
+                  { who: 'archlord', text: 'UniFlow est né dans notre propre faculté : on a commencé par régler nos problèmes d’emploi du temps.', archlordPose: 'explain' },
+                  { who: 'uni', text: 'Et moi je suis arrivé pour guider les étudiants — même hors ligne, même un mois sans réseau.', uniPose: 'pointing' },
+                  { who: 'archlord', text: 'KERNEL FORGE est une startup : UniFlow est notre premier produit, pas le dernier. On veut livrer des projets partout dans le monde.', archlordPose: 'laptop' },
+                  { who: 'uni', text: 'Chaque chose en son temps : d’abord la rentrée de la Faculté des Sciences !', uniPose: 'graduate' },
+                  { who: 'archlord', text: 'Exactement. Et on construit ça avec vous : vos retours font le produit.', archlordPose: 'thumbs' },
+                ]}
+              />
+            </motion.div>
+            <Illustration src={teamLab} alt="L'équipe KERNEL FORGE travaille en laboratoire devant un tableau de bord UniFlow" className="aspect-[4/3]" />
+          </div>
         </div>
       </AnimatedSection>
 
@@ -468,7 +485,7 @@ export default function AboutPage() {
       <section className="relative overflow-hidden bg-gradient-to-br from-[#1e3a8a] via-[#2d4fa8] to-[#0d9488] py-24">
         <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-10 px-6 lg:flex-row lg:items-end">
           <div className="hidden lg:block">
-            <UniMascot pose="pointing" size={210} />
+            <ArchlordAndUni size={230} />
           </div>
           <div className="flex-1 space-y-6 text-center lg:text-left">
             <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-white ring-1 ring-white/20">

@@ -2,9 +2,11 @@ import { AnimatePresence, motion, useReducedMotion, type TargetAndTransition, ty
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react'
 import { cn } from '@/utils/cn'
 import { ARCHLORD_NAME, ARCHLORD_POSES, ARCHLORD_UNI_FISTBUMP, type ArchlordPose } from './archlord'
+import { nextLineIndex, posesFor, shouldAutoAdvance, type DialogueSpeaker, type IdlePoses } from './dialogueModel'
 import { UniBubble, UniMascot, type UniPose } from './UniMascot'
 
 export type { ArchlordPose } from './archlord'
+export type { DialogueSpeaker } from './dialogueModel'
 
 export interface ArchlordMascotProps {
   pose: ArchlordPose
@@ -190,8 +192,6 @@ export function ArchlordAndUni({ size = 220, className, still = false }: { size?
   )
 }
 
-export type DialogueSpeaker = 'archlord' | 'uni'
-
 export interface DialogueLine {
   who: DialogueSpeaker
   text: ReactNode
@@ -214,7 +214,7 @@ export interface MascotDialogueProps {
   /** Fond sombre : bulles et étiquettes adaptées. */
   tone?: 'light' | 'dark'
   /** Poses par défaut quand un personnage écoute. */
-  idle?: { archlord?: ArchlordPose; uni?: UniPose }
+  idle?: IdlePoses
 }
 
 /**
@@ -232,23 +232,18 @@ export function MascotDialogue({ lines, size = 150, interval = 3800, autoplay = 
   const total = lines.length
 
   const next = useCallback(() => {
-    setIndex((current) => {
-      if (current + 1 < total) return current + 1
-      return loop ? 0 : current
-    })
+    setIndex((current) => nextLineIndex(current, total, loop))
   }, [loop, total])
 
   useEffect(() => {
-    if (!autoplay || reduced || paused || total < 2) return
-    if (!loop && index === total - 1) return
+    if (!shouldAutoAdvance({ autoplay, reduced, paused, total, loop, index })) return
     const timer = window.setTimeout(next, interval)
     return () => window.clearTimeout(timer)
   }, [autoplay, reduced, paused, total, loop, index, interval, next])
 
   if (total === 0) return null
   const current = lines[Math.min(index, total - 1)]
-  const archlordPose = current.archlordPose ?? (current.who === 'archlord' ? 'explain' : idle?.archlord ?? 'wave')
-  const uniPose = current.uniPose ?? (current.who === 'uni' ? 'pointing' : idle?.uni ?? 'wave')
+  const { archlord: archlordPose, uni: uniPose } = posesFor(current, idle)
   const dark = tone === 'dark'
 
   if (reduced) {
