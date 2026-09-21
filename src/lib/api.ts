@@ -547,6 +547,16 @@ const isLearner = (entry: { role: string }) => entry.role === 'STUDENT' || entry
 export const studentsApi = {
   list: async (): Promise<Student[]> => (await academicDirectory()).filter(isLearner).map(asStudent),
   listScoped: async (selection: ScopeSelection): Promise<Student[]> => (await academicDirectory(selection)).filter(isLearner).map(asStudent),
+  /** Étudiants distincts inscrits à au moins un des cours de l'enseignant ou du délégué connecté. */
+  countForMyCourses: async (): Promise<number> => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current || current.role === 'STUDENT') return 0
+    const [courses, enrollments] = await Promise.all([universityCourses(), academicAppwriteApi.enrollments.list()])
+    const courseIds = new Set(courses.map((course) => course.id))
+    return new Set(enrollments
+      .filter((enrollment) => courseIds.has(enrollment.courseId) && enrollment.status !== 'INACTIVE')
+      .map((enrollment) => enrollment.studentId)).size
+  },
   listForCourse: async (courseId: string): Promise<Student[]> => {
     const [directory, enrollments] = await Promise.all([academicDirectory(), academicAppwriteApi.enrollments.list()])
     const enrolledStudentIds = new Set(enrollments

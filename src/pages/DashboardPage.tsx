@@ -3,7 +3,7 @@ import { BookOpen, ClipboardList, Clock, TrendingUp, UserCheck, Calendar, Bell, 
 import { useUserRole } from '../utils/userRole'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, AreaChart, Area } from 'recharts'
 import { useEffect, useState } from 'react'
-import { assignmentsApi, attendanceApi, coursesApi, gradesApi, notificationsApi, schedulesApi, type Assignment, type Grade, type Notification, type Schedule } from '../lib/api'
+import { assignmentsApi, attendanceApi, coursesApi, gradesApi, notificationsApi, schedulesApi, studentsApi, type Assignment, type Grade, type Notification, type Schedule } from '../lib/api'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 import { attendanceRate } from '../lib/assignmentModel'
@@ -26,7 +26,9 @@ const calDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
 export default function DashboardPage() {
   const { currentRole, currentUser, language, authUser, isSessionReady } = useUserRole()
   const navigate = useNavigate()
-  const firstName = currentUser.name.split(' ')[0]
+  // « Pr. Fouda » saluait « Bonjour, Pr. » : un titre en tête n'est pas un prénom.
+  const nameParts = currentUser.name.trim().split(/\s+/)
+  const firstName = /^(pr|dr|m|mme|mlle|me)\.?$/i.test(nameParts[0] ?? '') ? currentUser.name.trim() : nameParts[0]
 
   // Dynamic current date calculations
   const now = new Date()
@@ -73,19 +75,20 @@ export default function DashboardPage() {
     setOverviewError(null)
     try {
       // Les encarts secondaires ne doivent pas faire échouer les compteurs : chacun retombe sur vide.
-      const [courses, loadedAssignments, loadedGrades, records, loadedSchedules, loadedNotifications] = await Promise.all([
+      const [courses, loadedAssignments, loadedGrades, records, loadedSchedules, loadedNotifications, studentCount] = await Promise.all([
         coursesApi.mine(),
         assignmentsApi.mine(),
         gradesApi.mine(),
         attendanceApi.myRecords().catch(() => []),
         schedulesApi.mine().catch(() => []),
         notificationsApi.list().catch(() => []),
+        currentRole === 'student' ? Promise.resolve(0) : studentsApi.countForMyCourses().catch(() => 0),
       ])
       const gradeAverage = loadedGrades.length ? loadedGrades.reduce((sum, grade) => sum + Number(grade.grade), 0) / loadedGrades.length : null
       // « Devoirs à rendre » ne compte que ce qui reste à faire ; un devoir déjà
       // rendu ou noté n'est plus une tâche.
       const pending = loadedAssignments.filter((assignment) => assignment.status === 'À rendre' || assignment.status === 'En retard').length
-      const nextOverview = { courseCount: courses.length, assignmentCount: loadedAssignments.length, pendingAssignmentCount: pending, gradeCount: loadedGrades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: attendanceRate(records), studentCount: 0 }
+      const nextOverview = { courseCount: courses.length, assignmentCount: loadedAssignments.length, pendingAssignmentCount: pending, gradeCount: loadedGrades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: attendanceRate(records), studentCount }
       setOverview(nextOverview)
       setAssignments(loadedAssignments)
       setGrades(loadedGrades)
