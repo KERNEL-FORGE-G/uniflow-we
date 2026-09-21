@@ -8,8 +8,15 @@
  * Les données reprennent les membres qui étaient figés dans
  * `src/pages/TeamsPage.tsx` — le web en montrait neuf, le mobile six et le
  * desktop quatre, d'où trois pages différentes selon la plateforme. L'équipe
- * compte huit membres depuis le 2026-09-20 ; la liste ci-dessous fait foi et
- * le seed supprime de la base ceux qui n'y figurent plus.
+ * compte dix membres depuis le 2026-09-21 (pôle marketing et second
+ * développeur desktop) ; la liste ci-dessous fait foi et le seed supprime de
+ * la base ceux qui n'y figurent plus.
+ *
+ * Depuis le 2026-09-21, l'administration ajoute aussi des membres depuis
+ * Réglages > Équipe (service `/team-roster`) : leur `$id` est alors aléatoire,
+ * pas le slug. Le seed rapproche donc les documents par le champ `slug` et non
+ * par `$id` — sinon un re-run supprimait Tessoh (créé depuis cette page) avec
+ * sa photo, pour le recréer sans photo.
  *
  * Chaque document porte `read("any")` : la collection a
  * `documentSecurity: true`, donc ce sont les permissions du document qui
@@ -55,7 +62,9 @@ const members = [
     subTeam: 'Architecture & Direction',
     role: 'Chef de projet & Architecte',
     badge: 'Lead Architect',
-    accent: 'blue',
+    // Valeur choisie depuis la page Réglages > Équipe ; le seed la reflète
+    // pour ne pas l'écraser à la prochaine exécution.
+    accent: 'cyan',
   },
   {
     slug: 'aliya',
@@ -104,7 +113,9 @@ const members = [
   {
     slug: 'hassane',
     name: 'HASSANE YOUSSOUF OUMAR',
-    github: 'hawadja1',
+    // Compte GitHub corrigé depuis la page Réglages > Équipe le 2026-09-21
+    // (l'ancien `hawadja1` n'existait pas, voir BROKEN_GITHUB_AVATARS).
+    github: 'Hawadja',
     email: 'h.hawadja1@gmail.com',
     team: 'Backend',
     subTeam: 'Backend Microservices',
@@ -136,6 +147,32 @@ const members = [
     badge: 'Fullstack UI',
     accent: 'indigo',
   },
+  // Pôle marketing créé le 2026-09-21 ; Tessoh a d'abord été saisi depuis la
+  // page Réglages > Équipe (d'où son `$id` aléatoire, voir l'en-tête).
+  {
+    slug: 'tessoh-pekam-marcel',
+    name: 'Tessoh pekam marcel',
+    github: '',
+    email: 'tesmarcel48@gmail.com',
+    team: 'Frontend',
+    subTeam: 'MARKETING',
+    role: 'Chef branche marketing',
+    badge: 'MARKETING & Dev frontend',
+    accent: 'blue',
+  },
+  // Second développeur desktop, arrivé le 2026-09-21 pour travailler en binôme
+  // avec Aliyatou sur le rattrapage du desktop. Contact et GitHub à compléter.
+  {
+    slug: 'miguel',
+    name: 'DJOMGUE Miguel',
+    github: '',
+    email: '',
+    team: 'Frontend',
+    subTeam: 'Frontend Desktop',
+    role: 'Desktop Developer',
+    badge: 'Desktop App',
+    accent: 'purple',
+  },
 ].map((member, index) => ({ ...member, displayOrder: index }))
 
 requireConfig()
@@ -143,16 +180,27 @@ console.log(`Injection de l'équipe dans ${endpoint} — projet ${projectId}`)
 
 const request = createClient()
 
-/** Crée le document, ou le remplace s'il existe déjà. */
-async function upsert(slug, data, permissions) {
-  const created = await request('POST', `/databases/${databaseId}/collections/${COLLECTION}/documents`, {
-    documentId: slug,
-    data,
-    permissions,
-  })
-  if (created.status === 201) return 'created'
-  await request('PATCH', `/databases/${databaseId}/collections/${COLLECTION}/documents/${slug}`, { data, permissions })
-  return 'updated'
+const documentsPath = `/databases/${databaseId}/collections/${COLLECTION}/documents`
+
+/** Tous les documents actuels, indexés par `slug` (voir l'en-tête). */
+async function loadExistingBySlug() {
+  const listed = await request('GET', `${documentsPath}?queries[0]=${encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] }))}`)
+  return new Map((listed.payload.documents || []).map((document) => [document.slug || document.$id, document]))
+}
+
+/**
+ * Met à jour le document qui porte déjà ce slug (quel que soit son `$id`),
+ * sinon le crée avec le slug pour identifiant.
+ */
+async function upsert(member, permissions, existingBySlug) {
+  const current = existingBySlug.get(member.slug)
+  if (current) {
+    await request('PATCH', `${documentsPath}/${current.$id}`, { data: member, permissions })
+    return 'updated'
+  }
+  const created = await request('POST', documentsPath, { documentId: member.slug, data: member, permissions })
+  if (created.status !== 201) throw new Error(`Création de ${member.slug} refusée (${created.status}) : ${created.payload?.message || ''}`)
+  return 'created'
 }
 
 /**
@@ -163,7 +211,7 @@ async function upsert(slug, data, permissions) {
  * dans [BROKEN_GITHUB_AVATARS] n'ont pas de photo — l'import les laisse en
  * silhouette plutôt que d'inventer une image.
  */
-async function importGitHubPhotos() {
+async function importGitHubPhotos(existingBySlug) {
   for (const member of members) {
     if (!member.github || BROKEN_GITHUB_AVATARS.has(member.github)) {
       console.log(`  ${member.slug} : pas de photo GitHub, laissé en silhouette.`)
@@ -192,7 +240,8 @@ async function importGitHubPhotos() {
       console.log(`  ${member.slug} : téléversement refusé (${upload.status}) — ${payload.message || ''}`)
       continue
     }
-    await request('PATCH', `/databases/${databaseId}/collections/${COLLECTION}/documents/${member.slug}`, {
+    const documentId = existingBySlug.get(member.slug)?.$id ?? member.slug
+    await request('PATCH', `${documentsPath}/${documentId}`, {
       data: { avatarFileId: payload.$id },
     })
     console.log(`  ${member.slug} : photo importée (${payload.$id}).`)
@@ -201,8 +250,9 @@ async function importGitHubPhotos() {
 
 const withPhotos = process.argv.includes('--photos')
 
+const existingBySlug = await loadExistingBySlug()
 for (const member of members) {
-  const action = await upsert(member.slug, member, ['read("any")'])
+  const action = await upsert(member, ['read("any")'], existingBySlug)
   console.log(`  ${action === 'created' ? 'Créé' : 'Mis à jour'} : ${member.name}`)
 }
 
@@ -214,22 +264,21 @@ for (const member of members) {
  * est supprimée du bucket avec le document.
  */
 const kept = new Set(members.map((member) => member.slug))
-const existing = await request('GET', `/databases/${databaseId}/collections/${COLLECTION}/documents?queries[0]=${encodeURIComponent(JSON.stringify({ method: 'limit', values: [100] }))}`)
-for (const document of existing.payload.documents || []) {
-  if (kept.has(document.$id)) continue
+for (const [slug, document] of existingBySlug) {
+  if (kept.has(slug)) continue
   if (document.avatarFileId) {
     await fetch(`${endpoint}/storage/buckets/${AVATAR_BUCKET}/files/${document.avatarFileId}`, {
       method: 'DELETE',
       headers: { 'X-Appwrite-Project': projectId, 'X-Appwrite-Key': apiKey },
     })
   }
-  await request('DELETE', `/databases/${databaseId}/collections/${COLLECTION}/documents/${document.$id}`)
+  await request('DELETE', `${documentsPath}/${document.$id}`)
   console.log(`  Supprimé : ${document.name} (n'est plus dans l'équipe)`)
 }
 
 if (withPhotos) {
   console.log('Import des photos GitHub :')
-  await importGitHubPhotos()
+  await importGitHubPhotos(await loadExistingBySlug())
 }
 
 console.log(`${members.length} membre(s) de l'équipe en base.`)
