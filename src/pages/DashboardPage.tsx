@@ -7,7 +7,7 @@ import { assignmentsApi, attendanceApi, coursesApi, gradesApi, notificationsApi,
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 import { attendanceRate } from '../lib/assignmentModel'
-import { eventDaysInMonth, gradeDistribution, relativeTime, teacherAverages, todaysSessions, weeklyAttendanceTrend } from '../lib/dashboardModel'
+import { dueWithin, eventDaysInMonth, gradeDistribution, gradedStudentCount, passRate, relativeTime, teacherAverages, todaysSessions, weeklyAttendanceTrend } from '../lib/dashboardModel'
 
 /** Icône et couleur d'une entrée d'activité d'après le type de notification Appwrite. */
 function activityStyle(type: string): { icon: typeof BookOpen; color: string } {
@@ -137,19 +137,26 @@ export default function DashboardPage() {
     { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note',   up: (overview?.averageGrade ?? 10) >= 10,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
     { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75, icon: UserCheck,     bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/presences' },
   ]
+  // Les pastilles des cartes disent d'où vient le chiffre ; les anciennes
+  // valeurs fixes (« Incrémental », « 0 ») laissaient croire à des compteurs morts.
+  const unreadCount = notifications.filter((item) => !item.isRead).length
+  const dueSoon = dueWithin(assignments, now)
+  const successRate = passRate(grades)
+  const gradedStudents = gradedStudentCount(grades)
+  const weeklySessions = schedules.length ? `${schedules.length} séance${schedules.length > 1 ? 's' : ''} / semaine` : 'Aucune séance planifiée'
   const delegateStats = [
     { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/gestion-presences' },
-    { label: 'Sync. en attente',  value: '0',    delta: 'En ligne', up: true, icon: ClipboardList, bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/gestion-presences' },
-    { label: 'Justif. en attente',value: '0',    delta: '0',     up: true,  icon: Bell,          bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/gestion-presences' },
-    { label: 'Étudiants suivis',  value: overview ? `${overview.studentCount}` : '0',   delta: 'Personnel',  up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/etudiants' },
-    { label: 'Sessions validées', value: '0',   delta: '0',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/emploi-du-temps' },
+    { label: 'Séances / semaine', value: `${schedules.length}`, delta: overview.courseCount ? `${overview.courseCount} cours` : 'Aucun cours', up: schedules.length > 0, icon: Calendar, bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/emploi-du-temps' },
+    { label: 'Devoirs à rendre',  value: `${overview.pendingAssignmentCount}`, delta: dueSoon ? `${dueSoon} sous 7 jours` : 'Aucune échéance proche', up: dueSoon === 0, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
+    { label: 'Étudiants suivis',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à la promotion' : 'Aucun inscrit',  up: overview.studentCount > 0,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/etudiants' },
+    { label: 'Notifications',     value: `${unreadCount}`, delta: unreadCount ? 'Non lues' : 'Tout est lu', up: unreadCount === 0, icon: Bell, bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/notifications' },
   ]
   const teacherStats = [
-    { label: 'Cours créés',       value: overview ? `${overview.courseCount}` : '0',     delta: 'Incrémental', up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/mes-cours-enseignant' },
-    { label: 'Étudiants enregistrés',  value: overview ? `${overview.studentCount}` : '0',   delta: 'Actifs',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/etudiants' },
-    { label: 'Devoirs créés',     value: overview ? `${overview.assignmentCount ?? 0}` : '0',    delta: '0',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
-    { label: 'Notes saisies',     value: overview ? `${overview.gradeCount ?? 0}` : '0',     delta: '0',     up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
-    { label: 'Moyenne générale',  value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—',     delta: '0',     up: true,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/notes' },
+    { label: 'Cours créés',       value: `${overview.courseCount}`,     delta: weeklySessions, up: schedules.length > 0,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/mes-cours-enseignant' },
+    { label: 'Étudiants enregistrés',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à vos cours' : 'Aucun inscrit',    up: overview.studentCount > 0,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/etudiants' },
+    { label: 'Devoirs créés',     value: `${overview.assignmentCount}`,    delta: dueSoon ? `${dueSoon} à échéance sous 7 j` : 'Aucune échéance proche',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
+    { label: 'Notes saisies',     value: `${overview.gradeCount}`,     delta: gradedStudents ? `${gradedStudents} étudiant${gradedStudents > 1 ? 's' : ''} noté${gradedStudents > 1 ? 's' : ''}` : 'Aucune note',     up: gradedStudents > 0,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
+    { label: 'Moyenne générale',  value: overview.averageGrade != null ? `${overview.averageGrade}/20` : '—',     delta: successRate != null ? `${successRate} % ≥ 10/20` : 'Aucune note',     up: (successRate ?? 100) >= 50,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/notes' },
   ]
 
   const stats = currentRole === 'teacher' ? teacherStats : currentRole === 'delegate' ? delegateStats : studentStats

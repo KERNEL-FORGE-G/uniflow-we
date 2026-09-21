@@ -103,6 +103,43 @@ export function gradeDistribution(grades: GradeLike[]): DistributionSlice[] {
   return BANDS.map((band, index) => ({ name: band.name, value: rounded[index], color: band.color })).filter((slice) => slice.value > 0)
 }
 
+/** Part des notes ≥ 10/20, en pourcentage entier ; `null` sans note. */
+export function passRate(grades: GradeLike[]): number | null {
+  if (grades.length === 0) return null
+  const passing = grades.filter((grade) => scoreOn20(grade) >= 10).length
+  return Math.round((passing / grades.length) * 100)
+}
+
+/** Nombre d'étudiants distincts ayant au moins une note (les notes sans `studentId` comptent pour une personne chacune). */
+export function gradedStudentCount(grades: Array<GradeLike & { studentId?: string }>): number {
+  const ids = new Set<string>()
+  let anonymous = 0
+  for (const grade of grades) {
+    if (grade.studentId) ids.add(grade.studentId)
+    else anonymous += 1
+  }
+  return ids.size + anonymous
+}
+
+export interface DueLike {
+  due?: string | null
+}
+
+/**
+ * Devoirs dont l'échéance tombe entre maintenant et `days` jours (bornes
+ * incluses). Une échéance illisible ou déjà passée n'est pas comptée : la
+ * carte « à échéance sous 7 j » ne doit pas gonfler avec les vieux devoirs.
+ */
+export function dueWithin(items: DueLike[], now: Date = new Date(), days = 7): number {
+  const start = now.getTime()
+  const end = start + days * 86_400_000
+  return items.filter((item) => {
+    if (!item.due) return false
+    const time = new Date(item.due).getTime()
+    return Number.isFinite(time) && time >= start && time <= end
+  }).length
+}
+
 export interface TeacherAveragePoint {
   week: string
   average: number

@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { eventDaysInMonth, gradeDistribution, isoWeekNumber, relativeTime, scoreOn20, startOfWeek, teacherAverages, todaysSessions, weekdayKey, weeklyAttendanceTrend } from './dashboardModel.ts'
+import { dueWithin, eventDaysInMonth, gradeDistribution, gradedStudentCount, isoWeekNumber, passRate, relativeTime, scoreOn20, startOfWeek, teacherAverages, todaysSessions, weekdayKey, weeklyAttendanceTrend } from './dashboardModel.ts'
 
 const monday = new Date(2026, 8, 21, 9, 0) // lundi 21 septembre 2026
 
@@ -48,6 +48,28 @@ test('teacherAverages regroupe par type d’évaluation', () => {
     { grade: 12, type: 'CC' }, { grade: 16, type: 'CC' }, { grade: 10, type: 'EXAM' },
   ])
   assert.deepEqual(points, [{ week: 'CC', average: 14 }, { week: 'EXAM', average: 10 }])
+})
+
+test('passRate et gradedStudentCount', () => {
+  assert.equal(passRate([]), null)
+  // 6/7 = 17,1/20 réussit ; 8/20 échoue ; 10 pile compte comme réussi.
+  assert.equal(passRate([{ grade: 6, maxScore: 7 }, { grade: 8 }, { grade: 10 }]), 67)
+  assert.equal(gradedStudentCount([{ grade: 12, studentId: 'a' }, { grade: 14, studentId: 'a' }, { grade: 9, studentId: 'b' }]), 2)
+  assert.equal(gradedStudentCount([{ grade: 12 }, { grade: 14 }]), 2)
+})
+
+test('dueWithin ne compte que les échéances à venir dans la fenêtre', () => {
+  const items = [
+    { due: '2026-09-22T23:59:00.000Z' }, // demain
+    { due: '2026-09-28T08:00:00.000Z' }, // dans 7 jours
+    { due: '2026-09-30T08:00:00.000Z' }, // trop loin
+    { due: '2026-09-15T08:00:00.000Z' }, // passé
+    { due: 'pas une date' },
+    { due: null },
+  ]
+  assert.equal(dueWithin(items, monday), 2)
+  assert.equal(dueWithin(items, monday, 2), 1)
+  assert.equal(dueWithin([], monday), 0)
 })
 
 test('startOfWeek et isoWeekNumber', () => {
