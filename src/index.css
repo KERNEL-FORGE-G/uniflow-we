@@ -804,3 +804,13 @@ body {
   background: rgba(30, 58, 138, 0.2);
   color: #1e3a8a;
 }
+
+/* ─── Tuiles d'icônes (docs/icones-uniflow.md) ───
+   Phosphor rend le calque secondaire des icônes duotone à 20 % ; sur une tuile
+   pleine (icône blanche sur dégradé) la spec le veut à 45 %, sinon il disparaît. */
+.uni-icon-tile[data-variant="filled"] svg path[opacity] {
+  opacity: 0.45;
+}
+.uni-icon-tile svg {
+  display: block;
+}
