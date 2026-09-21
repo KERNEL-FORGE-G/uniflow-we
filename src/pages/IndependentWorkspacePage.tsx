@@ -4,6 +4,7 @@ import { subjectColor } from '../lib/subjectIcon'
 import { ApiError } from '../lib/api'
 import { personalAppwriteApi as personalApi, type PersonalAssignmentRecord as PersonalAssignment, type PersonalCourseRecord as PersonalCourse, type PersonalGradeRecord as PersonalGrade, type PersonalScheduleRecord as PersonalSchedule } from '../lib/appwrite'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
+import { BottomEdge } from '../components/layout/CornerStack'
 
 type Tab = 'courses' | 'schedule' | 'assignments' | 'grades'
 
@@ -262,8 +263,10 @@ export default function IndependentWorkspacePage({ initialTab, scheduleOnly = fa
   // La route « Emploi du temps » est une consultation dédiée : elle ne rend
   // volontairement ni formulaire, ni indicateur, ni panneau de gestion.
   // Les opérations CRUD restent accessibles depuis Gestion personnelle.
+  // Comme la grille universitaire, elle occupe tout l'écran : le lanceur d'Uni
+  // s'efface (l'ancienne exception par `pathname` couvrait aussi ce cas).
   if (scheduleOnly) {
-    return <div className="mx-auto max-w-[1500px]"><WeeklyScheduleGrid schedules={schedules} courses={courses} /></div>
+    return <div className="mx-auto max-w-[1500px]"><BottomEdge kind="fullscreen" /><WeeklyScheduleGrid schedules={schedules} courses={courses} /></div>
   }
 
   return (

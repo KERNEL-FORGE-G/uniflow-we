@@ -7,6 +7,7 @@ import { isOnline } from '../lib/offline/networkStatus'
 import { isRetryableReplayError } from '../lib/offline/offlineModel'
 import { queueMessage } from '../lib/offline/replayHandlers'
 import { useNavigate } from 'react-router-dom'
+import { useBottomEdge } from '../components/layout/CornerStack'
 
 interface Message {
   id: string
@@ -46,6 +47,12 @@ export default function MessagingPage() {
   const [addError, setAddError] = useState<string | null>(null)
   const [queuedNotice, setQueuedNotice] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
+
+  // Le panneau fait toute la hauteur et son composeur est collé en bas à
+  // droite : le lanceur d'Uni recouvrait le bouton « Envoyer » (et le champ
+  // sur petit écran). Déclaré pour toute la page, chargement compris, pour
+  // que le lanceur ne clignote pas entre le spinner et la conversation.
+  useBottomEdge('composer')
 
   // Auto-scroll to bottom
   useEffect(() => {

@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { RotateCcw, SendHorizontal, Sparkles, Trash2, Volume2, VolumeX, X } from 'lucide-react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { executeAssistantAction } from '@/lib/appwrite'
 import { GUEST_GREETING, GUEST_SUGGESTIONS, guestReply, type GuestLink } from '@/lib/assistantGuest'
 import { UniMascot } from '@/components/mascot/UniMascot'
+import { CornerSlot, useCornerStack } from '@/components/layout/CornerStack'
+import { launcherVisible } from '@/components/layout/bottomEdgeModel'
 import {
   ASSISTANT_NAME,
   clearMessages,
@@ -30,6 +32,10 @@ import { UniAvatar, type UniMood } from './UniAvatar'
  * Function `uniflow-api` interroge Gemini 3.1 Flash-Lite avec le profil et
  * l'emploi du temps du jour de l'utilisateur ; aucune clé ne transite ici.
  * La synthèse vocale (Web Speech API) se coupe et se rallume depuis l'en-tête.
+ *
+ * Le lanceur ne se pose plus lui-même dans le coin : il se rend dans la pile
+ * `CornerStack` (zone `launcher`, tout en bas) et s'efface quand la page
+ * déclare occuper son bord inférieur — voir `bottomEdgeModel.ts`.
  */
 
 const DEFAULT_GREETING = `Bonjour ! Je suis ${ASSISTANT_NAME}, l'assistant UniFlow. Pose-moi une question sur tes cours, ton emploi du temps ou la plateforme.`
@@ -70,7 +76,7 @@ function TypingDots() {
 
 export function UniAssistant() {
   const { authUser, currentUser } = useUserRole()
-  const { pathname } = useLocation()
+  const { bottomEdge } = useCornerStack()
   const reduceMotion = useReducedMotion() ?? false
   const userId = authUser?.id ?? ''
   const storage = typeof window !== 'undefined' ? window.localStorage : undefined
@@ -258,15 +264,20 @@ export function UniAssistant() {
     }
   }
 
-  // La grille de l'emploi du temps garde tout l'écran ; Uni reste accessible partout ailleurs.
-  if (pathname === '/app/emploi-du-temps' && !isOpen) return null
+  // La page a déclaré son bord inférieur (composeur de la messagerie, grille
+  // plein écran de l'emploi du temps) : le lanceur recouvrait le bouton
+  // « Envoyer ». Panneau déjà ouvert, il reste — on ne coupe pas une
+  // conversation parce que la page change ; fermé, rien ne s'affiche, et Uni
+  // reste à un clic sur toute autre page. L'état (messages, ouverture) est
+  // conservé : le composant reste monté, il ne rend simplement rien.
+  if (!launcherVisible(bottomEdge, isOpen)) return null
 
   const showSuggestions = !pending && (guest ? suggestions.length > 0 : messages.filter((m) => !m.local).length === 0)
   const stagePose = pending ? 'thinking' : error ? 'sorry' : guest ? 'wave' : justGreeted ? 'celebrate' : 'headset'
   const showStage = messages.filter((m) => m.role === 'user').length === 0
 
   return (
-    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end gap-3 sm:bottom-6 sm:right-6">
+    <CornerSlot zone="launcher">
       {/* Le panneau au-dessus ; en bas, la bulle d'accueil à gauche du bouton. */}
       <AnimatePresence>
         {isOpen && (
@@ -442,7 +453,7 @@ export function UniAssistant() {
         {unread && !isOpen && <span className="absolute -left-1 top-1 h-3 w-3 rounded-full bg-[#f59e0b] ring-2 ring-white" aria-hidden="true" />}
         <span className="pointer-events-none absolute -bottom-1.5 rounded-md bg-[#1e3a8a] px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-white">{ASSISTANT_NAME.toUpperCase()}</span>
       </motion.button>
-    </div>
+    </CornerSlot>
   )
 }
 

@@ -6,6 +6,7 @@ import { useUserRole } from '../utils/userRole'
 import { ExportButtons } from '../components/exports/ExportButtons'
 import { timetableDocument } from '../lib/exports'
 import { toTimetableSlots } from '../lib/exports/adapters'
+import { useBottomEdge } from '../components/layout/CornerStack'
 
 const DAY_LABELS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 const DAY_KEYS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
@@ -43,6 +44,10 @@ export default function SchedulePage() {
   const [weekOffset, setWeekOffset] = useState(0)
   const [focusDay, setFocusDay] = useState<string | null>(null)
   const { data: schedules, loading, error, refetch } = useApi(() => schedulesApi.mine(), [], { key: 'schedules.mine' })
+  // La grille (1080 px minimum, défilement horizontal) prend tout l'écran : le
+  // lanceur d'Uni s'efface ici. Remplace l'exception `pathname ===
+  // '/app/emploi-du-temps'` qui était codée en dur dans le lanceur.
+  useBottomEdge('fullscreen')
   // Un étudiant ne voit que sa filière et son niveau : sans les deux sur son
   // profil, la couche données ne renvoie rien — on le lui dit au lieu de
   // montrer une grille vide sans explication.

@@ -11,6 +11,7 @@ import { Skeleton } from './components/ui/Skeleton'
 import { ErrorBoundary } from './components/feedback/ErrorBoundary'
 import { UniLoading } from './components/mascot/UniScenes'
 import { OfflineBanner } from './components/offline/OfflineBanner'
+import { CornerStack, CornerStackProvider } from './components/layout/CornerStack'
 
 // Uni est monté une seule fois, pour le site public comme pour l'espace connecté.
 const UniAssistant = lazy(() => import('./components/assistant/UniAssistant').then((module) => ({ default: module.UniAssistant })))
@@ -252,93 +253,98 @@ export default function App() {
 
   return (
     <RoleProvider>
-      <SEOHead />
-      <IdleTimer />
-      <GlobalNetworkToast />
-      <AudienceTracker />
-      <OfflineBanner />
-      <Suspense fallback={null}><UniAssistant /></Suspense>
-      <ErrorBoundary resetKey={location.pathname}>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/about" element={<PublicPage><AboutPage /></PublicPage>} />
-            <Route path="/pricing" element={<PublicPage><PricingPage /></PublicPage>} />
-            <Route path="/subscribe" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
-            <Route path="/subscribe/:planId" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
-            <Route path="/contact" element={<PublicPage><ContactPage /></PublicPage>} />
-            <Route path="/presentation" element={<PublicPage><PresentationPage /></PublicPage>} />
-            <Route path="/login" element={<GuestRoute><PublicPage><LoginPage /></PublicPage></GuestRoute>} />
-            <Route path="/register" element={<GuestRoute><PublicPage><RegisterPage /></PublicPage></GuestRoute>} />
-            <Route path="/mot-de-passe-oublie" element={<GuestRoute><PublicPage><ForgotPasswordPage /></PublicPage></GuestRoute>} />
-            <Route path="/reinitialiser-mot-de-passe" element={<PublicPage><ResetPasswordPage /></PublicPage>} />
-            <Route path="/sentinelle" element={<PublicPage><SentinellePage /></PublicPage>} />
-            <Route path="/forum" element={<PublicPage><ForumPage /></PublicPage>} />
-            <Route path="/teams" element={<PublicPage><TeamsPage /></PublicPage>} />
-            {LEGAL_DOCUMENTS.map((doc) => (
-              <Route key={doc.slug} path={doc.path} element={<PublicPage><LegalDocumentPage document={doc} /></PublicPage>} />
-            ))}
+      <CornerStackProvider>
+        <SEOHead />
+        {/* Seul conteneur `fixed bottom right` de l'application : Uni, le bandeau
+            d'inactivité et les bandeaux de page s'y empilent (voir CornerStack.tsx). */}
+        <CornerStack />
+        <IdleTimer />
+        <GlobalNetworkToast />
+        <AudienceTracker />
+        <OfflineBanner />
+        <Suspense fallback={null}><UniAssistant /></Suspense>
+        <ErrorBoundary resetKey={location.pathname}>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
+              <Route path="/about" element={<PublicPage><AboutPage /></PublicPage>} />
+              <Route path="/pricing" element={<PublicPage><PricingPage /></PublicPage>} />
+              <Route path="/subscribe" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
+              <Route path="/subscribe/:planId" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
+              <Route path="/contact" element={<PublicPage><ContactPage /></PublicPage>} />
+              <Route path="/presentation" element={<PublicPage><PresentationPage /></PublicPage>} />
+              <Route path="/login" element={<GuestRoute><PublicPage><LoginPage /></PublicPage></GuestRoute>} />
+              <Route path="/register" element={<GuestRoute><PublicPage><RegisterPage /></PublicPage></GuestRoute>} />
+              <Route path="/mot-de-passe-oublie" element={<GuestRoute><PublicPage><ForgotPasswordPage /></PublicPage></GuestRoute>} />
+              <Route path="/reinitialiser-mot-de-passe" element={<PublicPage><ResetPasswordPage /></PublicPage>} />
+              <Route path="/sentinelle" element={<PublicPage><SentinellePage /></PublicPage>} />
+              <Route path="/forum" element={<PublicPage><ForumPage /></PublicPage>} />
+              <Route path="/teams" element={<PublicPage><TeamsPage /></PublicPage>} />
+              {LEGAL_DOCUMENTS.map((doc) => (
+                <Route key={doc.slug} path={doc.path} element={<PublicPage><LegalDocumentPage document={doc} /></PublicPage>} />
+              ))}
 
-            {/* Accueil — tableau de bord universitaire ou espace indépendant */}
-            <Route path="/app" element={<Shell><AccountHomePage /></Shell>} />
-            <Route path="/app/independent" element={<Navigate to="/app" replace />} />
-            <Route path="/app/accueil-compact" element={<Shell><UniversityRoute><DashboardCompactPage /></UniversityRoute></Shell>} />
+              {/* Accueil — tableau de bord universitaire ou espace indépendant */}
+              <Route path="/app" element={<Shell><AccountHomePage /></Shell>} />
+              <Route path="/app/independent" element={<Navigate to="/app" replace />} />
+              <Route path="/app/accueil-compact" element={<Shell><UniversityRoute><DashboardCompactPage /></UniversityRoute></Shell>} />
 
-            {/* Apprentissage — commun, avec version personnelle */}
-            <Route path="/app/cours" element={<Shell><PersonalLearningRoute tab="courses"><CoursesPage /></PersonalLearningRoute></Shell>} />
-            <Route path="/app/cours/:courseId" element={<Shell><PersonalLearningRoute tab="courses"><CourseDetailPage /></PersonalLearningRoute></Shell>} />
-            <Route path="/app/emploi-du-temps" element={<Shell><PersonalLearningRoute tab="schedule" scheduleOnly><SchedulePage /></PersonalLearningRoute></Shell>} />
-            <Route path="/app/devoirs" element={<Shell><PersonalLearningRoute tab="assignments"><AssignmentsPage /></PersonalLearningRoute></Shell>} />
-            <Route path="/app/notes" element={<Shell><PersonalLearningRoute tab="grades"><GradesPage /></PersonalLearningRoute></Shell>} />
+              {/* Apprentissage — commun, avec version personnelle */}
+              <Route path="/app/cours" element={<Shell><PersonalLearningRoute tab="courses"><CoursesPage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/cours/:courseId" element={<Shell><PersonalLearningRoute tab="courses"><CourseDetailPage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/emploi-du-temps" element={<Shell><PersonalLearningRoute tab="schedule" scheduleOnly><SchedulePage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/devoirs" element={<Shell><PersonalLearningRoute tab="assignments"><AssignmentsPage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/notes" element={<Shell><PersonalLearningRoute tab="grades"><GradesPage /></PersonalLearningRoute></Shell>} />
 
-            {/* Commun aux deux types de compte */}
-            <Route path="/app/profil" element={<Shell><AccountAwareRoute kind="profile"><ProfilePage /></AccountAwareRoute></Shell>} />
-            <Route path="/app/parametres" element={<Shell><AccountAwareRoute kind="settings"><SettingsPage /></AccountAwareRoute></Shell>} />
-            <Route path="/app/aide" element={<Shell><AccountAwareRoute kind="help"><HelpPage /></AccountAwareRoute></Shell>} />
-            <Route path="/app/abonnement" element={<Shell><BillingPage /></Shell>} />
-            <Route path="/app/billing" element={<Navigate to="/app/abonnement" replace />} />
+              {/* Commun aux deux types de compte */}
+              <Route path="/app/profil" element={<Shell><AccountAwareRoute kind="profile"><ProfilePage /></AccountAwareRoute></Shell>} />
+              <Route path="/app/parametres" element={<Shell><AccountAwareRoute kind="settings"><SettingsPage /></AccountAwareRoute></Shell>} />
+              <Route path="/app/aide" element={<Shell><AccountAwareRoute kind="help"><HelpPage /></AccountAwareRoute></Shell>} />
+              <Route path="/app/abonnement" element={<Shell><BillingPage /></Shell>} />
+              <Route path="/app/billing" element={<Navigate to="/app/abonnement" replace />} />
 
-            {/* Universitaire uniquement */}
-            <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />
-            <Route path="/app/gestion-presences" element={<Shell><UniversityRoute roles={['delegate', 'teacher']}><AttendanceManagePage /></UniversityRoute></Shell>} />
-            <Route path="/app/notifications" element={<Shell><UniversityRoute><NotificationsPage /></UniversityRoute></Shell>} />
-            <Route path="/app/messages" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
-            <Route path="/app/messages/:conversationId" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
-            <Route path="/app/bibliotheque" element={<Shell><UniversityRoute><LibraryPage /></UniversityRoute></Shell>} />
-            <Route path="/app/salles" element={<Shell><UniversityRoute><ClassroomsPage /></UniversityRoute></Shell>} />
-            <Route path="/app/promotion" element={<Shell><UniversityRoute roles={['student', 'delegate']}><PromotionPage /></UniversityRoute></Shell>} />
-            <Route path="/app/mes-cours-enseignant" element={<Shell><UniversityRoute roles={['teacher']}><TeacherCoursesPage /></UniversityRoute></Shell>} />
-            <Route path="/app/demo" element={<Shell><UniversityRoute><DemoPage /></UniversityRoute></Shell>} />
+              {/* Universitaire uniquement */}
+              <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />
+              <Route path="/app/gestion-presences" element={<Shell><UniversityRoute roles={['delegate', 'teacher']}><AttendanceManagePage /></UniversityRoute></Shell>} />
+              <Route path="/app/notifications" element={<Shell><UniversityRoute><NotificationsPage /></UniversityRoute></Shell>} />
+              <Route path="/app/messages" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
+              <Route path="/app/messages/:conversationId" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
+              <Route path="/app/bibliotheque" element={<Shell><UniversityRoute><LibraryPage /></UniversityRoute></Shell>} />
+              <Route path="/app/salles" element={<Shell><UniversityRoute><ClassroomsPage /></UniversityRoute></Shell>} />
+              <Route path="/app/promotion" element={<Shell><UniversityRoute roles={['student', 'delegate']}><PromotionPage /></UniversityRoute></Shell>} />
+              <Route path="/app/mes-cours-enseignant" element={<Shell><UniversityRoute roles={['teacher']}><TeacherCoursesPage /></UniversityRoute></Shell>} />
+              <Route path="/app/demo" element={<Shell><UniversityRoute><DemoPage /></UniversityRoute></Shell>} />
 
-            {/* Anciennes adresses de la visioconférence : elle vit désormais dans l'application de bureau */}
-            <Route path="/app/visio/*" element={<Navigate to="/app/aide" replace />} />
-            <Route path="/app/visioconference/*" element={<Navigate to="/app/aide" replace />} />
+              {/* Anciennes adresses de la visioconférence : elle vit désormais dans l'application de bureau */}
+              <Route path="/app/visio/*" element={<Navigate to="/app/aide" replace />} />
+              <Route path="/app/visioconference/*" element={<Navigate to="/app/aide" replace />} />
 
-            {/* Administration */}
-            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="utilisateurs" element={<AdminUsersPage />} />
-              <Route path="etudiants" element={<StudentsPage />} />
-              <Route path="enseignants" element={<TeachersPage />} />
-              <Route path="equipe" element={<AdminTeamPage />} />
-              <Route path="structure" element={<AcademicStructurePage />} />
-              <Route path="cours" element={<AdminCoursesPage />} />
-              <Route path="ue" element={<UEPage />} />
-              <Route path="salles" element={<AdminClassroomsPage />} />
-              <Route path="parametres" element={<AdminSettingsPage />} />
-              <Route path="rapports" element={<AdminReportsPage />} />
-              <Route path="paiements" element={<AdminPaymentsPage />} />
-              <Route path="audience" element={<AdminAudiencePage />} />
-              <Route path="historique-presences" element={<AttendanceHistoryPage />} />
-              <Route path="activite" element={<AdminActivityPage />} />
-              <Route path="securite" element={<AdminSecurityPage />} />
+              {/* Administration */}
+              <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="utilisateurs" element={<AdminUsersPage />} />
+                <Route path="etudiants" element={<StudentsPage />} />
+                <Route path="enseignants" element={<TeachersPage />} />
+                <Route path="equipe" element={<AdminTeamPage />} />
+                <Route path="structure" element={<AcademicStructurePage />} />
+                <Route path="cours" element={<AdminCoursesPage />} />
+                <Route path="ue" element={<UEPage />} />
+                <Route path="salles" element={<AdminClassroomsPage />} />
+                <Route path="parametres" element={<AdminSettingsPage />} />
+                <Route path="rapports" element={<AdminReportsPage />} />
+                <Route path="paiements" element={<AdminPaymentsPage />} />
+                <Route path="audience" element={<AdminAudiencePage />} />
+                <Route path="historique-presences" element={<AttendanceHistoryPage />} />
+                <Route path="activite" element={<AdminActivityPage />} />
+                <Route path="securite" element={<AdminSecurityPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Route>
+
               <Route path="*" element={<NotFoundPage />} />
-            </Route>
-
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </Suspense>
-      </ErrorBoundary>
+            </Routes>
+          </Suspense>
+        </ErrorBoundary>
+      </CornerStackProvider>
     </RoleProvider>
   )
 }

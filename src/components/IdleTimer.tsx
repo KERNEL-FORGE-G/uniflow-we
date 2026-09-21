@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom'
 import { useUserRole } from '../utils/userRole'
 import { useAuth } from '../hooks/useAuth'
 import { LogOut, ShieldAlert } from 'lucide-react'
+import { CornerSlot } from './layout/CornerStack'
 
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000 // 30 minutes in milliseconds
 const WARNING_THRESHOLD_MS = 28 * 60 * 1000 // Show warning at 28 minutes (2 minutes remaining)
@@ -90,24 +91,27 @@ export function IdleTimer() {
     void logout()
   }
 
+  // Le bandeau se rend dans la pile du coin bas droit (CornerStack) au lieu de
+  // se poser lui-même en `fixed bottom-6 right-6` : il se superposait au
+  // lanceur d'Uni, qui réclame le même coin.
+  if (!showAutoLogoutToast) return null
   return (
-    <>
-      {/* Logout Notification Toast */}
-      {showAutoLogoutToast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3.5 text-white shadow-2xl border border-slate-700 animate-slide-in-right">
-          <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0" />
-          <div>
-            <p className="text-xs font-bold">Session fermée (30 min d'inactivité)</p>
-            <p className="text-[11px] text-slate-300">Veuillez vous réauthentifier pour continuer.</p>
-          </div>
-          <button
-            onClick={() => setShowAutoLogoutToast(false)}
-            className="ml-2 text-slate-400 hover:text-white text-xs font-bold"
-          >
-            ✕
-          </button>
+    <CornerSlot>
+      <div role="status" className="flex items-center gap-3 rounded-2xl bg-slate-900 px-5 py-3.5 text-white shadow-2xl border border-slate-700 animate-slide-in-right">
+        <ShieldAlert className="h-5 w-5 text-amber-400 shrink-0" />
+        <div>
+          <p className="text-xs font-bold">Session fermée (30 min d'inactivité)</p>
+          <p className="text-[11px] text-slate-300">Veuillez vous réauthentifier pour continuer.</p>
         </div>
-      )}
-    </>
+        <button
+          type="button"
+          onClick={() => setShowAutoLogoutToast(false)}
+          aria-label="Fermer"
+          className="ml-2 text-slate-400 hover:text-white text-xs font-bold"
+        >
+          ✕
+        </button>
+      </div>
+    </CornerSlot>
   )
 }

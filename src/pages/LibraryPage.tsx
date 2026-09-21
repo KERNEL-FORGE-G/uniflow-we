@@ -25,6 +25,7 @@ import {
 import { cn } from '../utils/cn'
 import { libraryApi, type LibraryResource } from '../lib/api'
 import { useApi } from '../hooks/useApi'
+import { CornerSlot } from '../components/layout/CornerStack'
 
 type TabCategory = 'Tout' | 'Documents' | 'Vidéos' | 'Audios'
 type ViewMode = 'grid' | 'list'
@@ -766,37 +767,46 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {/* 6. FLOATING AUDIO PLAYER BAR */}
+      {/* 6. Barre de lecture audio — dans la pile du coin bas droit (CornerStack),
+          au-dessus du lanceur d'Uni, au lieu d'un `fixed bottom-4 right-4` qui
+          le recouvrait. Même largeur qu'avant : pleine largeur moins les marges
+          sur mobile, 24 rem à partir de `sm`. */}
       {activeAudioItem && (
-        <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-40 rounded-2xl border border-emerald-500/40 bg-slate-900/95 backdrop-blur-md p-3 text-white shadow-2xl flex items-center justify-between gap-3 animate-bounce-short">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white font-bold">
-              <HiMusicalNote className="h-5 w-5 animate-pulse" />
+        <CornerSlot>
+          <div className="w-[calc(100vw-2rem)] sm:w-96 rounded-2xl border border-emerald-500/40 bg-slate-900/95 backdrop-blur-md p-3 text-white shadow-2xl flex items-center justify-between gap-3 animate-bounce-short">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500 text-white font-bold">
+                <HiMusicalNote className="h-5 w-5 animate-pulse" />
+              </div>
+              <div className="min-w-0">
+                <h5 className="text-xs font-extrabold text-white truncate">{activeAudioItem.title}</h5>
+                <p className="text-[10px] text-emerald-400 font-medium">{activeAudioItem.course} • {activeAudioItem.duration}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h5 className="text-xs font-extrabold text-white truncate">{activeAudioItem.title}</h5>
-              <p className="text-[10px] text-emerald-400 font-medium">{activeAudioItem.course} • {activeAudioItem.duration}</p>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-2 shrink-0">
-            <button
-              onClick={() => setIsAudioPlaying(!isAudioPlaying)}
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-all"
-            >
-              {isAudioPlaying ? <HiPause className="h-4 w-4" /> : <HiPlay className="h-4 w-4 ml-0.5" />}
-            </button>
-            <button
-              onClick={() => {
-                setActiveAudioItem(null)
-                setIsAudioPlaying(false)
-              }}
-              className="p-1 text-slate-400 hover:text-white"
-            >
-              <HiXMark className="h-4 w-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                type="button"
+                onClick={() => setIsAudioPlaying(!isAudioPlaying)}
+                aria-label={isAudioPlaying ? 'Mettre en pause' : 'Lire'}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-500 text-slate-950 font-bold hover:bg-emerald-400 transition-all"
+              >
+                {isAudioPlaying ? <HiPause className="h-4 w-4" /> : <HiPlay className="h-4 w-4 ml-0.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveAudioItem(null)
+                  setIsAudioPlaying(false)
+                }}
+                aria-label="Fermer le lecteur"
+                className="p-1 text-slate-400 hover:text-white"
+              >
+                <HiXMark className="h-4 w-4" />
+              </button>
+            </div>
           </div>
-        </div>
+        </CornerSlot>
       )}
     </div>
   )
