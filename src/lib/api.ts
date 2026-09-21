@@ -692,6 +692,13 @@ export const attendanceApi = {
   },
   /** Taux de présence de l'étudiant connecté (présents + retards), `null` sans relevé. */
   myRate: async (): Promise<number | null> => attendanceRate(await attendanceApi.myRecords()),
+  /** Relevés de l'étudiant connecté avec le cours, pour le détail par cours du profil. */
+  myRecordsByCourse: async (): Promise<Array<{ courseId: string; status: AttendanceRecord['status']; at: string }>> => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current || !isLearnerRole(current.role)) return []
+    const records = await academicAppwriteApi.attendance.recordsByStudent(current.id)
+    return records.map((record) => ({ courseId: record.courseId || '', status: record.status, at: record.verifiedAt || record.$createdAt || '' }))
+  },
   saveTodayRoll: async (dto: { courseId: string; date: string; rows: Array<{ studentId: string; status: AttendanceRecord['status'] }> }) => {
     const response = await executeAttendanceSecureAction({ action: 'roll', courseId: dto.courseId, date: dto.date, rows: dto.rows })
     if (!response.sessionId || !response.courseId || !response.date) throw new ApiError(502, 'La Function Appwrite n’a pas retourné la séance de présence.')
