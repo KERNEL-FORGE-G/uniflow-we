@@ -11,3 +11,8 @@ export const UNIFLOW_PRIMARY_LOGO_ALT = 'UniFlow — logo officiel'
 
 /** Illustration d'accueil originale, optimisée côté site pour un chargement fiable. */
 export const UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL = '/logos/uniflow-landing-original.webp'
+
+/** Logo du groupe KERNEL FORGE (fourni le 2026-09-21), fond retiré ; servi avec le site. */
+export const KERNEL_FORGE_LOGO_URL = '/logos/kernel-forge.webp'
+export const KERNEL_FORGE_LOGO_FALLBACK_URL = '/logos/kernel-forge.png'
+export const KERNEL_FORGE_LOGO_ALT = 'KERNEL FORGE — Open Source Software'

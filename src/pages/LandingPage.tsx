@@ -18,6 +18,9 @@ import { fadeInUp, staggerContainer, float } from '../utils/animations'
 import { cn } from '../utils/cn'
 import { useUserRole } from '../utils/userRole'
 import { UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL } from '../lib/brandAssets'
+import { usePublicStats } from '../lib/publicStats'
+import { CountUp } from '../components/ui/CountUp'
+import { UniMascot } from '../components/mascot/UniMascot'
 
 const landingImg = UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL
 
@@ -101,9 +104,15 @@ export default function LandingPage() {
   const { currentUser, authUser, isSessionReady } = useUserRole()
   const isConnected = isSessionReady && currentUser.email !== '—'
   const workspacePath = authUser?.role === 'ADMIN' ? '/admin' : '/app'
-  // Les statistiques de campus nécessitent une session universitaire. La page publique
-  // n’appelle donc aucun endpoint protégé et n’invente aucune métrique.
-  const stats: Array<{ icon: typeof Users; value: string; label: string; color: string }> = []
+  // Chiffres réels du service public `/public-stats` (totaux Appwrite + audience
+  // maison) : rien d'inventé, et la dernière valeur connue reste affichée hors ligne.
+  const { data: publicStats, isError: statsError } = usePublicStats()
+  const stats: Array<{ icon: typeof Users; value: number; label: string; color: string; hint: string }> = publicStats ? [
+    { icon: BookOpen, value: publicStats.courses, label: 'Unités d’enseignement', color: 'bg-[#eff3ff] text-[#1e3a8a]', hint: `${publicStats.programs} filières · ${publicStats.faculties} faculté${publicStats.faculties > 1 ? 's' : ''}` },
+    { icon: Calendar, value: publicStats.sessions, label: 'Séances planifiées', color: 'bg-[#f0fdfa] text-[#0d9488]', hint: `${publicStats.classrooms} salles référencées` },
+    { icon: Users, value: publicStats.users, label: 'Comptes UniFlow', color: 'bg-purple-50 text-purple-700', hint: `${publicStats.students} étudiants · ${publicStats.teachers} enseignant${publicStats.teachers > 1 ? 's' : ''}` },
+    { icon: TrendingUp, value: publicStats.visitors, label: 'Visiteurs uniques', color: 'bg-amber-50 text-amber-700', hint: `${publicStats.visitsToday} visite${publicStats.visitsToday > 1 ? 's' : ''} aujourd’hui` },
+  ] : []
 
   // Interactive Demo State
   const [activeRoleTab, setActiveRoleTab] = useState<RoleTab>('etudiant')
@@ -263,6 +272,11 @@ export default function LandingPage() {
                 </div>
               </motion.div>
 
+              {/* Uni salue depuis le coin de la carte : la mascotte est la première chose vivante de la page. */}
+              <div className="absolute -bottom-10 -left-4 z-30 hidden sm:block lg:-left-12">
+                <UniMascot pose="wave" size={150} bubble={<span>Salut ! Moi c’est <strong>Uni</strong>. Je t’accompagne sur tout UniFlow.</span>} bubbleSide="right" />
+              </div>
+
               {/* Central Hero Landing Image Container */}
               <div className="relative mx-auto w-full max-w-[540px] rounded-3xl border-4 border-slate-200/90 bg-white shadow-2xl overflow-hidden p-4 sm:p-5 text-center transform hover:scale-[1.01] transition-transform">
                 <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 via-transparent to-teal-50/50 pointer-events-none" />
@@ -284,7 +298,7 @@ export default function LandingPage() {
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Campus Numérique
                   </span>
                   <span className="bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-black">
-                    Système Synchro v2.4
+                    Web · Mobile · Desktop
                   </span>
                 </div>
               </div>
@@ -293,12 +307,23 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── Realtime Stats Bar ── */}
+      {/* ── Chiffres en direct (base Appwrite + audience) ── */}
       <AnimatedSection className="border-y-2 border-slate-200 bg-white py-12">
-        <div className="mx-auto max-w-[1920px] px-6 pb-4 text-center text-xs font-semibold text-slate-500">
-          Les métriques de campus apparaissent après connexion à un compte universitaire autorisé.
-        </div>
         <div className="mx-auto max-w-[1920px] px-6 lg:px-12">
+          <div className="mb-8 flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+            <UniMascot pose="pointing" size={96} />
+            <div>
+              <span className="inline-block rounded-full bg-teal-100 px-3.5 py-1 text-xs font-black uppercase tracking-wider text-teal-800">En direct de la base</span>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-[#0f172a] sm:text-3xl">UniFlow en chiffres, aujourd’hui</h2>
+              <p className="mt-1 text-sm font-medium text-[#64748b]">
+                {publicStats
+                  ? `Comptés dans Appwrite ${new Date(publicStats.generatedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} — ${publicStats.universities} université partenaire, ${publicStats.teamMembers} membres dans l’équipe.`
+                  : statsError
+                    ? 'Les chiffres ne sont pas joignables pour le moment ; ils reviendront avec le réseau.'
+                    : 'Uni compte les unités d’enseignement, les séances et les comptes…'}
+              </p>
+            </div>
+          </div>
           <motion.div
             variants={staggerContainer}
             initial="hidden"
@@ -306,7 +331,10 @@ export default function LandingPage() {
             viewport={{ once: true }}
             className="grid grid-cols-2 gap-6 lg:grid-cols-4"
           >
-            {stats.map(({ icon: Icon, value, label, color }) => (
+            {stats.length === 0 && !statsError && [0, 1, 2, 3].map((index) => (
+              <div key={index} className="h-44 animate-pulse rounded-3xl border-2 border-slate-100 bg-slate-50" aria-hidden />
+            ))}
+            {stats.map(({ icon: Icon, value, label, color, hint }) => (
               <AnimatedItem key={label}>
                 <Card hover className="text-center space-y-3 p-6 rounded-3xl border-2 border-slate-200/80 shadow-md">
                   <div className={`mx-auto w-fit rounded-2xl p-3.5 ${color} shadow-xs`}>
@@ -314,9 +342,10 @@ export default function LandingPage() {
                   </div>
                   <div>
                     <p className="text-3xl sm:text-4xl font-black text-[#0f172a] tracking-tight">
-                      {value}
+                      <CountUp value={value} />
                     </p>
                     <p className="text-xs font-extrabold text-[#64748b] uppercase tracking-wider mt-1">{label}</p>
+                    <p className="mt-1.5 text-[11px] font-semibold text-slate-400">{hint}</p>
                   </div>
                 </Card>
               </AnimatedItem>

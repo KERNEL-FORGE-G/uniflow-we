@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
-import { UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_FALLBACK_URL, UNIFLOW_PRIMARY_LOGO_URL } from '../../lib/brandAssets'
+import { KERNEL_FORGE_LOGO_ALT, KERNEL_FORGE_LOGO_FALLBACK_URL, KERNEL_FORGE_LOGO_URL, UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_FALLBACK_URL, UNIFLOW_PRIMARY_LOGO_URL } from '../../lib/brandAssets'
 import { useUserRole } from '../../utils/userRole'
 import { CONTACT_PHONE_DISPLAY, COVERAGE_LABEL, COVERAGE_SHORT } from '../../lib/contactInfo'
 import { LEGAL_DOCUMENTS } from '../../data/legal'
@@ -133,6 +133,20 @@ export function LandingFooter() {
                 <Lock className="h-3 w-3 text-slate-400" /> Accès par rôle
               </span>
             </div>
+            <Link to="/about" className="mt-6 inline-flex items-center gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 px-3 py-2 transition hover:border-slate-600 hover:bg-slate-800/80">
+              <img
+                src={KERNEL_FORGE_LOGO_URL}
+                alt={KERNEL_FORGE_LOGO_ALT}
+                loading="lazy"
+                decoding="async"
+                onError={(event) => { event.currentTarget.onerror = null; event.currentTarget.src = KERNEL_FORGE_LOGO_FALLBACK_URL }}
+                className="h-12 w-auto object-contain"
+              />
+              <span className="text-left">
+                <span className="block text-xs font-black uppercase tracking-wider text-white">Un projet KERNEL FORGE</span>
+                <span className="block text-[11px] text-slate-400">Open source software · Yaoundé</span>
+              </span>
+            </Link>
           </div>
 
           {/* Produit */}
