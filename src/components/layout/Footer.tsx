@@ -63,7 +63,7 @@ export function Footer() {
 
         <div className="mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <img src="/logos/uniflow-wordmark.png" alt="UniFlow" className="mb-3 h-8 w-auto object-contain" loading="lazy" />
+            <img src="/logos/uniflow-wordmark.svg" alt="UniFlow" className="mb-3 h-8 w-auto object-contain" loading="lazy" />
             <p className="text-xs leading-relaxed text-[#6b7280]">
               La plateforme académique de KERNEL FORGE : emploi du temps, cours, présences, notes et messagerie, reliés à Appwrite.
             </p>

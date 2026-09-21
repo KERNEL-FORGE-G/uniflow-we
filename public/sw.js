@@ -18,6 +18,10 @@ const SHELL_ASSETS = [
   '/favicon.svg',
   '/logos/icon-192.png',
   '/logos/icon-512.png',
+  '/logos/uniflow-wordmark.svg',
+  '/logos/uniflow-wordmark-white.svg',
+  '/logos/uniflow-emblem.svg',
+  // Le PNG reste utilisé par les exports PDF (jsPDF ne lit pas le SVG).
   '/logos/uniflow-wordmark.png'
 ]
 

@@ -1,15 +1,17 @@
 import { Link, useLocation } from 'react-router-dom'
 import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
-import { KERNEL_FORGE_LOGO_ALT, KERNEL_FORGE_LOGO_FALLBACK_URL, KERNEL_FORGE_LOGO_URL, UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_FALLBACK_URL, UNIFLOW_PRIMARY_LOGO_URL } from '../../lib/brandAssets'
+import { KERNEL_FORGE_LOGO_ALT, KERNEL_FORGE_LOGO_FALLBACK_URL, KERNEL_FORGE_LOGO_URL, UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_URL, UNIFLOW_WORDMARK_SVG, UNIFLOW_WORDMARK_WHITE_SVG } from '../../lib/brandAssets'
 import { useUserRole } from '../../utils/userRole'
 import { CONTACT_PHONE_DISPLAY, COVERAGE_LABEL, COVERAGE_SHORT, KERNEL_FORGE_GITHUB_URL, KERNEL_FORGE_WHATSAPP_GROUP_URL } from '../../lib/contactInfo'
 import { LEGAL_DOCUMENTS } from '../../data/legal'
 
-const logo = UNIFLOW_PRIMARY_LOGO_URL
+// Le SVG local d'abord (net, aucun aller-retour réseau) ; le PNG du bucket
+// Appwrite ne sert plus que de repli si le SVG venait à manquer.
+const logo = UNIFLOW_WORDMARK_SVG
 const restoreOriginalLogo = (event: React.SyntheticEvent<HTMLImageElement>) => {
   event.currentTarget.onerror = null
-  event.currentTarget.src = UNIFLOW_PRIMARY_LOGO_FALLBACK_URL
+  event.currentTarget.src = UNIFLOW_PRIMARY_LOGO_URL
 }
 
 const navLinks = [
@@ -115,11 +117,12 @@ export function LandingFooter() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <div className="flex items-center gap-3 mb-4">
-              <img 
-                src={logo}
+              {/* Version blanche : plus besoin de la tuile blanche qui découpait le pied de page sombre */}
+              <img
+                src={UNIFLOW_WORDMARK_WHITE_SVG}
                 alt={UNIFLOW_PRIMARY_LOGO_ALT}
                 onError={restoreOriginalLogo}
-                className="h-10 w-auto rounded-sm bg-white px-1 object-contain"
+                className="h-10 w-auto object-contain"
               />
             </div>
             <p className="text-sm text-slate-400 leading-relaxed max-w-xs">

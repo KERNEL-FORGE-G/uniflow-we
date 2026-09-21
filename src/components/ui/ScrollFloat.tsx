@@ -79,9 +79,11 @@ export function ScrollFloat({
     }
   }, [scrollContainerRef, animationDuration, ease, scrollStart, scrollEnd, stagger])
 
+  // Le titre est découpé en lettres pour l'animation : sans aria-label, les
+  // lecteurs d'écran (et l'arbre d'accessibilité) lisaient « F o n c t i o n n a l i t é s ».
   return (
-    <h2 ref={containerRef} className={`overflow-hidden ${containerClassName}`}>
-      <span className={`inline-block text-center leading-relaxed ${textClassName}`}>
+    <h2 ref={containerRef} className={`overflow-hidden ${containerClassName}`} aria-label={typeof children === 'string' ? children : undefined}>
+      <span className={`inline-block text-center leading-relaxed ${textClassName}`} aria-hidden="true">
         {splitText}
       </span>
     </h2>

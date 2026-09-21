@@ -150,7 +150,7 @@ export default function RegisterPage() {
           <motion.div variants={fadeInUp} className="text-center">
             {/* Version blanche : le wordmark bleu se fondait dans le dégradé bleu→teal et paraissait flou */}
             <img
-              src="/logos/uniflow-wordmark-white.png"
+              src="/logos/uniflow-wordmark-white.svg"
               alt="UniFlow"
               className="mx-auto h-14 mb-4 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
               onError={(e) => {
@@ -575,7 +575,7 @@ export default function RegisterPage() {
           {/* Mobile logo */}
           <div className="lg:hidden mt-8 text-center">
             <img
-              src="/logos/uniflow-wordmark.png"
+              src="/logos/uniflow-wordmark.svg"
               alt="UniFlow"
               className="mx-auto h-12 object-contain opacity-70"
               onError={(e) => {

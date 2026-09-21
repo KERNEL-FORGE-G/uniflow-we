@@ -41,7 +41,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between gap-3">
           <button onClick={() => navigate('/')} title="Retour à l’accueil — session conservée" className="rounded-lg p-1 text-left hover:bg-[#f3f4f6] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/30">
             <img
-              src="/logos/uniflow-wordmark.png"
+              src="/logos/uniflow-wordmark.svg"
               alt="Accueil UniFlow"
               loading="eager"
               decoding="async"
@@ -332,7 +332,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
         <div className="flex items-center gap-3">
           <button onClick={() => { navigate('/'); onClose() }} title="Retour à l’accueil — session conservée" className="rounded-lg p-1 text-left hover:bg-[#f3f4f6]">
             <img
-              src="/logos/uniflow-wordmark.png"
+              src="/logos/uniflow-wordmark.svg"
               alt="Accueil UniFlow"
               className="h-8 w-auto object-contain"
               onError={(e) => {

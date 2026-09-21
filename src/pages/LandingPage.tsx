@@ -817,7 +817,8 @@ export default function LandingPage() {
             transition={{ delay: 0.1 }}
             className="text-lg sm:text-xl text-white/90 max-w-2xl mx-auto font-medium"
           >
-            Rejoignez les milliers d'étudiants, enseignants et administrateurs qui utilisent déjà UniFlow au quotidien.
+            {/* Pas de « milliers d'utilisateurs » : UniFlow est en développement, les chiffres réels sont plus haut sur la page. */}
+            Rejoignez les premiers étudiants, délégués et enseignants de l'Université de Yaoundé I qui construisent UniFlow avec nous.
           </motion.p>
           <motion.div
             initial={{ opacity: 0, y: 20 }}

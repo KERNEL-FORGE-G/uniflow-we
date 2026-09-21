@@ -109,7 +109,7 @@ export default function PresentationPage() {
 
           <div className="mx-auto mb-5 flex justify-center">
             <img 
-              src="/logos/uniflow-wordmark.png" 
+              src="/logos/uniflow-wordmark.svg" 
               alt="UniFlow" 
               loading="eager"
               decoding="async"

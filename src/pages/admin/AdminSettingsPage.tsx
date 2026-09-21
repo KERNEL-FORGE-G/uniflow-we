@@ -501,7 +501,7 @@ export default function AdminSettingsPage() {
                   <label className="block text-xs font-bold text-[#374151] mb-3 uppercase tracking-wider">Logo de la plateforme</label>
                   <div className="flex items-center gap-4">
                     <img
-                      src="/logos/uniflow-wordmark.png"
+                      src="/logos/uniflow-wordmark.svg"
                       alt="Logo"
                       className="h-12 w-auto object-contain"
                       onError={(e) => {

@@ -341,8 +341,8 @@ export default function MessagingPage() {
               {active.messages.length === 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
                   <img 
-                    src="/logos/uniflow-wordmark.png" 
-                    alt="" 
+                    src="/logos/uniflow-emblem.svg"
+                    alt=""
                     className="h-28 w-28 object-contain opacity-10 animate-pulse" 
                     onError={(e) => { e.currentTarget.src = '/logo_1.png' }}
                   />
@@ -352,8 +352,8 @@ export default function MessagingPage() {
               {/* Mascot watermark — toujours présente en fond, très discrète */}
               <div className="pointer-events-none select-none absolute bottom-4 right-4 opacity-[0.04]">
                 <img 
-                  src="/logos/uniflow-wordmark.png" 
-                  alt="" 
+                  src="/logos/uniflow-emblem.svg"
+                  alt=""
                   className="h-40 w-40 object-contain" 
                   onError={(e) => { e.currentTarget.src = '/logo_1.png' }}
                 />
