@@ -2,6 +2,7 @@ import academicGrades from './services/academic-grades.js'
 import academicRegistration from './services/academic-registration.js'
 import account from './services/account.js'
 import adminDirectory from './services/admin-directory.js'
+import appReleases from './services/app-releases.js'
 import assistant from './services/assistant.js'
 import attendanceSecure from './services/attendance-secure.js'
 import contactMessages from './services/contact-messages.js'
@@ -35,6 +36,9 @@ const services = {
   // l'appelaient déjà, sans service derrière (2026-09-21).
   '/account': account,
   '/admin-directory': adminDirectory,
+  // Liens de téléchargement des applications (APK Android sur GitHub) : lus
+  // par la landing, modifiables par le seul superadmin — 2026-09-21.
+  '/app-releases': appReleases,
   // Assistant « Flo » (Gemini 3.1 Flash-Lite, clés côté serveur) — ajouté le
   // 2026-09-21 ; c'est le dixième service, le routeur n'a pas de limite.
   '/assistant': assistant,

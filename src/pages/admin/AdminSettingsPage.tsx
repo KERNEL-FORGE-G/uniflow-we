@@ -7,6 +7,7 @@ import { usePublicStats } from '../../lib/publicStats'
 import { clearPersistedQueries } from '../../lib/offline/queryPersistence'
 import { CONTACT_EMAIL_SECONDARY, CONTACT_PHONE_DISPLAY, CONTACT_WHATSAPP_URL, COVERAGE_LABEL } from '../../lib/contactInfo'
 import { useUserRole } from '../../utils/userRole'
+import { AppReleasesCard } from '../../components/admin/AppReleasesCard'
 
 /**
  * Paramètres de la plateforme, côté administration.
@@ -20,11 +21,14 @@ import { useUserRole } from '../../utils/userRole'
  * les seules actions qui ont un effet (vider le cache local, recharger).
  */
 
-type Section = 'overview' | 'infra' | 'rules' | 'maintenance'
+type Section = 'overview' | 'infra' | 'releases' | 'rules' | 'maintenance'
 
 const sections: Array<{ id: Section; label: string; icon: UniIconName }> = [
   { id: 'overview', label: 'Vue d’ensemble', icon: 'activity' },
   { id: 'infra', label: 'Infrastructure', icon: 'server' },
+  // Liens de téléchargement (APK Android…) : formulaire pour le superadmin,
+  // note explicative pour les autres administrations — 2026-09-21.
+  { id: 'releases', label: 'Applications à télécharger', icon: 'download' },
   { id: 'rules', label: 'Règles de la plateforme', icon: 'security' },
   { id: 'maintenance', label: 'Maintenance locale', icon: 'database' },
 ]
@@ -188,6 +192,8 @@ export default function AdminSettingsPage() {
               <p className="text-xs text-[#9ca3af]">Les quotas de stockage et d’exécution ne sont pas exposés aux clients ; ils se consultent dans la console Appwrite.</p>
             </div>
           )}
+
+          {section === 'releases' && <AppReleasesCard isSuperAdmin={Boolean(currentUser.isSuperAdmin)} />}
 
           {section === 'rules' && (
             <div className="space-y-4">

@@ -964,6 +964,41 @@ export const metricsSchemas = [
   },
 ]
 
+/**
+ * Liens de téléchargement des applications (demande du propriétaire du
+ * 2026-09-21) : l'APK Android est publié dans les releases GitHub du dépôt
+ * public `KERNEL-FORGE-G/uniflow-apps`, et l'URL change à chaque version. Le
+ * site ne code donc rien en dur : il lit cette collection, que l'admin de la
+ * plateforme met à jour depuis la page Paramètres.
+ *
+ * Un document par plateforme, **`$id` = plateforme** (`android`, `windows`,
+ * `linux`, `macos`) : l'upsert de la Function se résume à « update, sinon
+ * create », sans requête préalable ni doublon possible.
+ *
+ * Lecture `any` : la landing publique l'affiche sans session. **Aucune
+ * écriture côté client** — seule la Function `uniflow-api` (service
+ * `/app-releases`, réservé au label `superadmin`) écrit avec la clé serveur ;
+ * un ADMIN d'université ne doit pas pouvoir changer le lien de la plateforme.
+ */
+export const releasePlatforms = ['android', 'windows', 'linux', 'macos']
+export const appReleaseSchema = {
+  id: 'app_releases',
+  name: 'Applications à télécharger',
+  attributes: [
+    string('platform', 16, true),
+    string('version', 32, true),
+    string('url', 1024, true),
+    string('fileName', 255, false, ''),
+    integer('sizeBytes', false, 0),
+    string('sha256', 64, false, ''),
+    string('notes', 2000, false, ''),
+    datetime('publishedAt', false),
+    boolean('enabled', false, true),
+  ],
+  indexes: [],
+  permissions: ['read("any")'],
+}
+
 export const allSchemas = [
   ...schemas,
   ...academicSchemas.map((schema) => ({ ...schema, permissions: ['read("users")', 'create("users")'] })),
@@ -971,6 +1006,7 @@ export const allSchemas = [
   ...referenceSchemas,
   ...metricsSchemas,
   teamSchema,
+  appReleaseSchema,
 ]
 
 export const expectedCollections = [...new Set([...allSchemas.map((schema) => schema.id), ...referencedCollections])]

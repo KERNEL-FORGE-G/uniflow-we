@@ -14,16 +14,16 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
-  AddressBook, ArrowLeft, ArrowRight, ArrowSquareOut, ArrowsClockwise, Atom, Barbell, BellRinging, BellSlash, BookBookmark, BookOpen, BookOpenText,
+  AddressBook, AndroidLogo, AppleLogo, ArrowLeft, ArrowRight, ArrowSquareOut, ArrowsClockwise, Atom, Barbell, BellRinging, BellSlash, BookBookmark, BookOpen, BookOpenText,
   Books, Brain, Broadcast, Buildings, CalendarBlank, CalendarCheck, Camera, CaretDown, CaretLeft, CaretRight, Chalkboard,
   ChalkboardTeacher, ChartBar, ChartLine, ChartLineUp, ChatsCircle, Check, CheckCircle, CheckSquare, CircleNotch, ClipboardText,
-  Clock, Cloud, Code, Coins, CreditCard, Database, DeviceMobile, Dna, Door, DownloadSimple, Envelope, Eye, EyeSlash, Feather,
+  Clock, Cloud, Code, Coins, CreditCard, Database, Desktop, DeviceMobile, Dna, Door, DownloadSimple, Envelope, Eye, EyeSlash, Feather,
   FileText, FilmSlate, FirstAid, Flask, FloppyDisk, Funnel, GearSix, Globe, GlobeHemisphereWest, GraduationCap, HardDrives, House, Info,
-  Kanban, Key, Lightning, List, LockKey, MagnifyingGlass, MapPin, MathOperations, Medal, Megaphone, Moon, MusicNotes, Network,
+  Kanban, Key, Lightning, LinuxLogo, List, LockKey, MagnifyingGlass, MapPin, MathOperations, Medal, Megaphone, Moon, MusicNotes, Network,
   Palette, Paperclip, PencilSimple, Play, Plus, PlusCircle, Printer, Pulse, QrCode, Question, Rocket, Scales, Scroll,
   ShieldCheck, SignOut, Sparkle, SpeakerHigh, SpeakerSlash, SquaresFour, Stack, Star, Terminal, Translate, Trash, Trophy,
   UploadSimple, User, UserCircle, UserGear, Users, UsersFour, UsersThree, VideoCamera, Warning, WarningCircle, WifiHigh,
-  WifiSlash, X, XCircle,
+  WifiSlash, WindowsLogo, X, XCircle,
   type Icon, type IconProps, type IconWeight,
 } from '@phosphor-icons/react'
 import { cn } from '../../utils/cn'
@@ -130,6 +130,13 @@ export const UNI_ICONS = {
   audience: Broadcast,
   server: HardDrives,
   externalLink: ArrowSquareOut,
+  // Plateformes des applications à télécharger (landing, pied de page, admin).
+  android: AndroidLogo,
+  mobile: DeviceMobile,
+  desktop: Desktop,
+  windows: WindowsLogo,
+  linux: LinuxLogo,
+  apple: AppleLogo,
 } as const satisfies Record<string, Icon>
 
 export type UniIconName = keyof typeof UNI_ICONS

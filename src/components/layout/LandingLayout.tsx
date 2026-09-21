@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
-import { ArrowRight, Menu, X, Lock } from 'lucide-react'
+import { ArrowRight, Download, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { KERNEL_FORGE_LOGO_ALT, KERNEL_FORGE_LOGO_FALLBACK_URL, KERNEL_FORGE_LOGO_URL, UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_URL, UNIFLOW_WORDMARK_SVG, UNIFLOW_WORDMARK_WHITE_SVG } from '../../lib/brandAssets'
 import { useUserRole } from '../../utils/userRole'
 import { CONTACT_PHONE_DISPLAY, COVERAGE_LABEL, COVERAGE_SHORT, KERNEL_FORGE_GITHUB_URL, KERNEL_FORGE_WHATSAPP_GROUP_URL } from '../../lib/contactInfo'
 import { LEGAL_DOCUMENTS } from '../../data/legal'
+import { findRelease, releaseFallbackUrl, useAppReleases } from '../../lib/appReleases'
 
 // Le SVG local d'abord (net, aucun aller-retour réseau) ; le PNG du bucket
 // Appwrite ne sert plus que de repli si le SVG venait à manquer.
@@ -14,6 +15,9 @@ const restoreOriginalLogo = (event: React.SyntheticEvent<HTMLImageElement>) => {
   event.currentTarget.src = UNIFLOW_PRIMARY_LOGO_URL
 }
 
+// « Télécharger » est mis en avant (pastille) : c'est la porte d'entrée vers
+// l'APK Android et la version de bureau, dont les liens vivent dans la
+// collection `app_releases` et sont réglés depuis la page Administration.
 const navLinks = [
   { to: '/about',        label: 'À propos' },
   { to: '/teams',        label: 'Équipe' },
@@ -22,6 +26,7 @@ const navLinks = [
   { to: '/presentation', label: 'Présentation' },
   { to: '/forum',        label: 'Forum' },
   { to: '/contact',      label: 'Contact' },
+  { to: '/download',     label: 'Télécharger', highlight: true },
 ]
 
 export function LandingNavbar() {
@@ -31,8 +36,10 @@ export function LandingNavbar() {
   const isConnected = isSessionReady && currentUser.email !== '—'
   const workspacePath = authUser?.role === 'ADMIN' ? '/admin' : '/app'
 
+  // Huit entrées plus le logo et les deux boutons ne tiennent pas entre 768 et
+  // 1024 px : la barre complète attend `lg`, le menu replié sert jusque-là.
   return (
-    <nav className="sticky top-0 z-50 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm">
+    <nav className="sticky top-0 z-50 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm" aria-label="Navigation principale">
       <div className="mx-auto flex w-full max-w-[1920px] items-center justify-between px-6 py-3.5">
         {/* Logo */}
         <Link to="/" className="flex items-center shrink-0">
@@ -47,24 +54,34 @@ export function LandingNavbar() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-8 md:flex">
+        <div className="hidden items-center gap-6 lg:flex xl:gap-8">
           {navLinks.map(l => (
             <Link
               key={l.to}
               to={l.to}
-              className={`text-sm font-medium transition-colors ${
-                pathname === l.to
-                  ? 'text-[#1e3a8a] font-semibold'
-                  : 'text-[#6b7280] hover:text-[#1e3a8a]'
-              }`}
+              aria-current={pathname === l.to ? 'page' : undefined}
+              className={
+                l.highlight
+                  ? `inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                      pathname === l.to
+                        ? 'bg-[#0d9488] text-white'
+                        : 'bg-[#f0fdfa] text-[#0d9488] hover:bg-[#ccfbf1]'
+                    }`
+                  : `text-sm font-medium transition-colors ${
+                      pathname === l.to
+                        ? 'text-[#1e3a8a] font-semibold'
+                        : 'text-[#6b7280] hover:text-[#1e3a8a]'
+                    }`
+              }
             >
+              {l.highlight ? <Download className="h-3.5 w-3.5" /> : null}
               {l.label}
             </Link>
           ))}
         </div>
 
         {/* CTA */}
-        <div className="hidden items-center gap-2 md:flex">
+        <div className="hidden items-center gap-2 lg:flex">
           {isConnected ? <span className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700">Connecté</span> : <Link to="/login" className="rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">Se connecter</Link>}
           <Link
             to={workspacePath}
@@ -76,8 +93,12 @@ export function LandingNavbar() {
 
         {/* Mobile burger */}
         <button
-          className="md:hidden rounded-lg p-2 text-[#374151] hover:bg-[#f9fafb]"
+          type="button"
+          className="lg:hidden rounded-lg p-2 text-[#374151] hover:bg-[#f9fafb]"
           onClick={() => setOpen(v => !v)}
+          aria-label={open ? 'Fermer le menu' : 'Ouvrir le menu'}
+          aria-expanded={open}
+          aria-controls="menu-mobile"
         >
           {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </button>
@@ -85,14 +106,17 @@ export function LandingNavbar() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="border-t border-[#e5e7eb] bg-white px-6 py-4 space-y-3 md:hidden animate-fade-in">
+        <div id="menu-mobile" className="border-t border-[#e5e7eb] bg-white px-6 py-4 space-y-3 lg:hidden animate-fade-in">
           {navLinks.map(l => (
             <Link
               key={l.to}
               to={l.to}
               onClick={() => setOpen(false)}
-              className="block text-sm font-medium text-[#374151] hover:text-[#1e3a8a]"
+              className={l.highlight
+                ? 'inline-flex items-center gap-1.5 rounded-full bg-[#f0fdfa] px-3.5 py-1.5 text-sm font-semibold text-[#0d9488]'
+                : 'block text-sm font-medium text-[#374151] hover:text-[#1e3a8a]'}
             >
+              {l.highlight ? <Download className="h-3.5 w-3.5" /> : null}
               {l.label}
             </Link>
           ))}
@@ -110,6 +134,10 @@ export function LandingNavbar() {
 }
 
 export function LandingFooter() {
+  // Lien APK Android dynamique (collection `app_releases`) ; sans version
+  // publiée, il mène à la page des releases GitHub.
+  const { data: releases } = useAppReleases()
+  const android = findRelease(releases, 'android')
   return (
     <footer className="bg-[#0f172a] text-slate-300">
       <div className="mx-auto w-full max-w-[1920px] px-6 py-16">
@@ -160,12 +188,23 @@ export function LandingFooter() {
                 { to: '/#fonctionnalites', label: 'Fonctionnalités' },
                 { to: '/presentation', label: 'Présentation' },
                 { to: '/pricing', label: 'Tarifs' },
+                { to: '/download', label: 'Télécharger les applications' },
                 { to: '/forum', label: 'Forum' },
               ].map(l => (
                 <li key={l.label}>
                   <Link to={l.to} className="text-slate-400 hover:text-white transition-colors">{l.label}</Link>
                 </li>
               ))}
+              <li>
+                <a
+                  href={android?.url ?? releaseFallbackUrl}
+                  target={android ? undefined : '_blank'}
+                  rel="noopener noreferrer"
+                  className="text-slate-400 hover:text-white transition-colors"
+                >
+                  {android ? `Application Android (APK ${android.version})` : 'Application Android (APK) — bientôt'}
+                </a>
+              </li>
             </ul>
           </div>
 

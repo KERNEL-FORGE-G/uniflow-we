@@ -51,6 +51,7 @@ const ClassroomsPage = lazy(() => import('./pages/ClassroomsPage'))
 const PresentationPage = lazy(() => import('./pages/PresentationPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const PricingPage = lazy(() => import('./pages/PricingPage'))
+const DownloadPage = lazy(() => import('./pages/DownloadPage'))
 const SubscriptionFlowPage = lazy(() => import('./pages/SubscriptionFlowPage'))
 const BillingPage = lazy(() => import('./pages/billing/BillingPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
@@ -269,6 +270,7 @@ export default function App() {
               <Route path="/" element={<LandingPage />} />
               <Route path="/about" element={<PublicPage><AboutPage /></PublicPage>} />
               <Route path="/pricing" element={<PublicPage><PricingPage /></PublicPage>} />
+              <Route path="/download" element={<PublicPage><DownloadPage /></PublicPage>} />
               <Route path="/subscribe" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
               <Route path="/subscribe/:planId" element={<PublicPage><SubscriptionFlowPage /></PublicPage>} />
               <Route path="/contact" element={<PublicPage><ContactPage /></PublicPage>} />

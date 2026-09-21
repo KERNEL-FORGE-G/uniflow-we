@@ -43,6 +43,7 @@ export type UniFlowServicePath =
   | '/academic-registration'
   | '/account'
   | '/admin-directory'
+  | '/app-releases'
   | '/assistant'
   | '/attendance-secure'
   | '/contact-messages'

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, Play, CheckCircle, GraduationCap, Users, Wifi, Shield,
@@ -22,6 +22,7 @@ import { usePublicStats } from '../lib/publicStats'
 import { CountUp } from '../components/ui/CountUp'
 import { UniMascot } from '../components/mascot/UniMascot'
 import { MascotDialogue } from '../components/mascot/ArchlordMascot'
+import { DOWNLOAD_SECTION_ID, DownloadSection } from '../components/landing/DownloadSection'
 
 const landingImg = UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL
 
@@ -70,10 +71,13 @@ const features = [
   },
 ]
 
+// Android a une application native (APK, releases GitHub) depuis le
+// 2026-09-21 ; le web reste la PWA installable. Chaque tuile mène à la section
+// de téléchargement.
 const platforms = [
-  { icon: Smartphone, label: 'Mobile', sub: 'iOS & Android (PWA)', color: 'text-[#1e3a8a]' },
-  { icon: Globe, label: 'Web', sub: 'PWA Navigabilité', color: 'text-[#0d9488]' },
-  { icon: Monitor, label: 'Desktop', sub: 'Windows, Mac, Linux', color: 'text-purple-700' },
+  { icon: Smartphone, label: 'Mobile', sub: 'Android — application native (APK)', color: 'text-[#1e3a8a]' },
+  { icon: Globe, label: 'Web', sub: 'Navigateur, installable en PWA', color: 'text-[#0d9488]' },
+  { icon: Monitor, label: 'Desktop', sub: 'Windows, macOS, Linux', color: 'text-purple-700' },
 ]
 
 const faqs = [
@@ -91,7 +95,7 @@ const faqs = [
   },
   {
     q: "Puis-je installer UniFlow comme une application mobile ?",
-    a: "Absolument. UniFlow est une PWA (Progressive Web App). Vous pouvez l'installer en un clic depuis votre navigateur Safari ou Chrome pour l'utiliser comme une application native iOS/Android sans repasser par le Store."
+    a: "Oui. Sur Android, UniFlow existe en application native : téléchargez le fichier APK depuis la section « Télécharger l'application » (publié dans les releases GitHub de KERNEL FORGE) et autorisez l'installation depuis cette source quand Android le demande. Sur les autres appareils, le site web est une PWA : installez-le en un clic depuis Chrome, Edge ou Safari."
   },
   {
     q: "Comment sont sécurisées nos données académiques ?",
@@ -123,6 +127,15 @@ export default function LandingPage() {
 
   // FAQ Accordion State
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+
+  // Ancres internes (`/#telecharger`) : avec le HashRouter, un `href="#id"`
+  // nu serait pris pour la route `/id` (404). On lit donc le hash du routeur
+  // et on fait défiler jusqu'à la section, comme sur les pages juridiques.
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (!hash) return
+    document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [hash])
 
   // Calculated ROI values
   const paperSavedSheets = studentCount === null ? null : Math.round(studentCount * 140)
@@ -650,23 +663,28 @@ export default function LandingPage() {
           >
             {platforms.map(({ icon: Icon, label, sub, color }) => (
               <AnimatedItem key={label}>
-                <motion.div
-                  whileHover={{ y: -4 }}
-                  className="flex items-center gap-4 rounded-2xl border-2 border-slate-200/80 bg-white px-6 py-4 shadow-sm hover:shadow-md transition-shadow"
-                >
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 ${color}`}>
-                    <Icon className="h-6 w-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-black text-slate-900">{label}</p>
-                    <p className="text-xs font-semibold text-slate-500">{sub}</p>
-                  </div>
+                <motion.div whileHover={{ y: -4 }}>
+                  <Link
+                    to={{ pathname: '/', hash: `#${DOWNLOAD_SECTION_ID}` }}
+                    className="flex items-center gap-4 rounded-2xl border-2 border-slate-200/80 bg-white px-6 py-4 shadow-sm hover:shadow-md transition-shadow"
+                  >
+                    <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-slate-50 ${color}`}>
+                      <Icon className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-slate-900">{label}</p>
+                      <p className="text-xs font-semibold text-slate-500">{sub}</p>
+                    </div>
+                  </Link>
                 </motion.div>
               </AnimatedItem>
             ))}
           </motion.div>
         </div>
       </section>
+
+      {/* ── Télécharger l'application (APK Android, desktop, web) ── */}
+      <DownloadSection />
 
       {/* ── Features Section ── */}
       <AnimatedSection className="bg-white py-24 border-b border-slate-200" stagger>

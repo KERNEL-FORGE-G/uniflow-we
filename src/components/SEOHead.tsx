@@ -28,6 +28,10 @@ const PAGE_SEO_CONFIG: Record<string, { title: string; description: string }> = 
     title: 'Tarifs & Offres — Déploiement Établissements | UniFlow',
     description: 'Consultez les offres d\'intégration UniFlow pour départements, facultés et universités. Version communautaire gratuite et licences pro.'
   },
+  '/download': {
+    title: 'Télécharger UniFlow — Android (APK), bureau et web | KERNEL FORGE',
+    description: 'Téléchargez l\'application Android UniFlow (APK) et la version de bureau pour Windows, Linux et macOS. Emploi du temps, cours, présence QR code et notes, même hors ligne.'
+  },
   '/presentation': {
     title: 'Présentation & Vidéos Démo — UniFlow Platform',
     description: 'Visionnez les démonstrations interactives des fonctionnalités d\'UniFlow : Visioconférence, PWA offline, Sentinelle IoT et émargement QR Code.'

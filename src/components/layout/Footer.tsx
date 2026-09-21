@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { Monitor, Smartphone, Globe } from 'lucide-react'
 import { LEGAL_DOCUMENTS } from '../../data/legal'
 import { CONTACT_PHONE_DISPLAY, CONTACT_WHATSAPP_URL, KERNEL_FORGE_WHATSAPP_GROUP_URL } from '../../lib/contactInfo'
+import { findRelease, releaseFallbackUrl, useAppReleases } from '../../lib/appReleases'
 
 /**
  * Pied de page de l'espace connecté.
@@ -19,6 +20,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; to: string; 
       { label: 'Tarifs', to: '/pricing' },
       { label: 'Sentinelle IoT', to: '/sentinelle' },
       { label: 'Forum', to: '/forum' },
+      { label: 'Télécharger les applications', to: '/download' },
     ],
   },
   {
@@ -41,15 +43,26 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; to: string; 
 ]
 
 export function Footer() {
+  // Lien APK Android dynamique (collection `app_releases`) ; tant qu'aucune
+  // version n'est publiée, il mène à la page des releases GitHub.
+  const { data: releases } = useAppReleases()
+  const android = findRelease(releases, 'android')
+  const androidLink = {
+    label: android ? `Application Android (APK ${android.version})` : 'Application Android (APK) — bientôt',
+    to: android?.url ?? releaseFallbackUrl,
+    external: true,
+  }
+  const columns = COLUMNS.map((column) => (column.title === 'Produit' ? { ...column, links: [...column.links, androidLink] } : column))
+
   return (
     <footer className="border-t border-[#e5e7eb] bg-white">
       <div className="mx-auto w-full max-w-[1920px] px-6 py-8">
         <div className="mb-6 flex flex-wrap items-center justify-center gap-4">
-          <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2">
+          <a href={androidLink.to} target={android ? undefined : '_blank'} rel="noopener noreferrer" className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2 transition-colors hover:border-[#1e3a8a]/40">
             <Smartphone className="h-4 w-4 text-[#1e3a8a]" />
-            <span className="text-xs font-semibold text-[#374151]">Mobile Android & iOS</span>
-            <span className="ml-1 text-xs text-[#6b7280]">(hors ligne)</span>
-          </div>
+            <span className="text-xs font-semibold text-[#374151]">Mobile Android (APK)</span>
+            <span className="ml-1 text-xs text-[#6b7280]">{android ? `v${android.version}, hors ligne` : '(bientôt)'}</span>
+          </a>
           <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2">
             <Globe className="h-4 w-4 text-[#0d9488]" />
             <span className="text-xs font-semibold text-[#374151]">Web progressive (PWA)</span>
@@ -68,7 +81,7 @@ export function Footer() {
               La plateforme académique de KERNEL FORGE : emploi du temps, cours, présences, notes et messagerie, reliés à Appwrite.
             </p>
           </div>
-          {COLUMNS.map((column) => (
+          {columns.map((column) => (
             <div key={column.title}>
               <h3 className="mb-3 text-sm font-bold text-[#111827]">{column.title}</h3>
               <ul className="space-y-2 text-xs text-[#6b7280]">
