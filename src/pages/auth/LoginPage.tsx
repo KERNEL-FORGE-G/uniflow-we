@@ -83,10 +83,11 @@ export default function LoginPage() {
         >
           {/* Logo + Uni : la mascotte accueille, le logo garde sa place */}
           <motion.div variants={fadeInUp} className="text-center">
+            {/* Version blanche : le wordmark bleu se fondait dans le dégradé bleu→teal et paraissait flou */}
             <img
-              src="/logos/uniflow-wordmark.png"
+              src="/logos/uniflow-wordmark-white.png"
               alt="UniFlow"
-              className="mx-auto h-14 mb-4 object-contain drop-shadow-lg"
+              className="mx-auto h-14 mb-4 object-contain drop-shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback1) {

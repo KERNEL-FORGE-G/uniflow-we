@@ -109,10 +109,10 @@ export default function PresentationPage() {
           <div className="mx-auto mb-5 flex justify-center">
             <img 
               src="/logos/uniflow-wordmark.png" 
-              alt="Mascotte UniFlow" 
+              alt="UniFlow" 
               loading="eager"
               decoding="async"
-              className="h-20 w-20 object-contain drop-shadow-md animate-bounce" 
+              className="h-16 w-auto object-contain drop-shadow-md" 
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 target.src = '/logos/icon-512.png'
