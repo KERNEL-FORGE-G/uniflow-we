@@ -1,7 +1,20 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, ArrowRight } from 'lucide-react'
-import { subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
+import { getAccountType, subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
+
+/**
+ * Faut-il taire l'absence d'abonnement ? Un compte universitaire (étudiant,
+ * délégué, enseignant, administration) est couvert par son établissement : le
+ * bandeau « Aucun abonnement actif » sur son tableau de bord laissait croire à
+ * un accès restreint. Il ne reste affiché que sur la page Abonnement, où l'on
+ * vient justement pour ça, et pour les comptes indépendants, qui paient
+ * eux-mêmes. Un abonnement existant (en attente, actif, expiré) s'affiche
+ * toujours.
+ */
+export function shouldHideMissingSubscription(accountType: string, onBillingPage: boolean): boolean {
+  return accountType !== 'PERSONAL' && !onBillingPage
+}
 
 export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatusType | null>(null)
@@ -10,6 +23,7 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   const navigate = useNavigate()
   // Sur la page Abonnement, le bouton « Voir la demande » renverrait à la page courante.
   const onBillingPage = useLocation().pathname === '/app/abonnement'
+  const hideMissing = shouldHideMissingSubscription(getAccountType(), onBillingPage)
 
   const fetchStatus = async () => {
     setLoading(true)
