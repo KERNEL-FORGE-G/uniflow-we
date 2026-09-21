@@ -12,11 +12,26 @@ import { AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../motion/PageTransition'
 import { Skeleton } from '../ui/Skeleton'
 import { useAuth } from '../../hooks/useAuth'
+import { useUserRole } from '../../utils/userRole'
 
-// L'administration a le même assistant que l'espace connecté : Flo connaît
-// les chiffres du périmètre (annuaire, UE, séances, filières).
+/**
+ * Libellés du compte : « Super Admin » n'est vrai que pour l'administrateur
+ * de la plateforme (label `superadmin`) ; une administration d'université est
+ * une administration, avec son nom et son université.
+ */
+function useAdminIdentity() {
+  const { authUser, currentUser } = useUserRole()
+  const isPlatform = Boolean(authUser?.isSuperAdmin)
+  return {
+    name: currentUser.name && currentUser.name !== 'Utilisateur non connecté' ? currentUser.name : 'Administration',
+    title: isPlatform ? 'Admin plateforme' : 'Administration',
+    scope: isPlatform ? 'KERNEL FORGE · toutes les universités' : (currentUser.university || 'Université'),
+    isPlatform,
+  }
+}
 
 function AdminSidebar() {
+  const identity = useAdminIdentity()
   return (
     <aside className="flex h-screen w-[256px] shrink-0 flex-col border-r border-[#e5e7eb] bg-white sticky top-0 overflow-hidden">
       {/* Header with gradient */}
@@ -35,12 +50,12 @@ function AdminSidebar() {
 
         {/* Admin user */}
         <div className="mt-4 flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur-sm">
-          <Avatar name="Admin UniFlow" size="sm" />
+          <Avatar name={identity.name} size="sm" />
           <div className="min-w-0 flex-1">
-            <p className="text-xs font-bold text-white truncate">Administrateur</p>
+            <p className="text-xs font-bold text-white truncate">{identity.name}</p>
             <div className="flex items-center gap-1">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-              <p className="text-[10px] text-white/60">Super Admin · En ligne</p>
+              <p className="truncate text-[10px] text-white/60">{identity.title} · {identity.scope}</p>
             </div>
           </div>
         </div>
@@ -132,6 +147,7 @@ function AdminBreadcrumb() {
 export function AdminLayout() {
   const navigate = useNavigate()
   const { logout } = useAuth()
+  const identity = useAdminIdentity()
   const [searchVal, setSearchVal] = useState('')
   // Aucun compteur inventé : la pastille apparaîtra quand les notifications admin seront lues d'Appwrite.
   const notifCount = 0
@@ -177,17 +193,17 @@ export function AdminLayout() {
           </button>
 
           {/* Admin badge */}
-          <div className="hidden md:flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3 py-1.5 text-xs font-bold text-amber-700">
+          <div className={cn('hidden md:flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold', identity.isPlatform ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-[#eff3ff] border-[#c7d2fe] text-[#1e3a8a]')}>
             <Shield className="h-3.5 w-3.5" />
-            Super Admin
+            {identity.title}
           </div>
 
           {/* User */}
           <div className="flex items-center gap-2">
-            <Avatar name="Admin UniFlow" size="sm" />
+            <Avatar name={identity.name} size="sm" />
             <div className="hidden sm:block">
-              <p className="text-sm font-bold text-[#111827]">Administrateur</p>
-              <p className="text-xs text-[#6b7280]">Super Admin</p>
+              <p className="text-sm font-bold text-[#111827]">{identity.name}</p>
+              <p className="text-xs text-[#6b7280]">{identity.scope}</p>
             </div>
           </div>
 

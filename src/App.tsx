@@ -75,6 +75,7 @@ const AttendanceHistoryPage = lazy(() => import('./pages/admin/AttendanceHistory
 const AdminActivityPage = lazy(() => import('./pages/admin/AdminActivityPage'))
 const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'))
 const AdminPaymentsPage = lazy(() => import('./pages/admin/AdminPaymentsPage'))
+const AdminAudiencePage = lazy(() => import('./pages/admin/AdminAudiencePage'))
 const AdminTeamPage = lazy(() => import('./pages/admin/AdminTeamPage'))
 
 /**
@@ -323,6 +324,7 @@ export default function App() {
               <Route path="parametres" element={<AdminSettingsPage />} />
               <Route path="rapports" element={<AdminReportsPage />} />
               <Route path="paiements" element={<AdminPaymentsPage />} />
+              <Route path="audience" element={<AdminAudiencePage />} />
               <Route path="historique-presences" element={<AttendanceHistoryPage />} />
               <Route path="activite" element={<AdminActivityPage />} />
               <Route path="securite" element={<AdminSecurityPage />} />

@@ -5,6 +5,7 @@ import { Eye, EyeOff, Loader2, GraduationCap, Wifi, ShieldCheck, ArrowRight, Loc
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { useAuth } from '../../hooks/useAuth'
 import { ActionResultSlot } from '../../components/feedback/ActionResult'
+import { UniMascot } from '../../components/mascot/UniMascot'
 
 const features = [
   { 
@@ -80,12 +81,12 @@ export default function LoginPage() {
           variants={staggerContainer}
           className="max-w-lg text-white relative z-10 space-y-8"
         >
-          {/* Logo */}
+          {/* Logo + Uni : la mascotte accueille, le logo garde sa place */}
           <motion.div variants={fadeInUp} className="text-center">
             <img
               src="/logos/uniflow-wordmark.png"
               alt="UniFlow"
-              className="mx-auto h-20 mb-6 object-contain drop-shadow-lg"
+              className="mx-auto h-14 mb-4 object-contain drop-shadow-lg"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback1) {
@@ -97,6 +98,14 @@ export default function LoginPage() {
                 }
               }}
             />
+            <div className="mb-4 flex justify-center">
+              <UniMascot
+                pose={error ? 'sorry' : loading ? 'thinking' : 'wave'}
+                size={170}
+                bubble={error ? <span>Hmm, ça n’a pas marché. Vérifie ton e-mail et ton mot de passe.</span> : loading ? <span>Je vérifie ton compte…</span> : <span>Content de te revoir ! Connecte-toi, je m’occupe du reste.</span>}
+                bubbleSide="right"
+              />
+            </div>
             <h1 className="text-4xl font-black mb-3">Bienvenue sur UniFlow</h1>
             <p className="text-blue-100 text-lg leading-relaxed">
               La plateforme universitaire intelligente qui fonctionne partout, même sans Internet
