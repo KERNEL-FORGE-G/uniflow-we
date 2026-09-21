@@ -50,6 +50,7 @@ const PresentationPage = lazy(() => import('./pages/PresentationPage'))
 const AboutPage = lazy(() => import('./pages/AboutPage'))
 const PricingPage = lazy(() => import('./pages/PricingPage'))
 const SubscriptionFlowPage = lazy(() => import('./pages/SubscriptionFlowPage'))
+const BillingPage = lazy(() => import('./pages/billing/BillingPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const SentinellePage = lazy(() => import('./pages/SentinellePage'))
 const ForumPage = lazy(() => import('./pages/ForumPage'))
@@ -293,6 +294,8 @@ export default function App() {
             <Route path="/app/profil" element={<Shell><AccountAwareRoute kind="profile"><ProfilePage /></AccountAwareRoute></Shell>} />
             <Route path="/app/parametres" element={<Shell><AccountAwareRoute kind="settings"><SettingsPage /></AccountAwareRoute></Shell>} />
             <Route path="/app/aide" element={<Shell><AccountAwareRoute kind="help"><HelpPage /></AccountAwareRoute></Shell>} />
+            <Route path="/app/abonnement" element={<Shell><BillingPage /></Shell>} />
+            <Route path="/app/billing" element={<Navigate to="/app/abonnement" replace />} />
 
             {/* Universitaire uniquement */}
             <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />

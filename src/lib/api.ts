@@ -8,6 +8,7 @@ import {
   executeMessagingAction,
   executeSubscriptionPaymentAction,
   type SubscriptionPaymentRecord,
+  type SubscriptionPlanDocument,
   getCurrentAccount,
   listDocuments,
   listAppwriteNotifications,
@@ -1087,10 +1088,11 @@ export interface SubscriptionPlan { id: string; code: string; name: string; cate
 export interface PricingInfo { countryCode: string; currency: 'XAF' | 'EUR' | 'USD'; amount: number; formattedPrice: string; billingInterval: string; providers: string[] }
 export interface SubscriptionStatus { status: 'NONE' | 'PENDING' | 'TRIAL' | 'ACTIVE' | 'PAST_DUE' | 'CANCELLED' | 'EXPIRED'; planCode?: string | null; countryCode?: string | null; currency?: string | null; monthlyAmount?: number | null; currentPeriodEnd?: string | null; isAutoRenew: boolean }
 export interface CheckoutResult { transactionId?: string; paymentUrl?: string; status?: string; message?: string; requestedAt?: string }
-export type CheckoutPayload = { planId?: string; planCode: string; countryCode: string; paymentProvider?: string; phoneNumber?: string; billingInterval?: 'MONTHLY' | 'ANNUALLY'; billingCycle: 'monthly' | 'annually'; email?: string; fullName?: string }
+export type CheckoutPayload = { planId?: string; planCode: string; countryCode: string; paymentProvider?: string; phoneNumber?: string; billingInterval?: 'MONTHLY' | 'ANNUALLY'; billingCycle: 'monthly' | 'annually'; email?: string; fullName?: string; institution?: string }
 export type SubscriptionPaymentRequest = SubscriptionPaymentRecord
 export interface AdminPaymentFilters { status?: SubscriptionPaymentRequest['status']; planCode?: string; from?: string; to?: string; search?: string }
 
+/** `providers` et `features` sont des tableaux JSON sérialisés dans un attribut chaîne. */
 function subscriptionProviders(value?: string): string[] {
   try {
     const parsed = value ? JSON.parse(value) : []
@@ -1098,6 +1100,11 @@ function subscriptionProviders(value?: string): string[] {
   } catch {
     return []
   }
+}
+
+function subscriptionButtonText(row: SubscriptionPlanDocument): string {
+  if (row.category === 'INSTITUTION') return 'Demander une étude'
+  return row.priceMonthlyAmount === 0 ? 'Accès inclus' : 'Payer par WhatsApp'
 }
 
 function money(amount: number, currency: string) {
@@ -1121,10 +1128,10 @@ async function appwriteSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     badge: row.badge || undefined,
     highlight: !!row.highlight,
     description: row.description,
-    btnText: row.priceMonthlyAmount === 0 ? 'Accès inclus' : 'Payer par WhatsApp',
+    btnText: subscriptionButtonText(row),
     btnVariant: row.highlight ? 'primary' : 'secondary',
     providers: subscriptionProviders(row.providers),
-    features: [],
+    features: subscriptionProviders(row.features),
     status: row.status,
   }))
 }
@@ -1170,6 +1177,7 @@ export const subscriptionApi = {
       fullName: payload.fullName || '',
       email: payload.email || '',
       phoneNumber: payload.phoneNumber || '',
+      institution: payload.institution || '',
     })
     if (!result.request) throw new ApiError(502, 'Appwrite n’a pas retourné de référence de demande de paiement.')
     return { transactionId: result.request.reference, paymentUrl: result.request.whatsappUrl, status: result.request.status, message: result.idempotent ? 'Votre demande de paiement en attente a été retrouvée.' : 'Votre demande a été enregistrée. Envoyez la preuve de paiement sur WhatsApp avec cette référence.', requestedAt: result.request.requestedAt }

@@ -64,7 +64,9 @@ export const navItems: NavItem[] = [
   { to: '/app/promotion',          icon: Award,         labelFr: 'Candidature délégué', labelEn: 'Delegate Candidacy', roles: ['student', 'delegate'] },
   // Commun
   { to: '/app/parametres',         icon: Settings,      labelFr: 'Paramètres',         labelEn: 'Settings',        roles: ['student', 'delegate', 'teacher', 'admin'], accounts: ['UNIVERSITY', 'PERSONAL'] },
-  { to: '/pricing',                icon: CircleDollarSign, labelFr: 'Abonnement',      labelEn: 'Subscription',    roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  // Pointait vers la page tarifaire publique : la personne connectée sortait de
+  // son espace et ne retrouvait ni sa référence ni l'état de sa demande.
+  { to: '/app/abonnement',         icon: CircleDollarSign, labelFr: 'Abonnement',      labelEn: 'Subscription',    roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
   { to: '/app/aide',               icon: HelpCircle,    labelFr: 'Aide & FAQ',         labelEn: 'Help & FAQ',      roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
 ]
 

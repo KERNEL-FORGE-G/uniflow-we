@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT_PAYMENT_FILTERS, matchesPaymentFilters, rejectionReasonProblem, whatsappBillingMessage, whatsappBillingUrl } from './paymentsModel.ts'
+import { DEFAULT_PAYMENT_FILTERS, annualSavingsPercent, matchesPaymentFilters, rejectionReasonProblem, whatsappBillingMessage, whatsappBillingUrl } from './paymentsModel.ts'
 import { CONTACT_WHATSAPP_E164 } from './contactInfo.ts'
 
 const input = { reference: 'UF-2026-0001', planName: 'Étudiant Premium', billingCycle: 'MONTHLY' as const, amount: 2500, currency: 'XAF', fullName: 'Ada Lovelace', email: 'ada@example.com' }
@@ -11,6 +11,20 @@ test('le message WhatsApp porte la référence, la formule et le montant', () =>
   assert.match(message, /Étudiant Premium \(mensuel\)/)
   assert.match(message, /2\s?500/)
   assert.match(message, /Ada Lovelace/)
+  assert.doesNotMatch(message, /Université/, 'pas de ligne université vide quand elle n’est pas renseignée')
+})
+
+test('le message WhatsApp porte l’université / faculté quand elle est connue', () => {
+  const message = whatsappBillingMessage({ ...input, institution: ' Université de Yaoundé I — FS ' })
+  assert.match(message, /Université \/ faculté : Université de Yaoundé I — FS\n/)
+})
+
+test('la remise annuelle est calculée sur les montants réels de la formule', () => {
+  assert.equal(annualSavingsPercent(100, 1000), 17, 'dix mensualités pour douze mois : deux mois offerts')
+  assert.equal(annualSavingsPercent(500, 5000), 17)
+  assert.equal(annualSavingsPercent(100, 1200), 0, 'aucune remise si l’annuel vaut douze mensualités')
+  assert.equal(annualSavingsPercent(100, 1500), 0, 'jamais de remise négative')
+  assert.equal(annualSavingsPercent(0, 0), 0, 'formule incluse : rien à remiser')
 })
 
 test('l’URL cible le numéro de facturation centralisé et encode le message', () => {
@@ -38,4 +52,6 @@ test('filtres admin : statut, formule, dates inclusives, recherche', () => {
   assert.deepEqual(rows.filter((row) => matchesPaymentFilters(row, { ...DEFAULT_PAYMENT_FILTERS, status: 'ALL', from: '2026-09-05' })).map((r) => r.reference), ['UF-1'])
   assert.deepEqual(rows.filter((row) => matchesPaymentFilters(row, { ...DEFAULT_PAYMENT_FILTERS, status: 'ALL', to: '2026-09-01' })).map((r) => r.reference), ['UF-2'])
   assert.deepEqual(rows.filter((row) => matchesPaymentFilters(row, { ...DEFAULT_PAYMENT_FILTERS, status: 'ALL', search: 'grace' })).map((r) => r.reference), ['UF-2'])
+  const withInstitution = rows.map((row) => (row.reference === 'UF-1' ? { ...row, institution: 'Université de Douala' } : row))
+  assert.deepEqual(withInstitution.filter((row) => matchesPaymentFilters(row, { ...DEFAULT_PAYMENT_FILTERS, status: 'ALL', search: 'douala' })).map((r) => r.reference), ['UF-1'], 'la recherche couvre l’université')
 })

@@ -369,6 +369,14 @@ export const subscriptionSchemas = [
       boolean('highlight', false, false),
       string('description', 5000, true),
       string('providers', 500, false, '[]'),
+      // Avantages affichés sous le prix, en JSON (`["…", "…"]`) comme
+      // `providers`. Ils vivaient en dur dans `PricingPage.tsx` et
+      // `SubscriptionFlowPage.tsx` : la base servait le prix, le code servait le
+      // reste, et une formule ajoutée en base s'affichait sans aucun avantage.
+      string('features', 3000, false, '[]'),
+      // Ordre d'affichage sur la page tarifaire (croissant). Sans lui, l'ordre
+      // était celui de création des documents, qui change à chaque re-seed.
+      integer('sortOrder', false, 0),
       string('status', 32, true),
     ],
     indexes: [
@@ -750,6 +758,10 @@ export const schemas = [
       string('fullName', 255, true),
       string('email', 255, true),
       string('phoneNumber', 64, false, ''),
+      // Université / faculté déclarée par le client. Le formulaire de
+      // souscription la demandait déjà mais ne l'envoyait pas : l'administration
+      // devait la redemander sur WhatsApp pour rattacher le paiement.
+      string('institution', 255, false, ''),
       // Canal par lequel le client règle : la facturation passe par le
       // WhatsApp +237 657 635 644 (consigne du 2026-09-20), pas de paiement en ligne.
       string('channel', 32, false, 'WHATSAPP'),

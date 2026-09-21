@@ -1,21 +1,20 @@
-import React, { useEffect, useState } from 'react'
-import { useParams, useNavigate, Link } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { 
-  Check, ArrowRight, ArrowLeft, ShieldCheck, CreditCard, Smartphone, 
-  Sparkles, Building2, GraduationCap, User, CheckCircle2, Lock, 
-  HelpCircle, Receipt, Download, RefreshCw, Zap
+import {
+  Check, ArrowRight, ArrowLeft, ShieldCheck, Smartphone,
+  Sparkles, CheckCircle2, RefreshCw, Zap, ExternalLink,
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { personalSubscriptionApi, type CheckoutResult, type SubscriptionPlan, ApiError } from '../lib/api'
 import { CONTACT_PHONE_DISPLAY } from '../lib/contactInfo'
-import { whatsappBillingUrl } from '../lib/paymentsModel'
+import { annualSavingsPercent, whatsappBillingUrl } from '../lib/paymentsModel'
+import { plansForCountry } from '../lib/pricingModel'
 import { ActionResult } from '../components/feedback/ActionResult'
 import { useUserRole } from '../utils/userRole'
 
 export default function SubscriptionFlowPage() {
   const { planId } = useParams<{ planId?: string }>()
-  const navigate = useNavigate()
   const { currentUser, authUser } = useUserRole()
 
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
@@ -35,9 +34,13 @@ export default function SubscriptionFlowPage() {
   const [paymentError, setPaymentError] = useState<string | null>(null)
 
   // Payment state
-  const [paymentProvider, setPaymentProvider] = useState<string>('WHATSAPP')
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
   const [transactionResult, setTransactionResult] = useState<CheckoutResult | null>(null)
+  // `null` tant qu'aucune ouverture n'a été tentée ; `false` quand le navigateur
+  // a bloqué la fenêtre (window.open renvoie null) — l'écran de confirmation
+  // affiche alors le lien à ouvrir à la main au lieu d'annoncer une ouverture
+  // qui n'a pas eu lieu.
+  const [whatsappOpened, setWhatsappOpened] = useState<boolean | null>(null)
 
   useEffect(() => {
     const loadData = async () => {
@@ -51,10 +54,8 @@ export default function SubscriptionFlowPage() {
         const match = fetchedPlans.find(p => p.code === targetCode || p.id === targetCode)
         if (match) {
           setSelectedPlan(match)
-          setPaymentProvider('WHATSAPP')
         } else if (fetchedPlans.length > 0) {
-          setSelectedPlan(fetchedPlans[0])
-          setPaymentProvider('WHATSAPP')
+          setSelectedPlan(fetchedPlans.find((plan) => plan.category !== 'INSTITUTION') || fetchedPlans[0])
         }
       } catch (err) {
         const message = err instanceof ApiError ? err.message : 'Les offres personnelles ne sont pas disponibles.'
@@ -72,7 +73,17 @@ export default function SubscriptionFlowPage() {
     if (authUser.email && !email) setEmail(authUser.email)
     if (currentUser.name && !fullName && currentUser.name !== 'Utilisateur non connecté') setFullName(currentUser.name)
     if (currentUser.phone && !phoneNumber) setPhoneNumber(currentUser.phone)
-  }, [authUser, currentUser, email, fullName, phoneNumber])
+    const declared = [currentUser.university, currentUser.faculty].filter(Boolean).join(' — ')
+    if (declared && !institution) setInstitution(declared)
+  }, [authUser, currentUser, email, fullName, phoneNumber, institution])
+
+  // Formules proposées à l'étape 1 : celles de la devise de la formule choisie,
+  // sans l'offre campus (sur devis, hors parcours). Afficher tout le catalogue
+  // mettait trois « UniFlow Personnel » de devises différentes côte à côte.
+  const selectablePlans = useMemo(() => {
+    if (!selectedPlan) return plans
+    return plansForCountry(plans, selectedPlan.countryCode || 'CM').filter((plan) => plan.category !== 'INSTITUTION')
+  }, [plans, selectedPlan])
 
   const handleProcessPayment = async () => {
     if (!selectedPlan) return
@@ -91,13 +102,17 @@ export default function SubscriptionFlowPage() {
         billingCycle: billingCycle.toLowerCase() as 'monthly' | 'annually',
         email: email.trim(),
         fullName: fullName.trim(),
+        institution: institution.trim() || undefined,
       })
       // L'URL vient de la Function (référence incluse) ; on la reconstruit
       // localement si elle manque, avec le même numéro de facturation.
-      const url = res.paymentUrl || (res.transactionId ? whatsappBillingUrl({ reference: res.transactionId, planName: selectedPlan.name, billingCycle, amount: finalPrice, currency: selectedPlan.currency || 'XAF', fullName: fullName.trim(), email: email.trim() }) : undefined)
+      const url = res.paymentUrl || (res.transactionId ? whatsappBillingUrl({ reference: res.transactionId, planName: selectedPlan.name, billingCycle, amount: finalPrice, currency: selectedPlan.currency || 'XAF', fullName: fullName.trim(), email: email.trim(), institution: institution.trim() }) : undefined)
       setTransactionResult({ ...res, paymentUrl: url })
       setCurrentStep(4)
-      if (url && !includedAccess) window.open(url, '_blank', 'noopener')
+      if (url && !includedAccess) {
+        const opened = window.open(url, '_blank', 'noopener')
+        setWhatsappOpened(opened !== null)
+      }
     } catch (err) {
       const message = err instanceof ApiError ? err.message : 'La demande n’a pas pu être enregistrée.'
       setPaymentError(message)
@@ -119,6 +134,7 @@ export default function SubscriptionFlowPage() {
   const checkoutStatus = transactionResult?.status?.toUpperCase()
   const paymentConfirmed = checkoutStatus === 'SUCCESS' || checkoutStatus === 'ACTIVE' || checkoutStatus === 'PAID'
   const includedAccess = !!selectedPlan && selectedPlan.priceMonthlyAmount === 0 && selectedPlan.providers.length === 0
+  const savings = selectedPlan ? annualSavingsPercent(selectedPlan.priceMonthlyAmount, selectedPlan.priceAnnuallyAmount) : 0
 
   const continueFromPlan = () => {
     if (!includedAccess) {
@@ -133,7 +149,9 @@ export default function SubscriptionFlowPage() {
 
   const getCurrencyLabel = () => {
     if (!selectedPlan) return 'FCFA'
-    return selectedPlan.currency === 'EUR' ? '€' : 'FCFA'
+    if (selectedPlan.currency === 'EUR') return '€'
+    if (selectedPlan.currency === 'USD') return '$'
+    return 'FCFA'
   }
 
   if (loading) {
@@ -280,16 +298,20 @@ export default function SubscriptionFlowPage() {
                   {/* Plan Selector Grid */}
                   <div className="space-y-4 mb-8">
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
-                      Offres Disponibles en Base de Données :
+                      Formules disponibles :
                     </label>
 
-                    <div className="grid gap-3">
-                      {plans.map((p) => {
+                    <div className="grid gap-3" role="radiogroup" aria-label="Formule d’abonnement">
+                      {selectablePlans.map((p) => {
                         const isSelected = selectedPlan?.id === p.id || selectedPlan?.code === p.code
                         return (
                           <div
                             key={p.id}
-                            onClick={() => { setSelectedPlan(p); setPaymentProvider('WHATSAPP'); setPaymentError(null) }}
+                            role="radio"
+                            aria-checked={isSelected}
+                            tabIndex={0}
+                            onClick={() => { setSelectedPlan(p); setPaymentError(null) }}
+                            onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedPlan(p); setPaymentError(null) } }}
                             className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
                               isSelected
                                 ? 'bg-blue-50/70 dark:bg-blue-950/40 border-[#1e3a8a] dark:border-blue-500 shadow-sm'
@@ -360,10 +382,12 @@ export default function SubscriptionFlowPage() {
                             : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                         }`}
                       >
-                        <span>Annuel (2 Mois Offerts)</span>
-                        <span className="ml-1 text-[10px] uppercase font-extrabold bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded">
-                          -20%
-                        </span>
+                        <span>Annuel</span>
+                        {savings > 0 && (
+                          <span className="ml-1 text-[10px] uppercase font-extrabold bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded">
+                            -{savings} %
+                          </span>
+                        )}
                       </button>
                     </div>
                   </div>
@@ -550,30 +574,43 @@ export default function SubscriptionFlowPage() {
 
                   {/* STEP 4: CONFIRMATION */}
               {currentStep === 4 && (
-                <motion.div key="step4" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}>
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
                   <ActionResult
                     layout="screen"
                     status={paymentConfirmed ? 'success' : 'pending'}
                     icon={paymentConfirmed ? CheckCircle2 : Smartphone}
-                    title={paymentConfirmed ? (includedAccess ? 'Accès académique inclus' : 'Votre abonnement est actif') : 'Demande enregistrée — finalisez sur WhatsApp'}
+                    title={paymentConfirmed
+                      ? (includedAccess ? 'Accès académique inclus' : 'Votre abonnement est actif')
+                      : whatsappOpened === false ? 'Demande enregistrée — ouvrez WhatsApp' : 'Demande enregistrée — finalisez sur WhatsApp'}
                     description={includedAccess
                       ? 'Votre accès universitaire est déjà actif. Aucune transaction n’a été créée.'
                       : paymentConfirmed
                         ? 'Le statut de souscription confirme l’activation de votre abonnement.'
-                        : `WhatsApp s’ouvre avec un message pré-rempli vers le ${CONTACT_PHONE_DISPLAY}. Envoyez-le avec votre preuve de paiement : l’administration valide ensuite votre abonnement.`}
+                        : whatsappOpened === false
+                          ? `Votre navigateur a bloqué l’ouverture automatique. Cliquez sur « Ouvrir WhatsApp » pour envoyer le message pré-rempli au ${CONTACT_PHONE_DISPLAY}, avec votre preuve de paiement.`
+                          : `WhatsApp s’est ouvert dans un nouvel onglet avec un message pré-rempli vers le ${CONTACT_PHONE_DISPLAY}. Envoyez-le avec votre preuve de paiement : l’administration valide ensuite votre abonnement.`}
                     className="max-w-none"
                     actions={[
-                      ...(transactionResult?.paymentUrl && !paymentConfirmed ? [{ label: 'Ouvrir WhatsApp', href: transactionResult.paymentUrl }] : []),
-                      { label: 'Accéder à mon espace', to: '/app', variant: (transactionResult?.paymentUrl && !paymentConfirmed ? 'secondary' : 'primary') as 'primary' | 'secondary' },
+                      ...(transactionResult?.paymentUrl && !paymentConfirmed ? [{ label: whatsappOpened === false ? 'Ouvrir WhatsApp' : 'Rouvrir WhatsApp', href: transactionResult.paymentUrl }] : []),
+                      { label: 'Suivre ma demande', to: '/app/abonnement', variant: (transactionResult?.paymentUrl && !paymentConfirmed ? 'secondary' : 'primary') as 'primary' | 'secondary' },
                       { label: 'Voir les offres', to: '/pricing', variant: 'secondary' as const },
                     ]}
                   >
                     <div className="mx-auto max-w-md space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
                       {transactionResult?.transactionId && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Référence :</span><span className="select-all font-mono font-bold text-slate-900 dark:text-white">{transactionResult.transactionId}</span></div>}
                       <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Formule :</span><span className="font-bold text-slate-900 dark:text-white">{selectedPlan?.name}</span></div>
+                      {institution.trim() && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Établissement :</span><span className="font-bold text-right text-slate-900 dark:text-white">{institution.trim()}</span></div>}
                       <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Statut :</span><span className="font-bold text-slate-900 dark:text-white">{paymentConfirmed ? 'Actif' : 'En attente de validation'}</span></div>
                       <div className="flex justify-between gap-4"><span className="text-slate-500">Montant :</span><span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span></div>
                     </div>
+                    {!paymentConfirmed && !includedAccess && transactionResult?.message && (
+                      <p className="mx-auto mt-4 max-w-md text-center text-xs text-slate-500 dark:text-slate-400">{transactionResult.message}</p>
+                    )}
+                    {!paymentConfirmed && !includedAccess && transactionResult?.paymentUrl && (
+                      <a href={transactionResult.paymentUrl} target="_blank" rel="noopener noreferrer" className="mx-auto mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#1e3a8a] underline-offset-2 hover:underline dark:text-blue-300">
+                        <ExternalLink className="h-3.5 w-3.5" /> Voir le message pré-rempli
+                      </a>
+                    )}
                   </ActionResult>
                 </motion.div>
               )}
@@ -605,8 +642,14 @@ export default function SubscriptionFlowPage() {
                   <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
                     <div className="flex justify-between">
                       <span className="text-slate-500">Cycle :</span>
-                      <span className="font-semibold">{billingCycle === 'ANNUALLY' ? 'Annuel (-20%)' : 'Mensuel'}</span>
+                      <span className="font-semibold">{billingCycle === 'ANNUALLY' ? (savings > 0 ? `Annuel (-${savings} %)` : 'Annuel') : 'Mensuel'}</span>
                     </div>
+                    {institution.trim() && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-slate-500 shrink-0">Établissement :</span>
+                        <span className="font-semibold text-right">{institution.trim()}</span>
+                      </div>
+                    )}
 
                     <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center font-bold text-sm text-slate-900 dark:text-white">
                       <span>Total à régler :</span>

@@ -407,6 +407,8 @@ export type SubscriptionPaymentRequest = {
   fullName?: string
   email?: string
   phoneNumber?: string
+  /** Université / faculté déclarée par le client (facultatif). */
+  institution?: string
   status?: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED'
   requestId?: string
   decision?: 'CONFIRMED' | 'REJECTED'
@@ -430,6 +432,8 @@ export type SubscriptionPaymentRecord = {
   fullName: string
   email: string
   phoneNumber: string
+  /** Absente des demandes créées avant l'attribut : la Function renvoie alors ''. */
+  institution?: string
   status: 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED'
   requestedAt: string
   processedAt?: string | null
@@ -1075,6 +1079,9 @@ export interface SubscriptionPlanDocument {
   highlight?: boolean
   description: string
   providers?: string
+  /** Avantages, tableau JSON sérialisé (voir `scripts/appwrite-schema.mjs`). */
+  features?: string
+  sortOrder?: number
   status: 'ACTIVE' | 'INACTIVE'
 }
 
@@ -1118,7 +1125,12 @@ export const academicAppwriteApi = {
     list: () => listAllDocuments<AcademicEnrollmentDocument>('academic_enrollments'),
   },
   subscriptions: {
-    listPlans: async () => (await listDocuments<SubscriptionPlanDocument>('subscription_plans')).filter((plan) => plan.status === 'ACTIVE'),
+    // Tri par `sortOrder` côté client : l'ordre de création des documents
+    // changeait à chaque re-seed et la formule mise en avant se retrouvait
+    // n'importe où dans la grille.
+    listPlans: async () => (await listDocuments<SubscriptionPlanDocument>('subscription_plans'))
+      .filter((plan) => plan.status === 'ACTIVE')
+      .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.code.localeCompare(b.code)),
     getStatus: async (userId: string) => {
       const rows = await listDocuments<SubscriptionStatusDocument>('subscription_statuses', [Query.equal('userId', userId)])
       return rows[0] || null

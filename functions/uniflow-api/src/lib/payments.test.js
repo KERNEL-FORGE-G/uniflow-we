@@ -27,6 +27,13 @@ test('whatsappUrl : numéro de facturation et message pré-rempli', () => {
   assert.match(text, /Premium \(annuel\)/)
   assert.match(text, /12000 XAF/)
   assert.match(text, /Ada/)
+  assert.doesNotMatch(text, /Université/, 'sans institution renseignée, aucune ligne vide « Université : »')
+})
+
+test('whatsappUrl : l’université / faculté figure dans le message quand elle est connue', () => {
+  const url = whatsappUrl({ reference: 'UF-2', planName: 'Personnel', billingCycle: 'MONTHLY', amount: 100, currency: 'XAF', fullName: 'Ada', email: 'ada@example.com', institution: '  UY1 — Faculté des Sciences ' })
+  const text = decodeURIComponent(url.split('text=')[1])
+  assert.match(text, /Université \/ faculté : UY1 — Faculté des Sciences\n/, 'valeur nettoyée de ses espaces')
 })
 
 test('customerWhatsappUrl : ne garde que les chiffres, vide si trop court', () => {
@@ -48,4 +55,6 @@ test('matchesAdminFilters : statut, formule, période, recherche', () => {
   assert.equal(matchesAdminFilters(request, { search: 'lovelace' }), true)
   assert.equal(matchesAdminFilters(request, { search: 'UF-42' }), true)
   assert.equal(matchesAdminFilters(request, { search: 'bob' }), false)
+  assert.equal(matchesAdminFilters({ ...request, institution: 'Université de Douala' }, { search: 'douala' }), true, 'la recherche couvre l’université')
+  assert.equal(matchesAdminFilters(request, { search: 'douala' }), false, 'sans institution, pas de faux positif')
 })

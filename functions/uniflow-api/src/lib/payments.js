@@ -34,13 +34,20 @@ export function rejectionReasonError(decision, adminNote) {
   return decision === 'REJECTED' && !(typeof adminNote === 'string' && adminNote.trim()) ? 'INVALID_ADMIN_NOTE' : ''
 }
 
+/**
+ * Message pré-rempli vers le WhatsApp de facturation. L'université / faculté
+ * n'y figure que si le client l'a renseignée : une ligne « Université : »
+ * vide poussait l'administration à la redemander systématiquement.
+ */
 export function whatsappUrl(request, number = WHATSAPP_NUMBER) {
+  const institution = String(request.institution || '').trim()
   const text = [
     'Bonjour UniFlow,',
     'je souhaite régler mon abonnement.',
     `Référence : ${request.reference}`,
     `Formule : ${request.planName} (${request.billingCycle === 'ANNUALLY' ? 'annuel' : 'mensuel'})`,
     `Montant : ${request.amount} ${request.currency}`,
+    ...(institution ? [`Université / faculté : ${institution}`] : []),
     `Nom : ${request.fullName}`,
     `Compte : ${request.email}`,
     'Je joins ma preuve de paiement à ce message.',
@@ -64,7 +71,9 @@ export function matchesAdminFilters(request, filters = {}) {
   if (filters.to && requestedAt > new Date(filters.to).getTime()) return false
   if (filters.search) {
     const needle = String(filters.search).trim().toLowerCase()
-    const haystack = `${request.fullName || ''} ${request.email || ''} ${request.reference || ''}`.toLowerCase()
+    // L'université fait partie du texte cherché : l'administration retrouve
+    // ainsi toutes les demandes d'un même établissement d'un coup.
+    const haystack = `${request.fullName || ''} ${request.email || ''} ${request.reference || ''} ${request.institution || ''}`.toLowerCase()
     if (needle && !haystack.includes(needle)) return false
   }
   return true

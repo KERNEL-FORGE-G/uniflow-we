@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { CheckCircle2, Clock3, CircleDollarSign, Loader2, MessageCircle, RefreshCw, Search, ShieldCheck, XCircle } from 'lucide-react'
+import { Building2, CheckCircle2, Clock3, CircleDollarSign, Loader2, MessageCircle, RefreshCw, Search, ShieldCheck, XCircle } from 'lucide-react'
 import { subscriptionApi, type SubscriptionPaymentRequest } from '@/lib/api'
 import { CONTACT_PHONE_DISPLAY } from '@/lib/contactInfo'
 import { DEFAULT_PAYMENT_FILTERS, formatMoney, matchesPaymentFilters, PAYMENT_STATUS_LABELS, rejectionReasonProblem, type AdminPaymentFilterState, type PaymentRequestStatus } from '@/lib/paymentsModel'
@@ -111,7 +111,7 @@ export default function AdminPaymentsPage() {
           <label className="relative block">
             <span className="sr-only">Rechercher</span>
             <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Nom, email, référence…" className={cn(fieldClass, 'pl-9')} />
+            <input value={filters.search} onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Nom, email, référence, université…" className={cn(fieldClass, 'pl-9')} />
           </label>
           <select value={filters.planCode} onChange={(event) => setFilters({ ...filters, planCode: event.target.value })} className={fieldClass} aria-label="Formule">
             <option value="">Toutes les formules</option>
@@ -148,7 +148,7 @@ export default function AdminPaymentsPage() {
                   return (
                     <motion.tr key={request.id} variants={{ hidden: { opacity: 0, y: 6 }, show: { opacity: 1, y: 0 } }} className="border-b border-slate-100 align-top transition-colors hover:bg-slate-50/70">
                       <td className="px-4 py-4"><p className="font-mono text-xs font-bold text-slate-900">{request.reference}</p><p className="mt-1 text-[11px] text-slate-500">{request.billingCycle === 'ANNUALLY' ? 'Annuel' : 'Mensuel'} · WhatsApp</p></td>
-                      <td className="px-4 py-4"><p className="font-semibold text-slate-900">{request.fullName}</p><p className="text-xs text-slate-500">{request.email}</p>{request.phoneNumber && <p className="text-xs text-slate-500">{request.phoneNumber}</p>}</td>
+                      <td className="px-4 py-4"><p className="font-semibold text-slate-900">{request.fullName}</p><p className="text-xs text-slate-500">{request.email}</p>{request.phoneNumber && <p className="text-xs text-slate-500">{request.phoneNumber}</p>}{request.institution && <p className="mt-1 inline-flex max-w-[220px] items-center gap-1 rounded-md bg-blue-50 px-1.5 py-0.5 text-[11px] font-semibold text-[#1e3a8a]" title="Université / faculté déclarée"><Building2 className="h-3 w-3 shrink-0" /><span className="truncate">{request.institution}</span></p>}</td>
                       <td className="px-4 py-4"><p className="font-semibold text-slate-900">{request.planName}</p><p className="text-xs font-bold text-teal-700">{formatMoney(request.amount, request.currency)}</p></td>
                       <td className="px-4 py-4 text-xs text-slate-600">{new Date(request.requestedAt).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}{request.processedAt && <p className="mt-1 text-[11px] text-slate-400">Traitée le {new Date(request.processedAt).toLocaleDateString('fr-FR')}</p>}</td>
                       <td className="px-4 py-4">

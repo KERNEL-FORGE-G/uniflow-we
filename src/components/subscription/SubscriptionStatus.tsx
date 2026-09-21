@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { motion } from 'framer-motion'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, ArrowRight } from 'lucide-react'
 import { subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
 
@@ -9,6 +8,8 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   const [loading, setLoading] = useState<boolean>(true)
   const [statusError, setStatusError] = useState<string | null>(null)
   const navigate = useNavigate()
+  // Sur la page Abonnement, le bouton « Voir la demande » renverrait à la page courante.
+  const onBillingPage = useLocation().pathname === '/app/abonnement'
 
   const fetchStatus = async () => {
     setLoading(true)
@@ -58,7 +59,7 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button onClick={fetchStatus} className="rounded-xl bg-white/70 p-2.5 text-amber-700 hover:bg-white" title="Actualiser le statut"><RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /></button>
-            <button onClick={() => navigate('/subscribe')} className="rounded-xl bg-amber-700 px-3 py-2.5 text-xs font-bold text-white hover:bg-amber-800">Voir la demande</button>
+            {!onBillingPage && <button onClick={() => navigate('/app/abonnement')} className="rounded-xl bg-amber-700 px-3 py-2.5 text-xs font-bold text-white hover:bg-amber-800">Voir la demande</button>}
           </div>
         </div>
       </div>

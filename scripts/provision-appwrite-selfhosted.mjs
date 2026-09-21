@@ -10,6 +10,7 @@
  */
 import { createClient, databaseId, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
 import { allSchemas, bucketDefinitions, membersExtraAttributes, usernameAttribute, usernameIndex } from './appwrite-schema.mjs'
+import { subscriptionPlanCatalog, upsertSubscriptionPlan } from './subscription-plans-catalog.mjs'
 
 // La configuration (endpoint, projet, clé) vient de uniflow-backend/.env via le
 // module partagé, qui refuse de démarrer si elle est absente : ce script a
@@ -233,34 +234,16 @@ async function ensurePublicSubscriptionPlanRead() {
   }
 }
 
+/**
+ * Formule minimale garantie après provisionnement : la page tarifaire ne doit
+ * jamais être vide. Le catalogue complet s'écrit avec
+ * `node scripts/seed-subscription-plans.mjs` ; la définition vient du même
+ * fichier pour qu'un provisionnement ne réécrive pas une version divergente.
+ */
 async function ensureIndependentWhatsAppPlan() {
-  const data = {
-    code: 'personal_cm',
-    name: 'UniFlow Personnel',
-    category: 'PERSONAL',
-    countryCode: 'CM',
-    currency: 'XAF',
-    priceMonthlyAmount: 100,
-    priceAnnuallyAmount: 1000,
-    period: 'Abonnement personnel',
-    badge: 'Paiement WhatsApp',
-    highlight: false,
-    description: 'Accès indépendant UniFlow au Cameroun. La demande est enregistrée dans Appwrite puis confirmée manuellement après réception de la preuve WhatsApp.',
-    providers: '["WHATSAPP"]',
-    status: 'ACTIVE',
-  }
-  const created = await request('POST', `/databases/${databaseId}/collections/subscription_plans/documents`, {
-    documentId: 'personal_cm',
-    data,
-    permissions: ['read("any")'],
-  })
-  if (created.status === 409) {
-    await request('PATCH', `/databases/${databaseId}/collections/subscription_plans/documents/personal_cm`, {
-      data,
-      permissions: ['read("any")'],
-    })
-  }
-  console.log(created.status === 201 ? 'Formule indépendante WhatsApp créée.' : 'Formule indépendante WhatsApp mise à jour.')
+  const plan = subscriptionPlanCatalog.find((entry) => entry.code === 'personal_cm')
+  const outcome = await upsertSubscriptionPlan(request, databaseId, plan)
+  console.log(outcome === 'created' ? 'Formule indépendante WhatsApp créée.' : 'Formule indépendante WhatsApp mise à jour.')
 }
 
 await ensureDatabase();

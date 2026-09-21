@@ -1,3 +1,5 @@
+import { subscriptionPlanCatalog } from './subscription-plans-catalog.mjs'
+
 const endpoint = (process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://fra.cloud.appwrite.io/v1').replace(/\/+$/, '')
 const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || 'uniflow'
 const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY
@@ -201,11 +203,10 @@ async function ensureDemoUser(user) {
 for (const schema of schemas) await ensureCollection(schema)
 const removedUniversityProfiles = await deleteUniversityProfilesAndAccounts()
 for (const user of demoUsers) await ensureDemoUser(user)
-await upsertDocument('subscription_plans', 'academic_uy1_free', {
-  code: 'academic_uy1_free', name: 'Accès académique UY1', category: 'ACADEMIC', countryCode: 'CM', currency: 'XAF',
-  priceMonthlyAmount: 0, priceAnnuallyAmount: 0, period: 'Accès académique', badge: 'Université partenaire', highlight: true,
-  description: 'Accès gratuit aux fonctionnalités académiques UniFlow pour le parcours ICT4D L1 de l’Université de Yaoundé I.', providers: '[]', status: 'ACTIVE',
-})
+// La formule académique vient du catalogue partagé : ce script la décrivait
+// à part (avec `highlight: true` et sans avantages) et écrasait donc la version
+// du catalogue à chaque re-seed de la démonstration.
+await upsertDocument('subscription_plans', 'academic_uy1_free', subscriptionPlanCatalog.find((plan) => plan.code === 'academic_uy1_free'), ['read("any")'])
 for (const user of demoUsers) {
   await upsertDocument('subscription_statuses', `sub_${user.id.replace('demo_uy1_', '')}`, {
     userId: user.id, status: 'ACTIVE', planCode: 'academic_uy1_free', countryCode: 'CM', currency: 'XAF', monthlyAmount: 0,

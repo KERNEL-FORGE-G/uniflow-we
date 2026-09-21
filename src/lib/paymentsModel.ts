@@ -23,6 +23,8 @@ export interface WhatsappBillingInput {
   currency: string
   fullName?: string
   email?: string
+  /** Université / faculté : l'administration rattache le paiement à l'établissement. */
+  institution?: string
 }
 
 export function formatMoney(amount: number, currency: string): string {
@@ -40,6 +42,8 @@ export function whatsappBillingMessage(input: WhatsappBillingInput): string {
     `Bonjour UniFlow, je souhaite régler mon abonnement ${input.planName} (${billingCycleLabel(input.billingCycle)}) de ${formatMoney(input.amount, input.currency)}.`,
     `Référence : ${input.reference}`,
   ]
+  const institution = input.institution?.trim()
+  if (institution) lines.push(`Université / faculté : ${institution}`)
   if (input.fullName) lines.push(`Nom : ${input.fullName}`)
   if (input.email) lines.push(`Email : ${input.email}`)
   lines.push('Merci de m’indiquer les modalités de paiement.')
@@ -65,6 +69,7 @@ export interface AdminPaymentRow {
   fullName: string
   email: string
   reference: string
+  institution?: string
 }
 
 export interface AdminPaymentFilterState {
@@ -90,6 +95,20 @@ export function matchesPaymentFilters(row: AdminPaymentRow, filters: AdminPaymen
     if (requestedAt > end.getTime()) return false
   }
   const needle = filters.search.trim().toLowerCase()
-  if (needle && !`${row.fullName} ${row.email} ${row.reference}`.toLowerCase().includes(needle)) return false
+  if (needle && !`${row.fullName} ${row.email} ${row.reference} ${row.institution || ''}`.toLowerCase().includes(needle)) return false
   return true
+}
+
+/**
+ * Remise réelle du cycle annuel par rapport à douze mensualités, en pourcentage
+ * entier. Le parcours affichait « -20 % » en dur alors que les formules valent
+ * dix mensualités (deux mois offerts, soit -17 %) : le chiffre est désormais
+ * calculé sur les montants de la formule, et vaut 0 si l'annuel n'est pas
+ * moins cher.
+ */
+export function annualSavingsPercent(monthlyAmount: number, annualAmount: number): number {
+  if (!(monthlyAmount > 0) || !(annualAmount >= 0)) return 0
+  const yearAtMonthlyRate = monthlyAmount * 12
+  if (annualAmount >= yearAtMonthlyRate) return 0
+  return Math.round(((yearAtMonthlyRate - annualAmount) / yearAtMonthlyRate) * 100)
 }
