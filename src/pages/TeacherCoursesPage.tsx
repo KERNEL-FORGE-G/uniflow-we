@@ -6,6 +6,8 @@ import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { coursesApi, gradesApi, Course } from '../lib/api'
 import type { LucideIcon } from 'lucide-react'
+import { ExportButtons } from '../components/exports/ExportButtons'
+import { courseGradesDocument } from '../lib/exports'
 
 const CC_COEFFICIENT = 3
 const EXAM_COEFFICIENT = 7
@@ -41,7 +43,7 @@ const getCourseIcon = (code: string): LucideIcon => {
 }
 
 export default function TeacherCoursesPage() {
-  const {} = useUserRole()
+  const { currentUser } = useUserRole()
   const navigate = useNavigate()
   const [courses, setCourses] = useState<Course[]>([])
   const [selCode, setSelCode] = useState<string | null>(null)
@@ -88,6 +90,21 @@ export default function TeacherCoursesPage() {
   const availableAverages = students.map(currentAverage).filter((value): value is number => value !== null)
   const avg = availableAverages.length ? Number((availableAverages.reduce((sum, value) => sum + value, 0) / availableAverages.length).toFixed(2)) : null
   const passRate = availableAverages.length ? Math.round((availableAverages.filter((value) => value >= 10).length / availableAverages.length) * 100) : null
+
+  // Le PV exporte la grille telle qu'affichée (y compris les notes saisies mais
+  // pas encore enregistrées) : c'est ce que l'enseignant a sous les yeux.
+  const gradesExport = () => (course && students.length
+    ? courseGradesDocument(students.map((student) => ({ studentId: student.id, name: student.name, matricule: student.matricule, cc: student.cc, exam: student.exam })), {
+      courseCode: course.code,
+      courseName: course.name,
+      ccWeight: CC_COEFFICIENT / (CC_COEFFICIENT + EXAM_COEFFICIENT),
+      examWeight: EXAM_COEFFICIENT / (CC_COEFFICIENT + EXAM_COEFFICIENT),
+      teacherName: currentUser.name,
+      program: course.program,
+      level: course.level,
+      institution: currentUser.university,
+    })
+    : null)
 
   const updateGrade = (id: string, field: 'cc'|'exam', val: string) => {
     const value = val === '' ? undefined : Math.min(20, Math.max(0, Number(val)))
@@ -357,8 +374,9 @@ export default function TeacherCoursesPage() {
                   <h3 className="text-sm font-bold text-[#111827]">Saisie des notes — {course.code}</h3>
                   <p className="text-xs text-[#9ca3af]">Coefficient : CC 30% / Examen 70% · Note /20</p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Badge variant="primary">Pondération 30/70</Badge>
+                  <ExportButtons getDocument={gradesExport} disabled={students.length === 0} disabledReason="Aucun étudiant inscrit à exporter." />
                   <button onClick={() => void handleSaveGrades()} disabled={savingGrades || students.length === 0}
                     className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
                     <Save className="h-3.5 w-3.5" /> {savingGrades ? 'Enregistrement…' : 'Enregistrer les notes'}

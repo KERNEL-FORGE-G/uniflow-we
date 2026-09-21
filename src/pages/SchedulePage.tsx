@@ -3,6 +3,9 @@ import { ChevronLeft, ChevronRight, RefreshCw, AlertCircle, Clock, MapPin, User,
 import { useApi } from '../hooks/useApi'
 import { schedulesApi, type Schedule } from '../lib/api'
 import { useUserRole } from '../utils/userRole'
+import { ExportButtons } from '../components/exports/ExportButtons'
+import { timetableDocument } from '../lib/exports'
+import { toTimetableSlots } from '../lib/exports/adapters'
 
 const DAY_LABELS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 const DAY_KEYS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
@@ -84,6 +87,13 @@ export default function SchedulePage() {
     }
   }, [schedules, weekOffset, focusDay])
 
+  const scopeLabel = currentRole === 'teacher'
+    ? `Cours de ${currentUser.name}`
+    : currentUser.scopeLabel || [currentUser.program || currentUser.filiere, currentUser.level].filter(Boolean).join(' ') || 'Ma filière'
+  const timetableExport = () => (schedules?.length
+    ? timetableDocument(toTimetableSlots(schedules), { scopeLabel, institution: currentUser.university, weekLabel: weekRangeLabel.replace(/^Cette semaine · /, 'Semaine du ') })
+    : null)
+
   if (loading) return <div className="space-y-4 animate-fade-in"><div className="h-36 rounded-2xl bg-slate-100 animate-pulse" /><div className="h-[620px] rounded-2xl bg-slate-100 animate-pulse" /></div>
   if (error) return <div className="flex flex-col items-center justify-center gap-4 py-20"><AlertCircle className="h-12 w-12 text-red-400" /><p className="text-sm text-slate-600">{error}</p><button onClick={refetch} className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white"><RefreshCw className="h-4 w-4" /> Réessayer</button></div>
 
@@ -107,7 +117,7 @@ export default function SchedulePage() {
         </section>
       )}
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3"><div className="flex flex-wrap gap-3">{Object.entries(typeColors).map(([type, className]) => <span key={type} className="flex items-center gap-1.5 text-xs font-bold text-slate-600"><span className={`h-2.5 w-2.5 rounded-sm ${className.split(' ')[0]}`} /> {type}</span>)}</div><p className="text-xs font-semibold text-slate-500">Sélectionnez un jour pour le mettre en avant.</p></section>
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3"><div className="flex flex-wrap gap-3">{Object.entries(typeColors).map(([type, className]) => <span key={type} className="flex items-center gap-1.5 text-xs font-bold text-slate-600"><span className={`h-2.5 w-2.5 rounded-sm ${className.split(' ')[0]}`} /> {type}</span>)}</div><div className="flex flex-wrap items-center gap-3"><p className="text-xs font-semibold text-slate-500">Sélectionnez un jour pour le mettre en avant.</p><ExportButtons getDocument={timetableExport} disabled={!schedules?.length} disabledReason="Aucun créneau à exporter." /></div></section>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-x-auto"><div className="min-w-[1080px]"><div className="grid border-b border-slate-200" style={{ gridTemplateColumns: '68px repeat(6, minmax(168px, 1fr))' }}><div className="bg-slate-50" />{weekDays.map((day) => <button type="button" key={day.key} onClick={() => setFocusDay(day.key)} className={`border-l border-slate-200 px-2 py-3 text-center transition ${day.key === focusedDay?.key ? 'bg-sky-50 text-[#0f285f]' : day.isToday ? 'bg-blue-50 text-[#1e3a8a]' : 'text-slate-600 hover:bg-slate-50'}`}><span className="block text-xs font-black uppercase tracking-wider">{day.label}</span><span className="mt-1 block text-xs font-semibold">{day.formattedDate}</span>{day.isToday && <span className="mt-1 inline-block rounded-full bg-[#1e3a8a] px-2 py-0.5 text-[9px] font-black text-white">AUJOURD’HUI</span>}</button>)}</div><div className="grid relative" style={{ gridTemplateColumns: '68px repeat(6, minmax(168px, 1fr))' }}><div className="border-r border-slate-200 bg-slate-50/80">{hours.map((hour) => <div key={hour} className="border-b border-slate-100 pr-2 text-right text-[10px] font-bold text-slate-400" style={{ height: CELL_H }}><span className="relative -top-2">{hour}</span></div>)}</div>{weekDays.map((day) => <div key={day.key} className={`relative border-r border-slate-200 ${day.key === focusedDay?.key ? 'bg-sky-50/40' : day.isToday ? 'bg-blue-50/30' : 'bg-white'}`}>{hours.map((hour) => <div key={hour} className="border-b border-slate-100" style={{ height: CELL_H }} />)}{(grouped[day.key] ?? []).map((schedule) => { const palette = typeColors[schedule.course?.type ?? 'CM'] ?? typeColors.CM; const height = timeDuration(schedule.startTime, schedule.endTime); return <button type="button" key={schedule.id} onClick={() => setSelected(schedule)} className={`absolute left-1 right-1 overflow-hidden rounded-xl border ${palette} p-2 text-left text-white shadow-sm transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-md ${day.key === focusedDay?.key ? 'ring-2 ring-sky-300 ring-offset-1' : ''}`} style={{ top: timeToRow(schedule.startTime, firstHour), height: Math.max(height - 6, 30) }}><span className="flex items-center justify-between gap-1"><span className="rounded bg-white/20 px-1 py-0.5 text-[8px] font-black tracking-wide">{schedule.course?.code}</span><span className="text-[8px] font-bold text-white/85">{schedule.course?.type ?? 'CM'}</span></span><span className="mt-1 block line-clamp-2 text-[10px] font-black leading-tight">{schedule.course?.name}</span><span className="mt-1 block text-[9px] font-semibold text-white/90">{schedule.startTime} – {schedule.endTime}</span>{height > 64 && <span className="mt-0.5 block truncate text-[9px] text-white/75">{schedule.course?.classroom?.name}</span>}</button> })}</div>)}</div></div></section>
 

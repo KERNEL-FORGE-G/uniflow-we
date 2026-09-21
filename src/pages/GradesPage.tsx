@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Download, GraduationCap, Loader2, RefreshCw, TrendingUp, Trophy, Sparkles, BookOpen, AlertCircle } from 'lucide-react'
+import { GraduationCap, Loader2, RefreshCw, TrendingUp, Trophy, Sparkles, BookOpen, AlertCircle } from 'lucide-react'
 import { gradesApi, type Grade } from '../lib/api'
+import { useUserRole } from '../utils/userRole'
+import { ExportButtons } from '../components/exports/ExportButtons'
+import { transcriptDocument } from '../lib/exports'
+import { toGradeEntries, transcriptStudentFromProfile } from '../lib/exports/adapters'
 
 type GradeWithScale = Grade
 
@@ -28,6 +32,7 @@ function scoreTone(percent: number) {
 }
 
 export default function GradesPage() {
+  const { currentUser } = useUserRole()
   const [grades, setGrades] = useState<Grade[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -68,24 +73,9 @@ export default function GradesPage() {
     return best
   }, null), [grades])
 
-  const exportGrades = () => {
-    const content = [
-      'RELEVÉ DE NOTES UNIFLOW',
-      `Moyenne calculée : ${average ? `${average}/20` : 'Aucune donnée'}`,
-      '',
-      ...grades.map((rawGrade) => {
-        const grade = rawGrade as GradeWithScale
-        return `${gradeLabel(grade)} — ${scoreValue(grade)}/${maxValue(grade)} — coefficient ${grade.coef} — ${subjectLabel(grade)}`
-      }),
-    ].join('\n')
-    const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const anchor = document.createElement('a')
-    anchor.href = url
-    anchor.download = 'uniflow-releve-notes.txt'
-    anchor.click()
-    URL.revokeObjectURL(url)
-  }
+  // Le relevé PDF/Excel remplace l'ancien export texte brut : même source (les
+  // notes chargées), mais un document daté, lisible et imprimable.
+  const transcriptExport = () => (grades.length ? transcriptDocument(toGradeEntries(grades), transcriptStudentFromProfile(currentUser)) : null)
 
   return (
     <div className="relative space-y-6 pb-10">
@@ -121,9 +111,7 @@ export default function GradesPage() {
           <button type="button" onClick={() => void loadGrades()} disabled={loading} className="rounded-xl border border-slate-200 p-2.5 text-slate-600 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="Actualiser">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button type="button" onClick={exportGrades} disabled={!grades.length} className="flex items-center gap-1.5 rounded-xl bg-slate-900 px-3.5 py-2.5 text-xs font-bold text-white transition hover:bg-teal-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-slate-900">
-            <Download className="h-4 w-4" /> Exporter
-          </button>
+          <ExportButtons getDocument={transcriptExport} disabled={loading || !grades.length} disabledReason="Aucune note à exporter pour le moment." />
         </div>
       </div>
 

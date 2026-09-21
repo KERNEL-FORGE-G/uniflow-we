@@ -2,6 +2,10 @@ import { useMemo, useState } from 'react'
 import { CalendarClock, CheckCircle2, Clock3, Filter, Loader2, UserCheck, Users, XCircle } from 'lucide-react'
 import { useApi } from '../../hooks/useApi'
 import { attendanceApi, type AttendanceRecord, type AttendanceSession } from '../../lib/api'
+import { useUserRole } from '../../utils/userRole'
+import { ExportButtons } from '../../components/exports/ExportButtons'
+import { attendanceCourseDocument, attendanceSessionDocument } from '../../lib/exports'
+import { toAttendanceExportSession } from '../../lib/exports/adapters'
 
 const statusStyle: Record<AttendanceRecord['status'], { label: string; className: string }> = {
   PRESENT: { label: 'Présent', className: 'bg-emerald-50 text-emerald-700 ring-emerald-200' },
@@ -29,6 +33,12 @@ export default function AttendanceHistoryPage() {
     return true
   }), [sessions, courseId, status])
   const recordsCount = filtered.reduce((total, session) => total + session.records.length, 0)
+  const { currentUser } = useUserRole()
+  const exportContext = { institution: currentUser.university }
+  // La grille par UE n'a de sens que pour un seul cours : toutes les séances
+  // d'un même cours deviennent des colonnes, mélanger plusieurs cours serait illisible.
+  const courseExportReady = courseId !== 'all' && filtered.some((session) => session.records.length > 0)
+  const courseExport = () => (courseExportReady ? attendanceCourseDocument(filtered.map((session) => toAttendanceExportSession(session)), exportContext) : null)
 
   if (loading) return <div className="flex min-h-[420px] items-center justify-center"><Loader2 className="h-7 w-7 animate-spin text-[#1e3a8a]" /></div>
   if (error) return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800"><p>{error}</p><button onClick={refetch} className="mt-3 rounded-lg bg-rose-700 px-3 py-2 text-xs font-bold text-white">Réessayer</button></div>
@@ -63,6 +73,9 @@ export default function AttendanceHistoryPage() {
             </select>
           </label>
           <button onClick={() => { setCourseId('all'); setStatus('all') }} className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100"><Filter className="h-3.5 w-3.5" /> Réinitialiser</button>
+          <div className="ml-auto grid gap-1 text-xs font-bold text-slate-600">Grille de l’UE
+            <ExportButtons getDocument={courseExport} disabled={!courseExportReady} disabledReason={courseId === 'all' ? 'Choisissez un cours pour exporter la grille de ses séances.' : 'Aucun relevé à exporter pour ce cours.'} />
+          </div>
         </div>
       </section>
 
@@ -83,7 +96,7 @@ export default function AttendanceHistoryPage() {
                 <span className="text-xs text-slate-500"><span className="block font-bold text-slate-800">Séance · {when(session.date, { dateStyle: 'full' })}</span><span className="mt-1 flex items-center gap-1"><Clock3 className="h-3 w-3" /> Créée {when(session.createdAt)}</span></span>
                 <span className="grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600"><span className="font-bold text-emerald-700">{present} présents</span><span>{session.records.length} relevés</span><span className="col-span-2 text-slate-400">{isExpanded ? 'Masquer le détail' : 'Voir le détail'}</span></span>
               </button>
-              {isExpanded && <div className="border-t border-slate-100 bg-slate-50/60 p-4"><div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead className="text-left text-xs uppercase tracking-wide text-slate-400"><tr><th className="pb-2 font-bold">Apprenant</th><th className="pb-2 font-bold">Matricule</th><th className="pb-2 font-bold">Statut</th><th className="pb-2 font-bold">Relevé enregistré</th></tr></thead><tbody className="divide-y divide-slate-100">{session.records.map((record) => <tr key={record.id}><td className="py-3 font-semibold text-slate-800">{record.student ? `${record.student.firstName} ${record.student.lastName}` : 'Apprenant non résolu'}</td><td className="py-3 font-mono text-xs text-slate-500">{record.student?.matricule ?? record.studentId}</td><td className="py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${statusStyle[record.status].className}`}>{statusStyle[record.status].label}</span></td><td className="py-3 text-xs text-slate-500">{when(record.createdAt)}</td></tr>)}</tbody></table></div>{session.records.length === 0 && <p className="py-4 text-center text-sm text-slate-500">Cette séance Appwrite ne contient encore aucun relevé.</p>}</div>}
+              {isExpanded && <div className="border-t border-slate-100 bg-slate-50/60 p-4"><div className="mb-3 flex flex-wrap items-center justify-between gap-2"><p className="text-xs font-bold uppercase tracking-wide text-slate-500">Liste d’émargement de la séance</p><ExportButtons getDocument={() => attendanceSessionDocument(toAttendanceExportSession(session), exportContext)} disabled={session.records.length === 0} disabledReason="Aucun relevé dans cette séance." /></div><div className="overflow-x-auto"><table className="w-full min-w-[640px] text-sm"><thead className="text-left text-xs uppercase tracking-wide text-slate-400"><tr><th className="pb-2 font-bold">Apprenant</th><th className="pb-2 font-bold">Matricule</th><th className="pb-2 font-bold">Statut</th><th className="pb-2 font-bold">Relevé enregistré</th></tr></thead><tbody className="divide-y divide-slate-100">{session.records.map((record) => <tr key={record.id}><td className="py-3 font-semibold text-slate-800">{record.student ? `${record.student.firstName} ${record.student.lastName}` : 'Apprenant non résolu'}</td><td className="py-3 font-mono text-xs text-slate-500">{record.student?.matricule ?? record.studentId}</td><td className="py-3"><span className={`rounded-full px-2.5 py-1 text-xs font-bold ring-1 ${statusStyle[record.status].className}`}>{statusStyle[record.status].label}</span></td><td className="py-3 text-xs text-slate-500">{when(record.createdAt)}</td></tr>)}</tbody></table></div>{session.records.length === 0 && <p className="py-4 text-center text-sm text-slate-500">Cette séance Appwrite ne contient encore aucun relevé.</p>}</div>}
             </article>
           })}
         </div>

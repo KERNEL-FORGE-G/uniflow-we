@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react'
-import { QrCode, Download, UserCheck, RefreshCw, AlertTriangle, Wifi, FileSpreadsheet, Check, Clock, X, HelpCircle, Megaphone, User, CheckCircle2, Loader2 } from 'lucide-react'
+import { QrCode, Download, UserCheck, RefreshCw, AlertTriangle, Wifi, Check, Clock, X, HelpCircle, Megaphone, User, CheckCircle2, Loader2 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
-import { attendanceApi, Course, Student } from '../lib/api'
+import { attendanceApi, Course, Student, type AttendanceSession } from '../lib/api'
+import { ExportButtons } from '../components/exports/ExportButtons'
+import { attendanceCourseDocument, attendanceSessionDocument, type AttendanceStatusCode } from '../lib/exports'
+import { toAttendanceExportSession } from '../lib/exports/adapters'
 
 type RollStatus = 'Présent' | 'Absent' | 'Late' | 'Excusé'
 
@@ -13,7 +16,15 @@ interface StudentRoll {
   id: string
   name: string
   email: string
+  matricule?: string
   status: RollStatus
+}
+
+const STATUS_TO_APPWRITE: Record<RollStatus, AttendanceStatusCode> = {
+  'Présent': 'PRESENT',
+  'Absent': 'ABSENT',
+  'Late': 'RETARD',
+  'Excusé': 'JUSTIFIE',
 }
 
 type ProximityPosition = { latitude: number; longitude: number; accuracy: number }
@@ -36,6 +47,7 @@ export default function AttendanceManagePage() {
   const [courses, setCourses] = useState<Course[]>([])
   const [selectedCode, setSelectedCode] = useState<string | null>(null)
   const [students, setStudents] = useState<StudentRoll[]>([])
+  const [courseSessions, setCourseSessions] = useState<AttendanceSession[]>([])
   const [showQR, setShowQR] = useState(false)
   const [qrSession, setQrSession] = useState<{ payload: string; expiresAt: string; sessionId: string } | null>(null)
   const [qrLoading, setQrLoading] = useState(false)
@@ -73,6 +85,7 @@ export default function AttendanceManagePage() {
     const selectedCourse = courses.find((item) => item.code === selectedCode)
     if (!selectedCourse?.id) {
       setStudents([])
+      setCourseSessions([])
       return
     }
     const courseId: string = selectedCourse.id
@@ -95,11 +108,13 @@ export default function AttendanceManagePage() {
         ])
         const todaySession = courseSessions.find((session) => session.date.slice(0, 10) === todayKey)
         if (!mounted) return
+        setCourseSessions(courseSessions)
         const persistedStatuses = new Map(todaySession?.records.map((record) => [record.studentId, record.status]) ?? [])
         setStudents(enrolledStudents.map((student) => ({
           id: student.id,
           name: `${student.firstName} ${student.lastName}`.trim(),
           email: student.user?.email || '',
+          matricule: student.matricule || undefined,
           status: persistedStatuses.get(student.id)
             ? statusFromAppwrite[persistedStatuses.get(student.id) as keyof typeof statusFromAppwrite]
             : 'Présent',
@@ -136,16 +151,10 @@ export default function AttendanceManagePage() {
     setSaving(true)
     setError(null)
     try {
-      const statusMap: Record<RollStatus, 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'> = {
-        'Présent': 'PRESENT',
-        'Absent': 'ABSENT',
-        'Late': 'RETARD',
-        'Excusé': 'JUSTIFIE',
-      }
       await attendanceApi.saveTodayRoll({
         courseId: course.id,
         date: new Date().toISOString(),
-        rows: students.map((student) => ({ studentId: student.id, status: statusMap[student.status] })),
+        rows: students.map((student) => ({ studentId: student.id, status: STATUS_TO_APPWRITE[student.status] })),
       })
       setSaved(true)
       setPending(0)
@@ -172,6 +181,22 @@ export default function AttendanceManagePage() {
       setQrLoading(false)
     }
   }
+
+  const exportContext = { institution: currentUser.university, program: course?.program, level: course?.level }
+  // La liste du jour exporte l'appel tel qu'affiché, même non encore validé :
+  // c'est la feuille que le délégué fait signer en salle, avant l'enregistrement.
+  const todayRollExport = () => (course && students.length
+    ? attendanceSessionDocument({
+      id: 'today',
+      date: new Date().toISOString(),
+      courseCode: course.code,
+      courseName: course.name,
+      teacherName: course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}`.trim() : undefined,
+      records: students.map((student) => ({ studentId: student.id, studentName: student.name, matricule: student.matricule, status: STATUS_TO_APPWRITE[student.status] })),
+    }, exportContext)
+    : null)
+  const recordedSessions = courseSessions.filter((session) => session.records.length > 0)
+  const courseHistoryExport = () => (recordedSessions.length ? attendanceCourseDocument(recordedSessions.map((session) => toAttendanceExportSession(session)), exportContext) : null)
 
   if (loading) {
     return (
@@ -201,21 +226,17 @@ export default function AttendanceManagePage() {
               {qrLoading ? 'Création Appwrite…' : 'Générer QR'}
             </button>
           )}
-          <button
-            onClick={() => {
-              const rows = ['Matricule,Nom,Statut,Heure']
-              students.forEach((s: any) => rows.push(`${s.id},"${s.name}",${s.status || 'Non marqué'},${new Date().toLocaleTimeString('fr-FR')}`))
-              const csv = rows.join('\n')
-              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-              const url = URL.createObjectURL(blob)
-              const a = document.createElement('a')
-              a.href = url; a.download = `appel-${selectedCode || 'cours'}-${new Date().toISOString().split('T')[0]}.csv`; a.click()
-              URL.revokeObjectURL(url)
-            }}
-            className="flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 transition-colors"
-          >
-            <FileSpreadsheet className="h-4 w-4" /> Exporter CSV
-          </button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-[#e5e7eb] bg-white px-5 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-bold uppercase tracking-wide text-[#6b7280]">Feuille du jour</span>
+          <ExportButtons getDocument={todayRollExport} disabled={attendanceLoading || students.length === 0} disabledReason="Aucun étudiant inscrit à ce cours." />
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <span className="text-xs font-bold uppercase tracking-wide text-[#6b7280]">Historique de l’UE ({recordedSessions.length} séance{recordedSessions.length > 1 ? 's' : ''})</span>
+          <ExportButtons getDocument={courseHistoryExport} disabled={attendanceLoading || recordedSessions.length === 0} disabledReason="Aucune séance enregistrée pour ce cours." />
         </div>
       </div>
 
