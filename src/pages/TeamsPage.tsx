@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { ExternalLink, Github, UsersRound, WifiOff } from 'lucide-react'
+import { ExternalLink, Github, MessageCircle, UsersRound, WifiOff } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { TeamGrid, TeamMemberCardSkeleton } from '../components/team/TeamMemberCard'
 import { ActionResult } from '../components/feedback/ActionResult'
 import { Container } from '../components/layout/Page'
 import { listTeamMembers, type TeamMemberDocument } from '../lib/appwrite'
-import { COVERAGE_UNIVERSITY } from '../lib/contactInfo'
+import { COVERAGE_UNIVERSITY, KERNEL_FORGE_GITHUB_URL, KERNEL_FORGE_WHATSAPP_GROUP_URL } from '../lib/contactInfo'
 
 /**
  * Page publique de l'équipe, reprise de la référence visuelle du propriétaire
@@ -92,14 +92,24 @@ export default function TeamsPage() {
         <Container width="narrow">
           <h2 className="text-2xl font-black sm:text-3xl">KERNEL FORGE, la startup derrière UniFlow</h2>
           <p className="mt-3 text-sm text-slate-300">Née à l’Université de Yaoundé I, KERNEL FORGE construit UniFlow comme son premier produit — avec l’ambition de devenir une entreprise de logiciel à part entière, qui livre des projets pour des clients de tous secteurs, au Cameroun comme à travers le monde.</p>
-          <a
-            href="https://github.com/KERNEL-FORGE-G"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#14b8a8] px-6 py-3 text-xs font-black text-[#0b0f19] shadow-lg transition hover:translate-y-[-2px] hover:bg-[#f59e0b]"
-          >
-            <Github className="h-4 w-4" /> Organisation GitHub <ExternalLink className="h-3.5 w-3.5" />
-          </a>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={KERNEL_FORGE_WHATSAPP_GROUP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-[#25d366] px-6 py-3 text-xs font-black text-[#0b0f19] shadow-lg transition hover:translate-y-[-2px] hover:bg-[#f59e0b]"
+            >
+              <MessageCircle className="h-4 w-4" /> Rejoindre le groupe WhatsApp <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+            <a
+              href={KERNEL_FORGE_GITHUB_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-full bg-[#14b8a8] px-6 py-3 text-xs font-black text-[#0b0f19] shadow-lg transition hover:translate-y-[-2px] hover:bg-[#f59e0b]"
+            >
+              <Github className="h-4 w-4" /> Organisation GitHub <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
         </Container>
       </section>
 

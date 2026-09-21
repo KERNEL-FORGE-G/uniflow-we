@@ -3,7 +3,7 @@ import { ArrowRight, Menu, X, Lock } from 'lucide-react'
 import { useState } from 'react'
 import { KERNEL_FORGE_LOGO_ALT, KERNEL_FORGE_LOGO_FALLBACK_URL, KERNEL_FORGE_LOGO_URL, UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_FALLBACK_URL, UNIFLOW_PRIMARY_LOGO_URL } from '../../lib/brandAssets'
 import { useUserRole } from '../../utils/userRole'
-import { CONTACT_PHONE_DISPLAY, COVERAGE_LABEL, COVERAGE_SHORT } from '../../lib/contactInfo'
+import { CONTACT_PHONE_DISPLAY, COVERAGE_LABEL, COVERAGE_SHORT, KERNEL_FORGE_GITHUB_URL, KERNEL_FORGE_WHATSAPP_GROUP_URL } from '../../lib/contactInfo'
 import { LEGAL_DOCUMENTS } from '../../data/legal'
 
 const logo = UNIFLOW_PRIMARY_LOGO_URL
@@ -173,10 +173,16 @@ export function LandingFooter() {
               {[
                 { to: '/presentation', label: 'Documentation du projet' },
                 { to: '/contact', label: 'Support' },
-                { to: '/forum', label: 'Communauté' },
+                { to: '/forum', label: 'Forum' },
+                { to: KERNEL_FORGE_WHATSAPP_GROUP_URL, label: 'Groupe WhatsApp KERNEL FORGE', external: true },
+                { to: KERNEL_FORGE_GITHUB_URL, label: 'GitHub', external: true },
               ].map(l => (
                 <li key={l.label}>
-                  <Link to={l.to} className="text-slate-400 hover:text-white transition-colors">{l.label}</Link>
+                  {l.external ? (
+                    <a href={l.to} target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-white transition-colors">{l.label}</a>
+                  ) : (
+                    <Link to={l.to} className="text-slate-400 hover:text-white transition-colors">{l.label}</Link>
+                  )}
                 </li>
               ))}
             </ul>

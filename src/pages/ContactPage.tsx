@@ -5,7 +5,7 @@ import {
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { executeContactMessageAction } from '../lib/appwrite'
-import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_URL, COVERAGE_LABEL, whatsappUrlWithMessage } from '../lib/contactInfo'
+import { CONTACT_PHONE_DISPLAY, CONTACT_PHONE_URL, COVERAGE_LABEL, KERNEL_FORGE_WHATSAPP_GROUP_URL, whatsappUrlWithMessage } from '../lib/contactInfo'
 
 export default function ContactPage() {
   const [fullName, setFullName] = useState('')
@@ -118,6 +118,14 @@ export default function ContactPage() {
                         className="text-[11px] font-semibold text-teal-700 hover:underline"
                       >
                         Écrire sur WhatsApp — facturation et support
+                      </a>
+                      <a
+                        href={KERNEL_FORGE_WHATSAPP_GROUP_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-1 block text-[11px] font-semibold text-teal-700 hover:underline"
+                      >
+                        Rejoindre le groupe WhatsApp KERNEL FORGE
                       </a>
                     </div>
                     <button

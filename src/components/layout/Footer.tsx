@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { Monitor, Smartphone, Globe } from 'lucide-react'
 import { LEGAL_DOCUMENTS } from '../../data/legal'
-import { CONTACT_PHONE_DISPLAY, CONTACT_WHATSAPP_URL } from '../../lib/contactInfo'
+import { CONTACT_PHONE_DISPLAY, CONTACT_WHATSAPP_URL, KERNEL_FORGE_WHATSAPP_GROUP_URL } from '../../lib/contactInfo'
 
 /**
  * Pied de page de l'espace connecté.
@@ -27,6 +27,7 @@ const COLUMNS: Array<{ title: string; links: Array<{ label: string; to: string; 
       { label: "Centre d'aide", to: '/app/aide' },
       { label: 'Contact', to: '/contact' },
       { label: `WhatsApp ${CONTACT_PHONE_DISPLAY}`, to: CONTACT_WHATSAPP_URL, external: true },
+      { label: 'Groupe WhatsApp KERNEL FORGE', to: KERNEL_FORGE_WHATSAPP_GROUP_URL, external: true },
     ],
   },
   {
