@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
+import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth'
 import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff, CheckCircle2, Plus, Sparkles, CreditCard, Loader2, Trash2, AlertCircle } from 'lucide-react'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
@@ -47,6 +49,18 @@ export default function SettingsPage() {
 
   const [showCurrentPwd, setShowCurrentPwd] = useState(false)
   const [showNewPwd, setShowNewPwd] = useState(false)
+
+  // Suppression du compte : le bouton ouvrait un `alert()` qui n'effaçait
+  // rien. La confirmation demande de taper le mot, puis `deleteAccount` appelle
+  // le service `/account` et nettoie l'appareil.
+  const { deleteAccount, loading: deleting } = useAuth()
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteWord, setDeleteWord] = useState('')
+  const [deleteError, setDeleteError] = useState<string | null>(null)
+  const confirmDelete = async () => {
+    setDeleteError(null)
+    try { await deleteAccount() } catch (err) { setDeleteError(err instanceof Error ? err.message : 'La suppression a échoué.') }
+  }
 
   const [fullName, setFullName] = useState(user.name)
   const [email, setEmail] = useState(user.email)
@@ -516,16 +530,62 @@ export default function SettingsPage() {
               </div>
               <div className="mt-5 rounded-xl bg-amber-50 border border-amber-200 p-4">
                 <p className="text-sm font-semibold text-amber-800">Données personnelles</p>
-                <p className="text-xs text-amber-700 mt-1">Vos données sont traitées conformément au RGPD. Vous pouvez demander l'export ou la suppression de vos données.</p>
-                <div className="flex gap-2 mt-3">
+                <p className="text-xs text-amber-700 mt-1">
+                  Vos données sont traitées selon notre <Link to="/confidentialite" className="font-semibold underline underline-offset-2">politique de confidentialité</Link> ; vos <Link to="/droits-des-utilisateurs" className="font-semibold underline underline-offset-2">droits</Link> (accès, rectification, effacement, portabilité) s'exercent ici ou en nous écrivant.
+                </p>
+                <div className="flex flex-wrap gap-2 mt-3">
                   <button onClick={handleExportData} type="button" className="rounded-xl bg-white border border-amber-300 px-4 py-1.5 text-xs font-bold text-amber-800 hover:bg-amber-100 transition-colors">
                     Exporter mes données
                   </button>
-                  <button onClick={() => { if (confirm('Êtes-vous sûr de vouloir demander la suppression de votre compte ?')) alert('Demande de suppression enregistrée.') }} type="button" className="rounded-xl bg-red-50 border border-red-200 px-4 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors">
+                  <button onClick={() => { setDeleteOpen(true); setDeleteWord(''); setDeleteError(null) }} type="button" className="rounded-xl bg-red-50 border border-red-200 px-4 py-1.5 text-xs font-bold text-red-700 hover:bg-red-100 transition-colors">
                     Supprimer mon compte
                   </button>
                 </div>
               </div>
+
+              {deleteOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/60 p-4 backdrop-blur-sm animate-fade-in-fast" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+                  <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-scale-in">
+                    <div className="flex items-start gap-3">
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Trash2 className="h-5 w-5" /></span>
+                      <div>
+                        <h3 id="delete-account-title" className="text-base font-bold text-[#111827]">Supprimer définitivement votre compte ?</h3>
+                        <p className="mt-1 text-sm text-[#6b7280]">
+                          Votre compte, votre profil, votre photo, vos notifications et votre espace personnel seront effacés immédiatement. Cette action est irréversible.
+                        </p>
+                      </div>
+                    </div>
+                    <label className="mt-5 block text-xs font-semibold text-[#374151]">
+                      Tapez <span className="font-mono text-red-700">SUPPRIMER</span> pour confirmer
+                      <input
+                        autoFocus
+                        value={deleteWord}
+                        onChange={(event) => setDeleteWord(event.target.value)}
+                        className="mt-1.5 w-full rounded-xl border border-[#e5e7eb] px-3 py-2.5 text-sm font-mono tracking-wider text-[#111827] outline-none focus:border-red-400 focus:ring-4 focus:ring-red-100"
+                        placeholder="SUPPRIMER"
+                        aria-label="Confirmation de suppression"
+                      />
+                    </label>
+                    {deleteError && (
+                      <p className="mt-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert"><AlertCircle className="h-4 w-4 shrink-0" />{deleteError}</p>
+                    )}
+                    <div className="mt-5 flex justify-end gap-2">
+                      <button type="button" onClick={() => setDeleteOpen(false)} disabled={deleting} className="rounded-xl border border-[#e5e7eb] px-4 py-2 text-sm font-semibold text-[#374151] transition hover:bg-[#f3f4f6] disabled:opacity-50">
+                        Annuler
+                      </button>
+                      <button
+                        type="button"
+                        onClick={confirmDelete}
+                        disabled={deleting || deleteWord.trim().toUpperCase() !== 'SUPPRIMER'}
+                        className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white shadow transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        {deleting ? 'Suppression…' : 'Supprimer mon compte'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

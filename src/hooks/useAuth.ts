@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { createAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowUser } from '@/lib/appwrite'
+import { createAccount, deleteOwnAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowUser } from '@/lib/appwrite'
 import { clearSessionSnapshot, persistSessionSnapshot } from '@/lib/sessionPersistence'
 import { setAccountType, type BackendUser } from '@/lib/api'
 import { logoutNavigationState, terminateSession, type LogoutReason } from '@/lib/session'
@@ -165,5 +165,25 @@ export function useAuth() {
 
   const isAuthenticated = useCallback(() => Boolean(authUser), [authUser])
 
-  return { login, register, logout, getCurrentUser, isAuthenticated, loading, error, setError }
+  /**
+   * Droit à l'effacement : le serveur supprime le compte et ses données, puis
+   * l'appareil est nettoyé comme pour une déconnexion (le compte n'existant
+   * plus, la fermeture de session distante échoue silencieusement).
+   */
+  const deleteAccount = useCallback(async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      await deleteOwnAccount()
+      await logout('account_deleted')
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'La suppression du compte a échoué.'
+      setError(msg)
+      throw err
+    } finally {
+      setLoading(false)
+    }
+  }, [logout])
+
+  return { login, register, logout, deleteAccount, getCurrentUser, isAuthenticated, loading, error, setError }
 }

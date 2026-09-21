@@ -7,11 +7,15 @@ import {
 import { adminNavGroups } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
 import { cn } from '../../utils/cn'
-import { Suspense, useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import { PageTransition } from '../motion/PageTransition'
 import { Skeleton } from '../ui/Skeleton'
 import { useAuth } from '../../hooks/useAuth'
+
+// L'administration a le même assistant que l'espace connecté : Flo connaît
+// les chiffres du périmètre (annuaire, UE, séances, filières).
+const UniAssistant = lazy(() => import('../assistant/UniAssistant').then((module) => ({ default: module.UniAssistant })))
 
 function AdminSidebar() {
   return (
@@ -210,6 +214,7 @@ export function AdminLayout() {
           </AnimatePresence>
         </main>
       </div>
+      <Suspense fallback={null}><UniAssistant /></Suspense>
     </div>
   )
 }

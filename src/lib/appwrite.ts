@@ -41,7 +41,9 @@ export const APPWRITE_API_FUNCTION_ID = String(import.meta.env.VITE_APPWRITE_API
 export type UniFlowServicePath =
   | '/academic-grades'
   | '/academic-registration'
+  | '/account'
   | '/admin-directory'
+  | '/assistant'
   | '/attendance-secure'
   | '/contact-messages'
   | '/forum-reactions'
@@ -464,6 +466,49 @@ export async function executeSubscriptionPaymentAction(payload: SubscriptionPaym
   return response
 }
 
+// ---------------------------------------------------------------------------
+// Assistant « Uni »
+//
+// Les clés Gemini / Mistral vivent dans les variables de la Function : le
+// client n'envoie que l'historique de la conversation et reçoit le texte. Le
+// modèle est verrouillé côté serveur (`gemini-3.1-flash-lite`) ; `model` et
+// `provider` ne sont renvoyés qu'à titre d'information.
+// ---------------------------------------------------------------------------
+
+export type AssistantTurn = { role: 'user' | 'assistant'; content: string }
+
+export type AssistantRequest =
+  | { action: 'hello'; platform?: 'web' }
+  | { action: 'chat'; messages: AssistantTurn[]; platform?: 'web'; voice?: boolean }
+
+export type AssistantResponse = {
+  ok: boolean
+  code?: string
+  message?: string
+  action?: 'hello' | 'chat'
+  assistant?: string
+  provider?: 'gemini' | 'mistral'
+  model?: string
+  greeting?: string
+  reply?: string
+  suggestions?: string[]
+}
+
+export async function executeAssistantAction(payload: AssistantRequest): Promise<AssistantResponse> {
+  const execution = await awaitAppwrite(
+    executeService('/assistant', payload),
+    "l'assistant Uni",
+  )
+  let response: AssistantResponse
+  try { response = JSON.parse(execution.responseBody || '{}') as AssistantResponse } catch {
+    throw new Error("L'assistant a retourné une réponse invalide.")
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || "L'assistant n'a pas pu répondre.")
+  }
+  return response
+}
+
 export type { UniFlowAccountType, UniFlowRole } from './roles'
 
 export interface UniFlowUser {
@@ -693,6 +738,22 @@ export async function getCurrentAccount(accountType?: UniFlowAccountType): Promi
 
 export async function logoutAccount() {
   try { await awaitAppwrite(appwriteAccount.deleteSession('current'), 'la fermeture de session') } catch { /* already logged out */ }
+}
+
+/**
+ * Supprime le compte de l'utilisateur connecté (service `/account`,
+ * `delete-self`). Le serveur efface le compte Appwrite, le profil, l'annuaire,
+ * la photo et les données en propre ; l'appelant n'a plus de session après.
+ */
+export async function deleteOwnAccount(): Promise<void> {
+  const execution = await awaitAppwrite(executeService('/account', { action: 'delete-self' }), 'la suppression du compte')
+  let response: { ok?: boolean; message?: string }
+  try { response = JSON.parse(execution.responseBody || '{}') as { ok?: boolean; message?: string } } catch {
+    throw new Error('Le serveur a retourné une réponse invalide lors de la suppression du compte.')
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || 'La suppression du compte a échoué.')
+  }
 }
 
 /**

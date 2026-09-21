@@ -1,6 +1,8 @@
 import academicGrades from './services/academic-grades.js'
 import academicRegistration from './services/academic-registration.js'
+import account from './services/account.js'
 import adminDirectory from './services/admin-directory.js'
+import assistant from './services/assistant.js'
 import attendanceSecure from './services/attendance-secure.js'
 import contactMessages from './services/contact-messages.js'
 import forumReactions from './services/forum-reactions.js'
@@ -27,7 +29,13 @@ import { resolveServicePath } from './lib/router.js'
 const services = {
   '/academic-grades': academicGrades,
   '/academic-registration': academicRegistration,
+  // Suppression de compte par son titulaire : le mobile et le desktop
+  // l'appelaient déjà, sans service derrière (2026-09-21).
+  '/account': account,
   '/admin-directory': adminDirectory,
+  // Assistant « Flo » (Gemini 3.1 Flash-Lite, clés côté serveur) — ajouté le
+  // 2026-09-21 ; c'est le dixième service, le routeur n'a pas de limite.
+  '/assistant': assistant,
   '/attendance-secure': attendanceSecure,
   '/contact-messages': contactMessages,
   '/forum-reactions': forumReactions,

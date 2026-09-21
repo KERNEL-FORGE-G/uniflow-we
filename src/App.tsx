@@ -10,6 +10,7 @@ import { GlobalNetworkToast } from './components/GlobalNetworkToast'
 import { Skeleton } from './components/ui/Skeleton'
 import { ErrorBoundary } from './components/feedback/ErrorBoundary'
 import { PageTransition } from './components/motion/PageTransition'
+import { LEGAL_DOCUMENTS } from './data/legal'
 import { pushNotificationService } from './services/pushNotificationService'
 import { initTheme } from './utils/theme'
 
@@ -48,6 +49,7 @@ const ContactPage = lazy(() => import('./pages/ContactPage'))
 const SentinellePage = lazy(() => import('./pages/SentinellePage'))
 const ForumPage = lazy(() => import('./pages/ForumPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
+const LegalDocumentPage = lazy(() => import('./pages/legal/LegalDocumentPage'))
 const PromotionPage = lazy(() => import('./pages/PromotionPage'))
 const PersonalAccountPage = lazy(() => import('./pages/PersonalAccountPages'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
@@ -235,6 +237,9 @@ export default function App() {
             <Route path="/sentinelle" element={<PublicPage><SentinellePage /></PublicPage>} />
             <Route path="/forum" element={<PublicPage><ForumPage /></PublicPage>} />
             <Route path="/teams" element={<PublicPage><TeamsPage /></PublicPage>} />
+            {LEGAL_DOCUMENTS.map((doc) => (
+              <Route key={doc.slug} path={doc.path} element={<PublicPage><LegalDocumentPage document={doc} /></PublicPage>} />
+            ))}
 
             {/* Accueil — tableau de bord universitaire ou espace indépendant */}
             <Route path="/app" element={<Shell><AccountHomePage /></Shell>} />

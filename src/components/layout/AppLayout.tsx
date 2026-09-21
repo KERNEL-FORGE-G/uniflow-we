@@ -13,7 +13,10 @@ import { cn } from '../../utils/cn'
 import { Component, lazy, Suspense, useEffect, useState, type ReactNode } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 
-const CompanionAssistant = lazy(() => import('../CompanionAssistant').then((module) => ({ default: module.CompanionAssistant })))
+// Flo remplace le compagnon scripté « Nova » (2026-09-21) : un vrai assistant,
+// servi par `/assistant` de la Function, chargé à part pour ne pas alourdir le
+// premier rendu de l'espace connecté.
+const CompanionAssistant = lazy(() => import('../assistant/UniAssistant').then((module) => ({ default: module.UniAssistant })))
 
 class CompanionBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   state = { failed: false }

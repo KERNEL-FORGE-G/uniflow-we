@@ -1,95 +1,100 @@
-import { Monitor, Smartphone, Download, Globe } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Monitor, Smartphone, Globe } from 'lucide-react'
+import { LEGAL_DOCUMENTS } from '../../data/legal'
+import { CONTACT_PHONE_DISPLAY, CONTACT_WHATSAPP_URL } from '../../lib/contactInfo'
+
+/**
+ * Pied de page de l'espace connecté.
+ *
+ * Toutes les entrées pointaient sur `#` (Blog, Carrières, Partenaires…) et le
+ * copyright disait 2024 : chaque lien mène désormais à une page qui existe, et
+ * les quatre documents juridiques (CGU, confidentialité, mentions légales,
+ * droits des utilisateurs) sont accessibles depuis chaque écran.
+ */
+const COLUMNS: Array<{ title: string; links: Array<{ label: string; to: string; external?: boolean }> }> = [
+  {
+    title: 'Produit',
+    links: [
+      { label: 'Fonctionnalités', to: '/presentation' },
+      { label: 'Tarifs', to: '/pricing' },
+      { label: 'Sentinelle IoT', to: '/sentinelle' },
+      { label: 'Forum', to: '/forum' },
+    ],
+  },
+  {
+    title: 'Support',
+    links: [
+      { label: "Centre d'aide", to: '/app/aide' },
+      { label: 'Contact', to: '/contact' },
+      { label: `WhatsApp ${CONTACT_PHONE_DISPLAY}`, to: CONTACT_WHATSAPP_URL, external: true },
+    ],
+  },
+  {
+    title: 'KERNEL FORGE',
+    links: [
+      { label: 'À propos', to: '/about' },
+      { label: "L'équipe", to: '/teams' },
+      ...LEGAL_DOCUMENTS.map((doc) => ({ label: doc.shortTitle, to: doc.path })),
+    ],
+  },
+]
 
 export function Footer() {
   return (
     <footer className="border-t border-[#e5e7eb] bg-white">
-      <div className="w-full max-w-[1920px] mx-auto px-6 py-8">
-        {/* Platform badges */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mb-6">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#f9fafb] border border-[#e5e7eb]">
+      <div className="mx-auto w-full max-w-[1920px] px-6 py-8">
+        <div className="mb-6 flex flex-wrap items-center justify-center gap-4">
+          <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2">
             <Smartphone className="h-4 w-4 text-[#1e3a8a]" />
-            <span className="text-xs font-semibold text-[#374151]">Mobile iOS & Android</span>
-            <span className="ml-1 text-xs text-[#6b7280]">(Offline)</span>
+            <span className="text-xs font-semibold text-[#374151]">Mobile Android & iOS</span>
+            <span className="ml-1 text-xs text-[#6b7280]">(hors ligne)</span>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#f9fafb] border border-[#e5e7eb]">
+          <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2">
             <Globe className="h-4 w-4 text-[#0d9488]" />
-            <span className="text-xs font-semibold text-[#374151]">Web Progressive (PWA)</span>
+            <span className="text-xs font-semibold text-[#374151]">Web progressive (PWA)</span>
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#f9fafb] border border-[#e5e7eb]">
+          <div className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] bg-[#f9fafb] px-4 py-2">
             <Monitor className="h-4 w-4 text-[#7c3aed]" />
-            <span className="text-xs font-semibold text-[#374151]">Desktop Win, Mac & Linux</span>
-            <span className="ml-1 text-xs text-[#6b7280]">(Offline)</span>
+            <span className="text-xs font-semibold text-[#374151]">Desktop Windows, macOS & Linux</span>
+            <span className="ml-1 text-xs text-[#6b7280]">(hors ligne, visio locale)</span>
           </div>
         </div>
 
-        {/* Main footer content */}
-        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="mb-8 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           <div>
-            <div className="flex items-center gap-2 mb-3">
-              <img
-                src="/logos/uniflow-wordmark.png"
-                alt="UniFlow"
-                className="h-8 w-auto object-contain"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  if (!target.dataset.triedFallback) {
-                    target.dataset.triedFallback = 'true'
-                    target.src = '/logo_1.png'
-                  }
-                }}
-              />
-            </div>
-            <p className="text-xs text-[#6b7280] leading-relaxed">
-              La plateforme universitaire intelligente pour la gestion académique complète.
+            <img src="/logos/uniflow-wordmark.png" alt="UniFlow" className="mb-3 h-8 w-auto object-contain" loading="lazy" />
+            <p className="text-xs leading-relaxed text-[#6b7280]">
+              La plateforme académique de KERNEL FORGE : emploi du temps, cours, présences, notes et messagerie, reliés à Appwrite.
             </p>
           </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-[#111827] mb-3">Produit</h3>
-            <ul className="space-y-2 text-xs text-[#6b7280]">
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Fonctionnalités</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Tarifs</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Téléchargements</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Mises à jour</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-[#111827] mb-3">Support</h3>
-            <ul className="space-y-2 text-xs text-[#6b7280]">
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Documentation</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Tutoriels</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Centre d'aide</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Contact</a></li>
-            </ul>
-          </div>
-
-          <div>
-            <h3 className="text-sm font-bold text-[#111827] mb-3">Entreprise</h3>
-            <ul className="space-y-2 text-xs text-[#6b7280]">
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">À propos</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Carrières</a></li>
-              <li><a href="#" className="hover:text-[#1e3a8a] transition-colors">Partenaires</a></li>
-            </ul>
-          </div>
+          {COLUMNS.map((column) => (
+            <div key={column.title}>
+              <h3 className="mb-3 text-sm font-bold text-[#111827]">{column.title}</h3>
+              <ul className="space-y-2 text-xs text-[#6b7280]">
+                {column.links.map((link) => (
+                  <li key={link.label}>
+                    {link.external ? (
+                      <a href={link.to} target="_blank" rel="noopener noreferrer" className="transition-colors hover:text-[#1e3a8a]">{link.label}</a>
+                    ) : (
+                      <Link to={link.to} className="transition-colors hover:text-[#1e3a8a]">{link.label}</Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
 
-        {/* Bottom bar */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-[#e5e7eb]">
-          <div className="flex items-center gap-4 text-xs text-[#9ca3af]">
-            <span>© 2024 UniFlow. Tous droits réservés.</span>
-            <a href="#" className="hover:text-[#1e3a8a] transition-colors">Confidentialité</a>
-            <a href="#" className="hover:text-[#1e3a8a] transition-colors">CGU</a>
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-[#e5e7eb] pt-6 sm:flex-row">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-[#9ca3af]">
+            <span>© {new Date().getFullYear()} UniFlow — KERNEL FORGE. Tous droits réservés.</span>
+            {LEGAL_DOCUMENTS.map((doc) => (
+              <Link key={doc.slug} to={doc.path} className="transition-colors hover:text-[#1e3a8a]">{doc.shortTitle}</Link>
+            ))}
           </div>
-          <div className="flex items-center gap-2 text-xs text-[#9ca3af]">
-            <Download className="h-3.5 w-3.5" />
-            <span>Version 1.0.0</span>
-            <span>•</span>
-            <a href="https://uniflow.kernelforge.codes" className="hover:text-[#1e3a8a] transition-colors">
-              uniflow.kernelforge.codes
-            </a>
-          </div>
+          <a href="https://uniflow.kernelforge.codes" className="text-xs text-[#9ca3af] transition-colors hover:text-[#1e3a8a]">
+            uniflow.kernelforge.codes
+          </a>
         </div>
       </div>
     </footer>

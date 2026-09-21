@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { UNIFLOW_PRIMARY_LOGO_ALT, UNIFLOW_PRIMARY_LOGO_FALLBACK_URL, UNIFLOW_PRIMARY_LOGO_URL } from '../../lib/brandAssets'
 import { useUserRole } from '../../utils/userRole'
 import { CONTACT_PHONE_DISPLAY, COVERAGE_LABEL, COVERAGE_SHORT } from '../../lib/contactInfo'
+import { LEGAL_DOCUMENTS } from '../../data/legal'
 
 const logo = UNIFLOW_PRIMARY_LOGO_URL
 const restoreOriginalLogo = (event: React.SyntheticEvent<HTMLImageElement>) => {
@@ -188,9 +189,10 @@ export function LandingFooter() {
         {/* Bottom bar */}
         <div className="mt-12 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-800 pt-8 text-xs text-slate-500">
           <p>© 2026 UniFlow — KERNEL FORGE · Périmètre : {COVERAGE_SHORT} · WhatsApp {CONTACT_PHONE_DISPLAY}</p>
-          <div className="flex items-center gap-4">
-            <Link to="/about" className="hover:text-slate-300 transition-colors">Confidentialité</Link>
-            <Link to="/about" className="hover:text-slate-300 transition-colors">CGU</Link>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            {LEGAL_DOCUMENTS.map((doc) => (
+              <Link key={doc.slug} to={doc.path} className="hover:text-slate-300 transition-colors">{doc.shortTitle}</Link>
+            ))}
             <a href="https://uniflow.kernelforge.codes" target="_blank" rel="noopener noreferrer"
               className="hover:text-slate-300 transition-colors">
               uniflow.kernelforge.codes
