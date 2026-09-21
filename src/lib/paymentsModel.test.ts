@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DEFAULT_PAYMENT_FILTERS, annualSavingsPercent, matchesPaymentFilters, rejectionReasonProblem, whatsappBillingMessage, whatsappBillingUrl } from './paymentsModel.ts'
+import { DEFAULT_PAYMENT_FILTERS, annualSavingsPercent, matchesPaymentFilters, rejectionReasonProblem, shouldHideMissingSubscription, whatsappBillingMessage, whatsappBillingUrl } from './paymentsModel.ts'
 import { CONTACT_WHATSAPP_E164 } from './contactInfo.ts'
 
 const input = { reference: 'UF-2026-0001', planName: 'Étudiant Premium', billingCycle: 'MONTHLY' as const, amount: 2500, currency: 'XAF', fullName: 'Ada Lovelace', email: 'ada@example.com' }
@@ -54,4 +54,12 @@ test('filtres admin : statut, formule, dates inclusives, recherche', () => {
   assert.deepEqual(rows.filter((row) => matchesPaymentFilters(row, { ...DEFAULT_PAYMENT_FILTERS, status: 'ALL', search: 'grace' })).map((r) => r.reference), ['UF-2'])
   const withInstitution = rows.map((row) => (row.reference === 'UF-1' ? { ...row, institution: 'Université de Douala' } : row))
   assert.deepEqual(withInstitution.filter((row) => matchesPaymentFilters(row, { ...DEFAULT_PAYMENT_FILTERS, status: 'ALL', search: 'douala' })).map((r) => r.reference), ['UF-1'], 'la recherche couvre l’université')
+})
+
+test('l’absence d’abonnement est tue pour les comptes universitaires hors page Abonnement', () => {
+  assert.equal(shouldHideMissingSubscription('UNIVERSITY', false), true)
+  assert.equal(shouldHideMissingSubscription('PLATFORM', false), true)
+  assert.equal(shouldHideMissingSubscription('UNIVERSITY', true), false)
+  assert.equal(shouldHideMissingSubscription('PERSONAL', false), false)
+  assert.equal(shouldHideMissingSubscription('PERSONAL', true), false)
 })

@@ -2,19 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { Clock, Calendar, AlertTriangle, RefreshCw, CheckCircle2, CreditCard, ArrowRight } from 'lucide-react'
 import { getAccountType, subscriptionApi, type SubscriptionStatus as SubscriptionStatusType } from '../../lib/api'
-
-/**
- * Faut-il taire l'absence d'abonnement ? Un compte universitaire (étudiant,
- * délégué, enseignant, administration) est couvert par son établissement : le
- * bandeau « Aucun abonnement actif » sur son tableau de bord laissait croire à
- * un accès restreint. Il ne reste affiché que sur la page Abonnement, où l'on
- * vient justement pour ça, et pour les comptes indépendants, qui paient
- * eux-mêmes. Un abonnement existant (en attente, actif, expiré) s'affiche
- * toujours.
- */
-export function shouldHideMissingSubscription(accountType: string, onBillingPage: boolean): boolean {
-  return accountType !== 'PERSONAL' && !onBillingPage
-}
+import { shouldHideMissingSubscription } from '../../lib/paymentsModel'
 
 export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = false }) => {
   const [status, setStatus] = useState<SubscriptionStatusType | null>(null)
@@ -46,6 +34,7 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
   }, [])
 
   if (!status && !loading) {
+    if (hideMissing) return null
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between gap-3">
@@ -80,6 +69,7 @@ export const SubscriptionStatus: React.FC<{ compact?: boolean }> = ({ compact = 
     )
   }
   if (status.status === 'NONE' || !status.currency || status.monthlyAmount == null) {
+    if (hideMissing) return null
     return (
       <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-5 shadow-sm">
         <h3 className="text-sm font-bold text-slate-900">Aucun abonnement actif</h3>

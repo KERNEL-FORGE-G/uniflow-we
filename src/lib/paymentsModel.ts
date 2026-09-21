@@ -8,6 +8,19 @@ import { whatsappUrlWithMessage } from './contactInfo.ts'
 
 export type PaymentRequestStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'CANCELLED'
 
+/**
+ * Faut-il taire l'absence d'abonnement ? Un compte universitaire (étudiant,
+ * délégué, enseignant, administration) est couvert par son établissement : le
+ * bandeau « Aucun abonnement actif » sur son tableau de bord laissait croire à
+ * un accès restreint. Il ne reste affiché que sur la page Abonnement, où l'on
+ * vient justement pour ça, et pour les comptes indépendants, qui paient
+ * eux-mêmes. Un abonnement existant (en attente, actif, expiré) s'affiche
+ * toujours, quel que soit le compte.
+ */
+export function shouldHideMissingSubscription(accountType: string, onBillingPage: boolean): boolean {
+  return accountType !== 'PERSONAL' && !onBillingPage
+}
+
 export const PAYMENT_STATUS_LABELS: Record<PaymentRequestStatus, string> = {
   PENDING: 'En attente',
   CONFIRMED: 'Validée',
