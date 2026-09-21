@@ -120,7 +120,7 @@ const timeline = [
   { when: '2024', title: 'KERNEL FORGE se lance', desc: 'Une startup fondée par des étudiants en informatique de l\'Université de Yaoundé I : fabriquer des logiciels utiles à leur propre campus, puis en faire un métier.' },
   { when: 'Été 2026', title: 'UniFlow prend forme', desc: 'Trois clients — web, mobile, desktop — pensés dès le départ pour fonctionner avec un réseau intermittent.' },
   { when: 'Septembre 2026', title: 'Un seul backend : Appwrite Cloud', desc: 'Migration complète, référentiel académique réel de la Faculté des Sciences, emplois du temps filtrés par filière et niveau, assistant Uni.' },
-  { when: 'Ensuite', title: 'Devenir l\'entreprise des universités', desc: 'Ouvrir UniFlow à d\'autres facultés puis d\'autres universités, avec des offres d\'intégration et un accompagnement : chaque administration enregistre sa structure, la plateforme reste la même.' },
+  { when: 'Ensuite', title: 'Ouvrir UniFlow, et livrer bien au-delà', desc: 'D\'autres facultés puis d\'autres universités rejoignent UniFlow ; KERNEL FORGE grandit en entreprise de logiciel qui conçoit et livre des projets pour des clients de tous secteurs, partout dans le monde.' },
 ]
 
 const platforms = [
@@ -399,7 +399,8 @@ export default function AboutPage() {
               KERNEL FORGE est une jeune startup technologique fondée par des étudiants en informatique de la
               Faculté des Sciences de l'Université de Yaoundé I. UniFlow est son premier produit : construit pour
               sa propre faculté d'abord — avec les vrais emplois du temps, les vraies UE et les vraies contraintes
-              de réseau — avec l'ambition de devenir demain l'entreprise qui équipe les universités de la région.
+              de réseau. L'ambition est plus large : devenir demain une entreprise de logiciel qui livre des
+              projets pour des clients de tous secteurs, au Cameroun et à travers le monde.
             </motion.p>
             <motion.ol variants={fadeInUp} className="relative space-y-6 border-l border-white/15 pl-6">
               {timeline.map((t) => (
