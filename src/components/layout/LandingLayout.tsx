@@ -144,7 +144,7 @@ export function LandingFooter() {
               />
               <span className="text-left">
                 <span className="block text-xs font-black uppercase tracking-wider text-white">Un projet KERNEL FORGE</span>
-                <span className="block text-[11px] text-slate-400">Open source software · Yaoundé</span>
+                <span className="block text-[11px] text-slate-400">Startup technologique · Yaoundé</span>
               </span>
             </Link>
           </div>

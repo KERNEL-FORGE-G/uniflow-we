@@ -117,10 +117,10 @@ const stack = [
 ]
 
 const timeline = [
-  { when: '2024', title: 'KERNEL FORGE se forme', desc: 'Un groupe d\'étudiants en informatique de l\'Université de Yaoundé I qui veut fabriquer des outils utiles à leur propre campus.' },
+  { when: '2024', title: 'KERNEL FORGE se lance', desc: 'Une startup fondée par des étudiants en informatique de l\'Université de Yaoundé I : fabriquer des logiciels utiles à leur propre campus, puis en faire un métier.' },
   { when: 'Été 2026', title: 'UniFlow prend forme', desc: 'Trois clients — web, mobile, desktop — pensés dès le départ pour fonctionner avec un réseau intermittent.' },
   { when: 'Septembre 2026', title: 'Un seul backend : Appwrite Cloud', desc: 'Migration complète, référentiel académique réel de la Faculté des Sciences, emplois du temps filtrés par filière et niveau, assistant Uni.' },
-  { when: 'Ensuite', title: 'Ouvrir à d\'autres facultés', desc: 'Chaque administration d\'université enregistre sa structure et ses comptes ; la plateforme reste la même, les données changent.' },
+  { when: 'Ensuite', title: 'Devenir l\'entreprise des universités', desc: 'Ouvrir UniFlow à d\'autres facultés puis d\'autres universités, avec des offres d\'intégration et un accompagnement : chaque administration enregistre sa structure, la plateforme reste la même.' },
 ]
 
 const platforms = [
@@ -391,14 +391,15 @@ export default function AboutPage() {
                 }}
               />
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-teal-200">Qui le fabrique</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-teal-200">La startup qui le fabrique</p>
                 <h2 className="text-3xl font-black lg:text-4xl">KERNEL FORGE</h2>
               </div>
             </div>
             <motion.p variants={fadeInUp} className="text-lg leading-relaxed text-blue-100/90">
-              Des étudiants en informatique de la Faculté des Sciences de l'Université de Yaoundé I, qui
-              construisent UniFlow pour leur propre faculté d'abord — avec les vrais emplois du temps, les
-              vraies UE et les vraies contraintes de réseau — avant de l'ouvrir à d'autres.
+              KERNEL FORGE est une jeune startup technologique fondée par des étudiants en informatique de la
+              Faculté des Sciences de l'Université de Yaoundé I. UniFlow est son premier produit : construit pour
+              sa propre faculté d'abord — avec les vrais emplois du temps, les vraies UE et les vraies contraintes
+              de réseau — avec l'ambition de devenir demain l'entreprise qui équipe les universités de la région.
             </motion.p>
             <motion.ol variants={fadeInUp} className="relative space-y-6 border-l border-white/15 pl-6">
               {timeline.map((t) => (

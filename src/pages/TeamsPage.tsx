@@ -90,8 +90,8 @@ export default function TeamsPage() {
 
       <section className="bg-[#0b0f19] py-14 text-center text-white">
         <Container width="narrow">
-          <h2 className="text-2xl font-black sm:text-3xl">Rejoignez l’organisation KERNEL FORGE</h2>
-          <p className="mt-3 text-sm text-slate-300">Projet open source développé pour la communauté académique.</p>
+          <h2 className="text-2xl font-black sm:text-3xl">KERNEL FORGE, la startup derrière UniFlow</h2>
+          <p className="mt-3 text-sm text-slate-300">Née à l’Université de Yaoundé I, KERNEL FORGE construit UniFlow comme son premier produit — avec l’ambition de devenir l’entreprise qui équipe les universités d’Afrique centrale.</p>
           <a
             href="https://github.com/KERNEL-FORGE-G"
             target="_blank"
