@@ -17,6 +17,7 @@ import {
   personalAppwriteApi,
 } from './appwrite'
 import { type AcademicScope, filterByScope, isLearnerRole, isLearnerScopeComplete, matchesScope, mergeScope, scopeOf, teacherMatches } from './academicScope'
+import { attendanceRate, formatSubmissionGrade, isPublishedStatement, learnerStatus, matchesAudience } from './assignmentModel'
 
 /**
  * Adaptateur de compatibilité UniFlow.
@@ -671,6 +672,15 @@ export const attendanceApi = {
   },
   listSessions: appwriteAttendanceSessions,
   byCourse: async (courseId: string): Promise<AttendanceSession[]> => (await appwriteAttendanceSessions()).filter((entry) => entry.courseId === courseId),
+  /** Relevés de l'étudiant connecté, datés (heure de vérification, sinon création) — vide pour les autres rôles. */
+  myRecords: async (): Promise<Array<{ status: AttendanceRecord['status']; at: string }>> => {
+    const current = await getCurrentAccount('UNIVERSITY')
+    if (!current || !isLearnerRole(current.role)) return []
+    const records = await academicAppwriteApi.attendance.recordsByStudent(current.id)
+    return records.map((record) => ({ status: record.status, at: record.verifiedAt || record.$createdAt || '' }))
+  },
+  /** Taux de présence de l'étudiant connecté (présents + retards), `null` sans relevé. */
+  myRate: async (): Promise<number | null> => attendanceRate(await attendanceApi.myRecords()),
   saveTodayRoll: async (dto: { courseId: string; date: string; rows: Array<{ studentId: string; status: AttendanceRecord['status'] }> }) => {
     const response = await executeAttendanceSecureAction({ action: 'roll', courseId: dto.courseId, date: dto.date, rows: dto.rows })
     if (!response.sessionId || !response.courseId || !response.date) throw new ApiError(502, 'La Function Appwrite n’a pas retourné la séance de présence.')
@@ -763,22 +773,57 @@ async function universityAssignments(): Promise<Assignment[]> {
   if (!current) return []
   const [rows, courses] = await Promise.all([academicAppwriteApi.assignments.list(), universityCourses()])
   const allowedCourseIds = new Set(courses.map((course) => course.id))
-  return rows
-    .filter((item) => current.role === 'TEACHER' ? allowedCourseIds.has(item.courseId) : item.studentId === current.id)
-    .map((item) => ({
+  const legacyStatus = (item: { status?: string }) => item.status === 'Soumis' || item.status === 'Noté' || item.status === 'En retard' ? item.status : 'À rendre'
+  const asLegacy = (item: (typeof rows)[number]): Assignment => ({
+    id: item.$id,
+    title: item.title,
+    code: item.courseId,
+    due: item.dueDate,
+    progress: item.status === 'Soumis' || item.status === 'Noté' ? 100 : 0,
+    status: legacyStatus(item),
+    grade: item.grade || undefined,
+    description: item.description || undefined,
+    feedback: item.feedback || undefined,
+    submittedAt: item.submittedAt || undefined,
+    submittedFile: item.submittedFile || undefined,
+    submissionNote: item.submissionNote || undefined,
+  })
+
+  if (current.role === 'TEACHER') {
+    return rows
+      .filter((item) => item.teacherId === current.id || allowedCourseIds.has(item.courseId))
+      .map(asLegacy)
+  }
+
+  // Étudiant ou délégué : ses devoirs « par étudiant » plus les énoncés publiés
+  // qui visent sa filière et son niveau (ou tout un de ses cours), avec l'état
+  // de son rendu. Le web n'affichait que les premiers : « Devoirs à rendre : 0 »
+  // devant trois énoncés publiés pour ICT4D L1.
+  const statements = rows.filter((item) => isPublishedStatement(item)
+    && (allowedCourseIds.size === 0 || allowedCourseIds.has(item.courseId) || Boolean(item.audience))
+    && matchesAudience(item.audience, { program: current.program, level: current.level }))
+  const submissions = statements.length ? await academicAppwriteApi.submissions.byStudent(current.id).catch(() => []) : []
+  const submissionByAssignment = new Map(submissions.map((submission) => [submission.assignmentId, submission]))
+  const published = statements.map((item): Assignment => {
+    const submission = submissionByAssignment.get(item.$id)
+    const status = learnerStatus(submission, item.dueDate)
+    return {
       id: item.$id,
       title: item.title,
-      code: item.courseId,
+      code: item.courseCode || item.courseId,
       due: item.dueDate,
-      progress: item.status === 'Soumis' || item.status === 'Noté' ? 100 : 0,
-      status: item.status === 'Soumis' || item.status === 'Noté' || item.status === 'En retard' ? item.status : 'À rendre',
-      grade: item.grade || undefined,
+      progress: status === 'Soumis' || status === 'Noté' ? 100 : 0,
+      status,
+      grade: formatSubmissionGrade(submission, item.maxScore) || undefined,
       description: item.description || undefined,
-      feedback: item.feedback || undefined,
-      submittedAt: item.submittedAt || undefined,
-      submittedFile: item.submittedFile || undefined,
-      submissionNote: item.submissionNote || undefined,
-    }))
+      feedback: submission?.feedback || undefined,
+      submittedAt: submission?.submittedAt || undefined,
+      submittedFile: submission?.fileName || undefined,
+      submissionNote: undefined,
+    }
+  })
+  const own = rows.filter((item) => item.studentId === current.id).map(asLegacy)
+  return [...own, ...published].sort((a, b) => String(a.due).localeCompare(String(b.due)))
 }
 export const assignmentsApi = {
   list: async () => getAccountType() === 'PERSONAL' ? personalAssignments() : universityAssignments(),

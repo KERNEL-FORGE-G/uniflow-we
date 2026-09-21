@@ -75,11 +75,13 @@ export default async ({ req, res, log, error }) => {
       if (kind === 'attendance') {
         const status = String(document.status || '').toUpperCase()
         if (!['ABSENT', 'RETARD'].includes(status) || !document.studentId) continue
-        const label = status === 'ABSENT' ? 'Absence' : 'Retard'
+        // Accord du participe : « Absence enregistrée » mais « Retard enregistré »
+        // (le titre unique au féminin donnait « Retard enregistrée »).
+        const title = status === 'ABSENT' ? 'Absence enregistrée' : 'Retard enregistré'
         results.push(await createNotification(databases, {
           ownerId: document.studentId,
-          type: 'absence',
-          title: `${label} enregistrée`,
+          type: status === 'ABSENT' ? 'absence' : 'retard',
+          title,
           message: status === 'ABSENT' ? 'Une absence a été enregistrée pour vous. Consultez le détail de la séance dans votre espace UniFlow.' : 'Un retard a été enregistré pour vous. Consultez l’historique de présence dans votre espace UniFlow.',
           courseId: document.courseId,
           eventKey: `attendance:${document.$id}:${status}`,

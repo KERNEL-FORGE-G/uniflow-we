@@ -3,17 +3,22 @@ import { BookOpen, ClipboardList, Clock, TrendingUp, UserCheck, Calendar, Bell, 
 import { useUserRole } from '../utils/userRole'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, AreaChart, Area } from 'recharts'
 import { useEffect, useState } from 'react'
-import { assignmentsApi, coursesApi, gradesApi } from '../lib/api'
+import { assignmentsApi, attendanceApi, coursesApi, gradesApi, notificationsApi, schedulesApi, type Assignment, type Grade, type Notification, type Schedule } from '../lib/api'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
+import { attendanceRate } from '../lib/assignmentModel'
+import { eventDaysInMonth, gradeDistribution, relativeTime, teacherAverages, todaysSessions, weeklyAttendanceTrend } from '../lib/dashboardModel'
 
-type AttendancePoint = { week: string; rate: number }
-type GradePoint = { week: string; average: number }
-type GradeDistributionPoint = { name: string; value: number; color: string }
-
-const gradeDistrib: GradeDistributionPoint[] = []
-const attendanceTrend: AttendancePoint[] = []
-const teacherGradeData: GradePoint[] = []
+/** Icône et couleur d'une entrée d'activité d'après le type de notification Appwrite. */
+function activityStyle(type: string): { icon: typeof BookOpen; color: string } {
+  const key = type.toUpperCase()
+  if (key.includes('ASSIGNMENT') || key.includes('SUBMISSION')) return { icon: ClipboardList, color: 'bg-[#fef3c7] text-[#d97706]' }
+  if (key.includes('SCHEDULE')) return { icon: Calendar, color: 'bg-[#f0fdfa] text-[#0d9488]' }
+  if (key.includes('ATTENDANCE')) return { icon: UserCheck, color: 'bg-[#d1fae5] text-[#059669]' }
+  if (key.includes('MESSAGE')) return { icon: MessageSquare, color: 'bg-[#ede9fe] text-[#7c3aed]' }
+  if (key.includes('GRADE') || key.includes('NOTE')) return { icon: TrendingUp, color: 'bg-[#eff3ff] text-[#1e3a8a]' }
+  return { icon: Bell, color: 'bg-[#f3f4f6] text-[#374151]' }
+}
 
 // Calendar helper
 const calDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -52,10 +57,14 @@ export default function DashboardPage() {
   const calTotal = new Date(currentYear, currentMonth + 1, 0).getDate()
   const today = todayNumber
 
-  const eventDays: number[] = []
-
   const [activeCalDay, setActiveCalDay] = useState(today)
-  const [overview, setOverview] = useState<{ courseCount: number; assignmentCount: number; gradeCount: number; averageGrade: number | null; attendanceRate: number | null; studentCount: number }>({ courseCount: 0, assignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
+  const [schedules, setSchedules] = useState<Schedule[]>([])
+  const [grades, setGrades] = useState<Grade[]>([])
+  const [assignments, setAssignments] = useState<Assignment[]>([])
+  const [notifications, setNotifications] = useState<Notification[]>([])
+  const [attendanceRecords, setAttendanceRecords] = useState<Array<{ status: string; at: string }>>([])
+  const eventDays = eventDaysInMonth(schedules, currentYear, currentMonth)
+  const [overview, setOverview] = useState<{ courseCount: number; assignmentCount: number; pendingAssignmentCount: number; gradeCount: number; averageGrade: number | null; attendanceRate: number | null; studentCount: number }>({ courseCount: 0, assignmentCount: 0, pendingAssignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
   const [overviewLoading, setOverviewLoading] = useState(true)
   const [overviewError, setOverviewError] = useState<string | null>(null)
 
@@ -63,14 +72,30 @@ export default function DashboardPage() {
     setOverviewLoading(true)
     setOverviewError(null)
     try {
-      const [courses, assignments, grades] = await Promise.all([coursesApi.mine(), assignmentsApi.mine(), gradesApi.mine()])
-      const gradeAverage = grades.length ? grades.reduce((sum, grade) => sum + Number(grade.grade), 0) / grades.length : null
-      const nextOverview = { courseCount: courses.length, assignmentCount: assignments.length, gradeCount: grades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: null, studentCount: 0 }
+      // Les encarts secondaires ne doivent pas faire échouer les compteurs : chacun retombe sur vide.
+      const [courses, loadedAssignments, loadedGrades, records, loadedSchedules, loadedNotifications] = await Promise.all([
+        coursesApi.mine(),
+        assignmentsApi.mine(),
+        gradesApi.mine(),
+        attendanceApi.myRecords().catch(() => []),
+        schedulesApi.mine().catch(() => []),
+        notificationsApi.list().catch(() => []),
+      ])
+      const gradeAverage = loadedGrades.length ? loadedGrades.reduce((sum, grade) => sum + Number(grade.grade), 0) / loadedGrades.length : null
+      // « Devoirs à rendre » ne compte que ce qui reste à faire ; un devoir déjà
+      // rendu ou noté n'est plus une tâche.
+      const pending = loadedAssignments.filter((assignment) => assignment.status === 'À rendre' || assignment.status === 'En retard').length
+      const nextOverview = { courseCount: courses.length, assignmentCount: loadedAssignments.length, pendingAssignmentCount: pending, gradeCount: loadedGrades.length, averageGrade: gradeAverage == null ? null : Number(gradeAverage.toFixed(2)), attendanceRate: attendanceRate(records), studentCount: 0 }
       setOverview(nextOverview)
+      setAssignments(loadedAssignments)
+      setGrades(loadedGrades)
+      setAttendanceRecords(records)
+      setSchedules(loadedSchedules)
+      setNotifications(loadedNotifications)
       return nextOverview
     } catch (err) {
       setOverviewError(err instanceof Error ? err.message : 'Impossible de charger les données Appwrite du dashboard.')
-      setOverview({ courseCount: 0, assignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
+      setOverview({ courseCount: 0, assignmentCount: 0, pendingAssignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
       return null
     } finally {
       setOverviewLoading(false)
@@ -104,13 +129,13 @@ export default function DashboardPage() {
 
   const studentStats = [
     { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',    up: Boolean(overview?.courseCount),  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
-    { label: 'Devoirs à rendre', value: overview ? `${overview.assignmentCount ?? 0}` : '0',       delta: '0',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
+    { label: 'Devoirs à rendre', value: overview ? `${overview.pendingAssignmentCount ?? 0}` : '0',       delta: overview?.assignmentCount ? `${overview.assignmentCount} au total` : 'Aucun devoir',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
     { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',   up: Boolean(overview?.courseCount),  icon: Clock,         bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/emploi-du-temps' },
-    { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: '0',   up: true,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
-    { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: '0%',    up: true, icon: UserCheck,     bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/presences' },
+    { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note',   up: (overview?.averageGrade ?? 10) >= 10,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
+    { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75, icon: UserCheck,     bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/presences' },
   ]
   const delegateStats = [
-    { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: '0%',    up: true,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/gestion-presences' },
+    { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/gestion-presences' },
     { label: 'Sync. en attente',  value: '0',    delta: 'En ligne', up: true, icon: ClipboardList, bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/gestion-presences' },
     { label: 'Justif. en attente',value: '0',    delta: '0',     up: true,  icon: Bell,          bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/gestion-presences' },
     { label: 'Étudiants suivis',  value: overview ? `${overview.studentCount}` : '0',   delta: 'Personnel',  up: true,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/etudiants' },
@@ -126,7 +151,24 @@ export default function DashboardPage() {
 
   const stats = currentRole === 'teacher' ? teacherStats : currentRole === 'delegate' ? delegateStats : studentStats
 
-  const activities: Array<{ text: string; time: string; icon: typeof BookOpen; color: string }> = []
+  const gradeDistrib = gradeDistribution(grades)
+  const attendanceTrend = weeklyAttendanceTrend(attendanceRecords, now)
+  const teacherGradeData = teacherAverages(grades)
+
+  // Activité récente : les cinq dernières notifications, complétées par les
+  // devoirs proches de l'échéance quand il n'y a rien d'autre à montrer.
+  const activities: Array<{ text: string; time: string; icon: typeof BookOpen; color: string }> = [
+    ...[...notifications]
+      .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+      .slice(0, 5)
+      .map((item) => ({ text: item.title, time: relativeTime(item.createdAt, now), ...activityStyle(item.type) })),
+    ...(notifications.length === 0
+      ? assignments
+        .filter((assignment) => assignment.status === 'À rendre' || assignment.status === 'En retard')
+        .slice(0, 3)
+        .map((assignment) => ({ text: `${assignment.title} — ${assignment.status.toLowerCase()}`, time: relativeTime(assignment.due, now), icon: ClipboardList, color: 'bg-[#fef3c7] text-[#d97706]' }))
+      : []),
+  ]
 
   const studentQuickActions = [
     { label: 'Mes cours',       icon: BookOpen,      to: '/app/cours',          gradient: 'from-[#1e3a8a] to-[#2d4fa8]' },
@@ -152,7 +194,7 @@ export default function DashboardPage() {
   const RoleIcon = currentRole === 'teacher' ? UserCheck : currentRole === 'delegate' ? Megaphone : GraduationCap
   const roleLabel = currentRole === 'teacher' ? 'Enseignant' : currentRole === 'delegate' ? 'Délégué' : 'Étudiant'
 
-  const upcomingEvents: Array<{ time: string; title: string; room: string; type: string }> = []
+  const upcomingEvents = todaysSessions(schedules, now)
 
   const typeColor: Record<string, string> = {
     CM: 'bg-[#eff3ff] text-[#1e3a8a]',
@@ -333,7 +375,7 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-[#111827]">Activité récente</h2>
-              <span className="text-xs text-[#9ca3af]">Aujourd'hui</span>
+              <Link to="/app/notifications" className="text-xs font-semibold text-[#1e3a8a] hover:underline">Tout voir →</Link>
             </div>
             {activities.length > 0 ? (
               <div className="space-y-3">

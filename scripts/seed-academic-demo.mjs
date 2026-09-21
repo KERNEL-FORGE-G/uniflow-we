@@ -24,8 +24,14 @@ const request = createClient()
 const UNIVERSITY = 'Université de Yaoundé I'
 const PROGRAM = 'ICT4D'
 const LEVEL = 'L1'
-/** Enseignant de démonstration : aucun compte enseignant n'existe encore. */
-const DEMO_TEACHER = { id: 'seed-teacher-ict4d', name: 'Pr. Fouda' }
+/**
+ * Comptes enseignants réels (seed-accounts.mjs et seed-classroom.mjs) : un
+ * `teacherId` fictif (`seed-teacher-ict4d`) privait les enseignants de leurs
+ * cours et des rendus à corriger, dont les permissions de lecture visent cet
+ * identifiant.
+ */
+const TEACHER_IDS = { 'Pr. Fouda': 'uy1-teacher-01', 'Dr. Nkolo': 'uy1-teacher-02', 'M. Essomba': 'uy1-teacher-03' }
+const teacherIdFor = (name) => TEACHER_IDS[name] || ''
 
 const courses = [
   { id: 'ict101', code: 'ICT101', name: 'Introduction aux TIC', credits: 6, hours: 60, teacher: 'Pr. Mbarga', classroom: 'Amphi 250', type: 'CM' },
@@ -162,7 +168,7 @@ async function main() {
       university: UNIVERSITY,
       program: PROGRAM,
       level: LEVEL,
-      teacherId: '',
+      teacherId: teacherIdFor(course.teacher),
       teacherName: course.teacher,
       credits: course.credits,
       hours: course.hours,
@@ -296,7 +302,7 @@ async function main() {
       description: assignment.description,
       courseId: assignment.course.id,
       courseCode: assignment.course.code,
-      teacherId: DEMO_TEACHER.id,
+      teacherId: teacherIdFor(assignment.course.teacher),
       teacherName: assignment.course.teacher,
       type: assignment.type,
       status: 'PUBLISHED',

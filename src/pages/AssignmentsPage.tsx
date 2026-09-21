@@ -8,6 +8,14 @@ import { useUserRole } from '../utils/userRole'
 import { pushNotificationService } from '../services/pushNotificationService'
 import PushNotificationControl from '../components/PushNotificationControl'
 
+/** Dates ISO d'Appwrite (« 2026-09-24T05:39:56.999Z ») rendues lisibles ; une valeur non datée est affichée telle quelle. */
+function formatWhen(value?: string): string {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return date.toLocaleString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
 type AssignmentStatus = 'À rendre' | 'En retard' | 'Soumis' | 'Noté'
 
 interface ExtendedAssignment extends Assignment {
@@ -33,8 +41,12 @@ const summary = [
 ] as const
 
 export default function AssignmentsPage() {
-  const { currentRole } = useUserRole()
+  const { currentRole, currentUser } = useUserRole()
   const isTeacherOrAdmin = currentRole === 'teacher' || currentRole === 'admin'
+  // Un compte universitaire ne crée pas ses devoirs : ils viennent des
+  // enseignants (`assignmentsApi.create` les refuse). Le bouton n'a de sens
+  // que pour l'espace personnel.
+  const canCreate = currentUser.accountType === 'PERSONAL'
 
   const [filter, setFilter] = useState<AssignmentStatus | 'Tous'>('Tous')
   const [filterUE, setFilterUE] = useState('')
@@ -197,12 +209,14 @@ export default function AssignmentsPage() {
           <button onClick={() => refetch()} className="rounded-lg border border-[#e5e7eb] p-2 text-[#6b7280] hover:bg-[#f9fafb]">
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-          <button
-            onClick={() => setShowNew(true)}
-            className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors shadow-sm"
-          >
-            <Plus className="h-4 w-4" /> Nouveau devoir
-          </button>
+          {canCreate && (
+            <button
+              onClick={() => setShowNew(true)}
+              className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors shadow-sm"
+            >
+              <Plus className="h-4 w-4" /> Nouveau devoir
+            </button>
+          )}
         </div>
       </div>
 
@@ -328,11 +342,11 @@ export default function AssignmentsPage() {
                     <p className="text-xs text-[#6b7280] mt-1 line-clamp-1">{a.description || 'Devoir pratique'}</p>
                     <div className="mt-3 flex items-center gap-4 text-xs text-[#9ca3af]">
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-[#1e3a8a]" /> Échéance : {a.due}
+                        <Clock className="h-3.5 w-3.5 text-[#1e3a8a]" /> Échéance : {formatWhen(a.due)}
                       </span>
                       {a.submittedAt && (
                         <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                          <Check className="h-3.5 w-3.5" /> Rendu le {a.submittedAt}
+                          <Check className="h-3.5 w-3.5" /> Rendu le {formatWhen(a.submittedAt)}
                         </span>
                       )}
                     </div>
@@ -442,7 +456,7 @@ export default function AssignmentsPage() {
                       <FileText className="h-5 w-5 text-[#1e3a8a]" />
                       <div>
                         <p className="font-semibold text-xs text-[#111827]">{selectedAssignment.submittedFile}</p>
-                        <p className="text-[11px] text-[#9ca3af]">Soumis le {selectedAssignment.submittedAt || 'récemment'}</p>
+                        <p className="text-[11px] text-[#9ca3af]">Soumis le {selectedAssignment.submittedAt ? formatWhen(selectedAssignment.submittedAt) : 'récemment'}</p>
                       </div>
                     </div>
                     <a

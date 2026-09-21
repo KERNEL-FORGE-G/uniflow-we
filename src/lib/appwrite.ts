@@ -1004,6 +1004,33 @@ export interface AcademicAssignmentDocument {
   submittedAt?: string
   submittedFile?: string
   submissionNote?: string
+  // Modèle « énoncé publié » (desktop, mobile, scripts de démonstration) :
+  // un document par devoir, les rendus dans `academic_submissions`.
+  teacherId?: string
+  teacherName?: string
+  type?: string
+  publishedAt?: string
+  maxScore?: number
+  allowLate?: boolean
+  quizJson?: string
+  fileId?: string
+  fileName?: string
+  audience?: string
+}
+
+export interface AcademicSubmissionDocument {
+  $id: string
+  assignmentId: string
+  studentId: string
+  studentName?: string
+  submittedAt: string
+  answersJson?: string
+  fileId?: string
+  fileName?: string
+  score?: number | null
+  feedback?: string
+  status?: string
+  gradedAt?: string
 }
 
 export interface AcademicGradeDocument {
@@ -1033,6 +1060,7 @@ export interface AcademicAttendanceRecordDocument {
   courseId: string
   studentId: string
   status: 'PRESENT' | 'ABSENT' | 'RETARD' | 'JUSTIFIE'
+  verifiedAt?: string
 }
 
 export interface AcademicAttendanceQrTokenDocument {
@@ -1110,12 +1138,23 @@ export const academicAppwriteApi = {
   assignments: {
     list: () => listDocuments<AcademicAssignmentDocument>('academic_assignments', [Query.limit(200)]),
   },
+  submissions: {
+    // Un étudiant ne lit que ses rendus (permission par document) ; la requête
+    // évite de parcourir toute la collection.
+    byStudent: (studentId: string) => listDocuments<AcademicSubmissionDocument>('academic_submissions', [Query.equal('studentId', studentId), Query.limit(200)]),
+    byAssignments: (assignmentIds: string[]) => assignmentIds.length
+      ? listDocuments<AcademicSubmissionDocument>('academic_submissions', [Query.equal('assignmentId', assignmentIds.slice(0, 100)), Query.limit(500)])
+      : Promise.resolve([] as AcademicSubmissionDocument[]),
+  },
   grades: {
     list: () => listDocuments<AcademicGradeDocument>('academic_grades', [Query.limit(200)]),
   },
   attendance: {
     sessions: () => listDocuments<AcademicAttendanceSessionDocument>('attendance_sessions', [Query.limit(200)]),
     records: () => listDocuments<AcademicAttendanceRecordDocument>('attendance_records', [Query.limit(200)]),
+    // Les relevés d'un seul étudiant : la liste globale est plafonnée à 200
+    // documents, ce qui tronquait déjà une salle de dix étudiants sur trois semaines.
+    recordsByStudent: (studentId: string) => listDocuments<AcademicAttendanceRecordDocument>('attendance_records', [Query.equal('studentId', studentId), Query.limit(500)]),
     qrTokens: () => listDocuments<AcademicAttendanceQrTokenDocument>('attendance_qr_tokens', [Query.limit(200)]),
   },
   directory: {
