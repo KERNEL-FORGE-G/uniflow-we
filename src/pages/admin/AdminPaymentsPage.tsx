@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Building2, CheckCircle2, Clock3, CircleDollarSign, Loader2, MessageCircle, RefreshCw, Search, ShieldCheck, XCircle } from 'lucide-react'
+import { Building2, CheckCircle2, Clock3, Loader2, MessageCircle, RefreshCw, Search, ShieldCheck, XCircle } from 'lucide-react'
 import { subscriptionApi, type SubscriptionPaymentRequest } from '@/lib/api'
 import { CONTACT_PHONE_DISPLAY } from '@/lib/contactInfo'
 import { DEFAULT_PAYMENT_FILTERS, formatMoney, matchesPaymentFilters, PAYMENT_STATUS_LABELS, rejectionReasonProblem, type AdminPaymentFilterState, type PaymentRequestStatus } from '@/lib/paymentsModel'
@@ -135,7 +135,7 @@ export default function AdminPaymentsPage() {
         {loading ? (
           <div className="space-y-3 p-5">{Array.from({ length: 5 }).map((_, index) => <Skeleton key={index} className="h-14" />)}</div>
         ) : visible.length === 0 ? (
-          <EmptyState icon={CircleDollarSign} title={requests.length === 0 ? 'Aucune demande de paiement' : 'Aucune demande ne correspond aux filtres'} description={requests.length === 0 ? 'Les demandes apparaissent ici dès qu’un client clique « Payer par WhatsApp ».' : 'Élargissez la période ou changez de statut.'} />
+          <EmptyState icon="billing" color="#0D9488" title={requests.length === 0 ? 'Aucune demande de paiement' : 'Aucune demande ne correspond aux filtres'} description={requests.length === 0 ? 'Les demandes apparaissent ici dès qu’un client clique « Payer par WhatsApp ».' : 'Élargissez la période ou changez de statut.'} />
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-left text-sm">

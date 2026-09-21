@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
-import { Camera, Bell, Globe, Shield, Database, Save, BookOpen, Video, HelpCircle, Mail, Check, Eye, EyeOff, CheckCircle2, Plus, Sparkles, CreditCard, Loader2, Trash2, AlertCircle } from 'lucide-react'
+import { IconTile, UniIcon, type UniIconName } from '../components/ui/UniIcon'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
@@ -13,14 +13,14 @@ import { SubscriptionWidget } from '../components/subscription/SubscriptionWidge
 
 const sections = ['Profil', 'Abonnement', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
 
-const sectionIcons: Record<string, any> = {
-  Profil: Camera, 
-  Abonnement: CreditCard,
-  'Inscriptions UEs': BookOpen,
-  Notifications: Bell, 
-  Apparence: Globe, 
-  Confidentialité: Shield, 
-  Avancé: Database,
+const sectionIcons: Record<string, UniIconName> = {
+  Profil: 'profile',
+  Abonnement: 'billing',
+  'Inscriptions UEs': 'courseUnit',
+  Notifications: 'notifications',
+  Apparence: 'globe',
+  Confidentialité: 'security',
+  Avancé: 'database',
 }
 
 export default function SettingsPage() {
@@ -227,13 +227,13 @@ export default function SettingsPage() {
           <p className="text-sm text-[#6b7280] mt-0.5">Gérez votre compte et vos préférences</p>
         </div>
         <button onClick={handleSave} className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-          {saved ? <><Check className="h-4 w-4" /> Enregistré !</> : <><Save className="h-4 w-4" /> Enregistrer</>}
+          {saved ? <><UniIcon name="check" weight="bold" size={16} /> Enregistré !</> : <><UniIcon name="save" weight="bold" size={16} /> Enregistrer</>}
         </button>
       </div>
 
       {saved && (
         <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 animate-slide-down">
-          <Check className="h-4 w-4" /> Paramètres enregistrés avec succès.
+          <UniIcon name="check" weight="bold" size={16} /> Paramètres enregistrés avec succès.
         </div>
       )}
 
@@ -241,7 +241,7 @@ export default function SettingsPage() {
         {/* Sidebar */}
         <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3 shadow-sm h-fit">
           {sections.map(s => {
-            const Icon = sectionIcons[s]
+            const icon = sectionIcons[s] ?? 'settings'
             return (
               <button
                 key={s}
@@ -252,7 +252,7 @@ export default function SettingsPage() {
                 )}
               >
                 <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0', section === s ? 'bg-white/20' : 'bg-[#f3f4f6]')}>
-                  <Icon className={cn('h-4 w-4', section === s ? 'text-white' : 'text-[#6b7280]')} />
+                  <UniIcon name={icon} weight={section === s ? 'fill' : 'duotone'} size={16} className={section === s ? 'text-white' : 'text-[#6b7280]'} />
                 </div>
                 {s}
               </button>
@@ -278,7 +278,7 @@ export default function SettingsPage() {
                   )}
                   {avatarBusy && (
                     <div className="absolute inset-0 flex items-center justify-center rounded-2xl bg-black/40">
-                      <Loader2 className="h-6 w-6 animate-spin text-white" />
+                      <UniIcon name="spinner" weight="bold" size={24} className="animate-spin text-white" />
                     </div>
                   )}
                   <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" onChange={handleAvatarChange} className="hidden" />
@@ -288,7 +288,7 @@ export default function SettingsPage() {
                     className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-xl bg-[#1e3a8a] text-white shadow-md hover:bg-[#2d4fa8] transition-all hover:scale-110 disabled:opacity-50 disabled:hover:scale-100"
                     title="Changer la photo de profil"
                   >
-                    <Camera className="h-4 w-4" />
+                    <UniIcon name="camera" weight="fill" size={16} />
                   </button>
                 </div>
                 <div className="min-w-0">
@@ -311,19 +311,19 @@ export default function SettingsPage() {
                         disabled={avatarBusy}
                         className="inline-flex items-center gap-1 text-xs font-semibold text-[#dc2626] hover:underline disabled:opacity-50"
                       >
-                        <Trash2 className="h-3 w-3" /> Retirer
+                        <UniIcon name="trash" weight="bold" size={12} /> Retirer
                       </button>
                     )}
                   </div>
                   <p className="mt-1 text-[11px] text-[#9ca3af]">JPEG, PNG ou WebP · 5 Mo maximum</p>
                   {avatarError && (
                     <p className="mt-1.5 inline-flex items-start gap-1 text-xs font-medium text-[#dc2626]">
-                      <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{avatarError}
+                      <UniIcon name="alert" weight="fill" size={14} className="mt-0.5 shrink-0" />{avatarError}
                     </p>
                   )}
                   {avatarSaved && (
                     <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-[#059669]">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Photo de profil enregistrée.
+                      <UniIcon name="success" weight="fill" size={14} /> Photo de profil enregistrée.
                     </p>
                   )}
                 </div>
@@ -379,7 +379,7 @@ export default function SettingsPage() {
                         className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 pr-10 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
                       />
                       <button type="button" onClick={() => setShowCurrentPwd(!showCurrentPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#374151]">
-                        {showCurrentPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showCurrentPwd ? <UniIcon name="eyeOff" size={16} /> : <UniIcon name="eye" size={16} />}
                       </button>
                     </div>
                   </div>
@@ -390,7 +390,7 @@ export default function SettingsPage() {
                         className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 pr-10 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
                       />
                       <button type="button" onClick={() => setShowNewPwd(!showNewPwd)} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-[#374151]">
-                        {showNewPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showNewPwd ? <UniIcon name="eyeOff" size={16} /> : <UniIcon name="eye" size={16} />}
                       </button>
                     </div>
                   </div>
@@ -429,7 +429,7 @@ export default function SettingsPage() {
                 </p>
               </div>
               <div className="rounded-xl border border-dashed border-[#0d9488]/40 bg-teal-50/60 dark:bg-teal-950/20 p-5">
-                <BookOpen className="h-6 w-6 text-[#0d9488]" />
+                <IconTile name="courseUnit" color="#0D9488" variant="soft" size={44} />
                 <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white">Aucune unité d’enseignement attribuée</h3>
                 <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
                   Les unités, inscriptions et crédits seront affichés ici lorsqu’ils auront été enregistrés dans Appwrite par l’administration universitaire. Aucun catalogue local ou choix fictif n’est présenté.
@@ -547,7 +547,7 @@ export default function SettingsPage() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/60 p-4 backdrop-blur-sm animate-fade-in-fast" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
                   <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-scale-in">
                     <div className="flex items-start gap-3">
-                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600"><Trash2 className="h-5 w-5" /></span>
+                      <IconTile name="trash" color="#DC2626" variant="soft" size={44} />
                       <div>
                         <h3 id="delete-account-title" className="text-base font-bold text-[#111827]">Supprimer définitivement votre compte ?</h3>
                         <p className="mt-1 text-sm text-[#6b7280]">
@@ -567,7 +567,7 @@ export default function SettingsPage() {
                       />
                     </label>
                     {deleteError && (
-                      <p className="mt-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert"><AlertCircle className="h-4 w-4 shrink-0" />{deleteError}</p>
+                      <p className="mt-3 flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700" role="alert"><UniIcon name="alert" weight="fill" size={16} className="shrink-0" />{deleteError}</p>
                     )}
                     <div className="mt-5 flex justify-end gap-2">
                       <button type="button" onClick={() => setDeleteOpen(false)} disabled={deleting} className="rounded-xl border border-[#e5e7eb] px-4 py-2 text-sm font-semibold text-[#374151] transition hover:bg-[#f3f4f6] disabled:opacity-50">
@@ -579,7 +579,7 @@ export default function SettingsPage() {
                         disabled={deleting || deleteWord.trim().toUpperCase() !== 'SUPPRIMER'}
                         className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white shadow transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-40"
                       >
-                        {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                        {deleting ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="trash" weight="bold" size={16} />}
                         {deleting ? 'Suppression…' : 'Supprimer mon compte'}
                       </button>
                     </div>
@@ -631,7 +631,7 @@ export default function SettingsPage() {
 
           <div className="flex justify-end">
             <button onClick={handleSave} className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-6 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
-              {saved ? <><Check className="h-4 w-4" /> Enregistré !</> : <><Save className="h-4 w-4" /> Enregistrer</>}
+              {saved ? <><UniIcon name="check" weight="bold" size={16} /> Enregistré !</> : <><UniIcon name="save" weight="bold" size={16} /> Enregistrer</>}
             </button>
           </div>
         </div>

@@ -1,12 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import {
-  Search, Bell, LogOut, Wifi, WifiOff, Globe, ChevronDown,
-  GraduationCap, Megaphone, UserCheck, Settings, Menu, X,
-  ChevronRight, Sparkles, Home
-} from 'lucide-react'
 import { useUserRole } from '../../utils/userRole'
 import { visibleNavItems } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
+import { NavIcon, UniIcon, type UniIconName } from '../ui/UniIcon'
 import { Footer } from './Footer'
 import { GlobalSearch } from './GlobalSearch'
 import { cn } from '../../utils/cn'
@@ -16,12 +12,12 @@ import { useAuth } from '../../hooks/useAuth'
 // Uni (l'assistant) est monté une seule fois dans `App.tsx`, pour le site
 // public comme pour l'espace connecté : plus rien à charger ici.
 
-const roleConfig = {
-  student:  { badge: 'Étudiant',    icon: GraduationCap, gradient: 'from-[#1e3a8a] to-[#2d4fa8]', bg: 'bg-[#eff3ff]', text: 'text-[#1e3a8a]', dot: 'bg-[#1e3a8a]' },
-  delegate: { badge: 'Délégué',     icon: Megaphone,     gradient: 'from-purple-700 to-purple-500', bg: 'bg-purple-50',  text: 'text-purple-700', dot: 'bg-purple-600' },
-  teacher:  { badge: 'Enseignant',  icon: UserCheck,     gradient: 'from-[#0d9488] to-[#14b8a8]', bg: 'bg-[#f0fdfa]', text: 'text-[#0d9488]', dot: 'bg-[#0d9488]' },
-  admin:    { badge: 'Admin',       icon: Settings,      gradient: 'from-amber-600 to-amber-500',  bg: 'bg-amber-50',  text: 'text-amber-700', dot: 'bg-amber-500' },
-  independent: { badge: 'Compte indépendant', icon: Sparkles, gradient: 'from-[#0f766e] to-[#1e3a8a]', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500' },
+const roleConfig: Record<'student' | 'delegate' | 'teacher' | 'admin' | 'independent', { badge: string; icon: UniIconName; gradient: string; bg: string; text: string; dot: string }> = {
+  student:  { badge: 'Étudiant',    icon: 'students',  gradient: 'from-[#1e3a8a] to-[#2d4fa8]', bg: 'bg-[#eff3ff]', text: 'text-[#1e3a8a]', dot: 'bg-[#1e3a8a]' },
+  delegate: { badge: 'Délégué',     icon: 'megaphone', gradient: 'from-purple-700 to-purple-500', bg: 'bg-purple-50',  text: 'text-purple-700', dot: 'bg-purple-600' },
+  teacher:  { badge: 'Enseignant',  icon: 'teacher',   gradient: 'from-[#0d9488] to-[#14b8a8]', bg: 'bg-[#f0fdfa]', text: 'text-[#0d9488]', dot: 'bg-[#0d9488]' },
+  admin:    { badge: 'Admin',       icon: 'settings',  gradient: 'from-amber-600 to-amber-500',  bg: 'bg-amber-50',  text: 'text-amber-700', dot: 'bg-amber-500' },
+  independent: { badge: 'Compte indépendant', icon: 'assistant', gradient: 'from-[#0f766e] to-[#1e3a8a]', bg: 'bg-teal-50', text: 'text-teal-700', dot: 'bg-teal-500' },
 }
 
 export function Sidebar() {
@@ -30,7 +26,6 @@ export function Sidebar() {
   const isIndependent = currentUser.accountType === 'PERSONAL'
   const filteredNav = visibleNavItems(currentRole, isIndependent ? 'PERSONAL' : 'UNIVERSITY')
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
-  const RoleIcon = role.icon
   // Aucun compteur backend : les notifications seront alimentées par Appwrite Messaging lorsque le push sera actif.
   const unreadCount = 0
 
@@ -58,7 +53,7 @@ export function Sidebar() {
               }}
             />
           </button>
-          <Sparkles className="h-4 w-4 text-[#0d9488] animate-pulse-dot" />
+          <UniIcon name="assistant" weight="fill" size={16} className="text-[#0d9488] animate-pulse-dot" />
         </div>
       </div>
 
@@ -83,13 +78,13 @@ export function Sidebar() {
               <p className="truncate text-[10px] text-[#6b7280]">{currentUser.roleLabel}</p>
             </div>
           </div>
-          <ChevronRight className="h-3.5 w-3.5 text-[#9ca3af] group-hover:text-[#1e3a8a] transition-colors flex-shrink-0" />
+          <UniIcon name="chevronRight" weight="bold" size={14} className="text-[#9ca3af] group-hover:text-[#1e3a8a] transition-colors flex-shrink-0" />
         </div>
 
         <div className="rounded-xl bg-[#f9fafb] p-3">
           <p className="text-[10px] font-bold text-[#9ca3af] uppercase tracking-wider mb-2">Rôle</p>
           <div className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-semibold text-[#374151]">
-            <RoleIcon className={cn('h-3.5 w-3.5', role.text)} />
+            <UniIcon name={role.icon} size={14} className={role.text} />
             <span>{role.badge}</span>
           </div>
         </div>
@@ -100,14 +95,13 @@ export function Sidebar() {
         <p className="px-2 pb-2 pt-1 text-[10px] font-bold text-[#9ca3af] uppercase tracking-widest">Navigation</p>
         <div className="space-y-0.5">
           {filteredNav.map((item, i) => {
-            const Icon = item.icon
             return (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.to === '/app'}
                 className={({ isActive }) => cn(
-                  'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200',
+                  'relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200 group',
                   isActive
                     ? `bg-gradient-to-r ${role.gradient} text-white shadow-md`
                     : 'text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]',
@@ -120,7 +114,7 @@ export function Sidebar() {
                       'flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0 transition-all',
                       isActive ? 'bg-white/20' : 'bg-transparent group-hover:bg-white'
                     )}>
-                      <Icon className={cn('h-4 w-4', isActive ? 'text-white' : '')} />
+                      <NavIcon name={item.icon} active={isActive} size={17} className={isActive ? 'text-white' : 'text-[#6b7280] group-hover:text-[#1e3a8a]'} />
                     </div>
                     <span className="truncate">{language === 'FR' ? item.labelFr : item.labelEn}</span>
                     {item.to === '/app/notifications' && unreadCount > 0 && (
@@ -150,7 +144,7 @@ export function Sidebar() {
               )}
             >
               <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-200/50">
-                <Settings className="h-4 w-4" />
+                <UniIcon name="settings" weight="fill" size={16} />
               </div>
               Panneau Admin
             </NavLink>
@@ -164,7 +158,7 @@ export function Sidebar() {
         <div className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#f9fafb] transition-colors cursor-pointer"
           onClick={() => setLanguage(language === 'FR' ? 'EN' : 'FR')}>
           <div className="flex items-center gap-2 text-xs text-[#374151]">
-            <Globe className="h-3.5 w-3.5 text-[#6b7280]" />
+            <UniIcon name="globe" size={14} className="text-[#6b7280]" />
             <span className="font-medium">Langue</span>
           </div>
           <span className="text-xs font-bold text-[#1e3a8a] bg-[#eff3ff] px-2 py-0.5 rounded-md">{language}</span>
@@ -174,9 +168,9 @@ export function Sidebar() {
         <div className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#f9fafb] transition-colors">
           <div className="flex items-center gap-2 text-xs text-[#374151]">
             {isOfflineMode ? (
-              <WifiOff className="h-3.5 w-3.5 text-red-500" />
+              <UniIcon name="wifiOff" size={14} className="text-red-500" />
             ) : (
-              <Wifi className="h-3.5 w-3.5 text-emerald-600" />
+              <UniIcon name="wifi" size={14} className="text-emerald-600" />
             )}
             <span className={cn('font-medium', isOfflineMode ? 'text-red-600' : '')}>
               {isOfflineMode ? 'Hors ligne' : 'En ligne'}
@@ -206,7 +200,6 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const isIndependent = currentUser.accountType === 'PERSONAL'
   const { logout } = useAuth()
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
-  const RoleIcon = role.icon
   // Aucun compteur backend : les notifications seront alimentées par Appwrite Messaging lorsque le push sera actif.
   const unreadCount = 0
 
@@ -216,8 +209,9 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
       <button
         onClick={onMenuClick}
         className="lg:hidden rounded-xl p-2 hover:bg-[#f3f4f6] transition-colors touch-target"
+        aria-label="Ouvrir le menu"
       >
-        <Menu className="h-5 w-5 text-[#6b7280]" />
+        <UniIcon name="menu" weight="bold" size={20} className="text-[#6b7280]" />
       </button>
 
       {/* Global Search Component */}
@@ -229,14 +223,14 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff] transition-all touch-target"
           title="Retour à l’accueil — session conservée"
         >
-          <Home className="h-4 w-4" /> Accueil
+          <UniIcon name="home" size={16} /> Accueil
         </button>
         {/* Role Badge */}
         <div className={cn(
           'hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold',
           role.bg, role.text, 'border-current/20'
         )}>
-          <RoleIcon className="h-3.5 w-3.5" />
+          <UniIcon name={role.icon} size={14} />
           {role.badge}
         </div>
 
@@ -244,8 +238,9 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
         <button
           onClick={() => navigate('/app/notifications')}
           className="relative rounded-xl p-2 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827] transition-all touch-target"
+          aria-label="Notifications"
         >
-          <Bell className="h-5 w-5" />
+          <UniIcon name="notifications" size={20} />
           {unreadCount > 0 && (
             <span className="absolute right-1 top-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white min-w-[18px] h-[18px] px-1">
               {unreadCount}
@@ -263,7 +258,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
             <p className="text-sm font-bold text-[#111827] leading-none">{currentUser.name}</p>
             <p className="text-[11px] text-[#6b7280] leading-none mt-0.5 truncate max-w-[130px]">{currentUser.roleLabel}</p>
           </div>
-          <ChevronDown className="hidden sm:block h-4 w-4 text-[#9ca3af]" />
+          <UniIcon name="chevronDown" weight="bold" size={16} className="hidden sm:block text-[#9ca3af]" />
         </button>
 
         {/* Logout */}
@@ -274,7 +269,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
           title="Se déconnecter"
           aria-label="Se déconnecter"
         >
-          <LogOut className="h-5 w-5" />
+          <UniIcon name="logout" weight="bold" size={20} />
         </button>
       </div>
     </header>
@@ -323,7 +318,6 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
   const isIndependent = currentUser.accountType === 'PERSONAL'
   const filteredNav = visibleNavItems(currentRole, isIndependent ? 'PERSONAL' : 'UNIVERSITY')
   const role = isIndependent ? roleConfig.independent : roleConfig[currentRole]
-  const RoleIcon = role.icon
 
   return (
     <aside className="flex h-full flex-col bg-white">
@@ -348,8 +342,8 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
             />
           </button>
         </div>
-        <button onClick={onClose} className="rounded-xl p-2 hover:bg-[#f3f4f6] transition-colors">
-          <X className="h-5 w-5 text-[#6b7280]" />
+        <button onClick={onClose} className="rounded-xl p-2 hover:bg-[#f3f4f6] transition-colors" aria-label="Fermer le menu">
+          <UniIcon name="close" weight="bold" size={20} className="text-[#6b7280]" />
         </button>
       </div>
 
@@ -378,7 +372,6 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
       <nav className="flex-1 overflow-y-auto p-3 space-y-0.5">
         <p className="px-2 pb-2 text-[10px] font-bold text-[#9ca3af] uppercase tracking-widest">Navigation</p>
         {filteredNav.map(item => {
-          const Icon = item.icon
           return (
             <NavLink
               key={item.to}
@@ -392,8 +385,12 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
                   : 'text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827]'
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" />
-              <span>{language === 'FR' ? item.labelFr : item.labelEn}</span>
+              {({ isActive }) => (
+                <>
+                  <NavIcon name={item.icon} active={isActive} size={20} />
+                  <span>{language === 'FR' ? item.labelFr : item.labelEn}</span>
+                </>
+              )}
             </NavLink>
           )
         })}
@@ -404,7 +401,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
         <div className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#f9fafb] cursor-pointer"
           onClick={() => setLanguage(language === 'FR' ? 'EN' : 'FR')}>
           <div className="flex items-center gap-2 text-sm text-[#374151]">
-            <Globe className="h-4 w-4 text-[#6b7280]" />
+            <UniIcon name="globe" size={16} className="text-[#6b7280]" />
             <span>Langue</span>
           </div>
           <span className="text-xs font-bold text-[#1e3a8a] bg-[#eff3ff] px-2 py-0.5 rounded-md">{language}</span>
@@ -412,7 +409,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
 
         <div className="flex items-center justify-between px-3 py-2 rounded-xl hover:bg-[#f9fafb]">
           <div className="flex items-center gap-2 text-sm text-[#374151]">
-            {isOfflineMode ? <WifiOff className="h-4 w-4 text-red-500" /> : <Wifi className="h-4 w-4 text-emerald-600" />}
+            {isOfflineMode ? <UniIcon name="wifiOff" size={16} className="text-red-500" /> : <UniIcon name="wifi" size={16} className="text-emerald-600" />}
             <span className={isOfflineMode ? 'font-semibold text-red-600' : ''}>{isOfflineMode ? 'Hors ligne' : 'En ligne'}</span>
           </div>
           <button
@@ -429,7 +426,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
           onClick={() => { onClose(); void logout() }}
           className="mt-2 flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50"
         >
-          <LogOut className="h-4 w-4" /> Se déconnecter
+          <UniIcon name="logout" weight="bold" size={16} /> Se déconnecter
         </button>
       </div>
     </aside>

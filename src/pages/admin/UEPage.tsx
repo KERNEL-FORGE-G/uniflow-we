@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { BookMarked, CalendarClock, Download, FileText, Printer, Search, Users } from 'lucide-react'
+import { IconTile, UniIcon, type UniIconName } from '../../components/ui/UniIcon'
 import { Button } from '../../components/ui/Button'
 import { ueApi } from '../../lib/api'
 import { useAcademicScope } from '../../hooks/useAcademicScope'
@@ -49,11 +49,11 @@ export default function UEPage() {
     URL.revokeObjectURL(url)
   }
 
-  const stats = [
-    { label: 'Cours référencés', value: units.length, icon: BookMarked, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
-    { label: 'Crédits déclarés', value: totals.credits, icon: FileText, color: 'text-[#7c3aed]', bg: 'bg-purple-50' },
-    { label: 'Créneaux publiés', value: totals.schedules, icon: CalendarClock, color: 'text-[#d97706]', bg: 'bg-amber-50' },
-    { label: 'Inscriptions relevées', value: totals.enrollments, icon: Users, color: 'text-[#059669]', bg: 'bg-emerald-50' },
+  const stats: { label: string; value: number; icon: UniIconName; color: string }[] = [
+    { label: 'Cours référencés', value: units.length, icon: 'courseUnit', color: '#1E3A8A' },
+    { label: 'Crédits déclarés', value: totals.credits, icon: 'document', color: '#7C3AED' },
+    { label: 'Créneaux publiés', value: totals.schedules, icon: 'schedule', color: '#F59E0B' },
+    { label: 'Inscriptions relevées', value: totals.enrollments, icon: 'students', color: '#10B981' },
   ]
 
   return (
@@ -65,11 +65,11 @@ export default function UEPage() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={exportCsv} disabled={loading || filtered.length === 0}>
-            <Download className="mr-2 h-4 w-4" />
+            <UniIcon name="download" weight="bold" size={16} className="mr-2" />
             Exporter le référentiel
           </Button>
           <Button variant="outline" size="sm" onClick={() => window.print()} disabled={loading}>
-            <Printer className="mr-2 h-4 w-4" />
+            <UniIcon name="print" weight="bold" size={16} className="mr-2" />
             Imprimer
           </Button>
         </div>
@@ -88,11 +88,10 @@ export default function UEPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
-          const Icon = stat.icon
+        {stats.map((stat, index) => {
           return (
             <div key={stat.label} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-              <div className={`mb-3 inline-flex items-center justify-center rounded-lg p-2 ${stat.bg}`}><Icon className={`h-5 w-5 ${stat.color}`} /></div>
+              <div className="mb-3"><IconTile name={stat.icon} color={stat.color} variant="filled" size={44} index={index} /></div>
               <p className="text-2xl font-bold text-[#111827]">{stat.value}</p>
               <p className="mt-0.5 text-xs text-[#6b7280]">{stat.label}</p>
             </div>
@@ -102,7 +101,7 @@ export default function UEPage() {
 
       <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
         <div className="relative max-w-xl">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+          <UniIcon name="search" weight="bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
           <input
             type="search"
             placeholder="Rechercher un cours, un code, un responsable ou une salle..."

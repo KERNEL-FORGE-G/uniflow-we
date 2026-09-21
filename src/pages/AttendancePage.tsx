@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
-import { QrCode, CheckCircle, XCircle, Clock, Calendar, TrendingUp, RefreshCw, AlertCircle, X, Camera, Loader2 } from 'lucide-react'
+import { SubjectIcon, UniIcon } from '../components/ui/UniIcon'
+import { darkenHex, subjectColor } from '../lib/subjectIcon'
 import { Badge } from '../components/ui/Badge'
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, PieChart, Pie, Cell } from 'recharts'
 import { useApi } from '../hooks/useApi'
 import { attendanceApi, coursesApi, type AttendanceSession, type Course } from '../lib/api'
 
 function statusIcon(s: string) {
-  if (s === 'PRESENT')  return <CheckCircle className="h-4 w-4 text-emerald-500" />
-  if (s === 'ABSENT')   return <XCircle     className="h-4 w-4 text-red-500" />
-  return <Clock className="h-4 w-4 text-amber-500" />
+  if (s === 'PRESENT')  return <UniIcon name="success" weight="fill" size={16} className="text-emerald-500" />
+  if (s === 'ABSENT')   return <UniIcon name="error" weight="fill" size={16} className="text-red-500" />
+  return <UniIcon name="time" weight="fill" size={16} className="text-amber-500" />
 }
 function statusBadge(s: string) {
   if (s === 'PRESENT')  return <Badge variant="success">Présent</Badge>
@@ -16,11 +17,6 @@ function statusBadge(s: string) {
   if (s === 'RETARD')   return <Badge variant="warning">Retard</Badge>
   return <Badge variant="primary">Justifié</Badge>
 }
-
-const courseGradients = [
-  'from-blue-600 to-indigo-700', 'from-teal-600 to-emerald-700',
-  'from-purple-600 to-pink-700', 'from-amber-600 to-orange-700',
-]
 
 type ProximityPosition = { latitude: number; longitude: number; accuracy: number }
 
@@ -151,10 +147,10 @@ export default function AttendancePage() {
   )
   if (eCourses) return (
     <div className="flex flex-col items-center justify-center py-20 gap-4">
-      <AlertCircle className="h-12 w-12 text-red-400" />
+      <UniIcon name="alert" size={48} className="text-red-400" />
       <p className="text-sm text-[#6b7280]">{eCourses}</p>
       <button onClick={refetch} className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white">
-        <RefreshCw className="h-4 w-4" /> Réessayer
+        <UniIcon name="refresh" weight="bold" size={16} /> Réessayer
       </button>
     </div>
   )
@@ -169,7 +165,7 @@ export default function AttendancePage() {
         </div>
         <button onClick={() => { setQrStatus(null); setQrError(null); setQrValue(''); setShowQR(true) }}
           className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">
-          <QrCode className="h-4 w-4" /> Scanner QR
+          <UniIcon name="attendance" weight="bold" size={16} /> Scanner QR
         </button>
       </div>
 
@@ -208,7 +204,7 @@ export default function AttendancePage() {
 
       {/* Présences par cours */}
       <div className="grid gap-4 sm:grid-cols-2">
-        {(courses ?? []).map((course: Course, idx: number) => {
+        {(courses ?? []).map((course: Course) => {
           const courseSessions = (allSessions ?? []).filter((s: AttendanceSession) => s.courseId === course.id)
           const records = courseSessions.flatMap((s: AttendanceSession) => s.records ?? [])
           const present = records.filter(r => r.status === 'PRESENT').length
@@ -216,17 +212,18 @@ export default function AttendancePage() {
           const late    = records.filter(r => r.status === 'RETARD').length
           const tot = records.length || 1
           const rate = Math.round((present / tot) * 100)
-          const gradient = courseGradients[idx % courseGradients.length]
+          // Même teinte que la carte du cours : la matière se reconnaît d'une page à l'autre.
+          const color = subjectColor(course.code)
           const teacherName = course.teacher
             ? `${course.teacher.firstName} ${course.teacher.lastName}`
             : ''
 
           return (
             <div key={course.id} className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              <div className={`bg-gradient-to-r ${gradient} p-4 text-white`}>
+              <div className="p-4 text-white" style={{ backgroundImage: `linear-gradient(135deg, ${color} 0%, ${darkenHex(color, 0.3)} 100%)` }}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="inline-block rounded-md bg-white/20 px-2 py-0.5 text-xs font-bold mb-1">{course.code}</span>
+                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-white/20 px-2 py-0.5 text-xs font-bold"><SubjectIcon subject={course.name} code={course.code} weight="fill" size={14} />{course.code}</span>
                     <h3 className="text-base font-bold">{course.name}</h3>
                     <p className="text-xs opacity-80">{teacherName}</p>
                   </div>
@@ -239,17 +236,17 @@ export default function AttendancePage() {
               <div className="p-4 space-y-3">
                 <div className="grid grid-cols-3 gap-2 text-center">
                   <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2">
-                    <CheckCircle className="h-4 w-4 text-emerald-600 mx-auto mb-0.5" />
+                    <UniIcon name="success" weight="fill" size={16} className="text-emerald-600 mx-auto mb-0.5" />
                     <p className="text-lg font-bold text-emerald-900">{present}</p>
                     <p className="text-[10px] text-emerald-600">Présent</p>
                   </div>
                   <div className="rounded-lg bg-red-50 border border-red-200 p-2">
-                    <XCircle className="h-4 w-4 text-red-600 mx-auto mb-0.5" />
+                    <UniIcon name="error" weight="fill" size={16} className="text-red-600 mx-auto mb-0.5" />
                     <p className="text-lg font-bold text-red-900">{absent}</p>
                     <p className="text-[10px] text-red-600">Absent</p>
                   </div>
                   <div className="rounded-lg bg-amber-50 border border-amber-200 p-2">
-                    <Clock className="h-4 w-4 text-amber-600 mx-auto mb-0.5" />
+                    <UniIcon name="time" weight="fill" size={16} className="text-amber-600 mx-auto mb-0.5" />
                     <p className="text-lg font-bold text-amber-900">{late}</p>
                     <p className="text-[10px] text-amber-600">Retard</p>
                   </div>
@@ -259,7 +256,7 @@ export default function AttendancePage() {
                 {courseSessions.slice(-3).map((s: AttendanceSession) => (
                   <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-[#f9fafb] text-xs">
                     <span className="flex items-center gap-1.5 text-[#6b7280]">
-                      <Calendar className="h-3.5 w-3.5" />
+                      <UniIcon name="agenda" size={14} />
                       {new Date(s.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' })}
                     </span>
                     <div className="flex items-center gap-1">
@@ -305,7 +302,7 @@ export default function AttendancePage() {
       <div className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
           <h2 className="text-sm font-bold text-[#111827] mb-4 flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-[#1e3a8a]" /> Taux par matière
+            <UniIcon name="stats" size={16} className="text-[#1e3a8a]" /> Taux par matière
           </h2>
           <ResponsiveContainer width="100%" height={180}>
             <BarChart data={courseStats}>
@@ -346,9 +343,10 @@ export default function AttendancePage() {
           >
             <button
               onClick={() => setShowQR(false)}
+              aria-label="Fermer"
               className="absolute top-3 right-3 p-1 rounded-lg text-slate-400 hover:bg-slate-100"
             >
-              <X className="h-5 w-5" />
+              <UniIcon name="close" weight="bold" size={20} />
             </button>
             <h3 className="text-base font-bold text-[#111827] mb-1">Scanner le QR Code</h3>
             <p className="text-xs text-[#6b7280] mb-4">Pointez votre caméra vers le QR affiché par le délégué ou saisissez son contenu en secours.</p>
@@ -362,7 +360,7 @@ export default function AttendancePage() {
               onClick={() => void submitQr(qrValue)} disabled={qrSubmitting || !qrValue.trim()}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-[#1e3a8a] py-2.5 text-xs font-bold text-white hover:bg-blue-900 shadow-sm disabled:opacity-50"
             >
-              {qrSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+              {qrSubmitting ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="camera" weight="fill" size={16} />}
               {qrSubmitting ? 'Validation Appwrite…' : 'Valider mon émargement'}
             </button>
           </div>

@@ -1,11 +1,7 @@
 import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom'
-import {
-  Search, Bell, LogOut, BarChart3, Database, BookOpen, BookMarked,
-  Calendar, Users, GraduationCap, UserCheck, Settings, ChevronRight,
-  Shield, TrendingUp, FileText, AlertCircle, Activity, Home
-} from 'lucide-react'
 import { adminNavGroups } from '../../data/navigation'
 import { Avatar } from '../ui/Avatar'
+import { NavIcon, UniIcon } from '../ui/UniIcon'
 import { cn } from '../../utils/cn'
 import { Suspense, useEffect, useState } from 'react'
 import { AnimatePresence } from 'framer-motion'
@@ -40,7 +36,7 @@ function AdminSidebar() {
       <div className="admin-header-gradient px-5 py-4 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
-            <Shield className="h-5 w-5 text-white" />
+            <UniIcon name="security" weight="fill" size={20} className="text-white" />
           </div>
           <div>
             <span className="text-[17px] font-black tracking-tight text-white">
@@ -69,7 +65,7 @@ function AdminSidebar() {
           <div key={group.title} className="mb-5">
             <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-widest text-[#9ca3af]">{group.title}</p>
             <ul className="space-y-0.5">
-              {group.items.map(({ to, icon: Icon, labelFr, end }) => (
+              {group.items.map(({ to, icon, labelFr, end }) => (
                 <li key={to}>
                   <NavLink
                     to={to}
@@ -87,10 +83,10 @@ function AdminSidebar() {
                           'flex h-7 w-7 items-center justify-center rounded-lg transition-all flex-shrink-0',
                           isActive ? 'bg-white/20' : 'bg-[#f3f4f6] group-hover:bg-[#eff3ff]'
                         )}>
-                          <Icon className={cn('h-4 w-4', isActive ? 'text-white' : 'text-[#6b7280] group-hover:text-[#1e3a8a]')} />
+                          <NavIcon name={icon} active={isActive} size={17} className={isActive ? 'text-white' : 'text-[#6b7280] group-hover:text-[#1e3a8a]'} />
                         </div>
                         <span className="truncate">{labelFr}</span>
-                        {isActive && <ChevronRight className="ml-auto h-3.5 w-3.5 text-white/60" />}
+                        {isActive && <UniIcon name="chevronRight" weight="bold" size={14} className="ml-auto text-white/60" />}
                       </>
                     )}
                   </NavLink>
@@ -141,7 +137,7 @@ function BackendStatus() {
     <div className="border-t border-[#e5e7eb] p-3">
       <div className={cn('rounded-xl border px-3 py-2.5', tone.box)} role="status">
         <div className="flex items-center gap-2">
-          <Activity className={cn('h-3.5 w-3.5', tone.icon)} />
+          <UniIcon name="activity" weight="bold" size={14} className={tone.icon} />
           <span className={cn('text-xs font-semibold', tone.title)}>{title}</span>
         </div>
         <p className={cn('text-[10px] mt-0.5 ml-5.5', tone.text)}>{detail}</p>
@@ -171,7 +167,7 @@ function AdminBreadcrumb() {
     <div className="hidden md:flex items-center gap-1.5 text-sm text-[#6b7280]">
       {parts.map((part, i) => (
         <span key={i} className="flex items-center gap-1.5">
-          {i > 0 && <ChevronRight className="h-3.5 w-3.5" />}
+          {i > 0 && <UniIcon name="chevronRight" weight="bold" size={14} />}
           <span className={i === parts.length - 1 ? 'font-semibold text-[#111827]' : ''}>
             {labels[part] || part}
           </span>
@@ -204,12 +200,12 @@ export function AdminLayout() {
             title="Retour à l’accueil — session conservée"
             className="hidden sm:inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff] transition-all"
           >
-            <Home className="h-4 w-4" /> Accueil
+            <UniIcon name="home" size={16} /> Accueil
           </button>
 
           {/* Search */}
           <div className="relative flex-1 max-w-sm lg:max-w-xs">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+            <UniIcon name="search" weight="bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
             <input
               type="search"
               value={searchVal}
@@ -220,8 +216,8 @@ export function AdminLayout() {
           </div>
 
           {/* Notifications */}
-          <button className="relative rounded-xl p-2 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827] transition-all">
-            <Bell className="h-5 w-5" />
+          <button className="relative rounded-xl p-2 text-[#6b7280] hover:bg-[#f3f4f6] hover:text-[#111827] transition-all" aria-label="Notifications">
+            <UniIcon name="notifications" size={20} />
             {notifCount > 0 && (
               <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">
                 {notifCount}
@@ -231,7 +227,7 @@ export function AdminLayout() {
 
           {/* Admin badge */}
           <div className={cn('hidden md:flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-bold', identity.isPlatform ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-[#eff3ff] border-[#c7d2fe] text-[#1e3a8a]')}>
-            <Shield className="h-3.5 w-3.5" />
+            <UniIcon name="security" size={14} />
             {identity.title}
           </div>
 
@@ -252,7 +248,7 @@ export function AdminLayout() {
             aria-label="Se déconnecter"
             className="rounded-xl p-2 text-[#6b7280] hover:bg-red-50 hover:text-red-600 transition-all"
           >
-            <LogOut className="h-5 w-5" />
+            <UniIcon name="logout" weight="bold" size={20} />
           </button>
         </header>
 

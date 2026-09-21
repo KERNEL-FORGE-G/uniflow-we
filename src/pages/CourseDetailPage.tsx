@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, BookOpen, FileText, Video, Users, Clock, Calendar, Download, Play, Eye, CheckCircle, Film, Loader2 } from 'lucide-react'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
+import { IconTile, SubjectIcon, UniIcon, type UniIconName } from '../components/ui/UniIcon'
+import { darkenHex, subjectColor } from '../lib/subjectIcon'
 import { Course, coursesApi, libraryApi, schedulesApi, type LibraryResource, type Schedule } from '../lib/api'
 
 type Tab = 'infos' | 'documents' | 'videos' | 'visio' | 'syllabus'
@@ -34,7 +35,8 @@ const mapToUiCourse = (c: Course): UiCourse => ({
   teacher: c.teacher ? `${c.teacher.firstName} ${c.teacher.lastName}` : 'N/A',
   semester: 'N/A',
   progress: 0,
-  color: 'from-blue-600 to-blue-800',
+  // Même couleur que la carte du cours dans la liste : la matière se reconnaît d'une page à l'autre.
+  color: subjectColor(c.code),
   enrolled: 0,
   status: 'En cours'
 })
@@ -68,15 +70,15 @@ export default function CourseDetailPage() {
       .finally(() => setLoading(false))
   }, [courseId])
   
-  const tabs: { id: Tab; label: string; icon: any }[] = [
-    { id: 'infos', label: 'Informations', icon: BookOpen },
-    { id: 'documents', label: 'Documents', icon: FileText },
-    { id: 'videos', label: 'Vidéos', icon: Video },
-    { id: 'visio', label: 'Visioconférence', icon: Users },
-    { id: 'syllabus', label: 'Programme', icon: Calendar },
+  const tabs: { id: Tab; label: string; icon: UniIconName }[] = [
+    { id: 'infos', label: 'Informations', icon: 'courses' },
+    { id: 'documents', label: 'Documents', icon: 'document' },
+    { id: 'videos', label: 'Vidéos', icon: 'video' },
+    { id: 'visio', label: 'Visioconférence', icon: 'users' },
+    { id: 'syllabus', label: 'Programme', icon: 'agenda' },
   ]
 
-  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" /></div>
+  if (loading) return <div className="flex h-screen items-center justify-center"><UniIcon name="spinner" weight="bold" size={32} className="animate-spin text-[#1e3a8a]" /></div>
   if (error) return <div className="p-6 text-red-500">Erreur: {error}</div>
   if (!course) return <div className="p-6">Cours introuvable</div>
 
@@ -85,13 +87,17 @@ export default function CourseDetailPage() {
       {/* Back button + Header */}
       <button onClick={() => navigate('/app/cours')}
         className="flex items-center gap-2 text-sm font-medium text-[#6b7280] hover:text-[#1e3a8a] transition-colors">
-        <ArrowLeft className="h-4 w-4" /> Retour aux cours
+        <UniIcon name="back" weight="bold" size={16} /> Retour aux cours
       </button>
 
       {/* Course header */}
-      <div className={`rounded-xl border border-[#e5e7eb] bg-gradient-to-r ${course.color} p-6 text-white shadow-lg`}>
+      <div className="rounded-xl border border-[#e5e7eb] p-6 text-white shadow-lg" style={{ backgroundImage: `linear-gradient(135deg, ${course.color} 0%, ${darkenHex(course.color, 0.3)} 100%)` }}>
         <div className="flex items-start justify-between gap-4">
-          <div>
+          <div className="flex items-start gap-4">
+            <div className="hidden shrink-0 rounded-2xl bg-white/20 p-3 backdrop-blur-sm sm:block">
+              <SubjectIcon subject={course.name} code={course.code} size={40} />
+            </div>
+            <div>
             <div className="flex items-center gap-2 mb-2">
               <span className="inline-flex items-center rounded-md bg-white/20 px-2.5 py-1 text-xs font-bold backdrop-blur-sm">
                 {course.code}
@@ -101,9 +107,10 @@ export default function CourseDetailPage() {
             <h1 className="text-2xl font-extrabold mb-2">{course.title}</h1>
             <p className="text-sm opacity-90">{course.teacher} • {course.semester}</p>
             <div className="mt-4 flex items-center gap-6 text-sm">
-              <span className="flex items-center gap-1.5"><Users className="h-4 w-4" />{course.enrolled} inscrits</span>
-              <span className="flex items-center gap-1.5"><Clock className="h-4 w-4" />{course.credits} crédits</span>
+              <span className="flex items-center gap-1.5"><UniIcon name="users" size={16} />{course.enrolled} inscrits</span>
+              <span className="flex items-center gap-1.5"><UniIcon name="time" size={16} />{course.credits} crédits</span>
               <span className="flex items-center gap-1.5">{course.type}</span>
+            </div>
             </div>
           </div>
           <div className="text-right">
@@ -118,14 +125,14 @@ export default function CourseDetailPage() {
 
       {/* Tabs */}
       <div className="flex gap-2 border-b border-[#e5e7eb] overflow-x-auto">
-        {tabs.map(({ id, label, icon: Icon }) => (
+        {tabs.map(({ id, label, icon }) => (
           <button key={id} onClick={() => setActiveTab(id)}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap ${
               activeTab === id
                 ? 'border-[#1e3a8a] text-[#1e3a8a]'
                 : 'border-transparent text-[#6b7280] hover:text-[#374151]'
             }`}>
-            <Icon className="h-4 w-4" />
+            <UniIcon name={icon} weight={activeTab === id ? 'fill' : 'duotone'} size={16} />
             {label}
           </button>
         ))}
@@ -143,15 +150,15 @@ export default function CourseDetailPage() {
               <h3 className="text-sm font-bold text-[#111827] mb-2">Objectifs pédagogiques</h3>
               <ul className="space-y-2 text-sm text-[#6b7280]">
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />
+                  <UniIcon name="success" weight="fill" size={16} className="text-[#0d9488] shrink-0 mt-0.5" />
                   Ressources et créneaux du parcours {[course.program, course.level].filter(Boolean).join(' · ') || 'universitaire'} dans Appwrite
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />
+                  <UniIcon name="success" weight="fill" size={16} className="text-[#0d9488] shrink-0 mt-0.5" />
                   Supports pédagogiques disponibles depuis la bibliothèque universitaire
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 text-[#0d9488] shrink-0 mt-0.5" />
+                  <UniIcon name="success" weight="fill" size={16} className="text-[#0d9488] shrink-0 mt-0.5" />
                   Évaluations et présences consultables depuis les parcours associés
                 </li>
               </ul>
@@ -217,9 +224,7 @@ export default function CourseDetailPage() {
             {documents.map(doc => (
               <div key={doc.id} className="flex items-center justify-between p-4 rounded-lg border border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#eff3ff]">
-                    <FileText className="h-5 w-5 text-[#1e3a8a]" />
-                  </div>
+                  <IconTile name="document" color="#1E3A8A" variant="soft" size={44} />
                   <div>
                     <p className="text-sm font-semibold text-[#111827]">{doc.name}</p>
                     <div className="flex items-center gap-2 text-xs text-[#6b7280] mt-0.5">
@@ -235,10 +240,10 @@ export default function CourseDetailPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <button disabled title="Aperçu non provisionné" className="rounded-lg p-2 text-slate-300 cursor-not-allowed">
-                    <Eye className="h-4 w-4" />
+                    <UniIcon name="eye" size={16} />
                   </button>
                   <button disabled title="Fichier non associé dans le bucket Appwrite" className="rounded-lg bg-slate-200 p-2 text-slate-500 cursor-not-allowed">
-                    <Download className="h-4 w-4" />
+                    <UniIcon name="download" weight="bold" size={16} />
                   </button>
                 </div>
               </div>
@@ -255,9 +260,9 @@ export default function CourseDetailPage() {
             {videos.map(video => (
               <div key={video.id} className="rounded-xl border border-[#e5e7eb] overflow-hidden hover:shadow-md transition-shadow group cursor-pointer">
                 <div className="relative h-40 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-                  <Film className="h-12 w-12 text-white/30" />
+                  <UniIcon name="film" size={48} className="text-white/30" />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Play className="h-12 w-12 text-white" />
+                    <UniIcon name="play" weight="fill" size={48} className="text-white" />
                   </div>
                   <div className="absolute bottom-2 right-2 bg-black/70 px-2 py-0.5 rounded text-xs text-white font-semibold">
                     {video.duration}
@@ -280,9 +285,7 @@ export default function CourseDetailPage() {
         <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
           <h2 className="text-lg font-bold text-[#111827] mb-4">Visioconférence</h2>
           <div className="text-center py-12">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#eff3ff]">
-              <Video className="h-10 w-10 text-[#1e3a8a]" />
-            </div>
+            <div className="mx-auto mb-4 flex justify-center"><IconTile name="video" color="#1E3A8A" variant="soft" size={56} /></div>
             <h3 className="text-lg font-bold text-[#111827] mb-2">Aucune session en cours</h3>
             <p className="text-sm text-[#6b7280] mb-6">
               Aucune visioconférence n'est actuellement active pour ce cours.
@@ -308,7 +311,7 @@ export default function CourseDetailPage() {
                     <h3 className="text-sm font-bold text-[#111827]">{item.title}</h3>
                   </div>
                   {item.completed && (
-                    <CheckCircle className="h-5 w-5 text-[#0d9488]" />
+                    <UniIcon name="success" weight="fill" size={20} className="text-[#0d9488]" />
                   )}
                 </div>
                 <ul className="space-y-1 mt-2">

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Clock, CheckCircle, AlertCircle, FileText, ChevronRight, X, Loader2, RefreshCw, Upload, Search, Download, Check, Trash2, Award } from 'lucide-react'
+import { IconTile, UniIcon, type UniIconName } from '../components/ui/UniIcon'
 import { Badge } from '../components/ui/Badge'
 import { AnimatedList } from '../components/ui/AnimatedList'
 import { useApi } from '../hooks/useApi'
@@ -26,11 +26,11 @@ interface ExtendedAssignment extends Assignment {
   feedback?: string
 }
 
-const statusMeta: Record<AssignmentStatus, { variant: 'warning' | 'danger' | 'success' | 'info'; icon: any; label: string }> = {
-  'À rendre': { variant: 'warning', icon: Clock, label: 'À rendre' },
-  'En retard': { variant: 'danger', icon: AlertCircle, label: 'En retard' },
-  'Soumis': { variant: 'success', icon: CheckCircle, label: 'Soumis' },
-  'Noté': { variant: 'info', icon: FileText, label: 'Noté' },
+const statusMeta: Record<AssignmentStatus, { variant: 'warning' | 'danger' | 'success' | 'info'; icon: UniIconName; label: string }> = {
+  'À rendre': { variant: 'warning', icon: 'time', label: 'À rendre' },
+  'En retard': { variant: 'danger', icon: 'alert', label: 'En retard' },
+  'Soumis': { variant: 'success', icon: 'success', label: 'Soumis' },
+  'Noté': { variant: 'info', icon: 'document', label: 'Noté' },
 }
 
 const summary = [
@@ -207,14 +207,14 @@ export default function AssignmentsPage() {
         <div className="flex flex-wrap items-center gap-2">
           <PushNotificationControl compact />
           <button onClick={() => refetch()} className="rounded-lg border border-[#e5e7eb] p-2 text-[#6b7280] hover:bg-[#f9fafb]">
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            <UniIcon name="refresh" weight="bold" size={16} className={loading ? 'animate-spin' : ''} />
           </button>
           {canCreate && (
             <button
               onClick={() => setShowNew(true)}
               className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors shadow-sm"
             >
-              <Plus className="h-4 w-4" /> Nouveau devoir
+              <UniIcon name="plus" weight="bold" size={16} /> Nouveau devoir
             </button>
           )}
         </div>
@@ -229,7 +229,7 @@ export default function AssignmentsPage() {
       {/* Search & Filters Bar */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="relative flex-1 min-w-[220px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9ca3af]" />
+          <UniIcon name="search" weight="bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
           <input
             type="text"
             value={searchQuery}
@@ -305,7 +305,7 @@ export default function AssignmentsPage() {
       <div>
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#d1d5db] bg-white py-16 text-[#9ca3af]">
-            <FileText className="h-10 w-10 mb-3 opacity-40" />
+            <IconTile name="assignments" color="#1E3A8A" variant="soft" size={56} className="mb-3" />
             <p className="text-sm font-semibold text-[#374151]">Aucun devoir ne correspond à vos critères.</p>
             <p className="text-xs text-[#9ca3af] mt-1">Essayez de modifier vos filtres ou d'ajouter un nouveau devoir.</p>
           </div>
@@ -318,7 +318,6 @@ export default function AssignmentsPage() {
             className="max-h-[calc(100vh-420px)] space-y-3"
             renderItem={(a: ExtendedAssignment) => {
               const meta = statusMeta[a.status] || statusMeta['À rendre']
-              const StatusIcon = meta.icon
               return (
                 <div
                   key={a.id}
@@ -329,12 +328,12 @@ export default function AssignmentsPage() {
                     <div className="flex flex-wrap items-center gap-2 mb-1.5">
                       <Badge variant="primary">{a.code}</Badge>
                       <Badge variant={meta.variant}>
-                        <StatusIcon className="h-3 w-3 mr-1 inline" />
+                        <UniIcon name={meta.icon} weight="fill" size={12} className="mr-1 inline" />
                         {meta.label}
                       </Badge>
                       {a.grade && (
                         <span className="inline-flex items-center gap-1 text-xs font-bold text-[#1e3a8a] bg-[#eff3ff] rounded-md px-2.5 py-0.5 border border-[#1e3a8a]/20">
-                          <Award className="h-3 w-3 text-[#1e3a8a]" /> Note : {a.grade}
+                          <UniIcon name="grades" weight="fill" size={12} className="text-[#1e3a8a]" /> Note : {a.grade}
                         </span>
                       )}
                     </div>
@@ -342,11 +341,11 @@ export default function AssignmentsPage() {
                     <p className="text-xs text-[#6b7280] mt-1 line-clamp-1">{a.description || 'Devoir pratique'}</p>
                     <div className="mt-3 flex items-center gap-4 text-xs text-[#9ca3af]">
                       <span className="flex items-center gap-1">
-                        <Clock className="h-3.5 w-3.5 text-[#1e3a8a]" /> Échéance : {formatWhen(a.due)}
+                        <UniIcon name="time" size={14} className="text-[#1e3a8a]" /> Échéance : {formatWhen(a.due)}
                       </span>
                       {a.submittedAt && (
                         <span className="flex items-center gap-1 text-emerald-600 font-medium">
-                          <Check className="h-3.5 w-3.5" /> Rendu le {formatWhen(a.submittedAt)}
+                          <UniIcon name="check" weight="bold" size={14} /> Rendu le {formatWhen(a.submittedAt)}
                         </span>
                       )}
                     </div>
@@ -372,7 +371,7 @@ export default function AssignmentsPage() {
                       }`}
                     >
                       {a.status === 'À rendre' || a.status === 'En retard' ? 'Rendre le devoir' : 'Voir le détail'}
-                      <ChevronRight className="h-4 w-4" />
+                      <UniIcon name="chevronRight" weight="bold" size={16} />
                     </button>
                     {isTeacherOrAdmin && (
                       <button
@@ -383,7 +382,7 @@ export default function AssignmentsPage() {
                         className="rounded-xl p-2 text-[#9ca3af] hover:text-red-600 hover:bg-red-50 transition-colors"
                         title="Supprimer"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <UniIcon name="trash" size={16} />
                       </button>
                     )}
                   </div>
@@ -409,7 +408,7 @@ export default function AssignmentsPage() {
                 <h2 className="text-lg font-extrabold text-[#111827]">{selectedAssignment.title}</h2>
               </div>
               <button onClick={() => setSelectedAssignment(null)} className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]">
-                <X className="h-5 w-5" />
+                <UniIcon name="close" weight="bold" size={20} />
               </button>
             </div>
 
@@ -424,7 +423,7 @@ export default function AssignmentsPage() {
                   </p>
                 )}
                 <p className="text-xs text-[#9ca3af] pt-1 flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5 text-[#1e3a8a]" /> Date limite de remise : <strong>{selectedAssignment.due}</strong>
+                  <UniIcon name="time" size={14} className="text-[#1e3a8a]" /> Date limite de remise : <strong>{selectedAssignment.due}</strong>
                 </p>
               </div>
 
@@ -433,7 +432,7 @@ export default function AssignmentsPage() {
                 <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-4 space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="font-bold text-emerald-800 flex items-center gap-1.5">
-                      <Award className="h-4 w-4" /> Note attribuée :
+                      <UniIcon name="grades" weight="fill" size={16} /> Note attribuée :
                     </span>
                     <span className="text-base font-extrabold text-emerald-700 bg-white px-3 py-1 rounded-lg border border-emerald-300">
                       {selectedAssignment.grade}
@@ -453,7 +452,7 @@ export default function AssignmentsPage() {
                   <p className="font-bold text-xs uppercase text-[#6b7280]">Fichier soumis</p>
                   <div className="flex items-center justify-between bg-[#f9fafb] p-3 rounded-lg border border-[#e5e7eb]">
                     <div className="flex items-center gap-2.5">
-                      <FileText className="h-5 w-5 text-[#1e3a8a]" />
+                      <UniIcon name="document" size={20} className="text-[#1e3a8a]" />
                       <div>
                         <p className="font-semibold text-xs text-[#111827]">{selectedAssignment.submittedFile}</p>
                         <p className="text-[11px] text-[#9ca3af]">Soumis le {selectedAssignment.submittedAt ? formatWhen(selectedAssignment.submittedAt) : 'récemment'}</p>
@@ -467,7 +466,7 @@ export default function AssignmentsPage() {
                       }}
                       className="flex items-center gap-1 rounded-lg bg-[#1e3a8a] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8]"
                     >
-                      <Download className="h-3.5 w-3.5" /> Télécharger
+                      <UniIcon name="download" weight="bold" size={14} /> Télécharger
                     </a>
                   </div>
                   {selectedAssignment.submissionNote && (
@@ -485,7 +484,7 @@ export default function AssignmentsPage() {
 
                   {submitSuccess && (
                     <div className="flex items-center gap-2 rounded-xl bg-emerald-100 p-3 text-xs font-bold text-emerald-800">
-                      <CheckCircle className="h-4 w-4 text-emerald-600" />
+                      <UniIcon name="success" weight="fill" size={16} className="text-emerald-600" />
                       Devoir soumis avec succès !
                     </div>
                   )}
@@ -515,7 +514,7 @@ export default function AssignmentsPage() {
                     disabled={submittingDevoir}
                     className="flex items-center justify-center gap-2 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-xs font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-sm"
                   >
-                    {submittingDevoir ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                    {submittingDevoir ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="upload" weight="bold" size={16} />}
                     {selectedAssignment.status === 'Soumis' ? 'Mettre à jour le fichier' : 'Soumettre le devoir'}
                   </button>
                 </form>
@@ -525,7 +524,7 @@ export default function AssignmentsPage() {
               {isTeacherOrAdmin && (
                 <form onSubmit={handleGradeAssignment} className="rounded-xl border border-amber-200 bg-amber-50/50 p-4 space-y-3">
                   <p className="font-bold text-xs uppercase text-amber-800 tracking-wider flex items-center gap-1.5">
-                    <Award className="h-4 w-4" /> Espace Enseignant — Évaluation
+                    <UniIcon name="grades" weight="fill" size={16} /> Espace Enseignant — Évaluation
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
@@ -574,7 +573,7 @@ export default function AssignmentsPage() {
             <div className="flex items-center justify-between border-b border-[#f3f4f6] pb-3">
               <h2 className="text-base font-bold text-[#111827]">Nouveau devoir / TP</h2>
               <button onClick={() => setShowNew(false)} className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]">
-                <X className="h-5 w-5" />
+                <UniIcon name="close" weight="bold" size={20} />
               </button>
             </div>
             <form onSubmit={handleAddAssignment} className="space-y-3">
@@ -635,7 +634,7 @@ export default function AssignmentsPage() {
                   disabled={submitting}
                   className="flex-1 rounded-xl bg-[#1e3a8a] py-2.5 text-xs font-bold text-white hover:bg-[#2d4fa8] shadow-sm flex items-center justify-center gap-1.5"
                 >
-                  {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                  {submitting ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="plus" weight="bold" size={16} />}
                   Créer le devoir
                 </button>
               </div>

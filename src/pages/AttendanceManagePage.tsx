@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { QrCode, Download, UserCheck, RefreshCw, AlertTriangle, Wifi, Check, Clock, X, HelpCircle, Megaphone, User, CheckCircle2, Loader2 } from 'lucide-react'
+import { IconTile, UniIcon } from '../components/ui/UniIcon'
+import { subjectColor } from '../lib/subjectIcon'
 import { QRCodeSVG } from 'qrcode.react'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
@@ -222,7 +223,7 @@ export default function AttendanceManagePage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" />
+        <UniIcon name="spinner" weight="bold" size={32} className="animate-spin text-[#1e3a8a]" />
       </div>
     )
   }
@@ -235,7 +236,7 @@ export default function AttendanceManagePage() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
         <div>
           <span className="inline-flex items-center gap-1 rounded-full bg-[#f0fdfa] border border-[#ccfbf1] px-2.5 py-1 text-xs font-semibold text-[#0d9488] mb-2">
-            <Megaphone className="h-3.5 w-3.5" /> ESPACE DÉLÉGUÉ / ENSEIGNANT
+            <UniIcon name="megaphone" weight="fill" size={14} /> ESPACE DÉLÉGUÉ / ENSEIGNANT
           </span>
           <h1 className="text-xl font-bold text-[#111827]">Gestion des présences</h1>
           <p className="text-sm text-[#6b7280] mt-0.5">{currentUser.name} · {currentUser.status} · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
@@ -244,7 +245,7 @@ export default function AttendanceManagePage() {
           {course && (
             <button onClick={handleGenerateQr} disabled={qrLoading || isOfflineMode}
               className="flex items-center gap-1.5 rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a7167] transition-colors disabled:opacity-50">
-              {qrLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <QrCode className="h-4 w-4" />}
+              {qrLoading ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="attendance" weight="bold" size={16} />}
               {qrLoading ? 'Création Appwrite…' : 'Générer QR'}
             </button>
           )}
@@ -265,7 +266,7 @@ export default function AttendanceManagePage() {
       {/* Offline / Online banner */}
       {isOfflineMode ? (
         <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800">
-          <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5 animate-bounce" />
+          <UniIcon name="warning" weight="fill" size={20} className="text-amber-500 shrink-0 mt-0.5 animate-bounce" />
           <div className="flex-1">
             <p className="font-semibold text-sm">Mode hors ligne</p>
             <p className="text-xs mt-0.5">La consultation reste limitée aux données déjà chargées. La feuille du jour validée est mise en attente et partira au retour du réseau ; le QR de présence, lui, exige une connexion.</p>
@@ -273,13 +274,13 @@ export default function AttendanceManagePage() {
           {pending > 0 && (
             <button onClick={() => setPending(0)}
               className="flex items-center gap-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 px-3 py-1.5 text-xs font-bold text-amber-900 shrink-0">
-              <RefreshCw className="h-3.5 w-3.5" /> Sync ({pending})
+              <UniIcon name="refresh" weight="bold" size={14} /> Sync ({pending})
             </button>
           )}
         </div>
       ) : (
         <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800">
-          <Wifi className="h-5 w-5 text-emerald-500 shrink-0" />
+          <UniIcon name="wifi" weight="fill" size={20} className="text-emerald-500 shrink-0" />
           <p className="text-sm font-medium">Mode connecté — les présences sont lues et enregistrées directement dans Appwrite.</p>
         </div>
       )}
@@ -287,7 +288,7 @@ export default function AttendanceManagePage() {
       {/* Saved toast */}
       {saved && (
         <div className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
-          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+          <UniIcon name="success" weight="fill" size={16} className="text-emerald-400" />
           {queuedNotice ? 'Feuille du jour mise en attente d’envoi.' : 'Présences enregistrées dans Appwrite.'}
         </div>
       )}
@@ -315,13 +316,13 @@ export default function AttendanceManagePage() {
                   <button key={c.code} onClick={() => setSelectedCode(c.code)}
                     className={cn('w-full text-left rounded-xl border p-3.5 text-sm transition-all', selectedCode === c.code ? 'border-[#1e3a8a] bg-[#f0f4ff]' : 'border-[#e5e7eb] hover:bg-[#f9fafb]')}>
                     <div className="flex justify-between items-center">
-                      <span className="font-bold text-[#111827]">{c.code}</span>
+                      <span className="flex items-center gap-2 font-bold text-[#111827]"><IconTile subject={c.name} subjectCode={c.code} color={subjectColor(c.code)} variant={selectedCode === c.code ? 'filled' : 'soft'} size={36} />{c.code}</span>
                       <Badge variant="neutral">{c.classroom?.name || 'Salle N/A'}</Badge>
                     </div>
                     <p className="font-medium text-[#374151] mt-0.5 truncate">{c.name}</p>
                     <div className="flex justify-between text-xs text-[#9ca3af] mt-1">
-                      <span className="flex items-center gap-1"><User className="h-3 w-3" /> {c.teacher ? `${c.teacher.firstName} ${c.teacher.lastName}` : 'N/A'}</span>
-                      <span className="flex items-center gap-1 font-semibold text-[#1e3a8a]"><Clock className="h-3 w-3" /> {c.hours}h</span>
+                      <span className="flex items-center gap-1"><UniIcon name="teacher" size={12} /> {c.teacher ? `${c.teacher.firstName} ${c.teacher.lastName}` : 'N/A'}</span>
+                      <span className="flex items-center gap-1 font-semibold text-[#1e3a8a]"><UniIcon name="time" size={12} /> {c.hours}h</span>
                     </div>
                   </button>
                 ))}
@@ -396,9 +397,9 @@ export default function AttendanceManagePage() {
                                     : 'bg-purple-600 border-purple-700 text-white'
                                   : 'border-[#e5e7eb] bg-white hover:bg-[#f3f4f6] text-[#d1d5db]'
                               )}>
-                              {st === 'Présent' ? <Check className="h-3.5 w-3.5 stroke-[3]" />
-                                : st === 'Absent' ? <X className="h-3.5 w-3.5 stroke-[3]" />
-                                : st === 'Late' ? <Clock className="h-3.5 w-3.5 stroke-[3]" />
+                              {st === 'Présent' ? <UniIcon name="check" weight="bold" size={14} />
+                                : st === 'Absent' ? <UniIcon name="close" weight="bold" size={14} />
+                                : st === 'Late' ? <UniIcon name="time" weight="bold" size={14} />
                                 : <span className="text-[10px] font-bold">E</span>}
                             </button>
                           </td>
@@ -409,11 +410,11 @@ export default function AttendanceManagePage() {
                 </table>
                 <div className="px-5 py-4 border-t border-[#f3f4f6] bg-[#f9fafb] flex items-center justify-between gap-4">
                   <p className="text-xs text-[#9ca3af] flex items-center gap-1.5">
-                    <HelpCircle className="h-4 w-4" /> Les absences sont persistées dans Appwrite ; les notifications distantes exigent un fournisseur FCM configuré.
+                    <UniIcon name="help" size={16} /> Les absences sont persistées dans Appwrite ; les notifications distantes exigent un fournisseur FCM configuré.
                   </p>
                   <button onClick={handleSave} disabled={saving || attendanceLoading || !course}
                     className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-50">
-                    {saving || attendanceLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserCheck className="h-4 w-4" />}
+                    {saving || attendanceLoading ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="attendance" weight="bold" size={16} />}
                     {attendanceLoading ? 'Chargement du relevé…' : saving ? 'Sauvegarde Appwrite…' : 'Valider et sauvegarder'}
                   </button>
                 </div>
@@ -432,7 +433,7 @@ export default function AttendanceManagePage() {
           <div className="flex justify-between items-center">
             <h2 className="text-sm font-bold text-[#111827]">Annonces de la cohorte</h2>
             <button className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">
-              <Megaphone className="h-4 w-4" /> Nouvelle annonce
+              <UniIcon name="megaphone" weight="bold" size={16} /> Nouvelle annonce
             </button>
           </div>
           {announcements.map(a => (
@@ -453,19 +454,19 @@ export default function AttendanceManagePage() {
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-bold text-[#111827]">Jeton QR de présence</span>
-              <button onClick={() => { setShowQR(false); setQrSession(null) }} className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]"><X className="h-5 w-5" /></button>
+              <button onClick={() => { setShowQR(false); setQrSession(null) }} aria-label="Fermer" className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]"><UniIcon name="close" weight="bold" size={20} /></button>
             </div>
             <p className="text-xs text-[#6b7280] mb-4">{course.code} · {course.classroom?.name || 'Salle N/A'} · {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}</p>
             <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-xl border border-[#e5e7eb] bg-white p-3">
               <QRCodeSVG value={qrSession.payload} size={184} level="M" includeMargin aria-label="QR d’émargement UniFlow" />
             </div>
             <p className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-left text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
-              <Clock className="h-3.5 w-3.5 shrink-0" /> Jeton Appwrite actif jusqu’à {new Date(qrSession.expiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Un apprenant inscrit ne peut émarger qu’une fois.
+              <UniIcon name="time" weight="fill" size={14} className="shrink-0" /> Jeton Appwrite actif jusqu’à {new Date(qrSession.expiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Un apprenant inscrit ne peut émarger qu’une fois.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <button onClick={() => { setShowQR(false); setQrSession(null) }} className="rounded-lg border border-[#e5e7eb] py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">Fermer</button>
               <button onClick={() => navigator.clipboard?.writeText(qrSession.payload)} className="rounded-lg bg-[#1e3a8a] py-2 text-sm font-semibold text-white flex items-center justify-center gap-1.5 hover:bg-[#2d4fa8]">
-                <Download className="h-4 w-4" /> Copier le jeton
+                <UniIcon name="download" weight="bold" size={16} /> Copier le jeton
               </button>
             </div>
           </div>

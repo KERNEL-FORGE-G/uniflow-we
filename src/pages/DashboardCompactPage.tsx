@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { Badge } from '../components/ui/Badge'
-import { BookOpen, Clock, TrendingUp, UserCheck, ClipboardList } from 'lucide-react'
+import { IconTile, type UniIconName } from '../components/ui/UniIcon'
 import { useApi } from '../hooks/useApi'
 import { statsApi, getAccountType } from '../lib/api'
 import { useUserRole } from '../utils/userRole'
@@ -25,12 +25,12 @@ export default function DashboardCompactPage() {
 
   const lateHomework: Array<{ title: string; due: string }> = []
 
-  const quickStats = [
-    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '—', change: '—', icon: BookOpen, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
-    { label: 'Devoirs à rendre', value: overview?.assignmentCount == null ? '—' : `${overview.assignmentCount}`, change: '—', icon: ClipboardList, color: 'text-[#d97706]', bg: 'bg-[#fef3c7]' },
-    { label: 'Prochain cours', value: '—', change: '—', icon: Clock, color: 'text-[#0d9488]', bg: 'bg-[#f0fdfa]' },
-    { label: 'Moyenne', value: overview?.averageGrade == null ? '—' : `${overview.averageGrade}/20`, change: '—', icon: TrendingUp, color: 'text-[#7c3aed]', bg: 'bg-[#ede9fe]' },
-    { label: 'Présences', value: overview?.attendanceRate == null ? '—' : `${overview.attendanceRate}%`, change: '—', icon: UserCheck, color: 'text-[#059669]', bg: 'bg-[#d1fae5]' },
+  const quickStats: Array<{ label: string; value: string; change: string; icon: UniIconName; color: string }> = [
+    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '—', change: '—', icon: 'courses', color: '#1E3A8A' },
+    { label: 'Devoirs à rendre', value: overview?.assignmentCount == null ? '—' : `${overview.assignmentCount}`, change: '—', icon: 'assignments', color: '#D97706' },
+    { label: 'Prochain cours', value: '—', change: '—', icon: 'time', color: '#0D9488' },
+    { label: 'Moyenne', value: overview?.averageGrade == null ? '—' : `${overview.averageGrade}/20`, change: '—', icon: 'grades', color: '#7C3AED' },
+    { label: 'Présences', value: overview?.attendanceRate == null ? '—' : `${overview.attendanceRate}%`, change: '—', icon: 'attendance', color: '#059669' },
   ]
 
   return (
@@ -49,10 +49,9 @@ export default function DashboardCompactPage() {
       {/* Quick stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {quickStats.map((s, i) => {
-          const Icon = s.icon
           return (
             <div key={i} className="rounded-xl border border-[#e5e7eb] bg-white p-3 shadow-sm flex items-center gap-3">
-              <div className={`rounded-lg p-2 ${s.bg}`}><Icon className={`h-4 w-4 ${s.color}`} /></div>
+              <IconTile name={s.icon} color={s.color} variant="filled" size={44} index={i} />
               <div>
                 <p className="text-base font-extrabold text-[#111827]">{s.value}</p>
                 <p className="text-[10px] text-[#6b7280]">{s.label}</p>

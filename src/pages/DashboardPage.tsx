@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { BookOpen, ClipboardList, Clock, TrendingUp, UserCheck, Calendar, Bell, GraduationCap, Megaphone, Video, MessageSquare, BarChart3, ChevronRight, Star, Zap, Users, CheckCircle, AlertTriangle, RefreshCw } from 'lucide-react'
+import { IconTile, UniIcon, type UniIconName } from '../components/ui/UniIcon'
+import { hexWithAlpha } from '../lib/subjectIcon'
 import { useUserRole } from '../utils/userRole'
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, LineChart, Line, XAxis, YAxis, AreaChart, Area } from 'recharts'
 import { useEffect, useState } from 'react'
@@ -9,16 +10,19 @@ import { SubscriptionStatus } from '../components/subscription/SubscriptionStatu
 import { attendanceRate } from '../lib/assignmentModel'
 import { dueWithin, eventDaysInMonth, gradeDistribution, gradedStudentCount, passRate, relativeTime, teacherAverages, todaysSessions, weeklyAttendanceTrend } from '../lib/dashboardModel'
 
-/** Icône et couleur d'une entrée d'activité d'après le type de notification Appwrite. */
-function activityStyle(type: string): { icon: typeof BookOpen; color: string } {
+/** Icône et couleur (hex, pour la tuile) d'une entrée d'activité d'après le type de notification Appwrite. */
+function activityStyle(type: string): { icon: UniIconName; color: string } {
   const key = type.toUpperCase()
-  if (key.includes('ASSIGNMENT') || key.includes('SUBMISSION')) return { icon: ClipboardList, color: 'bg-[#fef3c7] text-[#d97706]' }
-  if (key.includes('SCHEDULE')) return { icon: Calendar, color: 'bg-[#f0fdfa] text-[#0d9488]' }
-  if (key.includes('ATTENDANCE')) return { icon: UserCheck, color: 'bg-[#d1fae5] text-[#059669]' }
-  if (key.includes('MESSAGE')) return { icon: MessageSquare, color: 'bg-[#ede9fe] text-[#7c3aed]' }
-  if (key.includes('GRADE') || key.includes('NOTE')) return { icon: TrendingUp, color: 'bg-[#eff3ff] text-[#1e3a8a]' }
-  return { icon: Bell, color: 'bg-[#f3f4f6] text-[#374151]' }
+  if (key.includes('ASSIGNMENT') || key.includes('SUBMISSION')) return { icon: 'assignments', color: '#D97706' }
+  if (key.includes('SCHEDULE')) return { icon: 'schedule', color: '#0D9488' }
+  if (key.includes('ATTENDANCE')) return { icon: 'attendance', color: '#059669' }
+  if (key.includes('MESSAGE')) return { icon: 'messages', color: '#7C3AED' }
+  if (key.includes('GRADE') || key.includes('NOTE')) return { icon: 'grades', color: '#1E3A8A' }
+  return { icon: 'notifications', color: '#6B7280' }
 }
+
+/** Couleurs UniFlow des cartes de statistiques et des actions rapides (une tuile = une couleur pleine). */
+const TILE = { blue: '#1E3A8A', amber: '#D97706', teal: '#0D9488', purple: '#7C3AED', green: '#059669' } as const
 
 // Calendar helper
 const calDays = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -130,12 +134,13 @@ export default function DashboardPage() {
   }, [authUser?.id, isSessionReady])
   const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 
-  const studentStats = [
-    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',    up: Boolean(overview?.courseCount),  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/cours' },
-    { label: 'Devoirs à rendre', value: overview ? `${overview.pendingAssignmentCount ?? 0}` : '0',       delta: overview?.assignmentCount ? `${overview.assignmentCount} au total` : 'Aucun devoir',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
-    { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',   up: Boolean(overview?.courseCount),  icon: Clock,         bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/emploi-du-temps' },
-    { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note',   up: (overview?.averageGrade ?? 10) >= 10,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
-    { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75, icon: UserCheck,     bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/presences' },
+  type StatCard = { label: string; value: string; delta: string; up: boolean; icon: UniIconName; color: string; to: string }
+  const studentStats: StatCard[] = [
+    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',    up: Boolean(overview?.courseCount),  icon: 'courses',     color: TILE.blue,   to: '/app/cours' },
+    { label: 'Devoirs à rendre', value: overview ? `${overview.pendingAssignmentCount ?? 0}` : '0',       delta: overview?.assignmentCount ? `${overview.assignmentCount} au total` : 'Aucun devoir',     up: true, icon: 'assignments', color: TILE.amber,  to: '/app/devoirs' },
+    { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',   up: Boolean(overview?.courseCount),  icon: 'schedule',    color: TILE.teal,   to: '/app/emploi-du-temps' },
+    { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note',   up: (overview?.averageGrade ?? 10) >= 10,  icon: 'grades',      color: TILE.purple, to: '/app/notes' },
+    { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75, icon: 'attendance',  color: TILE.green,  to: '/app/presences' },
   ]
   // Les pastilles des cartes disent d'où vient le chiffre ; les anciennes
   // valeurs fixes (« Incrémental », « 0 ») laissaient croire à des compteurs morts.
@@ -144,19 +149,19 @@ export default function DashboardPage() {
   const successRate = passRate(grades)
   const gradedStudents = gradedStudentCount(grades)
   const weeklySessions = schedules.length ? `${schedules.length} séance${schedules.length > 1 ? 's' : ''} / semaine` : 'Aucune séance planifiée'
-  const delegateStats = [
-    { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/gestion-presences' },
-    { label: 'Séances / semaine', value: `${schedules.length}`, delta: overview.courseCount ? `${overview.courseCount} cours` : 'Aucun cours', up: schedules.length > 0, icon: Calendar, bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/emploi-du-temps' },
-    { label: 'Devoirs à rendre',  value: `${overview.pendingAssignmentCount}`, delta: dueSoon ? `${dueSoon} sous 7 jours` : 'Aucune échéance proche', up: dueSoon === 0, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
-    { label: 'Étudiants suivis',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à la promotion' : 'Aucun inscrit',  up: overview.studentCount > 0,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/etudiants' },
-    { label: 'Notifications',     value: `${unreadCount}`, delta: unreadCount ? 'Non lues' : 'Tout est lu', up: unreadCount === 0, icon: Bell, bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/notifications' },
+  const delegateStats: StatCard[] = [
+    { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75,  icon: 'attendance',  color: TILE.teal,   to: '/app/gestion-presences' },
+    { label: 'Séances / semaine', value: `${schedules.length}`, delta: overview.courseCount ? `${overview.courseCount} cours` : 'Aucun cours', up: schedules.length > 0, icon: 'schedule', color: TILE.blue, to: '/app/emploi-du-temps' },
+    { label: 'Devoirs à rendre',  value: `${overview.pendingAssignmentCount}`, delta: dueSoon ? `${dueSoon} sous 7 jours` : 'Aucune échéance proche', up: dueSoon === 0, icon: 'assignments', color: TILE.amber, to: '/app/devoirs' },
+    { label: 'Étudiants suivis',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à la promotion' : 'Aucun inscrit',  up: overview.studentCount > 0,  icon: 'students',    color: TILE.purple, to: '/app/etudiants' },
+    { label: 'Notifications',     value: `${unreadCount}`, delta: unreadCount ? 'Non lues' : 'Tout est lu', up: unreadCount === 0, icon: 'notifications', color: TILE.green, to: '/app/notifications' },
   ]
-  const teacherStats = [
-    { label: 'Cours créés',       value: `${overview.courseCount}`,     delta: weeklySessions, up: schedules.length > 0,  icon: BookOpen,      bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]', to: '/app/mes-cours-enseignant' },
-    { label: 'Étudiants enregistrés',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à vos cours' : 'Aucun inscrit',    up: overview.studentCount > 0,  icon: UserCheck,     bg: 'bg-[#f0fdfa]', color: 'text-[#0d9488]', to: '/app/etudiants' },
-    { label: 'Devoirs créés',     value: `${overview.assignmentCount}`,    delta: dueSoon ? `${dueSoon} à échéance sous 7 j` : 'Aucune échéance proche',     up: true, icon: ClipboardList, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]', to: '/app/devoirs' },
-    { label: 'Notes saisies',     value: `${overview.gradeCount}`,     delta: gradedStudents ? `${gradedStudents} étudiant${gradedStudents > 1 ? 's' : ''} noté${gradedStudents > 1 ? 's' : ''}` : 'Aucune note',     up: gradedStudents > 0,  icon: TrendingUp,    bg: 'bg-[#ede9fe]', color: 'text-[#7c3aed]', to: '/app/notes' },
-    { label: 'Moyenne générale',  value: overview.averageGrade != null ? `${overview.averageGrade}/20` : '—',     delta: successRate != null ? `${successRate} % ≥ 10/20` : 'Aucune note',     up: (successRate ?? 100) >= 50,  icon: Calendar,      bg: 'bg-[#d1fae5]', color: 'text-[#059669]', to: '/app/notes' },
+  const teacherStats: StatCard[] = [
+    { label: 'Cours créés',       value: `${overview.courseCount}`,     delta: weeklySessions, up: schedules.length > 0,  icon: 'courses',     color: TILE.blue,   to: '/app/mes-cours-enseignant' },
+    { label: 'Étudiants enregistrés',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à vos cours' : 'Aucun inscrit',    up: overview.studentCount > 0,  icon: 'students',    color: TILE.teal,   to: '/app/etudiants' },
+    { label: 'Devoirs créés',     value: `${overview.assignmentCount}`,    delta: dueSoon ? `${dueSoon} à échéance sous 7 j` : 'Aucune échéance proche',     up: true, icon: 'assignments', color: TILE.amber,  to: '/app/devoirs' },
+    { label: 'Notes saisies',     value: `${overview.gradeCount}`,     delta: gradedStudents ? `${gradedStudents} étudiant${gradedStudents > 1 ? 's' : ''} noté${gradedStudents > 1 ? 's' : ''}` : 'Aucune note',     up: gradedStudents > 0,  icon: 'grades',      color: TILE.purple, to: '/app/notes' },
+    { label: 'Moyenne générale',  value: overview.averageGrade != null ? `${overview.averageGrade}/20` : '—',     delta: successRate != null ? `${successRate} % ≥ 10/20` : 'Aucune note',     up: (successRate ?? 100) >= 50,  icon: 'stats',       color: TILE.green,  to: '/app/notes' },
   ]
 
   const stats = currentRole === 'teacher' ? teacherStats : currentRole === 'delegate' ? delegateStats : studentStats
@@ -167,7 +172,7 @@ export default function DashboardPage() {
 
   // Activité récente : les cinq dernières notifications, complétées par les
   // devoirs proches de l'échéance quand il n'y a rien d'autre à montrer.
-  const activities: Array<{ text: string; time: string; icon: typeof BookOpen; color: string }> = [
+  const activities: Array<{ text: string; time: string; icon: UniIconName; color: string }> = [
     ...[...notifications]
       .sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
       .slice(0, 5)
@@ -176,32 +181,32 @@ export default function DashboardPage() {
       ? assignments
         .filter((assignment) => assignment.status === 'À rendre' || assignment.status === 'En retard')
         .slice(0, 3)
-        .map((assignment) => ({ text: `${assignment.title} — ${assignment.status.toLowerCase()}`, time: relativeTime(assignment.due, now), icon: ClipboardList, color: 'bg-[#fef3c7] text-[#d97706]' }))
+        .map((assignment) => ({ text: `${assignment.title} — ${assignment.status.toLowerCase()}`, time: relativeTime(assignment.due, now), icon: 'assignments' as UniIconName, color: TILE.amber }))
       : []),
   ]
 
-  const studentQuickActions = [
-    { label: 'Mes cours',       icon: BookOpen,      to: '/app/cours',          gradient: 'from-[#1e3a8a] to-[#2d4fa8]' },
-    { label: 'Devoirs',         icon: ClipboardList, to: '/app/devoirs',        gradient: 'from-[#d97706] to-[#b45309]' },
-    { label: 'Visio',           icon: Video,         to: '/app/visio',          gradient: 'from-[#0d9488] to-[#0a7167]' },
-    { label: 'Messages',        icon: MessageSquare, to: '/app/messages',       gradient: 'from-[#7c3aed] to-[#6d28d9]' },
+  type QuickAction = { label: string; icon: UniIconName; to: string; color: string }
+  const studentQuickActions: QuickAction[] = [
+    { label: 'Mes cours',       icon: 'courses',     to: '/app/cours',          color: TILE.blue },
+    { label: 'Devoirs',         icon: 'assignments', to: '/app/devoirs',        color: TILE.amber },
+    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.teal },
+    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.purple },
   ]
-  const teacherQuickActions = [
-    { label: 'Espace pédago',   icon: BookOpen,      to: '/app/mes-cours-enseignant', gradient: 'from-[#1e3a8a] to-[#2d4fa8]' },
-    { label: 'Visio',           icon: Video,         to: '/app/visio',          gradient: 'from-[#0d9488] to-[#0a7167]' },
-    { label: 'Messages',        icon: MessageSquare, to: '/app/messages',       gradient: 'from-[#7c3aed] to-[#6d28d9]' },
-    { label: 'Planning',        icon: Calendar,      to: '/app/emploi-du-temps',gradient: 'from-[#d97706] to-[#b45309]' },
+  const teacherQuickActions: QuickAction[] = [
+    { label: 'Espace pédago',   icon: 'teacher',     to: '/app/mes-cours-enseignant', color: TILE.blue },
+    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.teal },
+    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.purple },
+    { label: 'Planning',        icon: 'schedule',    to: '/app/emploi-du-temps', color: TILE.amber },
   ]
-  const delegateQuickActions = [
-    { label: 'Gérer présences', icon: UserCheck,     to: '/app/gestion-presences', gradient: 'from-[#0d9488] to-[#0a7167]' },
-    { label: 'Messages',        icon: MessageSquare, to: '/app/messages',       gradient: 'from-[#1e3a8a] to-[#2d4fa8]' },
-    { label: 'Planning',        icon: Calendar,      to: '/app/emploi-du-temps',gradient: 'from-[#7c3aed] to-[#6d28d9]' },
-    { label: 'Visio',           icon: Video,         to: '/app/visio',          gradient: 'from-[#d97706] to-[#b45309]' },
+  const delegateQuickActions: QuickAction[] = [
+    { label: 'Gérer présences', icon: 'attendance',  to: '/app/gestion-presences', color: TILE.teal },
+    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.blue },
+    { label: 'Planning',        icon: 'schedule',    to: '/app/emploi-du-temps', color: TILE.purple },
+    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.amber },
   ]
   const quickActions = currentRole === 'teacher' ? teacherQuickActions : currentRole === 'delegate' ? delegateQuickActions : studentQuickActions
 
-  const roleGradient = currentRole === 'teacher' ? 'from-[#0d9488] to-[#14b8a8]' : currentRole === 'delegate' ? 'from-purple-700 to-purple-500' : 'from-[#1e3a8a] to-[#2d4fa8]'
-  const RoleIcon = currentRole === 'teacher' ? UserCheck : currentRole === 'delegate' ? Megaphone : GraduationCap
+  const roleIcon: UniIconName = currentRole === 'teacher' ? 'teacher' : currentRole === 'delegate' ? 'megaphone' : 'students'
   const roleLabel = currentRole === 'teacher' ? 'Enseignant' : currentRole === 'delegate' ? 'Délégué' : 'Étudiant'
 
   const upcomingEvents = todaysSessions(schedules, now)
@@ -230,7 +235,7 @@ export default function DashboardPage() {
             </h1>
             <div className="flex items-center gap-2 mt-2">
               <span className="flex items-center gap-1.5 rounded-full bg-white/15 border border-white/20 px-3 py-1 text-xs font-semibold text-white">
-                <RoleIcon className="h-3.5 w-3.5" />
+                <UniIcon name={roleIcon} weight="fill" size={14} />
                 {roleLabel}
               </span>
             </div>
@@ -243,7 +248,7 @@ export default function DashboardPage() {
               className="flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/20 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
               title="Actualiser les données en direct"
             >
-              <RefreshCw className={`h-4 w-4 ${overviewLoading ? 'animate-spin' : ''}`} />
+              <UniIcon name="refresh" weight="bold" size={16} className={overviewLoading ? 'animate-spin' : ''} />
               <span className="hidden sm:inline">Actualiser</span>
             </button>
             {currentRole === 'student' && (
@@ -257,8 +262,9 @@ export default function DashboardPage() {
             <Link
               to="/app/notifications"
               className="relative rounded-xl bg-white/10 border border-white/20 p-2.5 text-white hover:bg-white/20 transition-all"
+              aria-label="Notifications"
             >
-              <Bell className="h-5 w-5" />
+              <UniIcon name="notifications" weight="fill" size={20} />
             </Link>
           </div>
         </div>
@@ -272,17 +278,15 @@ export default function DashboardPage() {
 
       {/* ── KPI Stats ── */}
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        {stats.map(({ label, value, delta, up, icon: Icon, bg, color, to }, i) => (
+        {stats.map(({ label, value, delta, up, icon, color, to }, i) => (
           <div
             key={label}
             onClick={() => navigate(to)}
             className={`rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm card-interactive animate-stagger-${i + 1} cursor-pointer`}
           >
-            <div className="flex items-start justify-between mb-3">
-              <div className={`rounded-xl p-2 ${bg}`}>
-                <Icon className={`h-4 w-4 ${color}`} />
-              </div>
-              <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 ${up ? 'text-emerald-700 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <IconTile name={icon} color={color} variant="filled" size={56} index={i} />
+              <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 text-right ${up ? 'text-emerald-700 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
                 {delta}
               </span>
             </div>
@@ -302,16 +306,17 @@ export default function DashboardPage() {
           <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-bold text-[#111827]">Actions rapides</h2>
-              <Zap className="h-4 w-4 text-[#0d9488]" />
+              <UniIcon name="lightning" weight="fill" size={16} className="text-[#0d9488]" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {quickActions.map(({ label, icon: Icon, to, gradient }, i) => (
+              {quickActions.map(({ label, icon, to, color }, i) => (
                 <button
                   key={to}
                   onClick={() => navigate(to)}
-                  className={`flex flex-col items-center gap-2 rounded-xl bg-gradient-to-br ${gradient} p-4 text-white font-semibold text-xs shadow-md hover:shadow-lg hover:scale-105 transition-all duration-200 animate-stagger-${i + 1}`}
+                  style={{ backgroundColor: hexWithAlpha(color, 0.08), borderColor: hexWithAlpha(color, 0.18) }}
+                  className={`flex flex-col items-center gap-2.5 rounded-2xl border p-4 text-xs font-semibold text-[#111827] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-stagger-${i + 1}`}
                 >
-                  <Icon className="h-6 w-6" />
+                  <IconTile name={icon} color={color} variant="filled" size={44} index={i} />
                   {label}
                 </button>
               ))}
@@ -389,11 +394,9 @@ export default function DashboardPage() {
             </div>
             {activities.length > 0 ? (
               <div className="space-y-3">
-                {activities.map(({ text, time, icon: Icon, color }, i) => (
+                {activities.map(({ text, time, icon, color }, i) => (
                   <div key={i} className={`flex items-start gap-3 animate-stagger-${i + 1}`}>
-                    <div className={`flex h-8 w-8 items-center justify-center rounded-xl flex-shrink-0 ${color}`}>
-                      <Icon className="h-4 w-4" />
-                    </div>
+                    <IconTile name={icon} color={color} variant="soft" size={36} index={i} />
                     <div className="flex-1 min-w-0"><p className="text-sm text-[#111827] font-medium leading-snug">{text}</p></div>
                     <span className="text-xs text-[#9ca3af] flex-shrink-0 whitespace-nowrap">{time}</span>
                   </div>
@@ -458,6 +461,7 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 {upcomingEvents.map(({ time, title, room, type }, i) => (
                   <div key={i} className={`flex items-center gap-3 rounded-xl p-3 ${i === 0 ? 'bg-[#eff3ff] border border-[#1e3a8a]/10' : 'bg-[#f9fafb]'} animate-stagger-${i + 1}`}>
+                    <IconTile subject={title} color={i === 0 ? TILE.blue : TILE.teal} variant={i === 0 ? 'filled' : 'soft'} size={36} index={i} />
                     <div className="text-center flex-shrink-0 w-10"><p className="text-xs font-bold text-[#1e3a8a]">{time}</p></div>
                     <div className="flex-1 min-w-0"><p className="text-xs font-semibold text-[#111827] truncate">{title}</p><p className="text-[11px] text-[#6b7280]">{room}</p></div>
                     <span className={`text-[10px] font-bold px-2 py-1 rounded-lg ${typeColor[type] || 'bg-[#f3f4f6] text-[#6b7280]'}`}>{type}</span>
@@ -501,7 +505,7 @@ export default function DashboardPage() {
           {currentRole === 'teacher' && (
             <div className="rounded-2xl border border-dashed border-[#d1d5db] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="h-4 w-4 text-[#d97706]" />
+                <UniIcon name="tasks" size={18} className="text-[#d97706]" />
                 <h2 className="text-sm font-bold text-[#111827]">Tâches pédagogiques</h2>
               </div>
               <p className="text-xs text-[#6b7280]">Les tâches pédagogiques Appwrite apparaîtront ici dès leur enregistrement pour ce cours.</p>
@@ -512,7 +516,7 @@ export default function DashboardPage() {
           {currentRole === 'delegate' && (
             <div className="rounded-2xl border border-dashed border-[#d1d5db] bg-white p-5 shadow-sm">
               <div className="flex items-center gap-2 mb-2">
-                <Users className="h-4 w-4 text-[#0d9488]" />
+                <UniIcon name="forum" size={18} className="text-[#0d9488]" />
                 <h2 className="text-sm font-bold text-[#111827]">Suivi de cohorte</h2>
               </div>
               <p className="text-xs text-[#6b7280]">Les statistiques de cohorte apparaîtront lorsque les données de présence Appwrite seront agrégées.</p>

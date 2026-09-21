@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Building2, Edit, Loader2, Plus, RefreshCw, Search, ShieldCheck, Trash2, UserPlus, Users } from 'lucide-react'
+import { Building2, Edit, Loader2, Plus, RefreshCw, Search, ShieldCheck, Trash2, UserPlus } from 'lucide-react'
 import { executeAdminDirectoryAction, type AdminDirectoryEntry } from '@/lib/appwrite'
 import { assignableRoles, canAssignRole, ROLE_LABELS_FR, type RoleCaller, type UniFlowRole } from '@/lib/roles'
 import { useUniversities } from '@/lib/referenceData'
@@ -189,7 +189,7 @@ export default function AdminUsersPage() {
         {loading ? (
           <div className="space-y-3 p-5">{Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-12" />)}</div>
         ) : filtered.length === 0 ? (
-          <EmptyState icon={Users} title="Aucun compte ne correspond" description={entries.length === 0 ? 'L’annuaire de votre université est vide : créez le premier compte.' : 'Modifiez la recherche ou les filtres.'} action={canCreate && entries.length === 0 ? { label: 'Créer un compte', onClick: openCreate } : undefined} />
+          <EmptyState icon="accounts" color="#1E3A8A" title="Aucun compte ne correspond" description={entries.length === 0 ? 'L’annuaire de votre université est vide : créez le premier compte.' : 'Modifiez la recherche ou les filtres.'} action={canCreate && entries.length === 0 ? { label: 'Créer un compte', onClick: openCreate } : undefined} />
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">

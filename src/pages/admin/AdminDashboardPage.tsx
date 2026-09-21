@@ -1,23 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, type Variants } from 'framer-motion'
-import {
-  Users,
-  GraduationCap,
-  BookOpen,
-  TrendingUp,
-  UserCheck,
-  ShieldCheck,
-  Building2,
-  BarChart3,
-  Loader2,
-  RefreshCw,
-  Calendar,
-  Layers,
-  CheckCircle2,
-  XCircle,
-  AlertTriangle,
-  Info
-} from 'lucide-react'
+import { IconTile, UniIcon } from '../../components/ui/UniIcon'
 import {
   BarChart,
   Bar,
@@ -94,7 +77,7 @@ export default function AdminDashboardPage() {
     return (
       <div className="flex h-screen items-center justify-center bg-[#f9fafb]">
         <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-[#1e3a8a]" />
+          <UniIcon name="spinner" weight="bold" size={40} className="animate-spin text-[#1e3a8a]" />
           <p className="text-sm font-semibold text-[#374151]">Chargement de la vue analytique Admin...</p>
         </div>
       </div>
@@ -227,7 +210,7 @@ export default function AdminDashboardPage() {
               Vue analytique Appwrite
             </span>
             <span className="flex items-center gap-1.5 rounded-full bg-[#f3f4f6] px-3 py-1 text-xs font-bold text-[#374151] border border-[#e5e7eb]">
-              <Calendar className="h-3.5 w-3.5 text-[#1e3a8a]" />
+              <UniIcon name="schedule" size={14} className="text-[#1e3a8a]" />
               {formattedToday}
             </span>
           </div>
@@ -248,11 +231,11 @@ export default function AdminDashboardPage() {
             disabled={refreshing}
             className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-xs font-bold text-[#374151] hover:bg-[#f9fafb] hover:border-[#1e3a8a] transition-all shadow-sm"
           >
-            <RefreshCw className={`h-4 w-4 text-[#1e3a8a] ${refreshing ? 'animate-spin' : ''}`} />
+            <UniIcon name="refresh" weight="bold" size={16} className={`text-[#1e3a8a] ${refreshing ? 'animate-spin' : ''}`} />
             Rafraîchir les données
           </button>
           <span className="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3.5 py-2 text-xs font-bold text-amber-800">
-            <ShieldCheck className="h-4 w-4 text-amber-600" /> {authUser?.isSuperAdmin ? 'Admin plateforme' : 'Administration'}
+            <UniIcon name="security" size={16} className="text-amber-600" /> {authUser?.isSuperAdmin ? 'Admin plateforme' : 'Administration'}
           </span>
         </div>
       </motion.div>
@@ -263,7 +246,7 @@ export default function AdminDashboardPage() {
           animate={{ opacity: 1, scale: 1 }}
           className="flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 p-4 text-sm font-semibold text-red-800 shadow-sm"
         >
-          <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
+          <UniIcon name="warning" size={20} className="text-red-600 shrink-0" />
           <p>{error}</p>
         </motion.div>
       )}
@@ -281,9 +264,7 @@ export default function AdminDashboardPage() {
           className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
-            <div className="rounded-xl bg-[#eff3ff] p-3 text-[#1e3a8a]">
-              <GraduationCap className="h-6 w-6" />
-            </div>
+            <IconTile name="students" color="#1E3A8A" variant="filled" size={56} index={0} />
             <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700">
               Actifs
             </span>
@@ -298,9 +279,7 @@ export default function AdminDashboardPage() {
           className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
-            <div className="rounded-xl bg-teal-50 p-3 text-teal-700">
-              <UserCheck className="h-6 w-6" />
-            </div>
+            <IconTile name="attendance" color="#0D9488" variant="filled" size={56} index={1} />
             <span className="rounded-full bg-teal-100 px-2.5 py-0.5 text-[11px] font-bold text-teal-800">
               Hebdo
             </span>
@@ -315,9 +294,7 @@ export default function AdminDashboardPage() {
           className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
-            <div className="rounded-xl bg-purple-50 p-3 text-purple-700">
-              <Calendar className="h-6 w-6" />
-            </div>
+            <IconTile name="schedule" color="#7C3AED" variant="filled" size={56} index={2} />
             <span className="rounded-full bg-purple-100 px-2.5 py-0.5 text-[11px] font-bold text-purple-800">
               Sessions
             </span>
@@ -332,9 +309,7 @@ export default function AdminDashboardPage() {
           className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
-            <div className="rounded-xl bg-amber-50 p-3 text-amber-700">
-              <Layers className="h-6 w-6" />
-            </div>
+            <IconTile name="layers" color="#D97706" variant="filled" size={56} index={3} />
             <span className="rounded-full bg-amber-100 px-2.5 py-0.5 text-[11px] font-bold text-amber-800">
               Majoritaire
             </span>
@@ -358,7 +333,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-extrabold text-[#111827] flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5 text-[#1e3a8a]" /> Taux de présence hebdomadaires (%)
+                  <UniIcon name="grades" size={20} className="text-[#1e3a8a]" /> Taux de présence hebdomadaires (%)
                 </h2>
                 <p className="text-xs text-[#6b7280] mt-0.5">
                   Évolution du taux d'assiduité calculée depuis <code className="text-[#1e3a8a] font-mono">/attendance/sessions</code>
@@ -443,7 +418,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h2 className="text-base font-extrabold text-[#111827] flex items-center gap-2">
-                  <BarChart3 className="h-5 w-5 text-[#0d9488]" /> Répartition des étudiants par filière
+                  <UniIcon name="stats" size={20} className="text-[#0d9488]" /> Répartition des étudiants par filière
                 </h2>
                 <p className="text-xs text-[#6b7280] mt-0.5">
                   Proportions d'effectifs calculées depuis l'API <code className="text-[#1e3a8a] font-mono">/students</code>
@@ -540,7 +515,7 @@ export default function AdminDashboardPage() {
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f3f4f6] pb-4">
           <div>
             <h2 className="text-base font-extrabold text-[#111827] flex items-center gap-2">
-              <Users className="h-5 w-5 text-[#1e3a8a]" /> Effectif d'étudiants par filière
+              <UniIcon name="forum" size={20} className="text-[#1e3a8a]" /> Effectif d'étudiants par filière
             </h2>
             <p className="text-xs text-[#6b7280]">
               Liste synchrone des étudiants récupérés depuis <code className="text-[#1e3a8a] font-mono">/students</code>
@@ -592,7 +567,7 @@ export default function AdminDashboardPage() {
                     <td className="py-3 px-4 text-[#6b7280]">{st.level?.name || 'Licence 2'}</td>
                     <td className="py-3 px-4">
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-800">
-                        <CheckCircle2 className="h-3 w-3 text-emerald-600" /> {st.status || 'ACTIVE'}
+                        <UniIcon name="success" weight="fill" size={12} className="text-emerald-600" /> {st.status || 'ACTIVE'}
                       </span>
                     </td>
                   </tr>
@@ -614,7 +589,7 @@ export default function AdminDashboardPage() {
         <div className="flex items-center justify-between border-b border-[#f3f4f6] pb-4">
           <div>
             <h2 className="text-base font-extrabold text-[#111827] flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-[#7c3aed]" /> Historique des sessions d'assiduité
+              <UniIcon name="agenda" size={20} className="text-[#7c3aed]" /> Historique des sessions d'assiduité
             </h2>
             <p className="text-xs text-[#6b7280]">
               Données de présence en direct des cours depuis <code className="text-[#1e3a8a] font-mono">/attendance/sessions</code>
@@ -638,8 +613,9 @@ export default function AdminDashboardPage() {
                 whileHover={{ y: -3 }}
                 className="rounded-xl border border-[#e5e7eb] bg-[#fcfdfe] p-4 space-y-2 shadow-xs hover:border-[#1e3a8a]/40 transition-all"
               >
-                <div className="flex items-center justify-between">
-                  <span className="font-mono text-xs font-bold text-[#1e3a8a]">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="flex items-center gap-2 font-mono text-xs font-bold text-[#1e3a8a]">
+                    <IconTile subject={sess.course?.name} subjectCode={sess.course?.code} color="#1E3A8A" variant="soft" size={36} />
                     {sess.course?.code || 'COURS'}
                   </span>
                   <span

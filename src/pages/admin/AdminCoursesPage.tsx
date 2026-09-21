@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { BookOpen, Search, Download, Plus, Eye, Edit, Trash2, Calendar, MapPin, Users, UserCheck, Loader2, X, Save } from 'lucide-react'
+import { IconTile, UniIcon } from '../../components/ui/UniIcon'
+import { subjectColor } from '../../lib/subjectIcon'
 import { Badge } from '../../components/ui/Badge'
 import { Button } from '../../components/ui/Button'
 import { coursesApi, teachersApi, classroomsApi, Course, Teacher, Classroom } from '../../lib/api'
@@ -134,10 +135,10 @@ export default function AdminCoursesPage() {
   })
 
   const stats = [
-    { label: 'Total Cours', value: courses.length, color: 'text-[#1e3a8a]', bg: 'bg-[#eff3ff]' },
-    { label: 'Cours Magistraux (CM)', value: courses.filter(c => c.type === 'CM').length, color: 'text-[#059669]', bg: 'bg-emerald-50' },
-    { label: 'Travaux Dirigés (TD)', value: courses.filter(c => c.type === 'TD').length, color: 'text-[#d97706]', bg: 'bg-amber-50' },
-    { label: 'Travaux Pratiques (TP)', value: courses.filter(c => c.type === 'TP').length, color: 'text-[#7c3aed]', bg: 'bg-purple-50' },
+    { label: 'Total Cours', value: courses.length, color: '#1E3A8A' },
+    { label: 'Cours Magistraux (CM)', value: courses.filter(c => c.type === 'CM').length, color: '#10B981' },
+    { label: 'Travaux Dirigés (TD)', value: courses.filter(c => c.type === 'TD').length, color: '#F59E0B' },
+    { label: 'Travaux Pratiques (TP)', value: courses.filter(c => c.type === 'TP').length, color: '#7C3AED' },
   ]
 
   const typeColors: Record<string, string> = {
@@ -149,7 +150,7 @@ export default function AdminCoursesPage() {
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" />
+        <UniIcon name="spinner" weight="bold" size={32} className="animate-spin text-[#1e3a8a]" />
       </div>
     )
   }
@@ -173,11 +174,9 @@ export default function AdminCoursesPage() {
 
       {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map(s => (
+        {stats.map((s, index) => (
           <div key={s.label} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-            <div className={`inline-flex items-center justify-center rounded-lg p-2 ${s.bg} mb-3`}>
-              <BookOpen className={`h-5 w-5 ${s.color}`} />
-            </div>
+            <div className="mb-3"><IconTile name="courses" color={s.color} variant="filled" size={44} index={index} /></div>
             <p className="text-2xl font-bold text-[#111827]">{s.value}</p>
             <p className="text-xs text-[#6b7280] mt-0.5">{s.label}</p>
           </div>
@@ -188,7 +187,7 @@ export default function AdminCoursesPage() {
       <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+            <UniIcon name="search" weight="bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
             <input
               type="text"
               placeholder="Rechercher par titre, code, enseignant..."
@@ -206,7 +205,7 @@ export default function AdminCoursesPage() {
               <option value="TP">Travaux Pratiques</option>
             </select>
             <Button variant="outline" size="sm" onClick={() => window.print()}>
-              <Download className="h-4 w-4 mr-2" />
+              <UniIcon name="download" weight="bold" size={16} className="mr-2" />
               Exporter PDF
             </Button>
           </div>
@@ -218,9 +217,12 @@ export default function AdminCoursesPage() {
         {filtered.map(course => (
           <div key={course.id} className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-start justify-between mb-3">
-              <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${typeColors[course.type] || 'bg-gray-100'}`}>
-                {course.type}
-              </span>
+              <div className="flex items-center gap-2">
+                <IconTile subject={course.name} subjectCode={course.code} color={subjectColor(course.code)} variant="filled" size={36} />
+                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${typeColors[course.type] || 'bg-gray-100'}`}>
+                  {course.type}
+                </span>
+              </div>
               <Badge variant="success">Actif</Badge>
             </div>
             
@@ -229,19 +231,19 @@ export default function AdminCoursesPage() {
             
             <div className="space-y-2 mb-4">
               <div className="flex items-center gap-2 text-sm text-[#374151]">
-                <UserCheck className="h-4 w-4 text-[#0d9488]" />
+                <UniIcon name="teacher" size={16} className="text-[#0d9488]" />
                 <span>{course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'Aucun enseignant'}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-[#374151]">
-                <MapPin className="h-4 w-4 text-[#7c3aed]" />
+                <UniIcon name="room" size={16} className="text-[#7c3aed]" />
                 <span>{course.classroom ? `${course.classroom.building} - ${course.classroom.name}` : 'Aucune salle'}</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-[#374151]">
-                <Calendar className="h-4 w-4 text-[#d97706]" />
+                <UniIcon name="time" size={16} className="text-[#d97706]" />
                 <span>{course.hours} heures</span>
               </div>
               <div className="flex items-center gap-2 text-sm text-[#374151]">
-                <Users className="h-4 w-4 text-[#1e3a8a]" />
+                <UniIcon name="badges" size={16} className="text-[#1e3a8a]" />
                 <span>{course.credits} crédits</span>
               </div>
             </div>
@@ -265,7 +267,7 @@ export default function AdminCoursesPage() {
               <h3 className="text-lg font-bold text-[#111827]">
                 {editingCourse ? 'Modifier le cours' : 'Créer un nouveau cours'}
               </h3>
-              <button onClick={() => setShowModal(false)} className="rounded-lg p-1 hover:bg-[#f3f4f6] text-[#9ca3af]"><X className="h-5 w-5" /></button>
+              <button onClick={() => setShowModal(false)} className="rounded-lg p-1 hover:bg-[#f3f4f6] text-[#9ca3af]"><UniIcon name="close" weight="bold" size={20} /></button>
             </div>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -333,8 +335,8 @@ export default function AdminCoursesPage() {
                   className="rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium hover:bg-[#f9fafb]">Annuler</button>
                 <button type="submit" disabled={saving}
                   className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] text-white px-5 py-2 text-sm font-semibold hover:bg-[#2d4fa8] disabled:opacity-50">
-                  {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                  <Save className="h-4 w-4" />
+                  {saving && <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" />}
+                  <UniIcon name="save" weight="bold" size={16} />
                   Sauvegarder
                 </button>
               </div>

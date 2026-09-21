@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Users, Download, UploadCloud, Trash2, Save, Video, Check, Code2, Database, Network, Brain, GraduationCap, UserCheck, Calendar, Upload, CheckCircle, AlertTriangle, BookOpen, Loader2, Paperclip, X } from 'lucide-react'
+import { SubjectIcon, UniIcon } from '../components/ui/UniIcon'
+import { darkenHex, subjectColor } from '../lib/subjectIcon'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { coursesApi, gradesApi, libraryApi, teacherStatementsApi, type Course, type LibraryResource, type PublishedStatement } from '../lib/api'
-import type { LucideIcon } from 'lucide-react'
 import { ExportButtons } from '../components/exports/ExportButtons'
 import { courseGradesDocument } from '../lib/exports'
 import { evaluationProgress, humanFileSize, localInputToIso, summarizeStatement } from '../lib/teacherCourseModel'
@@ -49,17 +49,8 @@ function currentAverage(student: CourseLearner): number | null {
   return Number((entries.reduce((sum, entry) => sum + entry.score * entry.coefficient, 0) / totalCoefficient).toFixed(2))
 }
 
-// Map course codes to icons (same as CoursesPage)
-const courseIconMap: Record<string, LucideIcon> = {
-  'INFO101': Code2,       // Algorithmique
-  'INFO201': Database,    // Bases de données
-  'INFO301': Network,     // Réseaux
-  'INFO401': Brain,       // IA
-}
-
-const getCourseIcon = (code: string): LucideIcon => {
-  return courseIconMap[code] || GraduationCap // Default icon
-}
+// L'icône du cours vient de `subjectIcon` (nom + code), comme sur la page
+// « Mes cours » : la table par code ne couvrait que quatre cours de démonstration.
 
 export default function TeacherCoursesPage() {
   const { currentUser } = useUserRole()
@@ -262,7 +253,7 @@ export default function TeacherCoursesPage() {
     { id: 'notes',        label: 'Notes' },
   ] as const
 
-  if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" /></div>
+  if (loading) return <div className="flex h-screen items-center justify-center"><UniIcon name="spinner" weight="bold" size={32} className="animate-spin text-[#1e3a8a]" /></div>
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -270,18 +261,17 @@ export default function TeacherCoursesPage() {
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
         <div>
           <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 mb-2">
-            <UserCheck className="h-3.5 w-3.5" /> ESPACE ENSEIGNANT
+            <UniIcon name="teacher" weight="fill" size={14} /> ESPACE ENSEIGNANT
           </span>
           <h1 className="text-xl font-bold text-[#111827]">Espace Pédagogique & Évaluations</h1>
           <p className="text-sm text-[#6b7280] mt-0.5">Gérez vos syllabus, ressources et notes · CC 30% + Examen 70%</p>
         </div>
         <div className="flex gap-2">
           {courses.map(c => {
-            const Icon = getCourseIcon(c.code)
             return (
               <button key={c.id} onClick={() => setSelCode(c.id)}
                 className={`rounded-lg px-3 py-2 text-xs font-bold border transition-all flex items-center gap-2 ${selCode === c.id ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-[#374151] border-[#e5e7eb] hover:bg-[#f9fafb]'}`}>
-                <Icon className="h-4 w-4" strokeWidth={2} />
+                <SubjectIcon subject={c.name} code={c.code} weight={selCode === c.id ? 'fill' : 'duotone'} size={16} />
                 {c.code}
               </button>
             )
@@ -291,7 +281,7 @@ export default function TeacherCoursesPage() {
 
       {saved && (
         <div role="status" className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
-          <Check className="h-4 w-4 text-[#0d9488]" /> {saved}
+          <UniIcon name="check" weight="bold" size={16} className="text-[#0d9488]" /> {saved}
         </div>
       )}
       {gradeError && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{gradeError}</div>}
@@ -301,8 +291,11 @@ export default function TeacherCoursesPage() {
           {/* Course card + visio */}
           <div className="space-y-4">
             <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-sm">
-              <div className="h-24 bg-gradient-to-r from-blue-600 to-blue-800 p-4 flex flex-col justify-between">
-                <Badge className="self-start bg-white/20 text-white border-0 text-[10px]">{course.code}</Badge>
+              <div className="h-24 p-4 flex flex-col justify-between" style={{ backgroundImage: `linear-gradient(135deg, ${subjectColor(course.code)} 0%, ${darkenHex(subjectColor(course.code), 0.3)} 100%)` }}>
+                <div className="flex items-start justify-between">
+                  <Badge className="self-start bg-white/20 text-white border-0 text-[10px]">{course.code}</Badge>
+                  <span className="rounded-lg bg-white/20 p-1.5 text-white"><SubjectIcon subject={course.name} code={course.code} size={20} /></span>
+                </div>
                 <div>
                   <h3 className="font-bold text-white text-base">{course.name}</h3>
                   <p className="text-xs text-white/80">{course.hours}h</p>
@@ -319,7 +312,7 @@ export default function TeacherCoursesPage() {
                   </div>
                 </div>
                 <div className="flex justify-between text-xs text-[#6b7280]">
-                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" /> {students.length} inscrits</span>
+                  <span className="flex items-center gap-1"><UniIcon name="students" size={14} /> {students.length} inscrits</span>
                   <span className="font-semibold text-indigo-600">{[course.program, course.level].filter(Boolean).join(' · ') || 'Cours universitaire'}</span>
                 </div>
               </div>
@@ -336,13 +329,13 @@ export default function TeacherCoursesPage() {
             {/* Visio launcher */}
             <div className="rounded-xl bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-4 shadow-md">
               <div className="flex items-center gap-2 mb-2">
-                <Video className="h-4 w-4 text-[#0d9488]" />
+                <UniIcon name="video" weight="fill" size={16} className="text-[#0d9488]" />
                 <h3 className="text-sm font-bold">Planifier / Démarrer Visioconf</h3>
               </div>
               <p className="text-xs text-indigo-200 mb-3">Hébergez un cours virtuel en LAN ou Internet. Mode bas-débit disponible.</p>
               <button onClick={() => navigate('/app/visioconference')}
                 className="w-full rounded-lg bg-[#0d9488] py-2 text-sm font-bold text-white hover:bg-[#0a7167] transition-colors flex items-center justify-center gap-2">
-                <Video className="h-4 w-4" /> Lancer la visioconférence
+                <UniIcon name="video" weight="fill" size={16} /> Lancer la visioconférence
               </button>
             </div>
           </div>
@@ -362,19 +355,19 @@ export default function TeacherCoursesPage() {
             <div className="space-y-4">
               {/* Upload form */}
               <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-                <h2 className="text-sm font-bold text-[#111827] mb-3 flex items-center gap-2"><UploadCloud className="h-4 w-4 text-indigo-600" /> Ajouter une ressource</h2>
+                <h2 className="text-sm font-bold text-[#111827] mb-3 flex items-center gap-2"><UniIcon name="cloud" size={16} className="text-indigo-600" /> Ajouter une ressource</h2>
                 <form onSubmit={(e) => void handleUpload(e)} className="space-y-3">
                   <input value={newName} onChange={e => setNewName(e.target.value)}
                     placeholder="Titre affiché (ex : TD2 — Arbres binaires) · par défaut le nom du fichier"
                     className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
                   <label className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 text-sm transition-colors ${newFile ? 'border-indigo-300 bg-indigo-50/60' : 'border-[#e5e7eb] hover:border-indigo-300 hover:bg-[#f9fafb]'}`}>
-                    <Paperclip className="h-4 w-4 shrink-0 text-indigo-600" />
+                    <UniIcon name="paperclip" weight="bold" size={16} className="shrink-0 text-indigo-600" />
                     <span className="min-w-0 flex-1 truncate">
                       {newFile ? <><span className="font-semibold text-[#111827]">{newFile.name}</span> <span className="text-[#6b7280]">· {humanFileSize(newFile.size)}</span></> : <span className="text-[#6b7280]">Choisir un fichier (PDF, diaporama, archive…) · 50 Mo max.</span>}
                     </span>
                     {newFile && (
                       <button type="button" onClick={(e) => { e.preventDefault(); setNewFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }} aria-label="Retirer le fichier" className="rounded p-1 text-[#9ca3af] hover:bg-white hover:text-[#374151]">
-                        <X className="h-4 w-4" />
+                        <UniIcon name="close" weight="bold" size={16} />
                       </button>
                     )}
                     <input ref={fileInputRef} type="file" className="sr-only" onChange={(e) => { setNewFile(e.target.files?.[0] ?? null); setUploadError(null) }} />
@@ -386,7 +379,7 @@ export default function TeacherCoursesPage() {
                     </select>
                     <button type="submit" disabled={uploading || !newFile}
                       className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
-                      {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />} {uploading ? 'Publication…' : 'Publier'}
+                      {uploading ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="plus" weight="bold" size={16} />} {uploading ? 'Publication…' : 'Publier'}
                     </button>
                   </div>
                   {uploadError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{uploadError}</p>}
@@ -395,7 +388,7 @@ export default function TeacherCoursesPage() {
               {/* Resources list */}
               <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-bold text-[#111827] flex items-center gap-1.5"><BookOpen className="h-4 w-4 text-indigo-600" /> Supports & Ressources</h2>
+                  <h2 className="text-sm font-bold text-[#111827] flex items-center gap-1.5"><UniIcon name="library" size={16} className="text-indigo-600" /> Supports & Ressources</h2>
                   <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">{resources.length} fichier{resources.length > 1 ? 's' : ''}</span>
                 </div>
                 {resourcesError && <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{resourcesError}</p>}
@@ -417,9 +410,9 @@ export default function TeacherCoursesPage() {
                         </div>
                         <div className="flex shrink-0 gap-1">
                           {downloadUrl
-                            ? <a href={downloadUrl} target="_blank" rel="noreferrer" title="Télécharger" className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#374151]"><Download className="h-4 w-4" /></a>
-                            : <span title="Fiche sans fichier" className="rounded p-1 text-[#d1d5db]"><Download className="h-4 w-4" /></span>}
-                          <button onClick={() => void handleRemoveResource(f)} title="Retirer de la bibliothèque" className="rounded p-1 hover:bg-red-50 text-[#9ca3af] hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                            ? <a href={downloadUrl} target="_blank" rel="noreferrer" title="Télécharger" className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#374151]"><UniIcon name="download" weight="bold" size={16} /></a>
+                            : <span title="Fiche sans fichier" className="rounded p-1 text-[#d1d5db]"><UniIcon name="download" weight="bold" size={16} /></span>}
+                          <button onClick={() => void handleRemoveResource(f)} title="Retirer de la bibliothèque" className="rounded p-1 hover:bg-red-50 text-[#9ca3af] hover:text-red-500"><UniIcon name="trash" size={16} /></button>
                         </div>
                       </div>
                     )
@@ -465,7 +458,7 @@ export default function TeacherCoursesPage() {
                 </div>
                 <button onClick={() => { setPublishError(null); setStatementForm((form) => ({ ...form, open: !form.open })) }} aria-expanded={statementForm.open}
                   className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8]">
-                  {statementForm.open ? <X className="h-3.5 w-3.5" /> : <Plus className="h-3.5 w-3.5" />} {statementForm.open ? 'Annuler' : 'Nouveau devoir'}
+                  {statementForm.open ? <UniIcon name="close" weight="bold" size={14} /> : <UniIcon name="plus" weight="bold" size={14} />} {statementForm.open ? 'Annuler' : 'Nouveau devoir'}
                 </button>
               </div>
 
@@ -501,7 +494,7 @@ export default function TeacherCoursesPage() {
                   <div className="flex justify-end">
                     <button type="submit" disabled={publishing}
                       className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
-                      {publishing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />} {publishing ? 'Publication…' : 'Publier le devoir'}
+                      {publishing ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="upload" weight="bold" size={16} />} {publishing ? 'Publication…' : 'Publier le devoir'}
                     </button>
                   </div>
                 </form>
@@ -523,15 +516,15 @@ export default function TeacherCoursesPage() {
                       </div>
                       <div className="flex shrink-0 items-center gap-2">
                         <Badge variant={summary.phase === 'Corrigé' ? 'success' : summary.phase === 'Échéance passée' ? 'danger' : 'warning'}>{summary.phase}</Badge>
-                        <button onClick={() => void handleRemoveStatement(statement)} title="Supprimer le devoir" className="rounded p-1 text-[#9ca3af] hover:bg-red-50 hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                        <button onClick={() => void handleRemoveStatement(statement)} title="Supprimer le devoir" className="rounded p-1 text-[#9ca3af] hover:bg-red-50 hover:text-red-500"><UniIcon name="trash" size={16} /></button>
                       </div>
                     </div>
                     {statement.description && <p className="mt-1.5 line-clamp-2 text-xs text-[#6b7280]">{statement.description}</p>}
                     <div className="mt-2 flex flex-wrap gap-4 text-xs text-[#6b7280]">
-                      <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5 text-[#9ca3af]" /> {formatDue(statement.dueDate)}</span>
-                      <span className="flex items-center gap-1"><Upload className="h-3.5 w-3.5 text-[#9ca3af]" /> {summary.submitted} rendu{summary.submitted > 1 ? 's' : ''}{students.length ? ` / ${students.length}` : ''}</span>
-                      <span className="flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5 text-emerald-600" /> {summary.corrected} corrigé{summary.corrected > 1 ? 's' : ''}</span>
-                      {summary.missing > 0 && summary.phase !== 'En cours' && <span className="flex items-center gap-1 text-amber-700"><AlertTriangle className="h-3.5 w-3.5" /> {summary.missing} sans rendu</span>}
+                      <span className="flex items-center gap-1"><UniIcon name="agenda" size={14} className="text-[#9ca3af]" /> {formatDue(statement.dueDate)}</span>
+                      <span className="flex items-center gap-1"><UniIcon name="upload" size={14} className="text-[#9ca3af]" /> {summary.submitted} rendu{summary.submitted > 1 ? 's' : ''}{students.length ? ` / ${students.length}` : ''}</span>
+                      <span className="flex items-center gap-1"><UniIcon name="success" weight="fill" size={14} className="text-emerald-600" /> {summary.corrected} corrigé{summary.corrected > 1 ? 's' : ''}</span>
+                      {summary.missing > 0 && summary.phase !== 'En cours' && <span className="flex items-center gap-1 text-amber-700"><UniIcon name="warning" weight="fill" size={14} /> {summary.missing} sans rendu</span>}
                     </div>
                   </div>
                 )
@@ -551,7 +544,7 @@ export default function TeacherCoursesPage() {
                   <ExportButtons getDocument={gradesExport} disabled={students.length === 0} disabledReason="Aucun étudiant inscrit à exporter." />
                   <button onClick={() => void handleSaveGrades()} disabled={savingGrades || students.length === 0}
                     className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
-                    <Save className="h-3.5 w-3.5" /> {savingGrades ? 'Enregistrement…' : 'Enregistrer les notes'}
+                    <UniIcon name="save" weight="bold" size={14} /> {savingGrades ? 'Enregistrement…' : 'Enregistrer les notes'}
                   </button>
                 </div>
               </div>
@@ -592,7 +585,7 @@ export default function TeacherCoursesPage() {
                           </td>
                           <td className="px-5 py-3 text-right">
                             <button onClick={() => void handleSaveGrades([s.id])} disabled={savingGrades} className="rounded p-1 hover:bg-[#f3f4f6] text-[#9ca3af] hover:text-[#1e3a8a] disabled:opacity-50" title="Enregistrer cet apprenant">
-                              <Save className="h-4 w-4" />
+                              <UniIcon name="save" weight="bold" size={16} />
                             </button>
                           </td>
                         </tr>
@@ -602,10 +595,10 @@ export default function TeacherCoursesPage() {
                 </table>
               </div>
               <div className="px-5 py-4 border-t border-[#f3f4f6] bg-[#f9fafb] flex items-center justify-between gap-4">
-                <p className="text-xs text-[#9ca3af] flex items-center gap-1.5"><AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" /> Les évaluations enregistrées sont immédiatement visibles dans le relevé Appwrite des apprenants.</p>
+                <p className="text-xs text-[#9ca3af] flex items-center gap-1.5"><UniIcon name="warning" weight="fill" size={14} className="text-amber-500 shrink-0" /> Les évaluations enregistrées sont immédiatement visibles dans le relevé Appwrite des apprenants.</p>
                 <button onClick={() => void handleSaveGrades()} disabled={savingGrades || students.length === 0}
                   className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors disabled:cursor-not-allowed disabled:opacity-60">
-                  <Save className="h-4 w-4" /> {savingGrades ? 'Enregistrement…' : 'Enregistrer la grille'}
+                  <UniIcon name="save" weight="bold" size={16} /> {savingGrades ? 'Enregistrement…' : 'Enregistrer la grille'}
                 </button>
               </div>
             </div>

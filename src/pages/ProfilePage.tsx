@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Edit, Users, UserCheck, Camera, Settings, BookOpen, TrendingUp, CalendarDays, Loader2, Check, ShieldCheck } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
+import { IconTile, UniIcon, type UniIconName } from '../components/ui/UniIcon'
+import { subjectColor } from '../lib/subjectIcon'
 import { Badge } from '../components/ui/Badge'
 import { Avatar } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
@@ -11,7 +11,7 @@ import { UniMascot } from '../components/mascot/UniMascot'
 
 type Tab = 'Informations' | 'Présences' | 'Notes' | 'Mes cours'
 
-interface StatCard { label: string; value: string; icon: LucideIcon; bg: string; color: string }
+interface StatCard { label: string; value: string; icon: UniIconName; color: string }
 
 const rateTone = (rate: number | null) => (rate == null ? 'bg-[#e5e7eb]' : rate >= 75 ? 'bg-[#0d9488]' : rate >= 50 ? 'bg-amber-500' : 'bg-red-500')
 
@@ -104,15 +104,15 @@ export default function ProfilePage() {
 
   const stats: StatCard[] = isLearner
     ? [
-      { label: 'Séances relevées', value: loading ? '…' : `${attendance.sessions}`, icon: CalendarDays, bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]' },
-      { label: 'Présences', value: loading ? '…' : `${attendance.present}`, icon: UserCheck, bg: 'bg-[#d1fae5]', color: 'text-[#059669]' },
-      { label: 'Taux de présence', value: loading ? '…' : attendance.rate == null ? '—' : `${attendance.rate}%`, icon: TrendingUp, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]' },
+      { label: 'Séances relevées', value: loading ? '…' : `${attendance.sessions}`, icon: 'schedule', color: '#1E3A8A' },
+      { label: 'Présences', value: loading ? '…' : `${attendance.present}`, icon: 'attendance', color: '#10B981' },
+      { label: 'Taux de présence', value: loading ? '…' : attendance.rate == null ? '—' : `${attendance.rate}%`, icon: 'stats', color: '#F59E0B' },
     ]
     : isTeacher
       ? [
-        { label: 'Cours enseignés', value: loading ? '…' : `${courses.length}`, icon: BookOpen, bg: 'bg-[#eff3ff]', color: 'text-[#1e3a8a]' },
-        { label: 'Étudiants inscrits', value: loading || teacherStudents == null ? '…' : `${teacherStudents}`, icon: Users, bg: 'bg-[#d1fae5]', color: 'text-[#059669]' },
-        { label: 'Séances / semaine', value: loading || weeklySessions == null ? '…' : `${weeklySessions}`, icon: CalendarDays, bg: 'bg-[#fef3c7]', color: 'text-[#d97706]' },
+        { label: 'Cours enseignés', value: loading ? '…' : `${courses.length}`, icon: 'courses', color: '#1E3A8A' },
+        { label: 'Étudiants inscrits', value: loading || teacherStudents == null ? '…' : `${teacherStudents}`, icon: 'students', color: '#10B981' },
+        { label: 'Séances / semaine', value: loading || weeklySessions == null ? '…' : `${weeklySessions}`, icon: 'schedule', color: '#F59E0B' },
       ]
       : []
 
@@ -129,7 +129,7 @@ export default function ProfilePage() {
               title="Changer la photo de profil"
               className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#1e3a8a] text-white shadow-md hover:bg-[#2d4fa8] transition-colors"
             >
-              <Camera className="h-3.5 w-3.5" />
+              <UniIcon name="camera" weight="fill" size={14} />
             </button>
           </div>
           <div className="flex-1 min-w-0">
@@ -138,18 +138,18 @@ export default function ProfilePage() {
               {user.username && (
                 <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-0.5 text-xs font-semibold text-[#0d9488]">@{user.username}</span>
               )}
-              <Badge variant="success"><ShieldCheck className="mr-1 inline h-3 w-3" />Session Appwrite</Badge>
+              <Badge variant="success"><UniIcon name="security" weight="fill" size={12} className="mr-1 inline" />Session Appwrite</Badge>
             </div>
             <p className="text-sm text-[#6b7280] mt-0.5">{[user.roleLabel, user.filiere, user.university].filter(Boolean).join(' · ')}</p>
             <p className="text-xs text-[#9ca3af] mt-1">{user.email}</p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Link to="/app/parametres" className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">
-              <Settings className="h-4 w-4" /> Paramètres
+              <UniIcon name="settings" size={16} /> Paramètres
             </Link>
             <button onClick={() => { setEditing(!editing); setSaveState(null) }}
               className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">
-              <Edit className="h-4 w-4" />
+              <UniIcon name="edit" size={16} />
               {editing ? 'Annuler' : 'Modifier mes coordonnées'}
             </button>
           </div>
@@ -158,7 +158,7 @@ export default function ProfilePage() {
 
       {saveState && (
         <div role={saveState.ok ? 'status' : 'alert'} className={`rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in ${saveState.ok ? 'bg-slate-900 text-white' : 'border border-red-200 bg-red-50 text-red-700'}`}>
-          {saveState.ok && <Check className="h-4 w-4 text-[#0d9488]" />} {saveState.message}
+          {saveState.ok && <UniIcon name="check" weight="bold" size={16} className="text-[#0d9488]" />} {saveState.message}
         </div>
       )}
       {loadError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div>}
@@ -197,7 +197,7 @@ export default function ProfilePage() {
               {editing && (
                 <button onClick={() => void handleSaveProfile()} disabled={saving}
                   className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e3a8a] py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-60">
-                  {saving && <Loader2 className="h-4 w-4 animate-spin" />} {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
+                  {saving && <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" />} {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
                 </button>
               )}
             </div>
@@ -220,11 +220,9 @@ export default function ProfilePage() {
             <div>
               <h2 className="text-sm font-bold text-[#111827] mb-3">Mes statistiques</h2>
               <div className="grid gap-4 sm:grid-cols-3">
-                {stats.map(({ label, value, icon: Icon, bg, color }) => (
+                {stats.map(({ label, value, icon, color }, index) => (
                   <div key={label} className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-                    <div className={`mb-3 inline-flex rounded-lg p-2 ${bg}`}>
-                      <Icon className={`h-5 w-5 ${color}`} />
-                    </div>
+                    <div className="mb-3"><IconTile name={icon} color={color} variant="filled" size={44} index={index} /></div>
                     <p className="text-3xl font-extrabold text-[#111827]">{value}</p>
                     <p className="text-sm text-[#6b7280] mt-0.5">{label}</p>
                   </div>
@@ -239,7 +237,7 @@ export default function ProfilePage() {
         <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
           <h2 className="text-sm font-bold text-[#111827] mb-4">Historique des présences</h2>
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-[#6b7280]"><Loader2 className="h-4 w-4 animate-spin" /> Chargement de vos relevés…</div>
+            <div className="flex items-center gap-2 text-sm text-[#6b7280]"><UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> Chargement de vos relevés…</div>
           ) : records.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <UniMascot pose="search" size={120} />
@@ -283,7 +281,7 @@ export default function ProfilePage() {
             <Link to="/app/notes" className="text-xs font-medium text-[#1e3a8a] hover:underline">Relevé détaillé →</Link>
           </div>
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-[#6b7280]"><Loader2 className="h-4 w-4 animate-spin" /> Chargement de vos notes…</div>
+            <div className="flex items-center gap-2 text-sm text-[#6b7280]"><UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> Chargement de vos notes…</div>
           ) : gradeRows.length === 0 ? (
             <div className="flex flex-col items-center gap-3 py-6 text-center">
               <UniMascot pose="thinking" size={120} />
@@ -323,7 +321,7 @@ export default function ProfilePage() {
             <Link to="/app/mes-cours-enseignant" className="text-xs font-medium text-[#1e3a8a] hover:underline">Espace pédagogique →</Link>
           </div>
           {loading ? (
-            <div className="flex items-center gap-2 text-sm text-[#6b7280]"><Loader2 className="h-4 w-4 animate-spin" /> Chargement de vos cours…</div>
+            <div className="flex items-center gap-2 text-sm text-[#6b7280]"><UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> Chargement de vos cours…</div>
           ) : courses.length === 0 ? (
             <p className="py-6 text-center text-sm text-[#6b7280]">Aucun cours ne vous est encore attribué : l’administration de votre université vous rattache à vos cours.</p>
           ) : (
@@ -331,7 +329,7 @@ export default function ProfilePage() {
               {courses.map((course) => (
                 <div key={course.id} className="rounded-lg border border-[#e5e7eb] p-4 hover:bg-[#f9fafb] transition-colors">
                   <div className="flex items-center justify-between gap-2">
-                    <Badge variant="primary">{course.code}</Badge>
+                    <span className="flex items-center gap-2"><IconTile subject={course.name} subjectCode={course.code} color={subjectColor(course.code)} variant="soft" size={36} /><Badge variant="primary">{course.code}</Badge></span>
                     <span className="text-xs text-[#9ca3af]">{course.hours ? `${course.hours} h` : ''}</span>
                   </div>
                   <p className="mt-2 font-semibold text-[#111827]">{course.name}</p>

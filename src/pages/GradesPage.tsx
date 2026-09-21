@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { GraduationCap, Loader2, RefreshCw, TrendingUp, Trophy, Sparkles, BookOpen, AlertCircle } from 'lucide-react'
+import { IconTile, UniIcon, type UniIconName } from '../components/ui/UniIcon'
 import { gradesApi, type Grade } from '../lib/api'
 import { useApi } from '../hooks/useApi'
 import { useUserRole } from '../utils/userRole'
@@ -74,7 +74,7 @@ export default function GradesPage() {
         <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-50 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-200" /> Relevé personnel
+              <UniIcon name="assistant" weight="fill" size={14} className="text-cyan-200" /> Relevé personnel
             </div>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Mes notes</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">Vos évaluations réelles, chargées depuis votre compte Appwrite.</p>
@@ -88,20 +88,20 @@ export default function GradesPage() {
 
       <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/90 p-3 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          <BookOpen className="h-4 w-4 text-teal-600" /> Évaluations enregistrées
+          <UniIcon name="grades" size={16} className="text-teal-600" /> Évaluations enregistrées
         </div>
         <div className="flex items-center gap-2">
           <select value={semester} disabled className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800">
             <option>Tous les semestres</option>
           </select>
           <button type="button" onClick={refetch} disabled={loading || refreshing} className="rounded-xl border border-slate-200 p-2.5 text-slate-600 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="Actualiser">
-            <RefreshCw className={`h-4 w-4 ${loading || refreshing ? 'animate-spin' : ''}`} />
+            <UniIcon name="refresh" weight="bold" size={16} className={loading || refreshing ? 'animate-spin' : ''} />
           </button>
           <ExportButtons getDocument={transcriptExport} disabled={loading || !grades.length} disabledReason="Aucune note à exporter pour le moment." />
         </div>
       </div>
 
-      {error && <div className="relative flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><AlertCircle className="mt-0.5 h-5 w-5 shrink-0" />{error}</div>}
+      {error && <div className="relative flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"><UniIcon name="alert" weight="fill" size={20} className="mt-0.5 shrink-0" />{error}</div>}
 
       {loading ? (
         <div className="grid gap-4 sm:grid-cols-3">
@@ -110,9 +110,9 @@ export default function GradesPage() {
       ) : (
         <>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Metric icon={<TrendingUp className="h-5 w-5" />} label="Moyenne calculée" value={average ? `${average}/20` : '—'} accent="teal" />
-            <Metric icon={<GraduationCap className="h-5 w-5" />} label="Évaluations" value={grades.length} accent="blue" />
-            <Metric icon={<Trophy className="h-5 w-5" />} label="Meilleure note" value={bestGrade ? `${scoreValue(bestGrade)}/${maxValue(bestGrade)}` : '—'} accent="amber" />
+            <Metric icon="grades" index={0} label="Moyenne calculée" value={average ? `${average}/20` : '—'} accent="teal" />
+            <Metric icon="assignments" index={1} label="Évaluations" value={grades.length} accent="blue" />
+            <Metric icon="trophy" index={2} label="Meilleure note" value={bestGrade ? `${scoreValue(bestGrade)}/${maxValue(bestGrade)}` : '—'} accent="amber" />
           </div>
 
           <motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.12 }} className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-7">
@@ -127,7 +127,7 @@ export default function GradesPage() {
             <AnimatePresence mode="popLayout">
               {grades.length === 0 ? (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="rounded-2xl border border-dashed border-slate-300 bg-slate-50/70 p-12 text-center dark:border-slate-700 dark:bg-slate-800/50">
-                  <GraduationCap className="mx-auto mb-4 h-10 w-10 text-slate-300 dark:text-slate-600" />
+                  <div className="mb-4 flex justify-center"><IconTile name="grades" color="#1E3A8A" variant="soft" size={56} /></div>
                   <p className="font-bold text-slate-700 dark:text-slate-200">Aucune note enregistrée</p>
                   <p className="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-500">Aucune évaluation Appwrite n’a encore été enregistrée pour votre parcours. Votre enseignant pourra les saisir depuis son espace pédagogique.</p>
                 </motion.div>
@@ -154,7 +154,7 @@ export default function GradesPage() {
   )
 }
 
-function Metric({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: React.ReactNode; accent: 'teal' | 'blue' | 'amber' }) {
-  const accents = { teal: 'bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300', blue: 'bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300', amber: 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300' }
-  return <motion.div whileHover={{ y: -3 }} className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"><div className={`flex h-11 w-11 items-center justify-center rounded-2xl ${accents[accent]}`}>{icon}</div><div><p className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{value}</p><p className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</p></div></motion.div>
+function Metric({ icon, index = 0, label, value, accent }: { icon: UniIconName; index?: number; label: string; value: React.ReactNode; accent: 'teal' | 'blue' | 'amber' }) {
+  const accents = { teal: '#0D9488', blue: '#1E3A8A', amber: '#F59E0B' }
+  return <motion.div whileHover={{ y: -3 }} className="flex items-center gap-4 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"><IconTile name={icon} color={accents[accent]} variant="filled" size={56} index={index} /><div><p className="text-2xl font-black tracking-tight text-slate-900 dark:text-white">{value}</p><p className="mt-0.5 text-xs font-semibold text-slate-500 dark:text-slate-400">{label}</p></div></motion.div>
 }
