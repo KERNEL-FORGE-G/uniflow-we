@@ -78,6 +78,8 @@ export function UniAssistant() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<AssistantMessage[]>([])
   const [suggestions, setSuggestions] = useState<string[]>(DEFAULT_SUGGESTIONS)
+  // Identité à laquelle appartient `messages` (voir l'effet d'accueil).
+  const [owner, setOwner] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -111,9 +113,14 @@ export function UniAssistant() {
     return () => window.clearTimeout(hide)
   }, [hello])
 
-  // La conversation suit le compte : changer d'utilisateur recharge la sienne.
+  // La conversation suit le compte : changer d'utilisateur (ou se déconnecter)
+  // recharge la sienne et remet les suggestions du bon profil — sinon un
+  // visiteur voyait encore « Comment créer un compte enseignant ? » après la
+  // déconnexion d'une administration.
   useEffect(() => {
     setMessages(loadMessages(storage, userId))
+    setOwner(userId)
+    setSuggestions(userId ? DEFAULT_SUGGESTIONS : GUEST_SUGGESTIONS)
     greeted.current = false
   }, [storage, userId])
 
@@ -139,7 +146,10 @@ export function UniAssistant() {
   }, [canSpeak, voiceOn])
 
   useEffect(() => {
-    if (!isOpen || greeted.current) return
+    // `owner !== userId` : la conversation affichée est encore celle du compte
+    // précédent (même commit que le rechargement) ; on attend le rendu suivant,
+    // sinon l'accueil du nouveau profil sautait après une déconnexion.
+    if (!isOpen || greeted.current || owner !== userId) return
     greeted.current = true
     setUnread(false)
     setJustGreeted(true)
@@ -166,7 +176,7 @@ export function UniAssistant() {
       say(greeting)
     })()
     return () => { cancelled = true; window.clearTimeout(timer) }
-  }, [guest, isOpen, messages.length, say])
+  }, [guest, isOpen, messages.length, owner, say, userId])
 
   const send = useCallback(async (text: string) => {
     const content = text.trim()

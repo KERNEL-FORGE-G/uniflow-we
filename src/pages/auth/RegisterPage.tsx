@@ -6,6 +6,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { levelLabel, useFaculties, usePrograms, useUniversities } from '../../lib/referenceData'
 import { ActionResultSlot } from '../../components/feedback/ActionResult'
+import { UniMascot } from '../../components/mascot/UniMascot'
 
 const benefits = [
   {
@@ -145,12 +146,12 @@ export default function RegisterPage() {
           variants={staggerContainer}
           className="max-w-lg text-white relative z-10 space-y-8"
         >
-          {/* Logo */}
+          {/* Logo + Uni : il guide l'inscription étape par étape */}
           <motion.div variants={fadeInUp} className="text-center">
             <img
               src="/logos/uniflow-wordmark.png"
               alt="UniFlow"
-              className="mx-auto h-20 mb-6 object-contain drop-shadow-lg"
+              className="mx-auto h-14 mb-4 object-contain drop-shadow-lg"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback) {
@@ -159,6 +160,19 @@ export default function RegisterPage() {
                 }
               }}
             />
+            <div className="mb-4 flex justify-center">
+              <UniMascot
+                pose={error ? 'sorry' : loading ? 'thinking' : step === 2 ? 'pointing' : 'graduate'}
+                size={170}
+                bubble={
+                  error ? <span>Aïe, l’inscription a échoué. Regarde le message à droite, on corrige ensemble.</span>
+                    : loading ? <span>Je crée ton compte…</span>
+                    : step === 2 ? <span>{accountType === 'PERSONAL' ? 'Dernière étape : un bon mot de passe et c’est parti.' : 'Choisis ton université, ta filière et ton niveau : ton emploi du temps en dépend.'}</span>
+                    : <span>Bienvenue ! Seuls les étudiants s’inscrivent ici ; les autres comptes viennent de l’administration.</span>
+                }
+                bubbleSide="right"
+              />
+            </div>
             <h1 className="text-4xl font-black mb-3">Rejoignez UniFlow</h1>
             <p className="text-teal-100 text-lg leading-relaxed">
               Créez votre compte et profitez d'une expérience universitaire moderne et connectée
@@ -219,11 +233,15 @@ export default function RegisterPage() {
           <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 p-8 lg:p-10">
             {/* Header */}
             <div className="mb-8">
+              {/* Sur les écrans étroits le panneau de gauche (et Uni) est masqué : Uni prend la place de l'icône */}
+              <div className="lg:hidden mb-3">
+                <UniMascot pose={error ? 'sorry' : loading ? 'thinking' : step === 2 ? 'pointing' : 'graduate'} size={96} effects={false} />
+              </div>
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
                 transition={{ delay: 0.2, type: "spring" }}
-                className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0d9488] to-[#14b8a8] mb-4"
+                className="hidden lg:inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0d9488] to-[#14b8a8] mb-4"
               >
                 <User className="h-8 w-8 text-white" />
               </motion.div>

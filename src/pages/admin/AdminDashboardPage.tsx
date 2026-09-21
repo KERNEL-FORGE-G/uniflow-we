@@ -43,10 +43,12 @@ import {
   type Student,
   type AttendanceSession
 } from '../../lib/api'
+import { useUserRole } from '../../utils/userRole'
 
 const COLORS = ['#1e3a8a', '#0d9488', '#7c3aed', '#d97706', '#059669', '#dc2626']
 
 export default function AdminDashboardPage() {
+  const { authUser } = useUserRole()
   const [stats, setStats] = useState<OverviewStats | null>(null)
   const [students, setStudents] = useState<Student[]>([])
   const [sessions, setSessions] = useState<AttendanceSession[]>([])
@@ -250,7 +252,7 @@ export default function AdminDashboardPage() {
             Rafraîchir les données
           </button>
           <span className="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3.5 py-2 text-xs font-bold text-amber-800">
-            <ShieldCheck className="h-4 w-4 text-amber-600" /> Super Admin
+            <ShieldCheck className="h-4 w-4 text-amber-600" /> {authUser?.isSuperAdmin ? 'Admin plateforme' : 'Administration'}
           </span>
         </div>
       </motion.div>
@@ -419,13 +421,13 @@ export default function AdminDashboardPage() {
             <div className="bg-[#f9fafb] p-2.5 rounded-xl border border-[#e5e7eb]">
               <p className="text-[11px] font-bold text-[#6b7280]">Présence Max</p>
               <p className="text-base font-extrabold text-emerald-600">
-                {Math.max(...attendanceTrendData.map((d) => d.rate))}%
+                {attendanceTrendData.length ? `${Math.max(...attendanceTrendData.map((d) => d.rate))}%` : '—'}
               </p>
             </div>
             <div className="bg-[#f9fafb] p-2.5 rounded-xl border border-[#e5e7eb]">
               <p className="text-[11px] font-bold text-[#6b7280]">Présence Min</p>
               <p className="text-base font-extrabold text-amber-600">
-                {Math.min(...attendanceTrendData.map((d) => d.rate))}%
+                {attendanceTrendData.length ? `${Math.min(...attendanceTrendData.map((d) => d.rate))}%` : '—'}
               </p>
             </div>
             <div className="bg-[#f9fafb] p-2.5 rounded-xl border border-[#e5e7eb]">
