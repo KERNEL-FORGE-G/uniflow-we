@@ -9,7 +9,8 @@ import { IdleTimer } from './components/IdleTimer'
 import { GlobalNetworkToast } from './components/GlobalNetworkToast'
 import { Skeleton } from './components/ui/Skeleton'
 import { ErrorBoundary } from './components/feedback/ErrorBoundary'
-import { UniLoading, UniOfflineBanner } from './components/mascot/UniScenes'
+import { UniLoading } from './components/mascot/UniScenes'
+import { OfflineBanner } from './components/offline/OfflineBanner'
 
 // Uni est monté une seule fois, pour le site public comme pour l'espace connecté.
 const UniAssistant = lazy(() => import('./components/assistant/UniAssistant').then((module) => ({ default: module.UniAssistant })))
@@ -255,7 +256,7 @@ export default function App() {
       <IdleTimer />
       <GlobalNetworkToast />
       <AudienceTracker />
-      <UniOfflineBanner />
+      <OfflineBanner />
       <Suspense fallback={null}><UniAssistant /></Suspense>
       <ErrorBoundary resetKey={location.pathname}>
         <Suspense fallback={<PageLoader />}>

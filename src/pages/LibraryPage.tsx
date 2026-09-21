@@ -62,7 +62,7 @@ export default function LibraryPage() {
   const [isAudioPlaying, setIsAudioPlaying] = useState(false)
 
   // API Integration
-  const { data: backendData } = useApi(() => libraryApi.list())
+  const { data: backendData } = useApi(() => libraryApi.list(), [], { key: 'library.list' })
 
   const apiResources: ResourceItem[] = (backendData ?? []).map((r: LibraryResource, i: number) => {
     const cat: 'Documents' | 'Vidéos' | 'Audios' =

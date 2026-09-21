@@ -9,6 +9,9 @@ import { attendanceApi, Course, Student, type AttendanceSession } from '../lib/a
 import { ExportButtons } from '../components/exports/ExportButtons'
 import { attendanceCourseDocument, attendanceSessionDocument, type AttendanceStatusCode } from '../lib/exports'
 import { toAttendanceExportSession } from '../lib/exports/adapters'
+import { isOnline } from '../lib/offline/networkStatus'
+import { isRetryableReplayError } from '../lib/offline/offlineModel'
+import { queueAttendanceRoll } from '../lib/offline/replayHandlers'
 
 type RollStatus = 'Présent' | 'Absent' | 'Late' | 'Excusé'
 
@@ -58,6 +61,7 @@ export default function AttendanceManagePage() {
   const [attendanceLoading, setAttendanceLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [queuedNotice, setQueuedNotice] = useState<string | null>(null)
 
   const announcements: Array<{ id: string; title: string; desc: string; time: string; type: string }> = []
 
@@ -144,23 +148,40 @@ export default function AttendanceManagePage() {
 
   const handleSave = async () => {
     if (!course) return
-    if (isOfflineMode) {
-      alert('La validation des présences nécessite une connexion à Appwrite. Désactivez le mode hors ligne puis réessayez.')
-      return
+    const payload = {
+      courseId: course.id,
+      date: new Date().toISOString(),
+      rows: students.map((student) => ({ studentId: student.id, status: STATUS_TO_APPWRITE[student.status] })),
+    }
+    // Sans réseau (ou en mode hors ligne choisi), la feuille est mise en file
+    // d'attente et partira au retour du réseau ; l'ancienne alerte bloquante
+    // obligeait à ressaisir tout l'appel plus tard.
+    const defer = async () => {
+      await queueAttendanceRoll(payload)
+      setQueuedNotice('Feuille du jour mise en attente : elle sera enregistrée automatiquement au retour du réseau.')
+      setSaved(true)
+      setPending(0)
+      setTimeout(() => setSaved(false), 3500)
     }
     setSaving(true)
     setError(null)
+    setQueuedNotice(null)
     try {
-      await attendanceApi.saveTodayRoll({
-        courseId: course.id,
-        date: new Date().toISOString(),
-        rows: students.map((student) => ({ studentId: student.id, status: STATUS_TO_APPWRITE[student.status] })),
-      })
+      if (isOfflineMode || !isOnline()) {
+        await defer()
+        return
+      }
+      await attendanceApi.saveTodayRoll(payload)
       setSaved(true)
       setPending(0)
       setTimeout(() => setSaved(false), 3500)
     } catch (err) {
-      setError(`Erreur lors de la validation Appwrite : ${err instanceof Error ? err.message : 'échec inconnu.'}`)
+      const shape = { status: typeof (err as { status?: unknown })?.status === 'number' ? (err as { status: number }).status : undefined, message: err instanceof Error ? err.message : String(err) }
+      if (isRetryableReplayError(shape, isOnline())) {
+        await defer()
+      } else {
+        setError(`Erreur lors de la validation Appwrite : ${err instanceof Error ? err.message : 'échec inconnu.'}`)
+      }
     } finally {
       setSaving(false)
     }
@@ -209,6 +230,7 @@ export default function AttendanceManagePage() {
   return (
     <div className="space-y-5 animate-fade-in">
       {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div>}
+      {queuedNotice && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">{queuedNotice}</div>}
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
         <div>
@@ -246,7 +268,7 @@ export default function AttendanceManagePage() {
           <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5 animate-bounce" />
           <div className="flex-1">
             <p className="font-semibold text-sm">Mode hors ligne</p>
-            <p className="text-xs mt-0.5">La consultation reste limitée aux données déjà chargées. La création et la validation des présences exigent une connexion Appwrite.</p>
+            <p className="text-xs mt-0.5">La consultation reste limitée aux données déjà chargées. La feuille du jour validée est mise en attente et partira au retour du réseau ; le QR de présence, lui, exige une connexion.</p>
           </div>
           {pending > 0 && (
             <button onClick={() => setPending(0)}
@@ -266,7 +288,7 @@ export default function AttendanceManagePage() {
       {saved && (
         <div className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-          {isOfflineMode ? 'Aucune écriture n’a été effectuée hors ligne.' : 'Présences enregistrées dans Appwrite.'}
+          {queuedNotice ? 'Feuille du jour mise en attente d’envoi.' : 'Présences enregistrées dans Appwrite.'}
         </div>
       )}
 

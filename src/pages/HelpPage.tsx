@@ -29,7 +29,7 @@ export default function HelpPage() {
   const [supportSubmitted, setSupportSubmitted] = useState(false)
   const [selectedGuide, setSelectedGuide] = useState<typeof guides[number] | null>(null)
 
-  const { data: apiFaqs } = useApi(() => supportApi.faqs())
+  const { data: apiFaqs } = useApi(() => supportApi.faqs(), [], { key: 'support.faqs' })
   const faqs = (apiFaqs && apiFaqs.length > 0) ? apiFaqs : defaultFaqs
 
   const filtered = faqs.filter(f => {

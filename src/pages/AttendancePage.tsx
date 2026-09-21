@@ -49,12 +49,13 @@ export default function AttendancePage() {
   const scannerRef = useRef<{ stop: () => Promise<void> } | null>(null)
 
   // On charge les cours puis les sessions pour chacun
-  const { data: courses, loading: lCourses, error: eCourses, refetch } = useApi(() => coursesApi.mine())
+  const { data: courses, loading: lCourses, error: eCourses, refetch } = useApi(() => coursesApi.mine(), [], { key: 'courses.mine' })
 
   // Sessions pour le cours sélectionné
   const { data: sessions, loading: lSessions } = useApi(
     () => selectedCourse ? attendanceApi.byCourse(selectedCourse) : Promise.resolve(null),
-    [selectedCourse]
+    [selectedCourse],
+    { key: 'attendance.byCourse' },
   )
 
   // Stats globales calculées depuis toutes les sessions
@@ -63,7 +64,8 @@ export default function AttendancePage() {
       ? Promise.all((courses as Course[]).map(c => attendanceApi.byCourse(c.id).catch(() => [] as AttendanceSession[])))
         .then(res => res.flat())
       : Promise.resolve([] as AttendanceSession[]),
-    [courses?.length, refreshKey]
+    [courses?.length, refreshKey],
+    { key: 'attendance.allSessions' },
   )
 
   const submitQr = async (value: string) => {

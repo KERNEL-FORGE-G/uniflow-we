@@ -40,7 +40,7 @@ export default function SchedulePage() {
   const [selected, setSelected] = useState<Schedule | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
   const [focusDay, setFocusDay] = useState<string | null>(null)
-  const { data: schedules, loading, error, refetch } = useApi(() => schedulesApi.mine())
+  const { data: schedules, loading, error, refetch } = useApi(() => schedulesApi.mine(), [], { key: 'schedules.mine' })
   // Un étudiant ne voit que sa filière et son niveau : sans les deux sur son
   // profil, la couche données ne renvoie rien — on le lui dit au lieu de
   // montrer une grille vide sans explication.

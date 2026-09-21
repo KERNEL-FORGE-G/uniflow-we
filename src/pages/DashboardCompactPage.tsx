@@ -10,7 +10,7 @@ import { SubscriptionStatus } from '../components/subscription/SubscriptionStatu
 const schedule: Array<{ time: string; course: string; teacher: string; room: string; type: string; status: 'Terminé' | 'À venir' }> = []
 
 export default function DashboardCompactPage() {
-  const { data: overview } = useApi(() => statsApi.overview())
+  const { data: overview } = useApi(() => statsApi.overview(), [], { key: 'stats.overview' })
   const { currentUser } = useUserRole()
 
   const now = new Date()

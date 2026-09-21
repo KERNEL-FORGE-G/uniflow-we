@@ -64,7 +64,7 @@ export default function ClassroomsPage() {
   const [isReserving, setIsReserving] = useState(false)
   const [reservedSuccess, setReservedSuccess] = useState(false)
 
-  const { data: classrooms, loading, error, refetch } = useApi(() => classroomsApi.list())
+  const { data: classrooms, loading, error, refetch } = useApi(() => classroomsApi.list(), [], { key: 'classrooms.list' })
 
   const allRooms = classrooms ?? []
 

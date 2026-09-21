@@ -8,6 +8,7 @@ import { logoutNavigationState, terminateSession, type LogoutReason } from '@/li
 import { unregisterAppwritePushTarget } from '@/services/appwritePushBridge'
 import { useUserRole } from '@/utils/userRole'
 import type { Role } from '@/utils/userRole'
+import { clearPersistedQueries } from '@/lib/offline/queryPersistence'
 
 export interface LoginPayload {
   email: string
@@ -144,7 +145,9 @@ export function useAuth() {
       deleteRemoteSession: logoutAccount,
       clearSnapshot: clearSessionSnapshot,
       unsubscribeRealtime: unregisterAppwritePushTarget,
-      clearQueryCache: () => queryClient.clear(),
+      // Vide aussi le cache persisté dans IndexedDB : sans cela, les données du
+      // compte précédent réapparaissaient au prochain utilisateur du navigateur.
+      clearQueryCache: () => { void clearPersistedQueries(queryClient) },
       // Événement distinct de « session expirée » : un clic volontaire ne doit
       // pas déclencher la modale d'expiration ni son toast d'avertissement.
       announce: (why) => { try { window.dispatchEvent(new CustomEvent('uniflow:logged-out', { detail: { reason: why } })) } catch { /* environnement sans window */ } },

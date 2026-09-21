@@ -73,7 +73,7 @@ export default function AssignmentsPage() {
   const [gradingScore, setGradingScore] = useState('16/20')
   const [gradingFeedback, setGradingFeedback] = useState('')
 
-  const { data: apiData, loading, error, refetch } = useApi(() => assignmentsApi.mine())
+  const { data: apiData, loading, error, refetch } = useApi(() => assignmentsApi.mine(), [], { key: 'assignments.mine' })
   const assignments: ExtendedAssignment[] = apiData ?? []
 
   const filtered = assignments

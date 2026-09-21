@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment, useMemo } from 'react'
+import { useState, Fragment, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
@@ -8,6 +8,7 @@ import {
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { personalSubscriptionApi, type SubscriptionPlan } from '../lib/api'
+import { useApi } from '../hooks/useApi'
 import { COUNTRY_OPTIONS, featuredPlanCode, plansForCountry } from '../lib/pricingModel'
 import { annualSavingsPercent } from '../lib/paymentsModel'
 import { CONTACT_PHONE_DISPLAY } from '../lib/contactInfo'
@@ -97,28 +98,14 @@ function priceLabel(plan: SubscriptionPlan, cycle: 'monthly' | 'annually') {
 }
 
 export default function PricingPage() {
-  const [dbPlans, setDbPlans] = useState<SubscriptionPlan[]>([])
-  const [loadingPlans, setLoadingPlans] = useState<boolean>(true)
-  const [plansError, setPlansError] = useState<string | null>(null)
+  // Lecture mise en cache et persistée : la grille tarifaire reste consultable
+  // hors ligne, alors qu'un rechargement sans réseau affichait « Aucune formule ».
+  const { data: plansData, loading: loadingPlans, error: plansError } = useApi(() => personalSubscriptionApi.getPlans(), [], { key: 'subscriptions.plans' })
+  const dbPlans: SubscriptionPlan[] = plansData ?? []
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
   const [countryCode, setCountryCode] = useState('CM')
   const [faqCategory, setFaqCategory] = useState<string>('Tous')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
-
-  useEffect(() => {
-    let mounted = true
-    setLoadingPlans(true)
-    setPlansError(null)
-    personalSubscriptionApi.getPlans()
-      .then((plans) => { if (mounted) setDbPlans(plans ?? []) })
-      .catch((reason: unknown) => {
-        if (!mounted) return
-        setDbPlans([])
-        setPlansError(reason instanceof Error ? reason.message : 'Les offres ne sont pas disponibles.')
-      })
-      .finally(() => { if (mounted) setLoadingPlans(false) })
-    return () => { mounted = false }
-  }, [])
 
   const visiblePlans = useMemo(() => plansForCountry(dbPlans, countryCode), [dbPlans, countryCode])
   const featuredCode = useMemo(() => featuredPlanCode(visiblePlans), [visiblePlans])

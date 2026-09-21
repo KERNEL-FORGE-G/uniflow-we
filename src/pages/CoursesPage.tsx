@@ -29,7 +29,7 @@ export default function CoursesPage() {
   const [search, setSearch] = useState('')
   const navigate = useNavigate()
 
-  const { data: courses, loading, error, refetch } = useApi(() => coursesApi.mine())
+  const { data: courses, loading, error, refetch } = useApi(() => coursesApi.mine(), [], { key: 'courses.mine' })
 
   const filtered = (courses ?? []).filter((c: Course) => {
     const matchTab = activeTab === 'Tous' || c.type === activeTab

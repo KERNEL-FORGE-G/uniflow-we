@@ -3,6 +3,9 @@ import { Search, Plus, Phone, Video, Paperclip, Smile, Mic, Send, MoreHorizontal
 import { Avatar } from '../components/ui/Avatar'
 import { AnimatedList } from '../components/ui/AnimatedList'
 import { messagingApi, type ChatConversation, type ChatContact } from '../lib/api'
+import { isOnline } from '../lib/offline/networkStatus'
+import { isRetryableReplayError } from '../lib/offline/offlineModel'
+import { queueMessage } from '../lib/offline/replayHandlers'
 import { useNavigate } from 'react-router-dom'
 
 interface Message {
@@ -41,6 +44,7 @@ export default function MessagingPage() {
   const [suggestions, setSuggestions] = useState<ChatContact[]>([])
   const [searchingContacts, setSearchingContacts] = useState(false)
   const [addError, setAddError] = useState<string | null>(null)
+  const [queuedNotice, setQueuedNotice] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom
@@ -147,19 +151,38 @@ export default function MessagingPage() {
     void messagingApi.markRead(c.id).catch((error: unknown) => setAddError(error instanceof Error ? error.message : 'Le marquage lu Appwrite a échoué.'))
   }
 
+  // Hors ligne (ou réseau tombé pendant l'envoi), le message est mis en file
+  // d'attente et partira au retour du réseau : perdre un message tapé était
+  // le reproche le plus fréquent en zone à connexion instable.
+  const deferMessage = async (conversationId: string, body: string) => {
+    await queueMessage({ conversationId, text: body })
+    setText('')
+    setQueuedNotice('Hors ligne : le message partira automatiquement au retour du réseau.')
+  }
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!text.trim() || !active) return
+    const body = text.trim()
+    if (!body || !active) return
     setIsSending(true)
     setAddError(null)
+    setQueuedNotice(null)
     try {
-      const updated = await messagingApi.sendMessage(active.id, text.trim())
+      if (!isOnline()) {
+        await deferMessage(active.id, body)
+        return
+      }
+      const updated = await messagingApi.sendMessage(active.id, body)
       const conversation = updated as ChatConversation
       setActive(conversation)
       setConvos(prev => prev.map(c => c.id === conversation.id ? conversation : c))
       setText('')
     } catch (err: any) {
-      setAddError(err?.message || 'Le message n’a pas pu être envoyé dans Appwrite.')
+      if (isRetryableReplayError({ status: typeof err?.status === 'number' ? err.status : undefined, message: err?.message }, isOnline())) {
+        await deferMessage(active.id, body)
+      } else {
+        setAddError(err?.message || 'Le message n’a pas pu être envoyé dans Appwrite.')
+      }
     } finally {
       setIsSending(false)
     }
@@ -372,6 +395,11 @@ export default function MessagingPage() {
 
             {/* Input */}
             <div className="border-t border-[#e5e7eb] px-4 py-3.5">
+              {queuedNotice && (
+                <p role="status" className="mb-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800">
+                  <AlertTriangle className="h-3.5 w-3.5 shrink-0" /> {queuedNotice}
+                </p>
+              )}
               <form onSubmit={sendMessage} className="flex items-center gap-2">
                 <button type="button" className="rounded-lg p-2 text-[#9ca3af] hover:bg-[#f3f4f6] hover:text-[#374151] transition-colors">
                   <Paperclip className="h-5 w-5" />

@@ -21,7 +21,7 @@ function when(value?: string, options: Intl.DateTimeFormatOptions = { dateStyle:
 }
 
 export default function AttendanceHistoryPage() {
-  const { data: sessions, loading, error, refetch } = useApi(() => attendanceApi.listSessions())
+  const { data: sessions, loading, error, refetch } = useApi(() => attendanceApi.listSessions(), [], { key: 'attendance.sessions' })
   const [courseId, setCourseId] = useState('all')
   const [status, setStatus] = useState<'all' | AttendanceRecord['status']>('all')
   const [expanded, setExpanded] = useState<string | null>(null)

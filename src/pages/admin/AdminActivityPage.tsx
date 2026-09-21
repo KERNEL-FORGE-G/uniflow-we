@@ -54,7 +54,7 @@ export default function AdminActivityPage() {
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState('all')
   const [filterStatus, setFilterStatus] = useState('all')
-  const { data: apiLogs, loading, error, refetch } = useApi(() => auditLogsApi.list())
+  const { data: apiLogs, loading, error, refetch } = useApi(() => auditLogsApi.list(), [], { key: 'audit.list' })
   const logs = (apiLogs ?? []).map(mapAuditLog)
 
   const filtered = logs.filter(l => {
