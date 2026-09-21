@@ -98,21 +98,25 @@ appwrite push function          # lit appwrite.config.json
 | `node scripts/verify-appwrite-schema.mjs` | Compare le serveur au schéma et signale toute divergence. |
 | `node scripts/seed-accounts.mjs` | Crée un compte par rôle (ADMIN, administration, enseignant, délégué, étudiants L1/L2) et un compte indépendant ; mots de passe dans `../uniflow-backend/.comptes-demo.local`. |
 | `node scripts/seed-academic-demo.mjs` | Cours, emploi du temps, notes, bibliothèque et devoirs de démonstration pour les étudiants ICT4D existants. |
+| `node scripts/seed-academic-reference-data.mjs [--dry-run] [--prune]` | Référentiel UY1 / Faculté des Sciences : filières, salles, cours et emplois du temps du semestre (`scripts/data/fs-uy1-2026-2027.mjs`), puis inscription des apprenants de l'annuaire à leurs cours. ICT4D L2 et L3 y sont **fictifs et provisoires** (`provisional: true`) jusqu'à l'emploi du temps officiel. |
 | `node scripts/seed-team-members.mjs` | Les neuf membres de l'équipe KERNEL FORGE (page Équipe). |
 | `node scripts/upload-public-appwrite-assets.mjs` | Téléverse le logo public (`assets/brand/`). |
 | `node scripts/test-team-roster-function.mjs` | Test de bout en bout du service Équipe (droits, photos, suppression). |
 | `node scripts/test-attendance-secure-function.mjs` | Émission, scan et audit d'une session de présence QR. |
 | `node scripts/test-messaging-attachment.mjs` | Pièce jointe de messagerie : droits par fichier. |
+| `node scripts/test-registration-flow.mjs` | Inscription de bout en bout avec les droits d'un client : filière avec et sans cours publiés, idempotence, puis suppression du compte par `delete-self`. |
 | `pnpm test:e2e:uy1` | Parcours complet UY1 : inscription, appel, notes, relevé. |
 
 ## Tests
 
 ```bash
 pnpm typecheck                                   # TypeScript strict
-node functions/uniflow-api/src/main.test.js 2>/dev/null || node --test functions
+node --test "functions/uniflow-api/src/**/*.test.js" "src/**/*.test.ts" "src/**/*.test.mjs" "scripts/**/*.test.mjs"
 ```
 
-Les tests des services (`functions/**/*.test.js`) s'exécutent avec `node --test`.
+Les tests unitaires (services des Functions, modèles du front, données du
+référentiel) s'exécutent avec `node --test` ; les scripts `test-*.mjs` sont des
+tests de bout en bout contre Appwrite Cloud (clé serveur requise).
 Toute correction de logique ou de mise en page s'accompagne d'un test.
 
 ## Organisation du dépôt

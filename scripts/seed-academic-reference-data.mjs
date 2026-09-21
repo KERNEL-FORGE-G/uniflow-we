@@ -31,6 +31,7 @@ import {
   FACULTY,
   PROGRAMS,
   SEMESTER,
+  TEACHER_ACCOUNTS,
   TIMETABLES,
   UNIVERSITY,
   allSessions,
@@ -112,8 +113,10 @@ function buildCourses(sessions) {
       types: new Set(),
       minutes: 0,
       optional: false,
+      provisional: false,
     }
     if (session.title && !course.title) course.title = session.title
+    course.provisional = course.provisional || session.provisional
     if (session.teachers) session.teachers.split('/').map((name) => name.trim()).filter(Boolean).forEach((name) => course.teachers.add(name))
     if (session.room) course.rooms.set(session.room, (course.rooms.get(session.room) || 0) + 1)
     course.types.add(session.type)
@@ -137,7 +140,11 @@ function courseDocument(course) {
     `${name} — ${programName} ${course.level}, semestre ${SEMESTER} ${ACADEMIC_YEAR}, Faculté des Sciences (UY1).`,
     teacherName ? `Enseignant(s) : ${teacherName}.` : '',
     course.optional ? 'UE optionnelle : une semaine sur deux ou 1h30 par semaine.' : '',
+    course.provisional ? 'Données provisoires fictives, en attente de l’emploi du temps officiel.' : '',
   ].filter(Boolean)
+  // Premier enseignant qui possède un compte de démonstration : son tableau
+  // de bord voit le cours. Un cours à plusieurs enseignants n'a qu'un titulaire.
+  const teacherId = [...course.teachers].map((teacher) => TEACHER_ACCOUNTS[teacher]).find(Boolean) || ''
   return {
     code: course.code.slice(0, 32),
     name: name.slice(0, 255),
@@ -145,7 +152,7 @@ function courseDocument(course) {
     university: UNIVERSITY.name,
     program: course.program,
     level: course.level,
-    teacherId: '',
+    teacherId,
     teacherName: teacherName.slice(0, 255),
     credits: 0,
     // Volume hebdomadaire arrondi à l'heure : la maquette (crédits, volume
@@ -219,6 +226,52 @@ async function backfillLegacySchedules() {
     })
     counters['mis à jour'] += 1
   }
+}
+
+/** Même identifiant que le service `/academic-registration` : les deux chemins ne créent jamais de doublon. */
+const enrollmentId = (studentId, courseId) => `enr_${createHash('sha256').update(`${studentId}:${courseId}`).digest('hex').slice(0, 24)}`
+
+/**
+ * Inscrit aux cours de leur filière et de leur niveau les apprenants déjà
+ * présents dans l'annuaire qui n'y sont pas encore.
+ *
+ * Pourquoi : un étudiant inscrit avant la publication des cours de sa filière
+ * (ICT4D L2 et L3 jusqu'au 2026-09-21) n'avait aucune inscription, donc un
+ * tableau de bord vide. Le service le rattrape à sa prochaine connexion ; ce
+ * passage le fait tout de suite, pour tous, sans attendre qu'ils se connectent.
+ */
+async function enrollDirectoryLearners(courseDocuments) {
+  const learners = (await listAll('academic_directory', [{ method: 'equal', attribute: 'role', values: ['STUDENT', 'DELEGATE'] }]))
+    .filter((entry) => entry.program && entry.level && entry.status !== 'INACTIVE')
+  if (learners.length === 0) return
+  console.log(`\n— Inscriptions des ${learners.length} apprenant(s) de l'annuaire`)
+  const coursesByScope = new Map()
+  for (const [id, course] of courseDocuments) {
+    const key = `${course.university}|${course.program}|${course.level}`
+    if (!coursesByScope.has(key)) coursesByScope.set(key, [])
+    coursesByScope.get(key).push(id)
+  }
+  let created = 0
+  for (const learner of learners) {
+    const courseIds = coursesByScope.get(`${learner.university}|${learner.program}|${learner.level}`) || []
+    if (courseIds.length === 0) continue
+    const existing = await listAll('academic_enrollments', [{ method: 'equal', attribute: 'studentId', values: [learner.userId] }])
+    const enrolled = new Set(existing.filter((row) => row.status !== 'INACTIVE').map((row) => row.courseId))
+    let added = 0
+    for (const courseId of courseIds) {
+      if (enrolled.has(courseId)) continue
+      const response = await request('POST', '/databases/' + databaseId + '/collections/academic_enrollments/documents', {
+        documentId: enrollmentId(learner.userId, courseId),
+        data: { studentId: learner.userId, courseId, status: 'ACTIVE' },
+        permissions: ['read("users")', `update("user:${learner.userId}")`, `delete("user:${learner.userId}")`],
+      })
+      if (response.status === 201) added += 1
+    }
+    if (added > 0) console.log(`  ${learner.name} (${learner.program} ${learner.level}) : +${added} cours`)
+    created += added
+  }
+  counters.créé += created
+  console.log(`  ${created} inscription(s) ajoutée(s).`)
 }
 
 async function main() {
@@ -295,6 +348,7 @@ async function main() {
   console.log(`  ${sessions.length} séances traitées.`)
 
   if (!dryRun) await backfillLegacySchedules()
+  if (!dryRun) await enrollDirectoryLearners(courseDocuments)
 
   if (prune && !dryRun) {
     console.log('\n— Nettoyage des séances obsolètes')

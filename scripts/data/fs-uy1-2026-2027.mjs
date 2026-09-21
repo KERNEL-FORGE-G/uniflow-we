@@ -90,7 +90,22 @@ export const CLASSROOMS = [
   { code: 'P1', name: 'Salle P1', kind: 'TD' },
   { code: 'P2', name: 'Salle P2', kind: 'TD' },
   { code: 'LANGUES', name: 'Salle de langues', kind: 'SALLE' },
+  // Salles des TP ICT4D : emploi du temps provisoire fictif (voir PROVISIONAL_TIMETABLES).
+  { code: 'INFO1', name: 'Salle informatique 1', kind: 'TP', capacity: 40 },
+  { code: 'INFO2', name: 'Salle informatique 2', kind: 'TP', capacity: 40 },
 ]
+
+/**
+ * Comptes enseignants de démonstration (créés par `seed-classroom.mjs`) :
+ * un cours dont l'enseignant est l'un d'eux reçoit son `teacherId`, pour que
+ * son tableau de bord, ses devoirs et ses présences voient le cours. Les
+ * autres noms restent de simples libellés.
+ */
+export const TEACHER_ACCOUNTS = {
+  'Pr. Fouda': 'uy1-teacher-01',
+  'Dr. Nkolo': 'uy1-teacher-02',
+  'M. Essomba': 'uy1-teacher-03',
+}
 
 // Créneaux standard de la Faculté (pause de 10 min entre chaque).
 const S1 = '07:00-09:55'
@@ -111,7 +126,8 @@ const tdg = (group) => ({ type: 'TD', group })
 
 /**
  * Emplois du temps par filière et niveau. Chaque entrée : { program, level,
- * defaultRoom?, notes?, sessions: [...] }.
+ * defaultRoom?, notes?, provisional?, sessions: [...] }. `provisional` marque
+ * un emploi du temps fictif posé en attendant l'officiel (ICT4D L2, L3).
  */
 export const TIMETABLES = [
   {
@@ -828,6 +844,60 @@ export const TIMETABLES = [
       ['Samedi', S4, 'BCH 331', '', 'R108', tdg('Gr4')],
     ],
   },
+
+  // ---------------------------------------------------------------------
+  // ICT4D L2 et L3 — DONNÉES FICTIVES PROVISOIRES (2026-09-21).
+  //
+  // L'emploi du temps officiel de la Licence professionnelle ICT4D n'est pas
+  // encore publié ; la L1 a un jeu de démonstration à part (`ict101`…`ict106`,
+  // `seed-classroom.mjs`). Le propriétaire a demandé des données fictives pour
+  // que les étudiants de L2 et L3 aient des cours, un emploi du temps et des
+  // inscriptions dès maintenant. À remplacer par l'officiel dès réception :
+  // `provisional: true` signale ces entrées, et `--prune` retirera les séances
+  // disparues.
+  // ---------------------------------------------------------------------
+  {
+    program: 'ICT4D', level: 'L2', provisional: true,
+    notes: 'Emploi du temps provisoire fictif, en attente de l’officiel.',
+    sessions: [
+      ['Lundi', S1, 'ICT201', 'Dr. Nkolo', 'A135', { title: 'Programmation orientée objet (Java)' }],
+      ['Lundi', S2, 'ICT202', 'M. Essomba', 'S101', { title: 'Réseaux informatiques' }],
+      ['Lundi', S3, 'ICT206', 'Dr. Atangana', 'S101', { title: 'Statistiques et analyse de données' }],
+      ['Mardi', S1, 'ICT203', 'Pr. Fouda', 'S102', { title: 'Systèmes d’exploitation (Linux)' }],
+      ['Mardi', S2, 'ICT201', 'Dr. Nkolo', 'INFO1', { type: 'TP', title: 'Programmation orientée objet (Java)' }],
+      ['Mardi', S4, 'ICT207', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais professionnel' }],
+      ['Mercredi', S1, 'ICT204', 'Pr. Fouda', 'S102', { title: 'Bases de données avancées' }],
+      ['Mercredi', S2, 'ICT205', 'M. Essomba', 'S103', { title: 'Développement mobile' }],
+      ['Mercredi', S3, 'ICT202', 'M. Essomba', 'INFO2', { type: 'TP', title: 'Réseaux informatiques' }],
+      ['Jeudi', S1, 'ICT205', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Développement mobile' }],
+      ['Jeudi', S2, 'ICT206', 'Dr. Atangana', 'S110', { type: 'TD', title: 'Statistiques et analyse de données' }],
+      ['Jeudi', S3, 'ICT208', 'Dr. Nkolo', 'S103', { title: 'TIC pour le développement : projet' }],
+      ['Vendredi', S1, 'ICT204', 'Pr. Fouda', 'INFO2', { type: 'TP', title: 'Bases de données avancées' }],
+      ['Vendredi', S2, 'ICT203', 'Pr. Fouda', 'INFO1', { type: 'TP', title: 'Systèmes d’exploitation (Linux)' }],
+      ['Samedi', S1, 'ICT208', 'Dr. Nkolo', 'S110', { type: 'TD', title: 'TIC pour le développement : projet' }],
+    ],
+  },
+  {
+    program: 'ICT4D', level: 'L3', provisional: true,
+    notes: 'Emploi du temps provisoire fictif, en attente de l’officiel.',
+    sessions: [
+      ['Lundi', S1, 'ICT301', 'Pr. Fouda', 'A135', { title: 'Génie logiciel et gestion de projet agile' }],
+      ['Lundi', S2, 'ICT303', 'Dr. Nkolo', 'S101', { title: 'Sécurité des systèmes d’information' }],
+      ['Lundi', S3, 'ICT302', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Développement web avancé' }],
+      ['Mardi', S1, 'ICT305', 'Dr. Atangana', 'S103', { title: 'Intelligence artificielle et science des données' }],
+      ['Mardi', S2, 'ICT304', 'M. Essomba', 'S102', { title: 'Cloud computing et DevOps' }],
+      ['Mardi', S3, 'ICT306', 'M. Ondoa', 'S110', { title: 'Entrepreneuriat numérique et innovation' }],
+      ['Mercredi', S1, 'ICT302', 'M. Essomba', 'S101', { title: 'Développement web avancé' }],
+      ['Mercredi', S2, 'ICT305', 'Dr. Atangana', 'INFO2', { type: 'TP', title: 'Intelligence artificielle et science des données' }],
+      ['Mercredi', S4, 'ICT308', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais des affaires' }],
+      ['Jeudi', S1, 'ICT304', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Cloud computing et DevOps' }],
+      ['Jeudi', S2, 'ICT303', 'Dr. Nkolo', 'INFO2', { type: 'TP', title: 'Sécurité des systèmes d’information' }],
+      ['Jeudi', S3, 'ICT301', 'Pr. Fouda', 'S102', { type: 'TD', title: 'Génie logiciel et gestion de projet agile' }],
+      ['Vendredi', S1, 'ICT307', 'Pr. Fouda / Dr. Nkolo', 'S110', { type: 'TD', title: 'Projet tutoré et stage professionnel' }],
+      ['Vendredi', S2, 'ICT306', 'M. Ondoa', 'S110', { type: 'TD', title: 'Entrepreneuriat numérique et innovation' }],
+      ['Samedi', S1, 'ICT307', 'Pr. Fouda / Dr. Nkolo', 'INFO1', { type: 'TP', title: 'Projet tutoré et stage professionnel' }],
+    ],
+  },
 ]
 
 /** Jours dans l'ordre d'affichage des clients. */
@@ -850,6 +920,7 @@ export function expandSession(timetable, session) {
     group: options.group || '',
     title: options.title || '',
     optional: Boolean(options.optional),
+    provisional: Boolean(timetable.provisional),
   }
 }
 
