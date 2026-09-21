@@ -11,8 +11,9 @@ import { DATABASE_ID, actorIdOf } from '../lib/caller.js'
  * donc partout. Le web se branche dessus en même temps.
  *
  * Ce qui est effacé : le compte Appwrite (sessions comprises), le document
- * `users`, l'entrée d'annuaire, la photo de profil, les notifications, les
- * réactions du forum, la préférence d'abonnement et l'espace personnel. Ce
+ * `users`, l'entrée d'annuaire, les inscriptions aux cours, la photo de
+ * profil, les notifications, les réactions du forum, la préférence
+ * d'abonnement et l'espace personnel. Ce
  * qui est conservé, dissocié de l'identité : présences, notes, rendus,
  * demandes de paiement (obligations de l'établissement et traçabilité de la
  * facturation). Les messages et publications restent, sans auteur
@@ -33,6 +34,10 @@ function bodyOf(req) {
 /** Collections dont les documents appartiennent en propre à l'utilisateur. */
 export const OWNED_COLLECTIONS = [
   { collection: 'academic_directory', attribute: 'userId' },
+  // Sans cette ligne, les inscriptions aux cours survivaient au compte
+  // (constaté par `scripts/test-registration-flow.mjs`) : les listes d'appel
+  // comptaient alors un étudiant fantôme que l'annuaire ne connaissait plus.
+  { collection: 'academic_enrollments', attribute: 'studentId' },
   { collection: 'notifications', attribute: 'ownerId' },
   { collection: 'forum_reactions', attribute: 'userId' },
   { collection: 'subscription_statuses', attribute: 'userId' },

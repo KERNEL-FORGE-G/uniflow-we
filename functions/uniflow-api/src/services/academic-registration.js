@@ -13,7 +13,9 @@ import { DATABASE_ID, resolveCaller } from '../lib/caller.js'
  * écrit dans son propre document `users`, est ignoré. Les rôles privilégiés se
  * posent uniquement via `/admin-directory` (labels Appwrite, clé serveur).
  */
-const LEVELS = ['L1', 'L2', 'L3']
+// Les niveaux du schéma (`academicLevels`) : M1 et M2 y sont depuis le
+// 2026-09-20, et un master inscrit était refusé ici avec « niveau L1 à L3 ».
+const LEVELS = ['L1', 'L2', 'L3', 'M1', 'M2']
 
 function json(res, body, status = 200) {
   return res.json(body, status, { 'content-type': 'application/json' })
@@ -77,7 +79,7 @@ export default async ({ req, res, log, error }) => {
       level: LEVELS.includes(profile.level) ? profile.level : '',
     }
     if (!scope.university || !scope.program || !scope.level) {
-      return json(res, { ok: false, code: 'SCOPE_INCOMPLETE', message: 'Le profil doit indiquer l’université, la filière et le niveau (L1 à L3).' }, 422)
+      return json(res, { ok: false, code: 'SCOPE_INCOMPLETE', message: 'Le profil doit indiquer l’université, la filière et le niveau (L1 à M2).' }, 422)
     }
     // Rôle réel = labels. Un auto-inscrit n'en a aucun : STUDENT. Si le
     // document `users` prétend autre chose (client bricolé), on le remet au
@@ -120,7 +122,24 @@ export default async ({ req, res, log, error }) => {
       Query.limit(100),
     ])
     const scopedCourses = courses.documents.filter((course) => sameAcademicScope(scope, course))
-    if (scopedCourses.length === 0) return json(res, { ok: false, code: 'COURSES_NOT_READY', message: `Les cours ${scope.program} / ${scope.level} ne sont pas encore disponibles.` }, 409)
+    if (scopedCourses.length === 0) {
+      // Filière ou niveau dont les cours ne sont pas encore publiés (le
+      // 2026-09-21 : tout sauf ICT4D). Répondre 409 ici faisait échouer
+      // l'inscription côté client — « Compte créé, mais… » — alors que le
+      // compte et l'annuaire étaient bons. L'entrée d'annuaire suffit ; les
+      // inscriptions aux cours se font au prochain appel `provision` (à la
+      // connexion), une fois les cours en base.
+      log(`academic_registration provision user=${userId} directoryCreated=${directoryCreated} coursesReady=false scope=${scope.program}/${scope.level}`)
+      return json(res, {
+        ok: true,
+        action: 'provision',
+        directoryCreated,
+        enrollmentsCreated: 0,
+        totalCourses: 0,
+        coursesReady: false,
+        message: `Les cours ${scope.program} / ${scope.level} ne sont pas encore publiés : vous y serez inscrit automatiquement dès leur publication.`,
+      })
+    }
 
     const existingEnrollments = await databases.listDocuments(DATABASE_ID, 'academic_enrollments', [Query.equal('studentId', userId), Query.limit(100)])
     const activeCourseIds = new Set(existingEnrollments.documents.filter((row) => row.status !== 'INACTIVE').map((row) => row.courseId))
@@ -142,7 +161,7 @@ export default async ({ req, res, log, error }) => {
     }
 
     log(`academic_registration provision user=${userId} directoryCreated=${directoryCreated} enrollmentsCreated=${enrollmentsCreated}`)
-    return json(res, { ok: true, action: 'provision', directoryCreated, enrollmentsCreated, totalCourses: scopedCourses.length })
+    return json(res, { ok: true, action: 'provision', directoryCreated, enrollmentsCreated, totalCourses: scopedCourses.length, coursesReady: true })
   } catch (exception) {
     error(`academic_registration failed=${exception?.message || 'unknown'}`)
     return json(res, { ok: false, code: 'ACADEMIC_REGISTRATION_ERROR', message: 'Le raccordement académique Appwrite a échoué.' }, 500)

@@ -204,6 +204,8 @@ export type AcademicRegistrationResponse = {
   directoryCreated?: boolean
   enrollmentsCreated?: number
   totalCourses?: number
+  /** `false` quand la filière n'a pas encore de cours publiés : à rejouer plus tard. */
+  coursesReady?: boolean
 }
 
 
@@ -694,14 +696,47 @@ export async function createAccount(email: string, password: string, name: strin
   }
   await awaitAppwrite(appwriteDatabases.createDocument(APPWRITE_DATABASE_ID, 'users', profile.$id, userProfile, userPermissions(profile.$id)), 'la création du profil UniFlow')
   if (accountType === 'UNIVERSITY') {
+    // Le raccordement (annuaire + inscriptions aux cours) ne conditionne plus
+    // l'inscription : le compte et la session existent déjà, et l'échec le
+    // plus fréquent — cours de la filière pas encore publiés — se rattrape à
+    // la prochaine connexion (`retryAcademicProvisioning`). Avant, l'étudiant
+    // lisait « Compte créé, mais… » et restait devant le formulaire.
     try {
       await provisionAcademicRegistration(profileInput.matricule)
+      markAcademicProvisioning('done')
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Le raccordement académique a échoué.'
-      throw new Error(`Compte créé, mais ${message} Connectez-vous puis relancez l’inscription universitaire depuis cette session.`)
+      console.warn('[uniflow] raccordement académique différé :', error instanceof Error ? error.message : error)
+      markAcademicProvisioning('pending')
     }
   }
   return normalizeUser(profile, accountType, effectiveRole, userProfile)
+}
+
+const ACADEMIC_PROVISIONING_KEY = 'uniflow_academic_provisioning'
+
+function markAcademicProvisioning(state: 'done' | 'pending') {
+  try { localStorage.setItem(ACADEMIC_PROVISIONING_KEY, state) } catch { /* stockage indisponible */ }
+}
+
+/**
+ * Rejoue le raccordement académique d'un étudiant universitaire si celui de
+ * l'inscription n'a pas abouti, ou si aucune trace n'existe (compte créé sur
+ * un autre appareil). L'appel serveur est idempotent : annuaire et
+ * inscriptions existants sont conservés, seuls les cours manquants sont
+ * ajoutés. Ne lève jamais : c'est un rattrapage, pas une condition d'accès.
+ */
+export async function retryAcademicProvisioning(user: UniFlowUser): Promise<void> {
+  if (user.accountType !== 'UNIVERSITY' || !['STUDENT', 'DELEGATE'].includes(user.role)) return
+  if (!user.program || !user.level) return
+  let state: string | null = null
+  try { state = localStorage.getItem(ACADEMIC_PROVISIONING_KEY) } catch { /* stockage indisponible */ }
+  if (state === 'done') return
+  try {
+    const response = await provisionAcademicRegistration()
+    markAcademicProvisioning(response.coursesReady === false ? 'pending' : 'done')
+  } catch (error) {
+    console.warn('[uniflow] raccordement académique toujours différé :', error instanceof Error ? error.message : error)
+  }
 }
 
 export async function loginAccount(email: string, password: string, accountType: UniFlowAccountType) {

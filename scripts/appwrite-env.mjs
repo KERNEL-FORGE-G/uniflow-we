@@ -140,11 +140,19 @@ export function createClient() {
     'X-Appwrite-Key': apiKey,
   }
   return async function request(method, path, body) {
-    const response = await fetch(`${endpoint}${path}`, {
-      method,
-      headers: body instanceof FormData ? { 'X-Appwrite-Project': projectId, 'X-Appwrite-Key': apiKey } : headers,
-      body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
-    })
+    let response
+    // Le CDN d'Appwrite Cloud rend parfois « 503 first byte timeout » (Varnish)
+    // au milieu d'un seed de plusieurs centaines de documents (vu le
+    // 2026-09-21) : on réessaie ces erreurs de passerelle avant d'abandonner.
+    for (let attempt = 1; ; attempt += 1) {
+      response = await fetch(`${endpoint}${path}`, {
+        method,
+        headers: body instanceof FormData ? { 'X-Appwrite-Project': projectId, 'X-Appwrite-Key': apiKey } : headers,
+        body: body === undefined ? undefined : body instanceof FormData ? body : JSON.stringify(body),
+      })
+      if (![502, 503, 504].includes(response.status) || attempt >= 4) break
+      await new Promise((resolve) => setTimeout(resolve, 1500 * attempt))
+    }
     const text = await response.text()
     let payload = {}
     try {

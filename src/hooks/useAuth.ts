@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
-import { createAccount, deleteOwnAccount, loginAccount, logoutAccount, type UniFlowAccountType, type UniFlowUser } from '@/lib/appwrite'
+import { createAccount, deleteOwnAccount, loginAccount, logoutAccount, retryAcademicProvisioning, type UniFlowAccountType, type UniFlowUser } from '@/lib/appwrite'
 import { clearSessionSnapshot, persistSessionSnapshot } from '@/lib/sessionPersistence'
 import { setAccountType, type BackendUser } from '@/lib/api'
 import { logoutNavigationState, terminateSession, type LogoutReason } from '@/lib/session'
@@ -89,6 +89,9 @@ export function useAuth() {
       setAuthUser(toBackendUser(user))
       setCurrentRole(mapRole(user.role))
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
+      // Un étudiant inscrit avant la publication des cours de sa filière est
+      // raccordé ici, sans bloquer l'entrée dans l'application.
+      void retryAcademicProvisioning(user)
       navigate(user.role === 'ADMIN' ? '/admin' : '/app')
       return { user }
     } catch (err) {
