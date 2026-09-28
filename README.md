@@ -109,13 +109,39 @@ appwrite push function          # lit appwrite.config.json
 | `node scripts/seed-team-members.mjs` | Les dix membres de l'équipe KERNEL FORGE (page Équipe) ; rapproche par `slug` les membres saisis depuis Réglages > Équipe. |
 | `node scripts/upload-public-appwrite-assets.mjs` | Téléverse le logo public (`assets/brand/`). |
 | `node scripts/set-app-release.mjs android --url … --version … [--file …] [--size …] [--sha256 …] [--notes …]` | Publie ou met à jour le lien de téléchargement d'une plateforme (`android`, `windows`, `linux`, `macos`) dans `app_releases`, avec la clé serveur. `--size` accepte des octets ou « 42,3 Mo » ; `--from <fichier local>` calcule nom, taille et SHA-256 ; `--disable` enregistre sans publier ; `--dry-run` n'écrit rien. Équivalent en ligne de commande de la carte « Applications à télécharger ». |
-| `node scripts/build-store-msix.mjs --package-id … --publisher-id …` | Fabrique le paquet Microsoft Store de la PWA (produit **UNIFLOW WEB**) : `.msixbundle` + `.classic.appxbundle` dans `dist/msix/`, puis relit l'identité gravée dans l'`AppxManifest.xml`. Les trois valeurs viennent de l'Espace partenaires. Voir `docs/deploiement/MICROSOFT_STORE.md`. |
+| `node scripts/build-store-msix.mjs` | Fabrique le paquet Microsoft Store de la PWA (produit **UNIFLOW WEB**) : `.msixbundle` + `.classic.appxbundle` dans `dist/msix/`, puis relit l'identité gravée dans l'`AppxManifest.xml`. Voir `docs/deploiement/MICROSOFT_STORE.md` et l'identité à utiliser plus bas. |
 | `node scripts/test-team-roster-function.mjs` | Test de bout en bout du service Équipe (droits, photos, suppression). |
 | `node scripts/test-app-releases-function.mjs` | Service `/app-releases` contre la Function déployée : `list` public, `upsert` refusé sans label `superadmin` (401/403), validation, upsert sans doublon ; laisse la collection vide. |
 | `node scripts/test-attendance-secure-function.mjs` | Émission, scan et audit d'une session de présence QR. |
 | `node scripts/test-messaging-attachment.mjs` | Pièce jointe de messagerie : droits par fichier. |
 | `node scripts/test-registration-flow.mjs` | Inscription de bout en bout avec les droits d'un client : filière avec et sans cours publiés, idempotence, puis suppression du compte par `delete-self`. |
 | `pnpm test:e2e:uy1` | Parcours complet UY1 : inscription, appel, notes, relevé. |
+
+### Identité Microsoft Store de la version web
+
+Les trois valeurs ci-dessous viennent de l'Espace partenaires (Produits › *UNIFLOW
+WEB* › View app identity details), sont sensibles à la casse et sont gravées dans
+le paquet : un écart d'un caractère fait rejeter le téléversement. Ce ne sont pas
+des secrets — le `Publisher ID` figure au manifeste `AppxManifest.xml` de
+l'application.
+
+```bash
+node scripts/build-store-msix.mjs \
+  --package-id "UniFlow.KernelForge" \
+  --publisher-id "CN=3a54a224-05dd-42aa-85bd-3f3c1478fdca" \
+  --publisher-display "KERNEL FORGE"
+```
+
+| Valeur | Gravée comme | Remarque |
+| --- | --- | --- |
+| `UniFlow.KernelForge` | `Identity Name` | **sans** le suffixe de 13 caractères, qui est le *package family name* |
+| `CN=3a54a224-05dd-42aa-85bd-3f3c1478fdca` | `Identity Publisher` | le service relit `CN=…, OID.2.25.…=1` : la clause `OID` est ajoutée par lui, pas par nous |
+| `KERNEL FORGE` | `PublisherDisplayName` | |
+
+Sans `--package-id` et `--publisher-id` le script s'arrête avant d'appeler le
+service ; les valeurs peuvent aussi venir de `STORE_PACKAGE_ID` et
+`STORE_PUBLISHER_ID`. Le paquet obtenu porte la version `1.0.1.0` (le quatrième
+segment est réservé au Store, qui le remplace à la certification).
 
 ## Tests
 

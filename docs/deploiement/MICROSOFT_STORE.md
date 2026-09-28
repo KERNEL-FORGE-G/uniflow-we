@@ -80,14 +80,22 @@ UniFlow.sideload.msix          1,32 Mo — essai local uniquement, ne se soumet 
 ```
 
 Le script affiche ensuite l'identité **réellement** lue dans l'`AppxManifest.xml`
-du paquet produit :
+du paquet produit. Rendu du paquet `1.0.1` fabriqué le 28/09/2026, tel que
+sorti (pas d'élision ici) :
 
 ```
 Name                   UniFlow.KernelForge
-Publisher              CN=3a54a224-…, OID.2.25.311729368913984317654407730594956997722=1
+Publisher              CN=3a54a224-05dd-42aa-85bd-3f3c1478fdca, OID.2.25.311729368913984317654407730594956997722=1
 Version                1.0.1.0
 Architecture           neutral
 Device families        Windows.Desktop ≥ 10.0.19041.0 · Windows.Holographic ≥ 10.0.19041.0
+```
+
+Empreintes du dépôt de ce jour-là (`sha256sum dist/msix/*`) :
+
+```
+02987d997bf6e57bbc0be6c3ef0f00c9ae4067c30d60137eb75dba3fe5b76f4e  UniFlow.msixbundle
+5a24c9c2b9b75a4d996e3a876b240178cf378fc3ab8652ee951738459bc61d9b  UniFlow.classic.appxbundle
 ```
 
 La clause `OID.2.25.…=1` ajoutée au `Publisher` est propre au service (elle
