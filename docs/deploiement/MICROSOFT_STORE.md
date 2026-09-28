@@ -52,6 +52,14 @@ Les valeurs sont sensibles à la casse, espaces et ponctuation compris. Le
 `Package ID` **ne doit pas** porter le suffixe de 13 caractères : avec ce
 suffixe c'est le *package family name*, et le script le refuse.
 
+Les « … » de ce document sont des élisions de lecture, jamais des valeurs à
+recopier. Un identifiant Appx est **strictement ASCII** : le service de
+packaging renvoie le `Publisher` dans un en-tête de la réponse HTTP, et un
+caractère comme `…` (U+2026) fait lever son serveur avant l'appel — un `500`
+empilé, sans rapport avec l'option fautive. Le script teste les cinq valeurs
+ASCII par caractère et refuse de partir, donc le message nomme l'option et le
+point de code en cause.
+
 ## 3. Générer le paquet
 
 ```bash

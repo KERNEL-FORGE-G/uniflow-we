@@ -7,6 +7,7 @@
 | `audits/` | Audits et validations datés (sécurité, parcours e2e, médias, navigateur de production). Ils décrivent l'état à une date donnée et ne sont pas mis à jour. |
 | `seo/` | Recherches de mots-clés, analyse concurrentielle et plan SEO d'août 2026. |
 | `communication/` | Fiche et livrable Devpost. |
+| `n8n/` | Les trois workflows auto-hébergés d'Uni (gabarit HTML, bienvenue inscrit, passerelle de l'assistant) et leur procédure d'installation datée du 2026-09-26. |
 | `historique/` | Suivi des améliorations livrées. |
 | `legacy/` | Spécifications et schémas SQL de l'ancien backend NestJS, conservés pour référence. Plus rien ne les utilise. |
 

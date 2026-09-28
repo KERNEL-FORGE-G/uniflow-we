@@ -122,6 +122,17 @@ function validate(opts) {
   if (/_([a-z0-9]{13})$/i.test(opts.packageId)) {
     problems.push(`--package-id="${opts.packageId}" se termine par un suffixe de 13 caractères : c'est le package FAMILY name, pas le Package ID. Reprendre la valeur sans ce suffixe.`);
   }
+  // Le service renvoie l'identité dans un en-tête de réponse HTTP : un caractère
+  // hors ASCII fait lever Kestrel avant toute lecture des options, et le 500 qui
+  // arrive alors ne nomme pas le coupable. Le marquer ici coûte une ligne.
+  for (const [label, value] of [['--package-id', opts.packageId], ['--publisher-id', opts.publisherId],
+    ['--publisher-display', opts.publisherDisplay], ['--display-name', opts.displayName], ['--site-url', opts.siteUrl]]) {
+    const rejects = [...new Set([...value].filter((c) => c.codePointAt(0) < 0x20 || c.codePointAt(0) > 0x7e))]
+      .map((c) => `${c} (U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')})`);
+    if (rejects.length) {
+      problems.push(`${label}="${value}" : ${rejects.join(', ')} n'est pas ASCII. Le service renvoie ces valeurs dans un en-tête HTTP et répond 500 avant de travailler — un « … » d'exemple n'est jamais le « … » d'un vrai identifiant. Recopier la valeur exacte de Partner Center.`);
+    }
+  }
   if (problems.length) {
     for (const p of problems) console.error(`✗ ${p}`);
     process.exit(2);

@@ -1,23 +1,26 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import {
-  GEMINI_ENDPOINT,
   GEMINI_MODEL,
   MAX_HISTORY,
   MAX_MESSAGE_CHARS,
+  MAX_OUTPUT_TOKENS,
+  N8N_DEFAULT_PATH,
+  N8N_TOKEN_HEADER,
   buildSystemInstruction,
-  extractGeminiText,
   extractMistralText,
+  extractN8nReply,
   frenchDayOfWeek,
   sanitizeHistory,
   suggestionsFor,
-  toGeminiRequest,
   toMistralRequest,
+  toN8nRequest,
 } from './assistant.js'
 
-test('le modèle Gemini est verrouillé sur 3.1 Flash-Lite', () => {
+test('le modèle Gemini reste verrouillé sur 3.1 Flash-Lite, et la passerelle a un chemin connu', () => {
   assert.equal(GEMINI_MODEL, 'gemini-3.1-flash-lite')
-  assert.match(GEMINI_ENDPOINT, /models\/gemini-3\.1-flash-lite:generateContent$/)
+  assert.equal(N8N_DEFAULT_PATH, '/webhook/uniflow-assistant')
+  assert.equal(N8N_TOKEN_HEADER, 'x-uniflow-token')
 })
 
 test("sanitizeHistory garde les tours valides, borne la longueur et exige un dernier tour utilisateur", () => {
@@ -93,11 +96,22 @@ test('les suggestions suivent le rôle', () => {
   assert.equal(suggestionsFor(null).length, 3)
 })
 
-test('toGeminiRequest traduit les rôles et fige la consigne système', () => {
-  const body = toGeminiRequest('SYS', [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }, { role: 'user', content: 'c' }])
-  assert.equal(body.system_instruction.parts[0].text, 'SYS')
-  assert.deepEqual(body.contents.map((c) => c.role), ['user', 'model', 'user'])
-  assert.equal(body.generationConfig.thinkingConfig.thinkingLevel, 'minimal')
+test('toN8nRequest passe la consigne ancrée, les rôles tels quels et aucun modèle', () => {
+  const body = toN8nRequest('SYS', [{ role: 'user', content: 'a' }, { role: 'assistant', content: 'b' }, { role: 'user', content: 'c' }], { platform: 'mobile', voice: true })
+  assert.equal(body.system, 'SYS')
+  assert.deepEqual(body.messages.map((m) => m.role), ['user', 'assistant', 'user'])
+  assert.equal(body.temperature, 0.6)
+  assert.equal(body.max_tokens, MAX_OUTPUT_TOKENS)
+  assert.deepEqual([body.platform, body.voice], ['mobile', true])
+  // Le verrou du 2026-09-21 : la requête ne nomme aucun modèle, donc aucun
+  // client ne peut faire choisir à la passerelle un modèle plus cher.
+  assert.equal('model' in body, false)
+  assert.equal('apiKey' in body, false)
+})
+
+test('toN8nRequest sans options rend des champs neutres plutôt que des absents', () => {
+  const body = toN8nRequest('SYS', [{ role: 'user', content: 'a' }])
+  assert.deepEqual([body.platform, body.voice], ['', false])
 })
 
 test('toMistralRequest garde la même consigne en tête', () => {
@@ -107,8 +121,19 @@ test('toMistralRequest garde la même consigne en tête', () => {
 })
 
 test('extraction des textes de réponse, vides si bloqués', () => {
-  assert.equal(extractGeminiText({ candidates: [{ content: { parts: [{ text: 'Bon' }, { text: 'jour' }] } }] }), 'Bonjour')
-  assert.equal(extractGeminiText({ promptFeedback: { blockReason: 'SAFETY' } }), '')
   assert.equal(extractMistralText({ choices: [{ message: { content: ' Salut ' } }] }), 'Salut')
   assert.equal(extractMistralText({}), '')
+})
+
+test('extractN8nReply lit reply, tolère text et le tableau d’éléments n8n', () => {
+  assert.equal(extractN8nReply({ ok: true, reply: ' Bonjour ' }), 'Bonjour')
+  assert.equal(extractN8nReply({ ok: true, text: 'Salut' }), 'Salut')
+  assert.equal(extractN8nReply([{ ok: true, reply: 'Salut' }]), 'Salut')
+})
+
+test('extractN8nReply rend une chaîne vide si la passerelle a échoué ou s’est tue', () => {
+  assert.equal(extractN8nReply({ ok: false, message: 'GEMINI_EMPTY SAFETY' }), '')
+  assert.equal(extractN8nReply({ ok: true }), '')
+  assert.equal(extractN8nReply(null), '')
+  assert.equal(extractN8nReply([]), '')
 })

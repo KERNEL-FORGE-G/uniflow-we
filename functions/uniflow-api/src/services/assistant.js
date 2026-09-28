@@ -2,31 +2,37 @@ import { Client, Databases, Query, Users } from 'node-appwrite'
 import { DATABASE_ID, actorIdOf, resolveCaller } from '../lib/caller.js'
 import {
   ASSISTANT_NAME,
-  GEMINI_ENDPOINT,
   GEMINI_MODEL,
   MISTRAL_ENDPOINT,
   MISTRAL_MODEL,
+  N8N_DEFAULT_PATH,
+  N8N_TOKEN_HEADER,
   buildSystemInstruction,
-  extractGeminiText,
   extractMistralText,
+  extractN8nReply,
   frenchDayOfWeek,
   frenchLongDate,
   sanitizeHistory,
   suggestionsFor,
-  toGeminiRequest,
   toMistralRequest,
+  toN8nRequest,
 } from '../lib/assistant.js'
 
 /**
  * Service `/assistant` — l'assistant « Uni » partagé par le web, le mobile et
  * le desktop.
  *
- * Pourquoi côté serveur : les clés Gemini et Mistral ne doivent jamais être
- * embarquées dans un client (le `.env` Flutter est lisible dans le binaire, le
- * bundle web est public). Les trois applications appellent donc ce service
- * avec leur session Appwrite ; il lit les clés dans les variables de la
- * Function, ancre la réponse dans les **données réelles** de l'appelant
- * (profil, séances du jour de sa filière et de son niveau) et renvoie le texte.
+ * Pourquoi côté serveur : aucune clé ne doit être embarquée dans un client (le
+ * `.env` Flutter est lisible dans le binaire, le bundle web est public). Les
+ * trois applications appellent donc ce service avec leur session Appwrite ; il
+ * ancre la réponse dans les **données réelles** de l'appelant (profil, séances
+ * du jour de sa filière et de son niveau) puis remet la consigne à la
+ * passerelle d'IA — le workflow n8n du VPS KERNEL FORGE depuis le 2026-09-25 —
+ * qui seule connaît le modèle et la clé Gemini.
+ *
+ * Ce que la passerelle ne reçoit PAS : la clé serveur Appwrite, ni l'accès à la
+ * base. Elle reçoit du texte, elle rend du texte. L'ancrage reste ici, sous
+ * contrôle des rôles Appwrite.
  *
  * Actions :
  * - `hello` : message d'accueil + suggestions, sans appel au modèle ;
@@ -34,7 +40,11 @@ import {
  *             dernier tour utilisateur ; réponse `{ reply, provider, model }`.
  */
 
-const GEMINI_TIMEOUT_MS = 25_000
+// 25 s : le budget historique de l'appel Gemini direct. Le nœud HTTP de la
+// passerelle est réglé à 20 s en interne, donc c'est n8n qui décroche le premier
+// et qui renvoie une erreur identifiable — plutôt qu'une exécution Appwrite
+// tuée au plafond, sans message.
+const N8N_TIMEOUT_MS = 25_000
 const MISTRAL_TIMEOUT_MS = 15_000
 
 function json(res, body, status = 200) {
@@ -58,18 +68,18 @@ async function fetchJson(url, init, timeoutMs) {
   return payload
 }
 
-async function askGemini(apiKey, systemInstruction, history) {
-  const payload = await fetchJson(GEMINI_ENDPOINT, {
+async function askN8n({ webhookUrl, token, systemInstruction, history, options }) {
+  const payload = await fetchJson(webhookUrl, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', 'x-goog-api-key': apiKey },
-    body: JSON.stringify(toGeminiRequest(systemInstruction, history)),
-  }, GEMINI_TIMEOUT_MS)
-  const text = extractGeminiText(payload)
-  if (!text) {
-    const reason = payload?.promptFeedback?.blockReason || payload?.candidates?.[0]?.finishReason || 'EMPTY'
-    throw new Error(`GEMINI_EMPTY ${reason}`)
+    headers: { 'content-type': 'application/json', [N8N_TOKEN_HEADER]: token },
+    body: JSON.stringify(toN8nRequest(systemInstruction, history, options)),
+  }, N8N_TIMEOUT_MS)
+  const reply = extractN8nReply(payload)
+  if (!reply) {
+    const motif = (Array.isArray(payload) ? payload[0] : payload)?.message || (Array.isArray(payload) ? payload[0] : payload)?.error?.message || 'ABSENT'
+    throw new Error(`N8N_EMPTY ${String(motif).slice(0, 120)}`)
   }
-  return text
+  return reply
 }
 
 async function askMistral(apiKey, systemInstruction, history) {
@@ -179,34 +189,49 @@ export default async ({ req, res, log, error }) => {
     return json(res, { ok: false, code: 'HISTORY_INVALID', message: 'Envoyez au moins un message utilisateur (4000 caractères au plus).' }, 400)
   }
 
-  const geminiKey = (process.env.GEMINI_API_KEY || '').trim()
   const mistralKey = (process.env.MISTRAL_API_KEY || '').trim()
-  if (!geminiKey && !mistralKey) {
-    error('assistant: aucune clé GEMINI_API_KEY / MISTRAL_API_KEY sur la Function')
+  // Deux façons de viser le workflow : l'URL complète (`N8N_WEBHOOK_URL`), ou
+  // seulement l'hôte (`N8N_HOST`, sans schéma) et on applique le chemin connu.
+  const n8nUrl = (process.env.N8N_WEBHOOK_URL || '').trim()
+    || ((process.env.N8N_HOST || '').trim() ? `https://${(process.env.N8N_HOST || '').trim()}${N8N_DEFAULT_PATH}` : '')
+  const n8nToken = (process.env.N8N_WEBHOOK_TOKEN || '').trim()
+  if (!n8nUrl && !mistralKey) {
+    error('assistant: ni N8N_WEBHOOK_URL / N8N_HOST ni MISTRAL_API_KEY sur la Function')
     return json(res, { ok: false, code: 'ASSISTANT_UNCONFIGURED', message: `${ASSISTANT_NAME} n'est pas encore configuré sur le serveur.` }, 503)
   }
 
   const grounding = await groundingFor(databases, caller, log)
   // `platform` (web | mobile | desktop) oriente vers les bons écrans ; `voice`
   // signale que la réponse sera lue par la synthèse vocale du client.
-  const systemInstruction = buildSystemInstruction(caller, grounding, {
+  const options = {
     platform: ['web', 'mobile', 'desktop'].includes(body.platform) ? body.platform : '',
     voice: body.voice === true,
-  })
+  }
+  const systemInstruction = buildSystemInstruction(caller, grounding, options)
 
   const failures = []
-  if (geminiKey) {
-    try {
-      const reply = await askGemini(geminiKey, systemInstruction, history)
-      return json(res, { ok: true, action, assistant: ASSISTANT_NAME, provider: 'gemini', model: GEMINI_MODEL, reply, suggestions: suggestionsFor(caller) })
-    } catch (exception) {
-      failures.push(`gemini: ${String(exception?.message || exception)}`)
+  if (n8nUrl) {
+    // Sans jeton, la passerelle répondrait 403 après un aller-retour réseau :
+    // autant le dire dans le journal et passer directement au secours.
+    if (!n8nToken) {
+      error('assistant: N8N_WEBHOOK_TOKEN absent sur la Function — passerelle n8n ignorée')
+      failures.push('n8n: jeton absent')
+    } else {
+      try {
+        const reply = await askN8n({ webhookUrl: n8nUrl, token: n8nToken, systemInstruction, history, options })
+        // `provider: 'gemini'` reste vrai : le nœud Gemini de n8n appelle ce
+        // modèle, et les trois clients affichent déjà cette étiquette sans
+        // brancher la valeur.
+        return json(res, { ok: true, action, assistant: ASSISTANT_NAME, provider: 'gemini', model: GEMINI_MODEL, reply, suggestions: suggestionsFor(caller) })
+      } catch (exception) {
+        failures.push(`n8n: ${String(exception?.message || exception)}`)
+      }
     }
   }
   if (mistralKey) {
     try {
       const reply = await askMistral(mistralKey, systemInstruction, history)
-      log(`assistant fallback mistral (${failures.join(' | ') || 'gemini absent'})`)
+      log(`assistant fallback mistral (${failures.join(' | ') || 'passerelle absente'})`)
       return json(res, { ok: true, action, assistant: ASSISTANT_NAME, provider: 'mistral', model: MISTRAL_MODEL, reply, suggestions: suggestionsFor(caller) })
     } catch (exception) {
       failures.push(`mistral: ${String(exception?.message || exception)}`)

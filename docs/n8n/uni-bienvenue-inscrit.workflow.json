@@ -1,0 +1,86 @@
+{
+  "name": "Uni · Bienvenue inscrit",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "appwrite-users",
+        "authentication": "none",
+        "responseMode": "onReceived",
+        "options": { "rawBody": true }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-820, 0],
+      "id": "uni-bw-trg-0001",
+      "name": "Webhook Appwrite",
+      "webhookId": "7c1f0a4d-2b6e-4c19-9a3d-51e7f0b28c14"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// CONTRÔLE D'INTÉGRITÉ DU WEBHOOK APPWRITE\n//\n// n8n.kernelforge.codes répond déjà publiquement en HTTP 200 (vérifié le\n// 2026-09-25 : /healthz ok, et POST /webhook/__probe__ → le 404 typique de n8n,\n// derrière Caddy). Un webhook laissé sans vérification serait donc, sur\n// Internet, un bouton « envoyer un email de bienvenue à l'adresse que je choisis ».\n//\n// Appwrite ne peut pas poser d'en-tête d'authentification arbitraire : il signe.\n// La doc annonce « X-Appwrite-Webhook-Signature : HMAC-SHA1 du corps » et\n// précise de concaténer l'URL du webhook avant le corps. D'où WEBHOOK_URL\n// ci-dessous, qui doit être strictement identique à celui saisi dans la console.\n//\n// Le corps doit être celui REÇU, octet pour octet : d'où options.rawBody sur le\n// nœud Webhook. Sans ça n8n re-sérialise le JSON, les espaces changent, et le\n// HMAC ne collera jamais. Symptôme attendu : 403 permanent alors que tout le\n// reste est juste — c'est cette erreur qu'il ne faut pas chercher deux jours.\n\nconst crypto = require('crypto')\n\nconst WEBHOOK_URL = 'https://n8n.kernelforge.codes/webhook/appwrite-users'\n\n// Fautif par construction : sans secret, on n'envoie rien. Une bienvenue qui\n// part quand même sans contrôle serait pire qu'un silence.\nconst secret = (typeof $env !== 'undefined' && $env.APPWRITE_WEBHOOK_SECRET) ? String($env.APPWRITE_WEBHOOK_SECRET) : ''\nif (!secret) {\n  throw new Error('APPWRITE_WEBHOOK_SECRET absent côté n8n : livraison refusée. Définir la variable d’environnement, et laisser N8N_BLOCK_ENV_ACCESS_IN_NODE à false pour que $env soit lisible dans les expressions.')\n}\n\nconst item = $input.first().json || {}\nconst headers = item.headers || {}\nconst raw = typeof item.rawBody === 'string' ? item.rawBody : JSON.stringify(item.body ?? {})\nconst received = String(headers['x-appwrite-webhook-signature'] || '')\nconst expected = crypto.createHmac('sha1', secret).update(WEBHOOK_URL + raw).digest('hex')\n\n// timingSafeEqual lève si les deux tampons n'ont pas la même longueur.\nconst candidate = Buffer.from(received.length === expected.length ? received : '0'.repeat(expected.length))\nif (received.length !== expected.length || !crypto.timingSafeEqual(candidate, Buffer.from(expected))) {\n  throw new Error('SIGNATURE_REJETEE : HMAC-SHA1 non concordant, livraison refusée.')\n}\n\nlet payload = item.body\nif (typeof payload === 'string') { try { payload = JSON.parse(payload) } catch { payload = {} } }\npayload = payload || {}\n\n// Forme exacte du payload d'un événement de plateforme : la doc renvoie au\n// modèle « User Object » sans garantir ni l'enveloppe ni l'en-tête d'événement.\n// On accepte donc les deux formes connues. Le premier envoi réel se contrôle sur\n// la sortie du nœud Webhook dans la liste des exécutions, avant d'être serré.\nconst event = String(headers['x-appwrite-event'] || payload.event || '')\nconst user = payload.user || payload.payload || payload\nif (event && !/^users\\.create$/i.test(event)) return []\n\nconst email = String(user.email || '').trim()\nconst name = String(user.name || user.username || '').trim()\nconst userId = String(user.$id || user.userId || '').trim()\nif (!email || !userId) return []\n\n// Les comptes de seed et de QA vivent tous sur des TLD réservés, non livrables\n// par définition protocolaire (RFC 6761 / 7505) : .test, .local, .invalid.\n// Vérifié dans scripts/seed-accounts.mjs — administration.ict4d@uniflow.test,\n// qa@example.invalid, qr-delegate-…@test.uniflow.local. Une règle sur le TLD\n// couvre aussi les seeds que tu écriras plus tard, sans liste à maintenir.\nconst tld = email.slice(email.lastIndexOf('.')).toLowerCase()\nif (['.test', '.local', '.invalid'].includes(tld)) return []\nif (/@example\\./i.test(email)) return []\n\n// Appwrite rejoue une livraison qui n'a pas répondu à temps : sans déduplication\n// un étudiant reçoit deux ou trois bienvenues. Les 800 derniers identifiants\n// tiennent en données statiques du workflow — pas de base externe, pas de secret.\nconst store = $getStaticData() || {}\nconst seen = Array.isArray(store.welcomed) ? store.welcomed : []\nif (seen.includes(userId)) return []\nseen.push(userId)\n$setStaticData({ welcomed: seen.slice(-800) })\n\nreturn [{ json: { email, name, userId, event: event || 'users.create' } }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-560, 0],
+      "id": "uni-bw-code-0002",
+      "name": "Vérifier la signature"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Le texte du bienvenue est un GABARIT, pas une génération de modèle.\n//\n// Ce message énonce des règles du produit : qui s'inscrit librement, qui crée\n// les comptes enseignant et administration, comment se règlent les offres\n// payantes. Un modèle peut en reformuler une à l'envers, et cette reformulation\n// engage KERNEL FORGE. Gemini 3.1 Flash-Lite garde son rôle là où il sert : la\n// conversation, dans l'application (workflow « Uni · Passerelle assistant »).\n//\n// Ce que le payload ne dit PAS : users.create ne porte que le compte — email,\n// nom, $id. Ni le rôle, ni l'université, ni la filière : elles sont dans les\n// documents Appwrite, et n8n n'a volontairement aucune clé pour les relire. D'où\n// un message qui ne promet rien de précis sur le rôle, et qui renvoie vers la\n// complétion du profil — ce qui est de toute façon le vrai blocage, parce que\n// sans filière ET niveau UniFlow n'affiche aucun emploi du temps (la branche\n// `scheduleScope: 'none'` de `describeSchedule`, src/lib/assistant.js).\n\nconst user = $input.first().json || {}\nconst firstName = String(user.name || '').trim().split(/\\s+/)[0] || ''\nconst salutation = firstName ? `Bonjour ${firstName},` : 'Bonjour,'\nconst sujet = firstName ? `${firstName}, ton compte UniFlow est ouvert` : 'Ton compte UniFlow est ouvert'\n\nreturn [{\n  json: {\n    subject: sujet,\n    preheader: 'Emploi du temps, notes, présences — et Uni, l’assistant intégré.',\n    title: 'Ton compte UniFlow est prêt',\n    salutation: `${salutation} ton compte est créé sur UniFlow, la plateforme académique de KERNEL FORGE (Université de Yaoundé I, Faculté des Sciences).`,\n    paragraphs: [\n      'Une chose tout de suite : ouvre ton profil et renseigne ta filière et ton niveau. UniFlow affiche l’emploi du temps par filière ET par niveau ; tant que ces deux champs manquent, ni ton emploi du temps ni Uni ne peuvent te dire quel cours tu as aujourd’hui.',\n      'Dans l’application, tu trouveras aussi l’assistant Uni — la petite mascotte, en bas à droite. Il connaît les écrans, les règles d’inscription et tes séances du jour. Il répond en français, et il ne modifie rien à ta place.',\n    ],\n    bullets: [\n      'Emploi du temps, unités d’enseignement, devoirs, notes et présences par QR code',\n      'Bibliothèque de documents, messagerie, forum et notifications',\n      'Espace personnel pour les comptes indépendants',\n      'Sur mobile et sur ordinateur, les données déjà synchronisées restent lisibles hors ligne',\n    ],\n    cta: { label: 'Ouvrir UniFlow', url: 'https://uniflow.kernelforge.codes/#/login' },\n    note: 'Compte étudiant : l’inscription est libre. Les comptes enseignant, délégué et administration sont créés par l’administration de ton université, et les comptes administration par l’administrateur de la plateforme. Les offres payantes se règlent par WhatsApp (+237 6 57 63 56 44), jamais par carte dans l’application.',\n  },\n}]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-300, 0],
+      "id": "uni-bw-code-0003",
+      "name": "Rédiger le bienvenue"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "REMPLACER_APRES_IMPORT",
+          "mode": "list",
+          "cachedResultName": "Uni · Gabarit HTML"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.1,
+      "position": [-40, 0],
+      "id": "uni-bw-subwf-0004",
+      "name": "Gabarit Uni"
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $('Vérifier la signature').item.json.email }}",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.html }}",
+        "options": { "emailType": "html" }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [220, 0],
+      "id": "uni-bw-gmail-0005",
+      "name": "Gmail - Envoyer la bienvenue",
+      "credentials": {
+        "gmailOAuth2": { "id": "qjuJvQIJOPk5FB5G", "name": "Gmail account" }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Appwrite": { "main": [[{ "node": "Vérifier la signature", "type": "main", "index": 0 }]] },
+    "Vérifier la signature": { "main": [[{ "node": "Rédiger le bienvenue", "type": "main", "index": 0 }]] },
+    "Rédiger le bienvenue": { "main": [[{ "node": "Gabarit Uni", "type": "main", "index": 0 }]] },
+    "Gabarit Uni": { "main": [[{ "node": "Gmail - Envoyer la bienvenue", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "tags": ["uniflow", "bienvenue", "email"]
+}
