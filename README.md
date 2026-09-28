@@ -109,6 +109,7 @@ appwrite push function          # lit appwrite.config.json
 | `node scripts/seed-team-members.mjs` | Les dix membres de l'équipe KERNEL FORGE (page Équipe) ; rapproche par `slug` les membres saisis depuis Réglages > Équipe. |
 | `node scripts/upload-public-appwrite-assets.mjs` | Téléverse le logo public (`assets/brand/`). |
 | `node scripts/set-app-release.mjs android --url … --version … [--file …] [--size …] [--sha256 …] [--notes …]` | Publie ou met à jour le lien de téléchargement d'une plateforme (`android`, `windows`, `linux`, `macos`) dans `app_releases`, avec la clé serveur. `--size` accepte des octets ou « 42,3 Mo » ; `--from <fichier local>` calcule nom, taille et SHA-256 ; `--disable` enregistre sans publier ; `--dry-run` n'écrit rien. Équivalent en ligne de commande de la carte « Applications à télécharger ». |
+| `node scripts/build-store-msix.mjs --package-id … --publisher-id …` | Fabrique le paquet Microsoft Store de la PWA (produit **UNIFLOW WEB**) : `.msixbundle` + `.classic.appxbundle` dans `dist/msix/`, puis relit l'identité gravée dans l'`AppxManifest.xml`. Les trois valeurs viennent de l'Espace partenaires. Voir `docs/deploiement/MICROSOFT_STORE.md`. |
 | `node scripts/test-team-roster-function.mjs` | Test de bout en bout du service Équipe (droits, photos, suppression). |
 | `node scripts/test-app-releases-function.mjs` | Service `/app-releases` contre la Function déployée : `list` public, `upsert` refusé sans label `superadmin` (401/403), validation, upsert sans doublon ; laisse la collection vide. |
 | `node scripts/test-attendance-secure-function.mjs` | Émission, scan et audit d'une session de présence QR. |
@@ -139,7 +140,7 @@ uniflow-we/
 ├── assets/brand/        logo source
 ├── docs/
 │   ├── technique/       diagnostics Appwrite, persistance de session IndexedDB
-│   ├── deploiement/     Vercel
+│   ├── deploiement/     Vercel, Microsoft Store (PWA empaquetée)
 │   ├── audits/          audits et validations datés (sécurité, e2e, médias…)
 │   ├── seo/             recherches et plan SEO
 │   ├── communication/   fiche Devpost
