@@ -41,7 +41,7 @@ function usage() {
   --package-id <id>       « Package ID » de Partner Center (Product management › View app identity details)
   --publisher-id <cn>     « Publisher ID », du genre CN=3a54a224-… (le préfixe CN= est ajouté s'il manque)
   --publisher-display <s> « Publisher display name » (défaut : STORE_PUBLISHER_DISPLAY ou "KERNEL FORGE")
-  --site-url <url>        PWA à empaqueter (défaut : https://uniflow.kernelforge.codes)
+  --site-url <url>        URL de lancement de la PWA (défaut : https://uniflow.kernelforge.codes/#/app?source=pwa — le fragment compte, c'est ce qui ouvre l'app au lieu de l'accueil)
   --display-name <s>      Nom affiché dans le Store (défaut : UniFlow)
   --version <v>           Version du paquet moderne, défaut 1.0.1 ; le quatrième segment est réservé au Store
   --classic-version <v>   Version du .classic.appxbundle, doit être strictement inférieure à --version
@@ -57,7 +57,12 @@ function parseArgs(argv) {
     packageId: process.env.STORE_PACKAGE_ID ?? '',
     publisherId: process.env.STORE_PUBLISHER_ID ?? '',
     publisherDisplay: process.env.STORE_PUBLISHER_DISPLAY ?? 'KERNEL FORGE',
-    siteUrl: 'https://uniflow.kernelforge.codes',
+    // Le service emploie cette valeur comme URL de lancement de l'app ; il ne
+    // relit PAS le `start_url` du manifeste pour cela. Mesuré : sans fragment
+    // ici, le paquet gravait `start-url?https://uniflow.kernelforge.codes/`,
+    // c'est-à-dire la page d'accueil marketing et non l'application — le routeur
+    // est un HashRouter, l'application n'existe qu'après le `#`.
+    siteUrl: 'https://uniflow.kernelforge.codes/#/app?source=pwa',
     displayName: 'UniFlow',
     version: '1.0.1',
     classicVersion: '1.0.0',

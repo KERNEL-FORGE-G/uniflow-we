@@ -91,21 +91,43 @@ Architecture           neutral
 Device families        Windows.Desktop ≥ 10.0.19041.0 · Windows.Holographic ≥ 10.0.19041.0
 ```
 
-Empreintes du dépôt de ce jour-là (`sha256sum dist/msix/*`) :
+Empreintes du rendu du 28/09/2026 :
 
 ```
-02987d997bf6e57bbc0be6c3ef0f00c9ae4067c30d60137eb75dba3fe5b76f4e  UniFlow.msixbundle
-5a24c9c2b9b75a4d996e3a876b240178cf378fc3ab8652ee951738459bc61d9b  UniFlow.classic.appxbundle
+e93764dba53cd4c9bcd4989b0b074db251816547c5f2080b4045a16e35ad4514  UniFlow.msixbundle
+c5b05093c785770198559ca5a34b7d77e043117586a349efea77131e3f498acc  UniFlow.classic.appxbundle
 ```
+
+À titre de repère seulement : **deux générations avec les mêmes options ne
+rendent pas les mêmes octets** (constaté le 28/09/2026, même `--site-url` et
+même version → empreintes différentes pour les trois fichiers). Le service
+embarque quelque chose qui change à chaque appel. Ce qui doit se retrouver d'un
+rendu à l'autre, c'est le bloc `Identité gravée` ci-dessus et l'`--app-id` passé
+à Edge, pas le `sha256sum`.
 
 La clause `OID.2.25.…=1` ajoutée au `Publisher` est propre au service (elle
 marque le paquet comme « windows-store-app ») : ce n'est pas une faute de
 saisie.
 
 Le paquet moderne déclare `uap10:HostId="PWA"` et passe à Edge
-`--app-id=<empreinte> --app-fallback-url=https://uniflow.kernelforge.codes/
+`--app-id=<empreinte> --app-fallback-url=https://uniflow.kernelforge.codes/#/app?source=pwa
 --display-mode=standalone --windows-store-app`, avec une dépendance d'exécution
 sur `Microsoft.MicrosoftEdge.Stable`. D'où les conséquences assumées en §6.
+
+### L'URL de lancement est celle de `--site-url`, pas celle du manifeste
+
+`public/manifest.json` déclare `start_url: "/#/app?source=pwa"`. Le service ne
+s'en sert pas comme URL de lancement : il grave l'`--site-url` qu'on lui envoie,
+et son défaut est l'origine nue. Envoyé tel quel le 28/09/2026, le paquet portait
+`start-url?https://uniflow.kernelforge.codes/` — soit `/`, que `src/App.tsx:270`
+route vers **`LandingPage`**, la page marketing, et non vers l'application. Un
+installateur du Store aurait donc ouvert une vitrine au lieu d'un compte à
+rejoindre, alors que la fiche promet l'application.
+
+Le fragment est conservé quand on l'envoie (`--app-id` et les 80 tuiles restent
+inchangés, seule l'URL bouge) : c'est pourquoi il fait partie du défaut du
+script. `#` n'étant pas transmis au serveur, `vercel.json` n'a besoin d'aucune
+réécriture pour que `/` réponde.
 
 ### Règles de version (contrôlées par le script avant l'appel)
 
