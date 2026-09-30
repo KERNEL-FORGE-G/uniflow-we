@@ -297,8 +297,11 @@ export default function LandingPage() {
                 <img
                   src={landingImg}
                   alt="Aperçu UniFlow"
+                  width={540}
+                  height={440}
                   className="w-full h-auto object-cover max-h-[440px] rounded-2xl relative z-10 mx-auto shadow-sm"
                   loading="eager"
+                  decoding="async"
                   onError={(e) => {
                     const target = e.target as HTMLImageElement
                     if (!target.dataset.triedFallback1) {
@@ -713,7 +716,7 @@ export default function LandingPage() {
               const Icon = feat.icon
               return (
                 <AnimatedItem key={feat.title}>
-                  <Card hover className="h-full space-y-4 group p-7 rounded-3xl border-2 border-slate-200/80 shadow-md">
+                  <Card hover className="h-full space-y-4 group p-7 rounded-3xl border-2 border-slate-200/80 shadow-md feature-card-hover">
                     <div className={`w-fit rounded-2xl p-4 bg-gradient-to-br ${feat.gradient} group-hover:scale-110 transition-transform duration-300 shadow-xs`}>
                       <Icon className={`h-7 w-7 ${feat.color.split(' ')[1]}`} />
                     </div>

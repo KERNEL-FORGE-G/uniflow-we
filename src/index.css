@@ -311,6 +311,28 @@ body {
   background: #9ca3af;
 }
 
+/* ─── FadeInUp (marketing sections) ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.4s ease-out both; }
+.fade-in-up-1 { animation: fadeInUp 0.4s 0.1s ease-out both; }
+.fade-in-up-2 { animation: fadeInUp 0.4s 0.2s ease-out both; }
+.fade-in-up-3 { animation: fadeInUp 0.4s 0.3s ease-out both; }
+.fade-in-up-4 { animation: fadeInUp 0.4s 0.4s ease-out both; }
+.fade-in-up-5 { animation: fadeInUp 0.4s 0.5s ease-out both; }
+
+/* ─── Feature card hover (smooth transition) ─── */
+.feature-card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.feature-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(30, 58, 138, 0.10);
+  border-color: rgba(30, 58, 138, 0.25);
+}
+
 /* ─── Core Animations ─── */
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
