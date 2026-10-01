@@ -999,12 +999,156 @@ export const appReleaseSchema = {
   permissions: ['read("any")'],
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Gamification — badges (100) et quêtes (300) dynamiques
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Catalogue des badges.
+ * Lisible par tous les utilisateurs connectés ; seule la clé serveur (Functions)
+ * peut créer/modifier des badges.
+ */
+export const gamificationSchemas = [
+  {
+    id: 'badges_catalog',
+    name: 'Catalogue des badges',
+    attributes: [
+      string('name', 255, true),
+      string('description', 1000, true),
+      string('unlockedMessage', 500, true),
+      enumeration('category', ['assiduite', 'academique', 'social', 'special', 'communaute', 'progression'], true),
+      enumeration('rarity', ['common', 'rare', 'epic', 'legendary'], true, 'common'),
+      enumeration('level', ['bronze', 'silver', 'gold', 'platinum', 'diamond'], true, 'bronze'),
+      // ID du fichier image dans le bucket uniflow_assets (préfixe badges/)
+      string('imageFileId', 36, false, ''),
+      // JSON des critères pour la Function : {"type":"attendance_rate","threshold":0.9,"min_sessions":5}
+      string('criteria', 2000, false, '{}'),
+      integer('xpReward', false, 10),
+      boolean('isLimited', false, false),
+      datetime('availableUntil', false),
+      integer('sortOrder', false, 0),
+    ],
+    indexes: [
+      { key: 'badge_category', type: 'key', attributes: ['category'] },
+      { key: 'badge_rarity', type: 'key', attributes: ['rarity'] },
+      { key: 'badge_limited', type: 'key', attributes: ['isLimited'] },
+    ],
+    permissions: ['read("users")'],
+  },
+  {
+    id: 'user_badges',
+    name: 'Badges obtenus par utilisateur',
+    attributes: [
+      string('userId', 36, true),
+      string('badgeId', 36, true),
+      datetime('unlockedAt', false),
+      // Progression 0–100. 100 = badge obtenu.
+      integer('progressPercent', false, 0),
+      string('progressDetail', 255, false, ''),
+    ],
+    indexes: [
+      { key: 'user_badge_user', type: 'key', attributes: ['userId'] },
+      { key: 'user_badge_unique', type: 'unique', attributes: ['userId', 'badgeId'] },
+      { key: 'user_badge_unlocked', type: 'key', attributes: ['userId', 'progressPercent'] },
+    ],
+    // L'utilisateur lit ses propres badges ; la Function les crée et les met à jour.
+    permissions: ['read("users")'],
+  },
+  {
+    id: 'quests_catalog',
+    name: 'Catalogue des quêtes',
+    attributes: [
+      string('title', 255, true),
+      string('description', 1000, true),
+      enumeration('period', ['daily', 'weekly', 'monthly', 'yearly', 'oneshot'], true),
+      enumeration('criteriaType', [
+        'attendSession', 'submitAssignment', 'earnGrade', 'postForum',
+        'sendMessage', 'loginStreak', 'completeQuiz', 'perfectQuiz',
+        'earnBadge', 'reachXp', 'rankTop', 'bestOfWeek', 'bestOfMonth',
+        'mostActive', 'earlyBird', 'nightOwl',
+      ], true),
+      integer('targetValue', true),
+      integer('xpReward', false, 20),
+      // Badge optionnel déverrouillé à la complétion
+      string('badgeRewardId', 36, false, ''),
+      string('iconName', 64, false, 'trophy'),
+      string('colorHex', 16, false, '#6366F1'),
+      boolean('isLimited', false, false),
+      datetime('availableFrom', false),
+      datetime('availableUntil', false),
+      integer('sortOrder', false, 0),
+    ],
+    indexes: [
+      { key: 'quest_period', type: 'key', attributes: ['period'] },
+      { key: 'quest_criteria', type: 'key', attributes: ['criteriaType'] },
+      { key: 'quest_limited', type: 'key', attributes: ['isLimited'] },
+    ],
+    permissions: ['read("users")'],
+  },
+  {
+    id: 'user_quest_progress',
+    name: 'Progression des quêtes par utilisateur',
+    attributes: [
+      string('userId', 36, true),
+      string('questId', 36, true),
+      integer('currentValue', false, 0),
+      datetime('updatedAt', false),
+      boolean('completed', false, false),
+      datetime('completedAt', false),
+      // Prochaine réinitialisation calculée par la Function
+      datetime('resetAt', false),
+    ],
+    indexes: [
+      { key: 'quest_progress_user', type: 'key', attributes: ['userId'] },
+      { key: 'quest_progress_unique', type: 'unique', attributes: ['userId', 'questId'] },
+      { key: 'quest_progress_completed', type: 'key', attributes: ['userId', 'completed'] },
+    ],
+    permissions: ['read("users")'],
+  },
+  {
+    id: 'user_xp',
+    name: 'XP et niveau des utilisateurs',
+    attributes: [
+      string('userId', 36, true),
+      integer('totalXp', false, 0),
+      datetime('updatedAt', false),
+    ],
+    indexes: [
+      { key: 'user_xp_unique', type: 'unique', attributes: ['userId'] },
+      { key: 'user_xp_top', type: 'key', attributes: ['totalXp'] },
+    ],
+    permissions: ['read("users")'],
+  },
+  {
+    id: 'leaderboard',
+    name: 'Classements hebdo/mensuel/annuel',
+    attributes: [
+      string('userId', 36, true),
+      string('displayName', 255, false, ''),
+      string('avatarFileId', 36, false, ''),
+      integer('rank', false, 0),
+      integer('score', false, 0),
+      enumeration('period', ['week', 'month', 'year'], true),
+      enumeration('metric', ['attendance', 'grades', 'activity', 'xp'], true),
+      // Identifiant de la période : "2026-W40", "2026-10", "2026"
+      string('periodKey', 16, true),
+    ],
+    indexes: [
+      { key: 'leaderboard_period_metric', type: 'key', attributes: ['period', 'metric', 'periodKey'] },
+      { key: 'leaderboard_user_period', type: 'key', attributes: ['userId', 'period', 'metric'] },
+      { key: 'leaderboard_unique', type: 'unique', attributes: ['userId', 'period', 'metric', 'periodKey'] },
+    ],
+    permissions: ['read("users")'],
+  },
+]
+
 export const allSchemas = [
   ...schemas,
   ...academicSchemas.map((schema) => ({ ...schema, permissions: ['read("users")', 'create("users")'] })),
   ...subscriptionSchemas,
   ...referenceSchemas,
   ...metricsSchemas,
+  ...gamificationSchemas,
   teamSchema,
   appReleaseSchema,
 ]
