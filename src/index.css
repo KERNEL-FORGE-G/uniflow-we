@@ -14,12 +14,14 @@
   --color-teal-50: #f0fdfa;
   --color-teal-100: #ccfbf1;
 
-  /* ─── Neutrals (Light Mode Default) ─── */
-  --color-bg: #f3f4f6;
+  /* ─── Neutrals (Light Mode Default) — Clean Premium Style ─── */
+  --color-bg: #f0f7ff;
   --color-surface: #ffffff;
   --color-border: #e5e7eb;
   --color-text: #111827;
-  --color-muted: #6b7280;
+  --color-muted: #4b5563;
+  --color-surface-muted: #f8fbff;
+  --color-card-shadow: 0 2px 12px rgba(30,58,138,0.08);
 
   /* ─── Status Colors ─── */
   --color-success: #10b981;
