@@ -29,6 +29,17 @@ scripts de provisionnement des trois clients vivent ici.
 | Indépendant | Espace de travail personnel (matières, tâches, documents, agenda) |
 | Compte | Profil, photo de profil, paramètres, notifications temps réel (Appwrite Realtime, sans Firebase) |
 
+### Design
+
+Thème **clean premium UniFlow** (refonte 2026-10) :
+
+- **Palette** : fond `#F0F7FF` (blanc-bleu pâle), accents bleu `#1E3A8A` et teal `#0D9488`
+- **Cartes** : arrondies `16 px`, ombre `rgba(30,58,138,0.08)` bleue douce
+- **Logos** : SVG vectorisés (wordmark + emblem) servis depuis `/logos/`. Les PNG racine (`logo_1.png`, `logo.png`…) sont des doublons conservés pour compatibilité ascendante ; les fallbacks d'avatar pointent tous vers `/logos/logo_1.png`
+- **Mascotte Uni** : poses `.webp` importées via `@/assets/mascot/`, `UniMascot` + `ArchlordMascot` avec dialogues contextuels et transitions CSS `cubic-bezier`
+- **Notifications push** : Appwrite Realtime (temps réel quand l'onglet est ouvert) ; aucun Firebase côté web (retiré intentionnellement)
+- **Images orphelines** : `landing.png`, `Image 1.png`, `mascotte.png` à la racine de `/public/` sont des résidus ; ne pas y référencer de nouveau code
+
 ## Installation
 
 Prérequis : Node.js 22 ou plus récent, pnpm (`corepack enable`).
