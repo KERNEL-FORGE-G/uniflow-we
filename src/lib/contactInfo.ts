@@ -27,6 +27,11 @@ export const COVERAGE_FACULTY = 'Faculté des Sciences'
 export const COVERAGE_LABEL = `${COVERAGE_UNIVERSITY} — ${COVERAGE_FACULTY}`
 export const COVERAGE_SHORT = 'UY1 · Faculté des Sciences'
 
+/** Badge et lien officiel Microsoft Store pour Windows (ID de produit: 9ngzkfgk98k6). */
+export const MICROSOFT_STORE_APP_ID = '9ngzkfgk98k6'
+export const MICROSOFT_STORE_INSTALLER_URL = 'https://get.microsoft.com/installer/download/9ngzkfgk98k6?referrer=appbadge'
+export const MICROSOFT_STORE_BADGE_IMAGE_DARK = 'https://get.microsoft.com/images/fr%20dark.svg'
+
 /** Lien WhatsApp avec un message pré-rempli (encodé pour l'URL). */
 export function whatsappUrlWithMessage(message: string): string {
   return `${CONTACT_WHATSAPP_URL}?text=${encodeURIComponent(message)}`
