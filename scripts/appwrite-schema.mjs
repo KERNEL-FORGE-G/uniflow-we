@@ -1060,19 +1060,25 @@ export const gamificationSchemas = [
     attributes: [
       string('title', 255, true),
       string('description', 1000, true),
-      enumeration('period', ['daily', 'weekly', 'monthly', 'yearly', 'oneshot'], true),
-      enumeration('criteriaType', [
-        'attendSession', 'submitAssignment', 'earnGrade', 'postForum',
-        'sendMessage', 'loginStreak', 'completeQuiz', 'perfectQuiz',
-        'earnBadge', 'reachXp', 'rankTop', 'bestOfWeek', 'bestOfMonth',
-        'mostActive', 'earlyBird', 'nightOwl',
-      ], true),
+      // Périodes : weekly/monthly/annual = reset automatique ; special = ponctuel
+      enumeration('period', ['daily', 'weekly', 'monthly', 'annual', 'yearly', 'oneshot', 'special'], true),
+      // Catégorie de la quête (assiduite, academique, social, special, communaute, progression, admin)
+      enumeration('category', [
+        'assiduite', 'academique', 'social', 'special',
+        'communaute', 'progression', 'admin', 'famille',
+      ], false, 'assiduite'),
+      // Type de critère libre (ex: attendance_count, quiz_avg_score, forum_post_count…)
+      // Utilise un string libre pour supporter les 150+ types sans enum trop rigide
+      string('criteriaType', 64, true),
+      // Rôles ciblés (JSON array : ["student"], ["teacher"], ["all"]…)
+      string('targetRoles', 255, false, '["student"]'),
       integer('targetValue', true),
       integer('xpReward', false, 20),
       // Badge optionnel déverrouillé à la complétion
       string('badgeRewardId', 36, false, ''),
       string('iconName', 64, false, 'trophy'),
       string('colorHex', 16, false, '#6366F1'),
+      boolean('isActive', false, true),
       boolean('isLimited', false, false),
       datetime('availableFrom', false),
       datetime('availableUntil', false),
