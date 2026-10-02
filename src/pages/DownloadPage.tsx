@@ -27,7 +27,7 @@ import webIllustration from '../assets/illustrations/telecharger-web.webp'
  * Les liens viennent de la collection `app_releases`, modifiable par l'admin
  * de la plateforme depuis Administration › Paramètres › Applications : l'APK
  * Android change d'URL à chaque release GitHub, et la version de bureau
- * (Windows, Linux, macOS) a déjà sa place, affichée « bientôt » tant qu'aucun
+ * (Windows, Linux) a déjà sa place, affichée « bientôt » tant qu'aucun
  * lien n'est publié.
  */
 
@@ -341,7 +341,7 @@ export default function DownloadPage() {
                 <ChannelCard
                   image={desktopIllustration}
                   alt="Ordinateur portable affichant une visioconférence et une feuille de présence UniFlow"
-                  eyebrow="Windows · Linux · macOS"
+                  eyebrow="Windows · Linux"
                   title="La version de bureau"
                   description="Pour les enseignants et l’administration : visioconférence embarquée, feuille de présence automatique, exports PDF et Excel."
                   accent="navy"
