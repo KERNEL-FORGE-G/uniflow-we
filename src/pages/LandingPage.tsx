@@ -594,7 +594,7 @@ export default function LandingPage() {
 
             <div className="relative z-10 space-y-8">
               <div className="text-center max-w-2xl mx-auto space-y-2">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold text-white backdrop-blur-md border border-white/30">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3.5 py-1 text-xs font-bold text-white border border-white/30">
                   <Calculator className="h-4 w-4 text-amber-300" /> Calculateur d'Impact Campus
                 </span>
                 <h3 className="text-2xl sm:text-3xl font-black text-white">
@@ -603,7 +603,7 @@ export default function LandingPage() {
               </div>
 
               {/* Slider Input */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20 max-w-xl mx-auto space-y-3">
+              <div className="bg-white/10 rounded-2xl p-6 border border-white/20 max-w-xl mx-auto space-y-3">
                 <div className="flex justify-between items-center text-sm font-extrabold text-white">
                   <span>Nombre d'étudiants inscrits :</span>
                   <span className="text-xl font-black text-amber-300 bg-black/20 px-3 py-1 rounded-xl border border-amber-300/30 font-mono">
@@ -628,13 +628,13 @@ export default function LandingPage() {
 
               {/* Calculated Outputs */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
-                <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-md border border-white/25 shadow-md">
+                <div className="rounded-2xl bg-white/15 p-5 border border-white/25 shadow-md">
                   <div className="text-3xl font-black text-amber-300 font-mono">{paperSavedSheets === null ? '—' : paperSavedSheets.toLocaleString()}</div>
                   <div className="text-xs font-extrabold text-blue-100 uppercase tracking-wider mt-1">Feuilles de papier / an économisées</div>
                   <div className="text-[10px] text-emerald-200 mt-1 font-bold">{treesSaved === null ? 'Résultat après saisie' : `Soit env. ${treesSaved} arbres préservés`}</div>
                 </div>
 
-                <div className="rounded-2xl bg-white/15 p-5 backdrop-blur-md border border-white/25 shadow-md">
+                <div className="rounded-2xl bg-white/15 p-5 border border-white/25 shadow-md">
                   <div className="text-3xl font-black text-teal-300 font-mono">{hoursSavedPerSemester === null ? '—' : `${hoursSavedPerSemester.toLocaleString()} h`}</div>
                   <div className="text-xs font-extrabold text-blue-100 uppercase tracking-wider mt-1">Heures de cours gagnées / sem</div>
                   <div className="text-[10px] text-teal-200 mt-1 font-bold">⚡ Prise d'appel QR code instantanée</div>

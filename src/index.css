@@ -15,7 +15,7 @@
   --color-teal-100: #ccfbf1;
 
   /* ─── Neutrals (Light Mode Default) — Clean Premium Style ─── */
-  --color-bg: #f0f7ff;
+  --color-bg: #F0F6FF;
   --color-surface: #ffffff;
   --color-border: #e5e7eb;
   --color-text: #111827;
@@ -75,7 +75,7 @@
 
 /* ─── Explicit Class Light Mode ─── */
 .light {
-  --color-bg: #f3f4f6;
+  --color-bg: #F0F6FF;
   --color-surface: #ffffff;
   --color-border: #e5e7eb;
   --color-text: #111827;
