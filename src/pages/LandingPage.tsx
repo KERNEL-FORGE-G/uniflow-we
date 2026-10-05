@@ -152,30 +152,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-white font-sans overflow-x-hidden selection:bg-blue-600 selection:text-white">
       <LandingNavbar />
 
-      {/* ── Banner région : visiteur hors Afrique ── */}
-      {!region.isAfrica && !regionBannerDismissed && (
-        <div className="relative z-50 flex items-center justify-between gap-3 bg-[#1e3a8a] px-4 py-2.5 text-white">
-          <div className="flex items-center gap-2 text-sm">
-            <Globe className="h-4 w-4 shrink-0 text-blue-300" />
-            <span>
-              <span className="font-semibold">UniFlow is also available in English</span>
-              {' '}— designed for African universities, accessible from anywhere.{' '}
-              <a href="#features" className="underline underline-offset-2 hover:text-blue-200">
-                See how it works →
-              </a>
-            </span>
-          </div>
-          <button
-            onClick={() => setRegionBannerDismissed(true)}
-            className="shrink-0 rounded-full p-1 hover:bg-white/10"
-            aria-label="Fermer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-      )}
-
-      {/* ── Banner région : visiteur afrique non cameroun ── */}
+      {/* ── Banner région : visiteur africain hors Cameroun ── */}
       {region.isAfrica && region.countryCode !== 'CM' && !regionBannerDismissed && (
         <div className="relative z-50 flex items-center justify-between gap-3 bg-[#0d9488] px-4 py-2.5 text-white">
           <div className="flex items-center gap-2 text-sm">
