@@ -84,7 +84,7 @@ export default function TeamsPage() {
                 <div className="mt-8 flex flex-wrap gap-5">
                   {[
                     { label: 'Membres', value: members.length },
-                    { label: 'Promotions', value: new Set(members.map((m) => m.subteam).filter(Boolean)).size || '—' },
+                    { label: 'Promotions', value: new Set(members.map((m) => m.subTeam).filter(Boolean)).size || '—' },
                     { label: 'Université', value: 'UY1' },
                   ].map((stat) => (
                     <div key={stat.label} className="flex flex-col">
