@@ -6,7 +6,7 @@ import {
   MessageSquare, BarChart3, Zap, ChevronRight,
   Smartphone, Globe, Monitor, TrendingUp, Clock, Award,
   QrCode, BookOpen, Calendar, Calculator, HelpCircle, ChevronDown,
-  Sparkles, Check, Laptop, ShieldCheck, FileText, CheckCircle2
+  Sparkles, Check, Laptop, ShieldCheck, FileText, CheckCircle2, X
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { OptimizedImage } from '../components/ui/OptimizedImage'
@@ -23,6 +23,7 @@ import { CountUp } from '../components/ui/CountUp'
 import { UniMascot } from '../components/mascot/UniMascot'
 import { MascotDialogue } from '../components/mascot/ArchlordMascot'
 import { DOWNLOAD_SECTION_ID, DownloadSection } from '../components/landing/DownloadSection'
+import { useVisitorRegion } from '../hooks/useVisitorRegion'
 
 const landingImg = UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL
 
@@ -119,6 +120,11 @@ export default function LandingPage() {
     { icon: TrendingUp, value: publicStats.visitors, label: 'Visiteurs uniques', color: 'bg-amber-50 text-amber-700', hint: `${publicStats.visitsToday} visite${publicStats.visitsToday > 1 ? 's' : ''} aujourd’hui` },
   ] : []
 
+
+  // Détection de la région du visiteur (timezone-based, zéro réseau, RGPD-friendly)
+  const region = useVisitorRegion()
+  const [regionBannerDismissed, setRegionBannerDismissed] = useState(false)
+
   // Interactive Demo State
   const [activeRoleTab, setActiveRoleTab] = useState<RoleTab>('etudiant')
 
@@ -145,6 +151,53 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white font-sans overflow-x-hidden selection:bg-blue-600 selection:text-white">
       <LandingNavbar />
+
+      {/* ── Banner région : visiteur hors Afrique ── */}
+      {!region.isAfrica && !regionBannerDismissed && (
+        <div className="relative z-50 flex items-center justify-between gap-3 bg-[#1e3a8a] px-4 py-2.5 text-white">
+          <div className="flex items-center gap-2 text-sm">
+            <Globe className="h-4 w-4 shrink-0 text-blue-300" />
+            <span>
+              <span className="font-semibold">UniFlow is also available in English</span>
+              {' '}— designed for African universities, accessible from anywhere.{' '}
+              <a href="#features" className="underline underline-offset-2 hover:text-blue-200">
+                See how it works →
+              </a>
+            </span>
+          </div>
+          <button
+            onClick={() => setRegionBannerDismissed(true)}
+            className="shrink-0 rounded-full p-1 hover:bg-white/10"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* ── Banner région : visiteur afrique non cameroun ── */}
+      {region.isAfrica && region.countryCode !== 'CM' && !regionBannerDismissed && (
+        <div className="relative z-50 flex items-center justify-between gap-3 bg-[#0d9488] px-4 py-2.5 text-white">
+          <div className="flex items-center gap-2 text-sm">
+            <Globe className="h-4 w-4 shrink-0 text-teal-200" />
+            <span>
+              <span className="font-semibold">UniFlow est disponible dans votre région</span>
+              {' '}— rejoignez la communauté universitaire africaine.{' '}
+              <a href="/register" className="underline underline-offset-2 hover:text-teal-100">
+                Créer un compte gratuitement →
+              </a>
+            </span>
+          </div>
+          <button
+            onClick={() => setRegionBannerDismissed(true)}
+            className="shrink-0 rounded-full p-1 hover:bg-white/10"
+            aria-label="Fermer"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
 
       {/* ── Hero Section ── */}
       <section className="relative overflow-hidden bg-gradient-to-br from-white via-[#f8fafc] to-[#eff3ff] min-h-screen flex items-center pt-24 pb-16">

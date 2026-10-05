@@ -12,6 +12,7 @@ import { useApi } from '../hooks/useApi'
 import { COUNTRY_OPTIONS, featuredPlanCode, plansForCountry } from '../lib/pricingModel'
 import { annualSavingsPercent } from '../lib/paymentsModel'
 import { CONTACT_PHONE_DISPLAY } from '../lib/contactInfo'
+import { useVisitorRegion } from '../hooks/useVisitorRegion'
 
 const comparisonCategories = [
   {
@@ -103,7 +104,10 @@ export default function PricingPage() {
   const { data: plansData, loading: loadingPlans, error: plansError } = useApi(() => personalSubscriptionApi.getPlans(), [], { key: 'subscriptions.plans' })
   const dbPlans: SubscriptionPlan[] = plansData ?? []
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
-  const [countryCode, setCountryCode] = useState('CM')
+  const region = useVisitorRegion()
+  // Choisir le countryCode par défaut depuis le pays détecté ; s'il n'est pas dans COUNTRY_OPTIONS, on tombe sur CM
+  const defaultCountry = COUNTRY_OPTIONS.some((o) => o.code === region.countryCode) ? region.countryCode : 'CM'
+  const [countryCode, setCountryCode] = useState(defaultCountry)
   const [faqCategory, setFaqCategory] = useState<string>('Tous')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
 
