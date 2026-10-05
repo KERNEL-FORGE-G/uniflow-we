@@ -20,6 +20,7 @@ import heroIllustration from '../assets/illustrations/telecharger-hero.webp'
 import androidIllustration from '../assets/illustrations/telecharger-android.webp'
 import desktopIllustration from '../assets/illustrations/telecharger-desktop.webp'
 import webIllustration from '../assets/illustrations/telecharger-web.webp'
+import { MicrosoftStoreBadge } from '../components/ui/MicrosoftStoreBadge'
 
 /**
  * Page publique « Télécharger UniFlow » (`/download`).
@@ -27,7 +28,7 @@ import webIllustration from '../assets/illustrations/telecharger-web.webp'
  * Les liens viennent de la collection `app_releases`, modifiable par l'admin
  * de la plateforme depuis Administration › Paramètres › Applications : l'APK
  * Android change d'URL à chaque release GitHub, et la version de bureau
- * (Windows, Linux, macOS) a déjà sa place, affichée « bientôt » tant qu'aucun
+ * (Windows, Linux) a déjà sa place, affichée « bientôt » tant qu'aucun
  * lien n'est publié.
  */
 
@@ -228,12 +229,13 @@ export default function DownloadPage() {
                 ) : (
                   <StatusPill status={channels.android.status} soonLabel="Version Android bientôt disponible" icon="android" dark />
                 )}
+                <MicrosoftStoreBadge width={190} className="shadow-lg" />
                 <a
                   href="#bureau"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-6 py-4 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
                 >
                   <UniIcon name="desktop" weight="duotone" className="h-5 w-5 text-teal-200" />
-                  {channels.desktop.status === 'available' ? 'Version de bureau' : 'Bureau : bientôt'}
+                  Autres systèmes
                 </a>
               </motion.div>
 
@@ -341,17 +343,33 @@ export default function DownloadPage() {
                 <ChannelCard
                   image={desktopIllustration}
                   alt="Ordinateur portable affichant une visioconférence et une feuille de présence UniFlow"
-                  eyebrow="Windows · Linux · macOS"
+                  eyebrow="Windows · Linux"
                   title="La version de bureau"
                   description="Pour les enseignants et l’administration : visioconférence embarquée, feuille de présence automatique, exports PDF et Excel."
                   accent="navy"
                 >
-                  {channels.desktop.status === 'checking' ? (
-                    <StatusPill status="checking" soonLabel="" icon="desktop" />
-                  ) : (
-                    <ul className="grid gap-2">
-                      {channels.desktop.entries.map((entry) => (
-                        <li key={entry.platform}>
+                  <div className="space-y-4">
+                    {/* Badge officiel Microsoft Store (Windows) */}
+                    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
+                      <div className="flex items-center justify-between mb-2.5">
+                        <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">
+                          <UniIcon name="windows" weight="fill" className="h-4 w-4" /> Windows
+                        </span>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-800">
+                          Recommandé
+                        </span>
+                      </div>
+                      <MicrosoftStoreBadge width={200} />
+                      <p className="mt-2 text-[11px] font-medium text-slate-500">
+                        Installation officielle, rapide et vérifiée en 1 clic via le Microsoft Store.
+                      </p>
+                    </div>
+
+                    {/* Autres systèmes (Linux, etc.) */}
+                    {channels.desktop.entries
+                      .filter((e) => e.platform !== 'windows')
+                      .map((entry) => (
+                        <div key={entry.platform}>
                           {entry.release ? (
                             <DownloadButton release={entry.release} label={`Pour ${entry.label}`} icon={PLATFORM_ICON[entry.platform]} tone="navy" size="md" />
                           ) : (
@@ -363,10 +381,9 @@ export default function DownloadPage() {
                               <span className="ml-auto rounded-full bg-[#eff3ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#1e3a8a]">Bientôt</span>
                             </span>
                           )}
-                        </li>
+                        </div>
                       ))}
-                    </ul>
-                  )}
+                  </div>
                   <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
                     <UniIcon name="video" weight="duotone" className="mt-0.5 h-4 w-4 shrink-0 text-[#1e3a8a]" />
                     La visioconférence hors ligne est réservée au bureau ; les participants sans application rejoignent depuis un lien local.

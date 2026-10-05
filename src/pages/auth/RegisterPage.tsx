@@ -157,7 +157,7 @@ export default function RegisterPage() {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback) {
                   target.dataset.triedFallback = 'true'
-                  target.src = '/logo_1.png'
+                  target.src = '/logos/logo_1.png'
                 }
               }}
             />
@@ -582,7 +582,7 @@ export default function RegisterPage() {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback) {
                   target.dataset.triedFallback = 'true'
-                  target.src = '/logo_1.png'
+                  target.src = '/logos/logo_1.png'
                 }
               }}
             />

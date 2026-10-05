@@ -81,6 +81,7 @@ const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'))
 const AdminPaymentsPage = lazy(() => import('./pages/admin/AdminPaymentsPage'))
 const AdminAudiencePage = lazy(() => import('./pages/admin/AdminAudiencePage'))
 const AdminTeamPage = lazy(() => import('./pages/admin/AdminTeamPage'))
+const GamificationPage = lazy(() => import('./pages/GamificationPage'))
 
 /**
  * Écran d'attente : squelette immédiat, puis Uni « réfléchit » si l'attente
@@ -316,6 +317,7 @@ export default function App() {
               <Route path="/app/promotion" element={<Shell><UniversityRoute roles={['student', 'delegate']}><PromotionPage /></UniversityRoute></Shell>} />
               <Route path="/app/mes-cours-enseignant" element={<Shell><UniversityRoute roles={['teacher']}><TeacherCoursesPage /></UniversityRoute></Shell>} />
               <Route path="/app/demo" element={<Shell><UniversityRoute><DemoPage /></UniversityRoute></Shell>} />
+              <Route path="/app/badges-quetes" element={<Shell><UniversityRoute><GamificationPage /></UniversityRoute></Shell>} />
 
               {/* Anciennes adresses de la visioconférence : elle vit désormais dans l'application de bureau */}
               <Route path="/app/visio/*" element={<Navigate to="/app/aide" replace />} />

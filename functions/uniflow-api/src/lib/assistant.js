@@ -7,13 +7,19 @@
  * au modèle et lire sa réponse ; elles sont isolées ici pour être testées avec
  * `node --test`, exactement comme `caller.js` et `payments.js`.
  *
- * Choix figés par le propriétaire du projet (2026-09-21) :
- * - le fournisseur principal est Gemini, **modèle verrouillé** sur
- *   `gemini-3.1-flash-lite` — jamais lu depuis la requête ni depuis une
- *   variable, pour qu'aucun client ne puisse basculer sur un modèle plus cher ;
- * - la clé d'API ne quitte jamais la Function : les clients (web, mobile,
- *   desktop) n'appellent que ce service, avec leur session Appwrite.
- * Mistral n'intervient qu'en secours si Gemini ne répond pas.
+ * Choix figés par le propriétaire du projet :
+ * - depuis le 2026-09-25, la génération passe par **le workflow n8n du VPS**
+ *   (`n8n.kernelforge.codes`) et non plus par un appel direct à Google. Le
+ *   modèle derrière n8n reste `gemini-3.1-flash-lite` ; ce qui change, c'est que
+ *   l'URL et la clé ne sont plus dans UniFlow. Le contrat attendu est donc
+ *   celui de la passerelle (`docs/n8n/`), plus le `generateContent` de Google ;
+ * - le nom du modèle reste verrouillé dans le code, **jamais lu depuis la
+ *   requête** : aucun client ne peut demander un modèle plus cher (décision du
+ *   2026-09-21, inchangée) ;
+ * - aucune clé d'API ne quitte le serveur : les clients (web, mobile, desktop)
+ *   n'appellent que ce service, avec leur session Appwrite, et la passerelle
+ *   n8n n'expose sa clé Gemini qu'à elle-même.
+ * Mistral n'intervient qu'en secours si la passerelle ne répond pas.
  */
 
 export const ASSISTANT_NAME = 'Uni'
@@ -25,9 +31,13 @@ const PLATFORM_HINTS = {
   desktop: "Le client est l'application de bureau : barre latérale Pilotage / Scolarité / Pédagogie / Vie de campus / Système ; elle seule porte la visioconférence locale (salle, lien navigateur pour les invités, feuille de présence générée depuis les participants) et les exports PDF/Excel avancés.",
 }
 export const GEMINI_MODEL = 'gemini-3.1-flash-lite'
-export const GEMINI_ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`
 export const MISTRAL_MODEL = 'mistral-small-latest'
 export const MISTRAL_ENDPOINT = 'https://api.mistral.ai/v1/chat/completions'
+
+/** Chemin du workflow n8n « Uni · Passerelle assistant », si l'hôte est configuré sans chemin. */
+export const N8N_DEFAULT_PATH = '/webhook/uniflow-assistant'
+/** En-tête d'authentification que la passerelle attend (Header Auth côté n8n). */
+export const N8N_TOKEN_HEADER = 'x-uniflow-token'
 
 /** Bornes de la charge utile : elles protègent le quota autant que la latence. */
 export const MAX_HISTORY = 20
@@ -161,32 +171,42 @@ export function suggestionsFor(caller) {
   }
 }
 
-/** Corps `generateContent` de Gemini : historique + consigne système. */
-export function toGeminiRequest(systemInstruction, history) {
+/**
+ * Charge utile pour la passerelle n8n. Elle ne porte **ni modèle ni clé** : la
+ * passerelle décide du modèle (verrouillé sur gemini-3.1-flash-lite dans son
+ * nœud HTTP), et UniFlow ne lui remet que la consigne déjà ancrée dans les
+ * données réelles de l'appelant.
+ *
+ * Le champ s'appelle `system` et non `system_instruction` : c'est le nom du
+ * contrat de la passerelle, choisi pour qu'un nœud HTTP n8n le transmette à
+ * Gemini sans remappage. Le `platform` et le `voice` ne servent pas à la
+ * génération — la consigne les a déjà intégrés — mais à tracer dans n8n de quel
+ * client vient la demande, quand un workflow de notification y branchera.
+ */
+export function toN8nRequest(systemInstruction, history, options = {}) {
   return {
-    system_instruction: { parts: [{ text: systemInstruction }] },
-    contents: history.map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
-    generationConfig: {
-      temperature: 0.6,
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
-      // Le mode « réflexion » ajoute des secondes de latence : inutile pour un
-      // assistant conversationnel court.
-      thinkingConfig: { thinkingLevel: 'minimal' },
-    },
-    safetySettings: [
-      { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-      { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-    ],
+    action: 'chat',
+    platform: options.platform || '',
+    voice: options.voice === true,
+    system: systemInstruction,
+    messages: history.map((m) => ({ role: m.role, content: m.content })),
+    temperature: 0.6,
+    max_tokens: MAX_OUTPUT_TOKENS,
   }
 }
 
-/** Texte de la première candidate Gemini, ou chaîne vide (réponse bloquée / vide). */
-export function extractGeminiText(payload) {
-  const parts = payload?.candidates?.[0]?.content?.parts
-  if (!Array.isArray(parts)) return ''
-  return parts.map((p) => (typeof p?.text === 'string' ? p.text : '')).join('').trim()
+/**
+ * Texte renvoyé par la passerelle. L'enveloppe attendue est
+ * `{ ok: true, reply: '…' }` ; `text` est toléré parce que c'est la clef que
+ * laisse voir une réponse n8n quand le nœud « Répondre » rend le tableau
+ * d'éléments tel quel — variante de configuration, pas de notre contrat, et
+ * autant la reconnaître ici que debout devant un 502.
+ */
+export function extractN8nReply(payload) {
+  const body = Array.isArray(payload) ? payload[0] : payload
+  if (!body || body.ok === false) return ''
+  const reply = typeof body.reply === 'string' ? body.reply : typeof body.text === 'string' ? body.text : ''
+  return reply.trim()
 }
 
 /** Corps « chat completions » de Mistral, même consigne, même historique. */

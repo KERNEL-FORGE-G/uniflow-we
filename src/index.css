@@ -14,12 +14,14 @@
   --color-teal-50: #f0fdfa;
   --color-teal-100: #ccfbf1;
 
-  /* ─── Neutrals (Light Mode Default) ─── */
-  --color-bg: #f3f4f6;
+  /* ─── Neutrals (Light Mode Default) — Clean Premium Style ─── */
+  --color-bg: #F0F6FF;
   --color-surface: #ffffff;
   --color-border: #e5e7eb;
   --color-text: #111827;
-  --color-muted: #6b7280;
+  --color-muted: #4b5563;
+  --color-surface-muted: #f8fbff;
+  --color-card-shadow: 0 2px 12px rgba(30,58,138,0.08);
 
   /* ─── Status Colors ─── */
   --color-success: #10b981;
@@ -73,7 +75,7 @@
 
 /* ─── Explicit Class Light Mode ─── */
 .light {
-  --color-bg: #f3f4f6;
+  --color-bg: #F0F6FF;
   --color-surface: #ffffff;
   --color-border: #e5e7eb;
   --color-text: #111827;
@@ -309,6 +311,28 @@ body {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
+}
+
+/* ─── FadeInUp (marketing sections) ─── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up { animation: fadeInUp 0.4s ease-out both; }
+.fade-in-up-1 { animation: fadeInUp 0.4s 0.1s ease-out both; }
+.fade-in-up-2 { animation: fadeInUp 0.4s 0.2s ease-out both; }
+.fade-in-up-3 { animation: fadeInUp 0.4s 0.3s ease-out both; }
+.fade-in-up-4 { animation: fadeInUp 0.4s 0.4s ease-out both; }
+.fade-in-up-5 { animation: fadeInUp 0.4s 0.5s ease-out both; }
+
+/* ─── Feature card hover (smooth transition) ─── */
+.feature-card-hover {
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.feature-card-hover:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(30, 58, 138, 0.10);
+  border-color: rgba(30, 58, 138, 0.25);
 }
 
 /* ─── Core Animations ─── */

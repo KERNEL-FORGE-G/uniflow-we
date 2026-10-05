@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { UniIcon, type UniIconName } from '../ui/UniIcon'
 import { UniMascot } from '../mascot/UniMascot'
 import { ScrollFloat } from '../ui/ScrollFloat'
+import { MicrosoftStoreBadge } from '../ui/MicrosoftStoreBadge'
 import { fadeInUp, staggerContainer } from '../../utils/animations'
 import { cn } from '../../utils/cn'
 import {
@@ -177,7 +178,8 @@ export function DownloadSection() {
             </Link>
           </motion.div>
 
-          <motion.div variants={fadeInUp} className="flex flex-col gap-3 border-t border-slate-100 pt-6 sm:flex-row sm:flex-wrap sm:items-start">
+          <motion.div variants={fadeInUp} className="flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center">
+            <MicrosoftStoreBadge width={190} className="shadow-md" />
             {desktop ? (
               <div>
                 <DownloadButton
@@ -187,31 +189,18 @@ export function DownloadSection() {
                   tone="secondary"
                   download
                 />
-                {otherDesktop.length ? (
-                  <p className="mt-2 flex flex-wrap gap-x-3 text-xs font-semibold text-slate-500">
-                    <span>Aussi pour</span>
-                    {otherDesktop.map((release) => (
-                      <a key={release.platform} href={release.url} rel="noopener noreferrer" className="inline-flex items-center gap-1 text-[#1e3a8a] hover:underline">
-                        <UniIcon name={PLATFORM_ICON[release.platform]} weight="fill" className="h-3.5 w-3.5" />
-                        {RELEASE_PLATFORM_LABELS[release.platform]}
-                      </a>
-                    ))}
-                  </p>
-                ) : null}
               </div>
-            ) : (
-              <SoonPill label="Desktop : bientôt" icon="desktop" />
-            )}
+            ) : null}
             <Link
               to="/login"
-              className="inline-flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200/80 bg-white px-5 py-4 text-left text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#1e3a8a]/30 hover:shadow-md sm:w-auto"
+              className="inline-flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200/80 bg-white px-5 py-3.5 text-left text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#1e3a8a]/30 hover:shadow-md sm:w-auto"
             >
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f0fdfa] text-[#0d9488]">
-                <UniIcon name="globe" weight="duotone" className="h-6 w-6" />
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f0fdfa] text-[#0d9488]">
+                <UniIcon name="globe" weight="duotone" className="h-5 w-5" />
               </span>
               <span>
-                <span className="block text-sm font-black leading-tight sm:text-base">Utiliser dans le navigateur</span>
-                <span className="mt-0.5 block text-xs font-semibold text-slate-500">Web, installable en PWA</span>
+                <span className="block text-sm font-black leading-tight sm:text-base">Navigateur Web</span>
+                <span className="mt-0.5 block text-xs font-semibold text-slate-500">Installable en PWA</span>
               </span>
             </Link>
           </motion.div>

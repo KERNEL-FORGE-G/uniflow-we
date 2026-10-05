@@ -45,7 +45,7 @@ export function Sidebar() {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback1) {
                   target.dataset.triedFallback1 = 'true'
-                  target.src = '/logo_1.png'
+                  target.src = '/logos/logo_1.png'
                 } else if (!target.dataset.triedFallback2) {
                   target.dataset.triedFallback2 = 'true'
                   target.src = '/logo.png'
@@ -333,7 +333,7 @@ function MobileSidebar({ onClose }: { onClose: () => void }) {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback1) {
                   target.dataset.triedFallback1 = 'true'
-                  target.src = '/logo_1.png'
+                  target.src = '/logos/logo_1.png'
                 } else if (!target.dataset.triedFallback2) {
                   target.dataset.triedFallback2 = 'true'
                   target.src = '/logo.png'

@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import {
   ArrowRight, Zap, HelpCircle,
   Building2, GraduationCap, ChevronDown, Check,
-  CheckCircle2, User, RefreshCw, Globe2, MessageCircle, ShieldCheck, ClipboardList, Sparkles,
+  CheckCircle2, User, RefreshCw, Globe2, MessageCircle, ShieldCheck, ClipboardList, Sparkles, Shield,
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { personalSubscriptionApi, type SubscriptionPlan } from '../lib/api'
@@ -139,6 +139,26 @@ export default function PricingPage() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 px-5 py-2.5 text-xs font-semibold text-emerald-900 dark:text-emerald-200 shadow-xs">
             <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
             <span>Règlement par <strong>WhatsApp</strong> avec validation par l’administration UniFlow — aucun paiement en ligne, aucune carte à saisir.</span>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* Phrase de Positionnement (Sprint 0 Fix #7) */}
+      <section className="bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#0d9488] py-6">
+        <div className="mx-auto max-w-7xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="flex items-center justify-center gap-4 text-center"
+          >
+            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/20">
+              <Shield className="h-6 w-6 text-amber-300 shrink-0" />
+              <p className="text-sm sm:text-base font-bold text-white leading-relaxed">
+                <span className="text-amber-300">UniFlow est gratuit</span> pour les étudiants et les enseignants.{' '}
+                <span className="text-blue-100">L'établissement prend une licence annuelle</span> pour héberger et administrer son campus.
+              </p>
+            </div>
           </motion.div>
         </div>
       </section>
