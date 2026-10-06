@@ -12,6 +12,7 @@ import { useApi } from '../hooks/useApi'
 import { COUNTRY_OPTIONS, featuredPlanCode, plansForCountry } from '../lib/pricingModel'
 import { annualSavingsPercent } from '../lib/paymentsModel'
 import { CONTACT_PHONE_DISPLAY } from '../lib/contactInfo'
+import { useVisitorRegion } from '../hooks/useVisitorRegion'
 
 const comparisonCategories = [
   {
@@ -48,12 +49,12 @@ const comparisonCategories = [
 const faqs = [
   {
     q: 'UniFlow est-il vraiment gratuit ?',
-    a: 'Oui pour les étudiants et enseignants des universités partenaires : leur administration a souscrit pour eux et l’accès académique est inclus. Les comptes indépendants (non rattachés à une université partenaire) disposent d’une formule personnelle à prix symbolique, et les institutions d’un déploiement sur devis.',
+    a: 'Oui pour les étudiants et enseignants dans le cadre de leur cursus académique. Les comptes indépendants disposent d’une formule personnelle à prix accessible, et les institutions d’un déploiement sur devis.',
     cat: 'Général'
   },
   {
     q: 'Comment régler un abonnement ?',
-    a: `Aucun paiement en ligne : en choisissant une formule, UniFlow enregistre votre demande avec une référence et ouvre WhatsApp vers notre numéro de facturation (${CONTACT_PHONE_DISPLAY}) avec un message pré-rempli. Envoyez-le avec votre preuve de paiement (Orange Money, MTN MoMo, virement) ; l’administration valide ensuite votre abonnement et votre espace « Abonnement » passe à l’état actif.`,
+    a: `Les abonnements se règlent en toute simplicité en ligne via Flutterwave (Orange Money, MTN Mobile Money, carte bancaire Visa / Mastercard) directement depuis les applications mobiles et desktop, ou par validation administrative assistée.`,
     cat: 'Général'
   },
   {
@@ -103,7 +104,10 @@ export default function PricingPage() {
   const { data: plansData, loading: loadingPlans, error: plansError } = useApi(() => personalSubscriptionApi.getPlans(), [], { key: 'subscriptions.plans' })
   const dbPlans: SubscriptionPlan[] = plansData ?? []
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly')
-  const [countryCode, setCountryCode] = useState('CM')
+  const region = useVisitorRegion()
+  // Choisir le countryCode par défaut depuis le pays détecté ; s'il n'est pas dans COUNTRY_OPTIONS, on tombe sur CM
+  const defaultCountry = COUNTRY_OPTIONS.some((o) => o.code === region.countryCode) ? region.countryCode : 'CM'
+  const [countryCode, setCountryCode] = useState(defaultCountry)
   const [faqCategory, setFaqCategory] = useState<string>('Tous')
   const [openFaq, setOpenFaq] = useState<number | null>(0)
 
@@ -117,63 +121,48 @@ export default function PricingPage() {
     : faqs.filter(f => f.cat === faqCategory)
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans selection:bg-[#1e3a8a] selection:text-white">
+    <div className="min-h-screen bg-[#F4F4F2] text-slate-800 font-sans selection:bg-slate-900 selection:text-white">
       <LandingNavbar />
 
       {/* Hero Header */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-blue-50/80 via-white to-slate-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 pt-16 pb-14 border-b border-slate-200/80 dark:border-slate-800">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }} className="inline-flex items-center gap-2 rounded-full bg-blue-100 dark:bg-blue-900/50 border border-blue-200 dark:border-blue-700/50 px-4 py-1.5 text-xs font-bold text-[#1e3a8a] dark:text-blue-300 mb-6 shadow-2xs">
-            <Zap className="h-3.5 w-3.5 text-[#1e3a8a] dark:text-blue-300" />
-            Tarification souple et équitable
-          </motion.div>
+      <section className="relative pt-12 pb-12 max-w-7xl mx-auto px-4 sm:px-8">
+        <div className="text-center max-w-3xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-white px-4 py-1 text-xs font-bold shadow-xs">
+            <Zap className="h-3.5 w-3.5 text-amber-400" />
+            Tarifs Universitaires Clairs & Sans Engagement
+          </div>
 
-          <motion.h1 initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4, delay: 0.05 }} className="text-3xl font-black text-slate-900 dark:text-white sm:text-5xl tracking-tight mb-4 leading-tight">
-            Des offres adaptées à <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#1e3a8a] via-[#2d4fa8] to-[#0d9488] dark:from-blue-400 dark:via-indigo-300 dark:to-teal-300">chaque usage</span>
-          </motion.h1>
+          <h1 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight leading-tight">
+            Des formules transparentes <br />
+            <span className="font-normal text-slate-400">adaptées à votre parcours</span>
+          </h1>
 
-          <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.1 }} className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed mb-8">
-            Une plateforme moderne, accessible et conçue pour la sobriété numérique. Choisissez votre formule et accédez à votre espace dédié.
-          </motion.p>
+          <p className="text-sm sm:text-base text-slate-500 max-w-2xl mx-auto font-medium leading-relaxed">
+            Profitez de toute la puissance d'UniFlow : émargement QR sans Internet, révisions avec l'IA Flo et bibliothèque numérique illimitée.
+          </p>
 
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4, delay: 0.15 }} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/80 px-5 py-2.5 text-xs font-semibold text-emerald-900 dark:text-emerald-200 shadow-xs">
-            <MessageCircle className="h-4 w-4 text-emerald-600 shrink-0" />
-            <span>Règlement par <strong>WhatsApp</strong> avec validation par l’administration UniFlow — aucun paiement en ligne, aucune carte à saisir.</span>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Phrase de Positionnement (Sprint 0 Fix #7) */}
-      <section className="bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#0d9488] py-6">
-        <div className="mx-auto max-w-7xl px-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex items-center justify-center gap-4 text-center"
-          >
-            <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-2xl px-6 py-4 border border-white/20">
-              <Shield className="h-6 w-6 text-amber-300 shrink-0" />
-              <p className="text-sm sm:text-base font-bold text-white leading-relaxed">
-                <span className="text-amber-300">UniFlow est gratuit</span> pour les étudiants et les enseignants.{' '}
-                <span className="text-blue-100">L'établissement prend une licence annuelle</span> pour héberger et administrer son campus.
-              </p>
-            </div>
-          </motion.div>
+          <div className="inline-flex flex-wrap items-center justify-center gap-2 pt-2">
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Activation instantanée par Flutterwave
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs">
+              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> Assistance facturation WhatsApp
+            </span>
+          </div>
         </div>
       </section>
 
       {/* PRICING CARDS SECTION */}
-      <section className="py-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div className="mx-auto max-w-7xl px-6">
+      <section className="py-8 bg-[#F4F4F2]">
+        <div className="mx-auto max-w-7xl px-4 sm:px-8">
 
-          <div className="mx-auto mb-10 flex max-w-4xl flex-col items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:flex-row dark:border-slate-700 dark:bg-slate-800/50">
-            <div className="inline-flex items-center rounded-2xl bg-white dark:bg-slate-900 p-1.5 border border-slate-200 dark:border-slate-700 shadow-inner" role="group" aria-label="Cycle de facturation">
+          <div className="mx-auto mb-10 flex max-w-4xl flex-col items-center justify-between gap-4 rounded-full border border-slate-200/80 bg-white p-2.5 sm:flex-row shadow-xs">
+            <div className="inline-flex items-center rounded-full bg-slate-100 p-1" role="group" aria-label="Cycle de facturation">
               <button
                 type="button"
                 onClick={() => setBillingCycle('monthly')}
                 aria-pressed={billingCycle === 'monthly'}
-                className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${billingCycle === 'monthly' ? 'bg-slate-100 dark:bg-slate-800 text-[#1e3a8a] dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${billingCycle === 'monthly' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Mensuel
               </button>
@@ -181,16 +170,16 @@ export default function PricingPage() {
                 type="button"
                 onClick={() => setBillingCycle('annually')}
                 aria-pressed={billingCycle === 'annually'}
-                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${billingCycle === 'annually' ? 'bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] text-white shadow-md' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${billingCycle === 'annually' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Annuel
-                {savings > 0 && <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${billingCycle === 'annually' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-800'}`}>-{savings} %</span>}
+                {savings > 0 && <span className={`rounded-full px-2 py-0.5 text-[10px] font-extrabold ${billingCycle === 'annually' ? 'bg-amber-400 text-slate-900' : 'bg-amber-100 text-amber-800'}`}>-{savings} %</span>}
               </button>
             </div>
 
-            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-              <Globe2 className="h-4 w-4 text-[#0d9488]" /> Pays de facturation
-              <select value={countryCode} onChange={event => setCountryCode(event.target.value)} className="rounded-lg border border-slate-300 bg-white px-2 py-2 text-xs dark:border-slate-600 dark:bg-slate-900">
+            <label className="flex items-center gap-2 text-xs font-bold text-slate-700 pr-3">
+              <Globe2 className="h-4 w-4 text-amber-500" /> Pays de facturation :
+              <select value={countryCode} onChange={event => setCountryCode(event.target.value)} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none cursor-pointer">
                 {COUNTRY_OPTIONS.map((option) => <option key={option.code} value={option.code}>{option.label} ({option.currency})</option>)}
               </select>
             </label>
@@ -224,44 +213,44 @@ export default function PricingPage() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ duration: 0.3, delay: index * 0.06 }}
                       whileHover={{ y: -4 }}
-                      className={`relative flex flex-col justify-between rounded-3xl p-7 border transition-shadow duration-300 ${isFeatured
-                        ? 'bg-gradient-to-b from-white to-blue-50/60 dark:from-slate-900 dark:to-blue-950/40 border-[#1e3a8a] shadow-xl ring-2 ring-[#1e3a8a]/20'
-                        : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 hover:border-slate-300 shadow-sm hover:shadow-md'}`}
+                      className={`relative flex flex-col justify-between rounded-[32px] p-7 border transition-all duration-300 ${isFeatured
+                        ? 'bg-white border-2 border-amber-400 shadow-xl'
+                        : 'bg-white border-black/[0.06] hover:border-slate-300 shadow-xs hover:shadow-md'}`}
                     >
                       {plan.badge && (
-                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] px-4 py-1 text-[11px] font-extrabold uppercase tracking-wider text-white shadow-md whitespace-nowrap">
+                        <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 rounded-full bg-amber-500 px-4 py-1 text-[11px] font-black uppercase tracking-wider text-white shadow-xs whitespace-nowrap">
                           {plan.badge}
                         </div>
                       )}
 
                       <div>
                         <div className="flex items-center gap-3 mb-4">
-                          <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shrink-0 ${isFeatured ? 'bg-[#1e3a8a] text-white shadow-md' : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700'}`}>
+                          <div className={`flex h-12 w-12 items-center justify-center rounded-2xl shrink-0 ${isFeatured ? 'bg-amber-100 text-amber-600 shadow-xs' : 'bg-slate-100 text-slate-700'}`}>
                             <Icon className="h-6 w-6" />
                           </div>
                           <div>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{plan.name}</h3>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{plan.period}</p>
+                            <h3 className="text-lg font-bold text-slate-900 leading-tight">{plan.name}</h3>
+                            <p className="text-xs text-slate-500 mt-0.5">{plan.period}</p>
                           </div>
                         </div>
 
-                        <div className="my-5 pb-5 border-b border-slate-200 dark:border-slate-800">
+                        <div className="my-5 pb-5 border-b border-slate-100">
                           <div className="flex items-baseline gap-2">
-                            <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white">
+                            <span className="text-2xl sm:text-3xl font-black text-slate-900">
                               {priceLabel(plan, billingCycle)}
                             </span>
                             {plan.priceMonthlyAmount > 0 && <span className="text-xs font-semibold text-slate-500">/ {billingCycle === 'annually' ? 'an' : 'mois'}</span>}
                           </div>
-                          {billingCycle === 'annually' && planSavings > 0 && <p className="mt-1 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">Soit {planSavings} % de moins que douze mensualités</p>}
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-2 font-normal">{plan.description}</p>
+                          {billingCycle === 'annually' && planSavings > 0 && <p className="mt-1 text-[11px] font-bold text-emerald-700">Soit {planSavings} % de moins que douze mensualités</p>}
+                          <p className="text-xs text-slate-500 mt-2 font-normal">{plan.description}</p>
                         </div>
 
                         <div className="space-y-3 mb-8">
                           <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Inclus dans cette offre</p>
                           {plan.features.length === 0 && <p className="text-xs text-slate-400">Détail des avantages sur demande.</p>}
                           {plan.features.map((feature) => (
-                            <div key={feature} className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-                              <CheckCircle2 className="h-4 w-4 text-teal-600 shrink-0 mt-0.5" />
+                            <div key={feature} className="flex items-start gap-2.5 text-xs text-slate-700">
+                              <CheckCircle2 className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
                               <span>{feature}</span>
                             </div>
                           ))}
@@ -270,11 +259,11 @@ export default function PricingPage() {
 
                       <Link
                         to={targetPath}
-                        className={`block w-full text-center py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer ${isFeatured
-                          ? 'bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white shadow-blue-900/20'
+                        className={`block w-full text-center py-3.5 rounded-full font-bold text-xs uppercase tracking-wider transition-all active:scale-95 shadow-xs cursor-pointer ${isFeatured
+                          ? 'bg-slate-900 hover:bg-black text-white shadow-sm'
                           : isInstitution
-                            ? 'bg-[#0d9488] hover:bg-[#14b8a8] text-white shadow-teal-900/20'
-                            : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700'}`}
+                            ? 'bg-[#0d9488] hover:bg-[#14b8a8] text-white shadow-sm'
+                            : 'bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200'}`}
                       >
                         {plan.btnText || 'Souscrire à cette offre'}
                       </Link>
@@ -289,11 +278,11 @@ export default function PricingPage() {
       </section>
 
       {/* HOW PAYMENT WORKS */}
-      <section className="py-14 bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
-        <div className="mx-auto max-w-5xl px-6">
+      <section className="py-14 bg-[#F4F4F2] border-t border-slate-200/60">
+        <div className="mx-auto max-w-5xl px-4 sm:px-8">
           <div className="text-center mb-8">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">Comment se passe le règlement ?</h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2">Trois étapes, sans formulaire bancaire.</p>
+            <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">Modalités de règlement sécurisées</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-2">Passerelle Flutterwave avec activation instantanée ou accompagnement par WhatsApp.</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {howItWorks.map((step, index) => (
@@ -303,11 +292,11 @@ export default function PricingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.3, delay: index * 0.08 }}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                className="rounded-[24px] border border-black/[0.05] bg-white p-6 shadow-xs"
               >
-                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-[#1e3a8a] dark:bg-blue-950/50 dark:text-blue-300"><step.icon className="h-5 w-5" /></div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">{step.title}</h3>
-                <p className="mt-1.5 text-xs leading-relaxed text-slate-600 dark:text-slate-300">{step.text}</p>
+                <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-amber-100 text-amber-600"><step.icon className="h-5 w-5" /></div>
+                <h3 className="text-sm font-bold text-slate-900">{step.title}</h3>
+                <p className="mt-1.5 text-xs leading-relaxed text-slate-500">{step.text}</p>
               </motion.div>
             ))}
           </div>
@@ -315,17 +304,17 @@ export default function PricingPage() {
       </section>
 
       {/* DETAILED COMPARISON TABLE */}
-      <section className="py-16 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
-        <div className="mx-auto max-w-5xl px-6">
+      <section className="py-16 bg-[#F4F4F2] border-t border-slate-200/60">
+        <div className="mx-auto max-w-6xl px-4 sm:px-8">
           <div className="text-center mb-10">
-            <h2 className="text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">Tableau comparatif détaillé</h2>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-2">Les fonctionnalités attribuées à chaque rôle et forfait.</p>
+            <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">Tableau comparatif des fonctionnalités</h2>
+            <p className="text-xs sm:text-sm text-slate-500 mt-2">Vue détaillée des outils inclus pour les étudiants, enseignants et administration.</p>
           </div>
 
-          <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white shadow-lg dark:border-slate-800 dark:bg-slate-900">
+          <div className="overflow-x-auto rounded-[32px] border border-black/[0.06] bg-white shadow-xs">
             <table className="w-full text-left text-xs sm:text-sm">
               <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-slate-700 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-200">
+                <tr className="border-b border-slate-100 bg-slate-50/70 text-slate-700">
                   <th className="py-4 px-6 font-bold">Fonctionnalités</th>
                   <th className="py-4 px-4 font-bold text-center w-28">Étudiant</th>
                   <th className="py-4 px-4 font-bold text-center w-36 text-[#1e3a8a] dark:text-blue-300">Enseignant</th>
@@ -442,7 +431,7 @@ export default function PricingPage() {
             </Link>
             <Link
               to="/app"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-7 py-3.5 text-xs font-bold uppercase tracking-wider text-white hover:bg-white/20 transition-all active:scale-95 cursor-pointer"
             >
               Tester l'application démo
             </Link>

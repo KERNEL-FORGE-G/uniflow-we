@@ -110,15 +110,15 @@ export default function CoursesPage() {
               className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer group">
               <div className="h-28 relative p-4 flex flex-col justify-between" style={{ backgroundImage: `linear-gradient(135deg, ${color} 0%, ${darkenHex(color, 0.3)} 100%)` }}>
                 <div className="flex items-center justify-between">
-                  <span className="inline-flex items-center rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                  <span className="inline-flex items-center rounded-md bg-white/25 px-2 py-0.5 text-[10px] font-bold text-white border border-white/30">
                     {course.code}
                   </span>
-                  <span className="rounded-md bg-white/20 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
+                  <span className="rounded-md bg-white/25 px-2 py-0.5 text-[10px] font-bold text-white border border-white/30">
                     {course.type}
                   </span>
                 </div>
                 <div className="flex justify-center">
-                  <div className="rounded-xl bg-white/20 backdrop-blur-sm p-3 text-white group-hover:scale-110 transition-transform">
+                  <div className="rounded-xl bg-white/25 border border-white/30 p-3 text-white group-hover:scale-110 transition-transform">
                     <SubjectIcon subject={course.name} code={course.code} size={32} />
                   </div>
                 </div>

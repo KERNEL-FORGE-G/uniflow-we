@@ -186,23 +186,44 @@ async function one(databases, collection, attribute, value) {
 
 async function actor(databases, userId) {
   const entry = await one(databases, 'academic_directory', 'userId', userId)
-  if (!hasScope(entry)) throw new Error('ACTOR_DENIED')
-  return entry
+  if (entry && hasScope(entry)) return entry
+
+  try {
+    const userDoc = await databases.getDocument(DATABASE_ID, 'users', userId)
+    if (userDoc) {
+      return {
+        $id: userDoc.$id,
+        userId: userDoc.$id,
+        name: userDoc.name || 'Utilisateur UniFlow',
+        role: userDoc.accountType === 'PERSONAL' ? 'INDEPENDENT' : (userDoc.role || 'STUDENT'),
+        accountType: userDoc.accountType || 'PERSONAL',
+      }
+    }
+  } catch {}
+
+  throw new Error('ACTOR_DENIED')
 }
 
 async function participantProfile(databases, userId) {
-  const [profile, directory] = await Promise.all([
+  const [profileResult, directoryResult] = await Promise.allSettled([
     databases.getDocument(DATABASE_ID, 'users', userId),
     one(databases, 'academic_directory', 'userId', userId),
   ])
-  if (!profile || profile.accountType !== 'UNIVERSITY' || !hasScope(directory)) throw new Error('CONTACT_NOT_FOUND')
+  const profile = profileResult.status === 'fulfilled' ? profileResult.value : null
+  const directory = directoryResult.status === 'fulfilled' ? directoryResult.value : null
+
+  if (!profile && !directory) throw new Error('CONTACT_NOT_FOUND')
+
+  const role = directory?.role
+    || (profile?.accountType === 'PERSONAL' ? 'INDEPENDENT' : (profile?.role || 'STUDENT'))
+
   return {
     userId,
-    name: profile.name || directory.name || 'Utilisateur UniFlow',
-    email: profile.email || '',
-    username: profile.username || '',
-    avatarFileId: profile.avatarFileId || '',
-    role: directory.role || 'STUDENT',
+    name: profile?.name || directory?.name || 'Utilisateur UniFlow',
+    email: profile?.email || '',
+    username: profile?.username || '',
+    avatarFileId: profile?.avatarFileId || '',
+    role,
   }
 }
 
@@ -300,7 +321,7 @@ export default async ({ req, res, error }) => {
           email: candidate.email || '',
           username: candidate.username || '',
           avatarFileId: candidate.avatarFileId || '',
-          role: candidate.role || 'STUDENT',
+          role: candidate.accountType === 'PERSONAL' ? 'INDEPENDENT' : (candidate.role || 'STUDENT'),
         }))
       return json(res, { ok: true, action: 'search', contacts })
     }
@@ -314,7 +335,7 @@ export default async ({ req, res, error }) => {
       const lookup = username ? Query.equal('username', username) : Query.equal('email', email)
       const contacts = await databases.listDocuments(DATABASE_ID, 'users', [lookup, Query.limit(1)])
       const contact = contacts.documents[0]
-      if (!contact || contact.$id === actorId) return json(res, { ok: false, code: 'CONTACT_NOT_FOUND', message: username ? `Aucun compte ne correspond au pseudo « ${username} ».` : 'Ce contact universitaire est introuvable.' }, 404)
+      if (!contact || contact.$id === actorId) return json(res, { ok: false, code: 'CONTACT_NOT_FOUND', message: username ? `Aucun compte ne correspond au pseudo « ${username} ».` : 'Ce contact est introuvable.' }, 404)
       const profile = await participantProfile(databases, contact.$id)
       const [participantA, participantB] = pairFor(actorId, profile.userId)
       const conversationId = conversationIdFor(participantA, participantB)
@@ -476,11 +497,12 @@ export default async ({ req, res, error }) => {
         : "Ce fichier est introuvable dans l'espace de stockage UniFlow."
       return json(res, { ok: false, code: message, message: denial }, 400)
     }
-    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND', 'CONVERSATION_DENIED'].includes(message)) {      const denial = message === 'CONVERSATION_DENIED'
+    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND', 'CONVERSATION_DENIED'].includes(message)) {
+      const denial = message === 'CONVERSATION_DENIED'
         ? 'Cette conversation ne vous appartient pas.'
-        : STRICT_SCOPE
-          ? 'La messagerie est réservée aux comptes universitaires UY1 / ICT4D / L1.'
-          : "La messagerie est réservée aux membres de l'annuaire académique (étudiant, délégué, enseignant ou administration)."
+        : message === 'CONTACT_NOT_FOUND'
+          ? 'Ce contact est introuvable.'
+          : 'Accès refusé au service de messagerie.'
       return json(res, { ok: false, code: message, message: denial }, 403)
     }
     // Conversation absente : le document a pu être supprimé, ou l'identifiant

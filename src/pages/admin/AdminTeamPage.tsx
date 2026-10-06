@@ -358,7 +358,7 @@ export default function AdminTeamPage() {
 
       {/* Formulaire de création / modification */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4 border-b pb-2">
               <h3 className="text-lg font-bold text-[#111827]">
@@ -589,7 +589,7 @@ export default function AdminTeamPage() {
 
       {/* Confirmation de suppression */}
       {pendingDeletion && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
             <div className="flex items-start gap-3">
               <div className="rounded-xl bg-red-50 p-2 text-red-600"><AlertTriangle className="h-5 w-5" /></div>

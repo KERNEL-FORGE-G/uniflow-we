@@ -168,7 +168,7 @@ export default function AboutPage() {
             <motion.span
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-teal-100 backdrop-blur"
+              className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-teal-100 "
             >
               <Sparkles className="h-3.5 w-3.5" /> Projet KERNEL FORGE · {COVERAGE_LABEL}
             </motion.span>
@@ -208,7 +208,7 @@ export default function AboutPage() {
               </Link>
               <Link
                 to="/presentation"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/15"
               >
                 Voir la présentation
               </Link>
@@ -424,7 +424,7 @@ export default function AboutPage() {
             </motion.div>
           </div>
           <div className="space-y-8">
-            <motion.div variants={fadeInUp} className="rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
+            <motion.div variants={fadeInUp} className="rounded-3xl border border-white/10 bg-white/5 p-5 ">
               <p className="mb-2 text-center text-[11px] font-black uppercase tracking-widest text-teal-200">Le fondateur et Uni</p>
               <MascotDialogue
                 tone="dark"
@@ -511,7 +511,7 @@ export default function AboutPage() {
               </a>
               <Link
                 to="/pricing"
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 bg-white/10 px-7 py-4 text-base font-bold text-white backdrop-blur transition hover:bg-white/20"
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-white/30 bg-white/10 px-7 py-4 text-base font-bold text-white transition hover:bg-white/20"
               >
                 Voir les offres
               </Link>

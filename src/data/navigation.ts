@@ -35,9 +35,9 @@ export const navItems: NavItem[] = [
   { to: '/app/gestion-presences',  icon: 'attendance',  labelFr: 'Gérer les présences', labelEn: 'Manage Attendance', roles: ['delegate', 'teacher'] },
   { to: '/app/mes-cours-enseignant', icon: 'teacher',   labelFr: 'Espace pédagogique', labelEn: 'Teacher Space',   roles: ['teacher'] },
   { to: '/app/notes',              icon: 'grades',      labelFr: 'Évaluations',        labelEn: 'Grades',          roles: ['teacher'] },
-  { to: '/app/messages',           icon: 'messages',    labelFr: 'Messages',           labelEn: 'Messages',        roles: ['student', 'delegate', 'teacher'] },
-  { to: '/app/notifications',      icon: 'notifications', labelFr: 'Notifications',    labelEn: 'Notifications',   roles: ['student', 'delegate', 'teacher'] },
-  { to: '/app/bibliotheque',       icon: 'library',     labelFr: 'Bibliothèque',       labelEn: 'Library',         roles: ['student', 'delegate', 'teacher'] },
+  { to: '/app/messages',           icon: 'messages',    labelFr: 'Messages',           labelEn: 'Messages',        roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/app/notifications',      icon: 'notifications', labelFr: 'Notifications',    labelEn: 'Notifications',   roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
+  { to: '/app/bibliotheque',       icon: 'library',     labelFr: 'Bibliothèque',       labelEn: 'Library',         roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
   { to: '/app/salles',             icon: 'room',        labelFr: 'Salles',             labelEn: 'Classrooms',      roles: ['student', 'delegate', 'teacher'] },
   { to: '/app/promotion',          icon: 'badges',      labelFr: 'Candidature délégué', labelEn: 'Delegate Candidacy', roles: ['student', 'delegate'] },
   // Commun

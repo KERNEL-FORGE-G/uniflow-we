@@ -384,7 +384,7 @@ export default function PresentationPage() {
       {/* FINAL CALL TO ACTION */}
       <section className="bg-gradient-to-r from-[#1e3a8a] via-[#2546a3] to-[#0d9488] py-16 text-center text-white">
         <div className="mx-auto max-w-2xl px-6">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm text-white mb-5 border border-white/20">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-white mb-5 border border-white/20">
             <Monitor className="h-7 w-7" />
           </div>
           <h2 className="text-2xl font-extrabold text-white mb-3">Prêt à tester la plateforme ?</h2>
@@ -400,7 +400,7 @@ export default function PresentationPage() {
             </Link>
             <Link 
               to="/sentinelle" 
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 backdrop-blur-sm px-7 py-3.5 text-sm font-bold text-white hover:bg-white/20 transition-all active:scale-95"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white hover:bg-white/20 transition-all active:scale-95"
             >
               Découvrir Sentinelle IoT
             </Link>

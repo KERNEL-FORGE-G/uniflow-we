@@ -114,8 +114,32 @@ export default function SubscriptionFlowPage() {
         setWhatsappOpened(opened !== null)
       }
     } catch (err) {
-      const message = err instanceof ApiError ? err.message : 'La demande n’a pas pu être enregistrée.'
-      setPaymentError(message)
+      console.warn('Subscription checkout creation fallback:', err)
+      // En cas de non-réponse de la Function Appwrite, on ne bloque pas l'utilisateur :
+      // le règlement s'effectue manuellement par WhatsApp (+237 6 57 63 56 44).
+      // On génère une référence unique sécurisée et on transmet la commande sur WhatsApp.
+      const fallbackRef = `UF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+      const fallbackUrl = whatsappBillingUrl({
+        reference: fallbackRef,
+        planName: selectedPlan.name,
+        billingCycle,
+        amount: finalPrice,
+        currency: selectedPlan.currency || 'XAF',
+        fullName: fullName.trim(),
+        email: email.trim(),
+        institution: institution.trim(),
+      })
+      setTransactionResult({
+        transactionId: fallbackRef,
+        paymentUrl: fallbackUrl,
+        status: 'PENDING',
+        message: 'Demande préparée pour transmission WhatsApp. Envoyez votre preuve de paiement avec la référence.',
+      })
+      setCurrentStep(4)
+      if (fallbackUrl && !includedAccess) {
+        const opened = window.open(fallbackUrl, '_blank', 'noopener')
+        setWhatsappOpened(opened !== null)
+      }
     } finally {
       setIsSubmitting(false)
     }

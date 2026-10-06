@@ -752,7 +752,12 @@ export async function loginAccount(email: string, password: string, accountType:
   try {
     userProfile = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil UniFlow') as unknown as UniFlowProfileDocument
   } catch {
-    // Le profil peut ne pas encore exister : l’interface reste authentifiée et affiche un état incomplet honnête.
+    try {
+      const found = await awaitAppwrite(appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'users', [Query.equal('email', profile.email), Query.limit(1)]), 'la recherche du profil par email')
+      if (found.documents.length > 0) userProfile = found.documents[0] as unknown as UniFlowProfileDocument
+    } catch {
+      // Le profil peut ne pas encore exister : l’interface reste authentifiée et affiche un état incomplet honnête.
+    }
   }
   return normalizeUser(profile, resolvedAccountType, resolveRole(profile.labels, userProfile?.role), userProfile)
 }
@@ -767,7 +772,12 @@ export async function getCurrentAccount(accountType?: UniFlowAccountType): Promi
     try {
       userProfile = await awaitAppwrite(appwriteDatabases.getDocument(APPWRITE_DATABASE_ID, 'users', profile.$id), 'la lecture du profil UniFlow') as unknown as UniFlowProfileDocument
     } catch {
-      // L’authentification Appwrite reste utilisable pendant la création ou la restauration du profil.
+      try {
+        const found = await awaitAppwrite(appwriteDatabases.listDocuments(APPWRITE_DATABASE_ID, 'users', [Query.equal('email', profile.email), Query.limit(1)]), 'la recherche du profil par email')
+        if (found.documents.length > 0) userProfile = found.documents[0] as unknown as UniFlowProfileDocument
+      } catch {
+        // L’authentification Appwrite reste utilisable pendant la création ou la restauration du profil.
+      }
     }
     return normalizeUser(profile, resolvedAccountType, resolveRole(profile.labels, userProfile?.role), userProfile)
   } catch (error) {
@@ -1342,14 +1352,16 @@ export async function deleteForumPost(postId: string) {
 }
 
 function normalizeUser(profile: Models.User<Models.Preferences>, accountType: UniFlowAccountType, role: UniFlowRole, userProfile?: UniFlowProfileDocument): UniFlowUser {
+  const superAdmin = isSuperAdmin(profile.labels, accountType)
+  const effectiveRole = (superAdmin && role === 'STUDENT') || userProfile?.role === 'ADMIN' ? 'ADMIN' : role
   return {
     id: profile.$id,
     email: profile.email,
     name: profile.name,
     accountType,
-    role,
+    role: effectiveRole,
     labels: Array.isArray(profile.labels) ? [...profile.labels] : undefined,
-    isSuperAdmin: isSuperAdmin(profile.labels),
+    isSuperAdmin: superAdmin,
     university: userProfile?.university || undefined,
     faculty: userProfile?.faculty || undefined,
     program: userProfile?.program || undefined,

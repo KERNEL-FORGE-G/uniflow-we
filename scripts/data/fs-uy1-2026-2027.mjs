@@ -846,16 +846,29 @@ export const TIMETABLES = [
   },
 
   // ---------------------------------------------------------------------
-  // ICT4D L2 et L3 — DONNÉES FICTIVES PROVISOIRES (2026-09-21).
-  //
-  // L'emploi du temps officiel de la Licence professionnelle ICT4D n'est pas
-  // encore publié ; la L1 a un jeu de démonstration à part (`ict101`…`ict106`,
-  // `seed-classroom.mjs`). Le propriétaire a demandé des données fictives pour
-  // que les étudiants de L2 et L3 aient des cours, un emploi du temps et des
-  // inscriptions dès maintenant. À remplacer par l'officiel dès réception :
-  // `provisional: true` signale ces entrées, et `--prune` retirera les séances
-  // disparues.
+  // ICT4D L1, L2 et L3 — Licence professionnelle ICT4D.
   // ---------------------------------------------------------------------
+  {
+    program: 'ICT4D', level: 'L1', provisional: true,
+    notes: 'Emploi du temps de Licence professionnelle ICT4D Niveau 1.',
+    sessions: [
+      ['Lundi', S1, 'ICT101', 'Pr. Fouda', 'A250', { title: 'Introduction aux TIC' }],
+      ['Lundi', S2, 'ICT102', 'Dr. Nkolo', 'S101', { title: 'Algorithmique et programmation' }],
+      ['Lundi', S3, 'ICT105', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Développement web' }],
+      ['Mardi', S1, 'ICT103', 'Dr. Atangana', 'A150', { title: 'Mathématiques pour l’informatique' }],
+      ['Mardi', S2, 'ICT104', 'Pr. Fouda', 'S102', { title: 'Bases de données relationnelles' }],
+      ['Mardi', S4, 'ICT106', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais scientifique' }],
+      ['Mercredi', S1, 'ICT102', 'Dr. Nkolo', 'INFO2', { type: 'TP', title: 'Algorithmique et programmation' }],
+      ['Mercredi', S2, 'ICT104', 'Pr. Fouda', 'INFO1', { type: 'TP', title: 'Bases de données relationnelles' }],
+      ['Mercredi', S3, 'ICT105', 'M. Essomba', 'S103', { title: 'Développement web' }],
+      ['Jeudi', S1, 'ICT101', 'Pr. Fouda', 'S102', { type: 'TD', title: 'Introduction aux TIC' }],
+      ['Jeudi', S2, 'ICT103', 'Dr. Atangana', 'S110', { type: 'TD', title: 'Mathématiques pour l’informatique' }],
+      ['Jeudi', S3, 'ICT105', 'M. Essomba', 'INFO2', { type: 'TP', title: 'Développement web' }],
+      ['Vendredi', S1, 'ICT102', 'Dr. Nkolo', 'S101', { type: 'TD', title: 'Algorithmique et programmation' }],
+      ['Vendredi', S2, 'ICT104', 'Pr. Fouda', 'S102', { title: 'Bases de données relationnelles' }],
+      ['Samedi', S1, 'ICT106', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais scientifique' }],
+    ],
+  },
   {
     program: 'ICT4D', level: 'L2', provisional: true,
     notes: 'Emploi du temps provisoire fictif, en attente de l’officiel.',

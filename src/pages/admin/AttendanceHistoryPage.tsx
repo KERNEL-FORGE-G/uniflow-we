@@ -55,8 +55,8 @@ export default function AttendanceHistoryPage() {
               <p className="mt-2 max-w-2xl text-sm text-blue-100">Chaque ligne est calculée depuis les séances et relevés persistés dans Appwrite. Les horodatages affichés proviennent des métadonnées de création des documents.</p>
             </div>
             <div className="flex gap-2">
-              <span className="rounded-xl bg-white/15 px-3 py-2 text-center text-xs font-bold backdrop-blur"><span className="block text-xl text-white">{filtered.length}</span>Séances</span>
-              <span className="rounded-xl bg-white/15 px-3 py-2 text-center text-xs font-bold backdrop-blur"><span className="block text-xl text-white">{recordsCount}</span>Relevés</span>
+              <span className="rounded-xl bg-white/15 px-3 py-2 text-center text-xs font-bold "><span className="block text-xl text-white">{filtered.length}</span>Séances</span>
+              <span className="rounded-xl bg-white/15 px-3 py-2 text-center text-xs font-bold "><span className="block text-xl text-white">{recordsCount}</span>Relevés</span>
             </div>
           </div>
         </div>

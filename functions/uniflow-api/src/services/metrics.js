@@ -83,6 +83,8 @@ async function recordHit(databases, hit, log) {
       language: hit.language,
       authenticated: hit.authenticated,
       pageViews: 1,
+      countryCode: hit.countryCode || 'XX',
+      timezone: hit.timezone || '',
     })
   } else {
     const visit = existing.documents[0]
@@ -151,15 +153,29 @@ export default async ({ req, res, log, error }) => {
       }
       const days = await allDaily(databases)
       const since = new Date(Date.now() - LIVE_WINDOW_MS).toISOString()
-      const [recent, live] = await Promise.all([
+      const [recent, live, allVisits] = await Promise.all([
         databases.listDocuments(DATABASE_ID, VISITS, [Query.orderDesc('$createdAt'), Query.limit(RECENT_VISITS)]),
         databases.listDocuments(DATABASE_ID, VISITS, [Query.greaterThan('$updatedAt', since), Query.limit(100)]),
+        databases.listDocuments(DATABASE_ID, VISITS, [Query.limit(5000), Query.orderDesc('$createdAt')]),
       ])
+
+      // Agrégat par pays : { countryCode -> { visitors, visits } }
+      const countryMap = new Map()
+      for (const v of allVisits.documents) {
+        const cc = v.countryCode || 'XX'
+        const entry = countryMap.get(cc) || { countryCode: cc, visitors: 0, visits: 0 }
+        entry.visitors += 1
+        entry.visits += Number(v.pageViews) || 1
+        countryMap.set(cc, entry)
+      }
+      const countries = [...countryMap.values()].sort((a, b) => b.visitors - a.visitors)
+
       return json(res, {
         ok: true,
         summary: publicSummary(days),
         series: adminSeries(days, DAYS_IN_ADMIN_SERIES),
         liveNow: live.total,
+        countries,
         recent: recent.documents.map((visit) => ({
           id: visit.$id,
           at: visit.$createdAt,
@@ -173,6 +189,8 @@ export default async ({ req, res, log, error }) => {
           language: visit.language,
           authenticated: Boolean(visit.authenticated),
           pageViews: Number(visit.pageViews) || 0,
+          countryCode: visit.countryCode || 'XX',
+          timezone: visit.timezone || '',
         })),
       })
     }

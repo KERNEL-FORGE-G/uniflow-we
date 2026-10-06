@@ -5,7 +5,7 @@ import {
   Heart, HeartPulse, Thermometer, Stethoscope, BookOpen, FlaskConical, 
   Home, ParkingSquare, Eye, Activity, Cpu, Bell, Play, RefreshCw, 
   Radio, Server, Check, AlertCircle, Layers, Sliders, Smartphone,
-  BarChart2, ShieldCheck, ChevronRight, Lock
+  BarChart2, ShieldCheck, ChevronRight, Lock, Bot
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 
@@ -178,12 +178,125 @@ export default function SentinellePage() {
               { label: 'Matériel requis', value: 'Low Cost', sub: 'Raspberry Pi & capteurs', color: 'text-amber-400' },
               { label: 'Confidentialité', value: 'RGPD OK', sub: 'Aucune donnée image au cloud', color: 'text-purple-400' },
             ].map((stat, idx) => (
-              <div key={idx} className="rounded-2xl bg-slate-900/80 border border-slate-800 p-5 text-center backdrop-blur-xs">
+              <div key={idx} className="rounded-2xl bg-slate-900 border border-slate-800 p-5 text-center">
                 <p className={`text-2xl sm:text-3xl font-extrabold ${stat.color} mb-1`}>{stat.value}</p>
                 <p className="text-xs font-bold text-slate-200">{stat.label}</p>
                 <p className="text-[11px] text-slate-400 mt-1">{stat.sub}</p>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION ROBOTS SENTINELLE — FORMAT PAVÉ / KIOSQUE MOTORISÉ */}
+      <section className="py-24 bg-slate-950 border-b border-slate-800 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(13,148,136,0.12),transparent_60%)] pointer-events-none" />
+        
+        <div className="mx-auto max-w-7xl px-6 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <span className="inline-flex items-center gap-2 rounded-full bg-teal-500/10 border border-teal-500/20 px-4 py-1.5 text-xs font-bold text-teal-400 mb-4 shadow-sm">
+              <Bot className="h-4 w-4 text-teal-400" />
+              <span>Matériel Déployé sur le Campus</span>
+            </span>
+            <h2 className="text-3xl font-black text-white sm:text-5xl tracking-tight mb-4">
+              Robots Motorisés en Format Pavé
+            </h2>
+            <p className="text-slate-300 text-base sm:text-lg leading-relaxed">
+              Une conception compacte en kiosque vertical sur châssis motorisé omnidirectionnel.
+              Les Sentinelles patrouillent les couloirs, halls et bibliothèques pour offrir un point de santé et de sécurité proactif aux étudiants.
+            </p>
+          </div>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Card 1 */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 overflow-hidden hover:border-teal-500/50 transition-all shadow-xl group flex flex-col justify-between">
+              <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
+                <img
+                  src="/illustrations/sentinelle/sentinel_hero.jpg"
+                  alt="UniFlow Sentinelle - Robot Kiosque Motorisé"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <span className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md border border-slate-700/80 text-emerald-400 text-[11px] font-black px-3 py-1 rounded-full">
+                  Format Pavé Électrique
+                </span>
+              </div>
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-lg font-extrabold text-white mb-2 flex items-center justify-between">
+                    <span>Kiosque Mobile Autonome</span>
+                    <span className="text-xs text-teal-400 font-mono bg-teal-950/60 border border-teal-800/60 px-2 py-0.5 rounded">PATROL-01</span>
+                  </h3>
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-4">
+                    Châssis motorisé cubique ultra-stable avec roues omnidirectionnelles masquées. Intègre une tablette tactile de tri médical, un dôme caméra 360° et des capteurs de navigation LiDAR.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-300 pt-2 border-t border-slate-800/60">
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Roues omnidirectionnelles</span>
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Écran tactile 21"</span>
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Autonomie 18h</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2 */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 overflow-hidden hover:border-emerald-500/50 transition-all shadow-xl group flex flex-col justify-between">
+              <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
+                <img
+                  src="/illustrations/sentinelle/sentinel_checkup.jpg"
+                  alt="Bilan de Santé et Triage Étudiant sur Sentinelle"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <span className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md border border-slate-700/80 text-teal-300 text-[11px] font-black px-3 py-1 rounded-full">
+                  Bilan & Triage Étudiant
+                </span>
+              </div>
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-lg font-extrabold text-white mb-2 flex items-center justify-between">
+                    <span>Interaction Médicale Proactive</span>
+                    <span className="text-xs text-emerald-400 font-mono bg-emerald-950/60 border border-emerald-800/60 px-2 py-0.5 rounded">CHECKUP</span>
+                  </h3>
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-4">
+                    L'étudiant effectue son auto-mesure en 30 secondes : capteur oxymètre de pouls SpO2, scanner infrarouge frontal et fréquence cardiaque, sans contact physique à risque.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-300 pt-2 border-t border-slate-800/60">
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Oxymétrie SpO2</span>
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Thermomètre IR</span>
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Triage automatique</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3 */}
+            <div className="rounded-3xl bg-slate-900/90 border border-slate-800 overflow-hidden hover:border-cyan-500/50 transition-all shadow-xl group flex flex-col justify-between">
+              <div className="relative aspect-[16/10] overflow-hidden bg-slate-950">
+                <img
+                  src="/illustrations/sentinelle/sentinel_patrol.jpg"
+                  alt="Flotte Sentinelle en patrouille amphi et bibliothèque"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                />
+                <span className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md border border-slate-700/80 text-cyan-300 text-[11px] font-black px-3 py-1 rounded-full">
+                  Flotte Connectée en LAN
+                </span>
+              </div>
+              <div className="p-6 flex-1 flex flex-col justify-between">
+                <div>
+                  <h3 className="text-lg font-extrabold text-white mb-2 flex items-center justify-between">
+                    <span>Patrouille Amphi & Bibliothèque</span>
+                    <span className="text-xs text-cyan-400 font-mono bg-cyan-950/60 border border-cyan-800/60 px-2 py-0.5 rounded">FLEET R1-R2</span>
+                  </h3>
+                  <p className="text-slate-400 text-xs sm:text-sm leading-relaxed mb-4">
+                    Surveillance des flux d'amphithéâtres, cartographie du campus, jauge de qualité de l'air CO2 et alerte immédiate en cas de chute ou de malaise d'un usager.
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2 text-[11px] font-bold text-slate-300 pt-2 border-t border-slate-800/60">
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Détection de chute Vigie</span>
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">Qualité de l'air</span>
+                  <span className="bg-slate-800 px-2.5 py-1 rounded-lg">100% Hors-ligne</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -490,7 +603,7 @@ export default function SentinellePage() {
             ].map((item) => {
               const Icon = item.icon
               return (
-                <div key={item.title} className={`rounded-2xl border p-6 backdrop-blur-xs ${item.color}`}>
+                <div key={item.title} className={`rounded-2xl border p-6 ${item.color}`}>
                   <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-slate-900 border border-slate-700">
                     <Icon className="h-6 w-6" />
                   </div>

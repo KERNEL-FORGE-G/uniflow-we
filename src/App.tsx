@@ -31,6 +31,11 @@ import AccessDeniedPage from './pages/AccessDeniedPage'
 // Lazy loading pour les pages de l'app
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 const IndependentWorkspacePage = lazy(() => import('./pages/IndependentWorkspacePage'))
+const IndependentDashboardPage = lazy(() => import('./pages/independent/IndependentDashboardPage'))
+const IndependentCoursesPage = lazy(() => import('./pages/independent/IndependentCoursesPage'))
+const IndependentSchedulePage = lazy(() => import('./pages/independent/IndependentSchedulePage'))
+const IndependentAssignmentsPage = lazy(() => import('./pages/independent/IndependentAssignmentsPage'))
+const IndependentGradesPage = lazy(() => import('./pages/independent/IndependentGradesPage'))
 const DashboardCompactPage = lazy(() => import('./pages/DashboardCompactPage'))
 const CoursesPage = lazy(() => import('./pages/CoursesPage'))
 const CourseDetailPage = lazy(() => import('./pages/CourseDetailPage'))
@@ -107,7 +112,7 @@ function PageLoader() {
       </div>
       {slow && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="rounded-3xl bg-white/85 px-8 shadow-xl backdrop-blur dark:bg-slate-900/85">
+          <div className="rounded-3xl bg-white/85 px-8 shadow-xl dark:bg-slate-900/85">
             <UniLoading label="Uni prépare la page" size={132} />
           </div>
         </div>
@@ -134,7 +139,7 @@ function AudienceTracker() {
  */
 function homeOf(user: { role: string; isSuperAdmin?: boolean } | null) {
   if (!user) return '/login'
-  return user.role === 'ADMIN' || user.isSuperAdmin ? '/admin' : '/app'
+  return user.role === 'ADMIN' || user.role === 'admin' || user.isSuperAdmin ? '/admin' : '/app'
 }
 
 function AuthenticatedRoute({ children }: { children: ReactNode }) {
@@ -154,7 +159,7 @@ function AdminRoute({ children }: { children: ReactNode }) {
   const { authUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
   if (!authUser) return <Navigate to="/login" replace />
-  const allowed = authUser.role === 'ADMIN' || authUser.isSuperAdmin
+  const allowed = authUser.role === 'ADMIN' || authUser.role === 'admin' || authUser.isSuperAdmin
   return allowed ? <>{children}</> : <AccessDeniedPage reason="L’administration est réservée aux comptes ADMIN de l’université et à l’administrateur de la plateforme." />
 }
 
@@ -186,19 +191,36 @@ function AccountAwareRoute({ kind, children }: { kind: 'profile' | 'settings' | 
 function AccountHomePage() {
   const { currentUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
-  return currentUser.accountType === 'PERSONAL' ? <IndependentWorkspacePage /> : <DashboardPage />
+  return currentUser.accountType === 'PERSONAL' ? <IndependentDashboardPage /> : <DashboardPage />
 }
 
 /**
- * Les comptes indépendants utilisent la même source Appwrite que la gestion
- * personnelle. Cette garde attend l’hydratation de session avant de décider de
- * la vue, au lieu de s’appuyer sur une valeur localStorage potentiellement
- * absente pendant le premier rendu.
+ * Pour les comptes indépendants, chaque domaine (cours, planning, devoirs, notes)
+ * bénéficie d'un écran web dédié, complet et pensé pour le grand écran, au lieu
+ * de reproduire un panneau d'onglets générique identique partout.
  */
-function PersonalLearningRoute({ tab, scheduleOnly = false, children }: { tab: 'courses' | 'schedule' | 'assignments' | 'grades'; scheduleOnly?: boolean; children: ReactNode }) {
+function PersonalLearningRoute({
+  kind,
+  children,
+}: {
+  kind: 'courses' | 'schedule' | 'assignments' | 'grades'
+  children: ReactNode
+}) {
   const { currentUser, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
-  return currentUser.accountType === 'PERSONAL' ? <IndependentWorkspacePage initialTab={tab} scheduleOnly={scheduleOnly} /> : <>{children}</>
+  if (currentUser.accountType === 'PERSONAL') {
+    switch (kind) {
+      case 'courses':
+        return <IndependentCoursesPage />
+      case 'schedule':
+        return <IndependentSchedulePage />
+      case 'assignments':
+        return <IndependentAssignmentsPage />
+      case 'grades':
+        return <IndependentGradesPage />
+    }
+  }
+  return <>{children}</>
 }
 
 /** Espace connecté : layout + transition de page animée sur le contenu seulement. */
@@ -292,12 +314,12 @@ export default function App() {
               <Route path="/app/independent" element={<Navigate to="/app" replace />} />
               <Route path="/app/accueil-compact" element={<Shell><UniversityRoute><DashboardCompactPage /></UniversityRoute></Shell>} />
 
-              {/* Apprentissage — commun, avec version personnelle */}
-              <Route path="/app/cours" element={<Shell><PersonalLearningRoute tab="courses"><CoursesPage /></PersonalLearningRoute></Shell>} />
-              <Route path="/app/cours/:courseId" element={<Shell><PersonalLearningRoute tab="courses"><CourseDetailPage /></PersonalLearningRoute></Shell>} />
-              <Route path="/app/emploi-du-temps" element={<Shell><PersonalLearningRoute tab="schedule" scheduleOnly><SchedulePage /></PersonalLearningRoute></Shell>} />
-              <Route path="/app/devoirs" element={<Shell><PersonalLearningRoute tab="assignments"><AssignmentsPage /></PersonalLearningRoute></Shell>} />
-              <Route path="/app/notes" element={<Shell><PersonalLearningRoute tab="grades"><GradesPage /></PersonalLearningRoute></Shell>} />
+              {/* Apprentissage — commun, avec version personnelle dédiée */}
+              <Route path="/app/cours" element={<Shell><PersonalLearningRoute kind="courses"><CoursesPage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/cours/:courseId" element={<Shell><PersonalLearningRoute kind="courses"><CourseDetailPage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/emploi-du-temps" element={<Shell><PersonalLearningRoute kind="schedule"><SchedulePage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/devoirs" element={<Shell><PersonalLearningRoute kind="assignments"><AssignmentsPage /></PersonalLearningRoute></Shell>} />
+              <Route path="/app/notes" element={<Shell><PersonalLearningRoute kind="grades"><GradesPage /></PersonalLearningRoute></Shell>} />
 
               {/* Commun aux deux types de compte */}
               <Route path="/app/profil" element={<Shell><AccountAwareRoute kind="profile"><ProfilePage /></AccountAwareRoute></Shell>} />
@@ -305,19 +327,19 @@ export default function App() {
               <Route path="/app/aide" element={<Shell><AccountAwareRoute kind="help"><HelpPage /></AccountAwareRoute></Shell>} />
               <Route path="/app/abonnement" element={<Shell><BillingPage /></Shell>} />
               <Route path="/app/billing" element={<Navigate to="/app/abonnement" replace />} />
+              <Route path="/app/bibliotheque" element={<Shell><LibraryPage /></Shell>} />
 
               {/* Universitaire uniquement */}
               <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />
               <Route path="/app/gestion-presences" element={<Shell><UniversityRoute roles={['delegate', 'teacher']}><AttendanceManagePage /></UniversityRoute></Shell>} />
-              <Route path="/app/notifications" element={<Shell><UniversityRoute><NotificationsPage /></UniversityRoute></Shell>} />
-              <Route path="/app/messages" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
-              <Route path="/app/messages/:conversationId" element={<Shell><UniversityRoute><MessagingPage /></UniversityRoute></Shell>} />
-              <Route path="/app/bibliotheque" element={<Shell><UniversityRoute><LibraryPage /></UniversityRoute></Shell>} />
+              <Route path="/app/notifications" element={<Shell><NotificationsPage /></Shell>} />
+              <Route path="/app/messages" element={<Shell><MessagingPage /></Shell>} />
+              <Route path="/app/messages/:conversationId" element={<Shell><MessagingPage /></Shell>} />
               <Route path="/app/salles" element={<Shell><UniversityRoute><ClassroomsPage /></UniversityRoute></Shell>} />
               <Route path="/app/promotion" element={<Shell><UniversityRoute roles={['student', 'delegate']}><PromotionPage /></UniversityRoute></Shell>} />
               <Route path="/app/mes-cours-enseignant" element={<Shell><UniversityRoute roles={['teacher']}><TeacherCoursesPage /></UniversityRoute></Shell>} />
-              <Route path="/app/demo" element={<Shell><UniversityRoute><DemoPage /></UniversityRoute></Shell>} />
-              <Route path="/app/badges-quetes" element={<Shell><UniversityRoute><GamificationPage /></UniversityRoute></Shell>} />
+              <Route path="/app/badges-quetes" element={<Shell><GamificationPage /></Shell>} />
+              <Route path="/app/quetes" element={<Navigate to="/app/badges-quetes" replace />} />
 
               {/* Anciennes adresses de la visioconférence : elle vit désormais dans l'application de bureau */}
               <Route path="/app/visio/*" element={<Navigate to="/app/aide" replace />} />

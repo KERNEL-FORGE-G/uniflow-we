@@ -73,7 +73,7 @@ export default function GradesPage() {
         <div className="absolute -bottom-24 right-16 h-48 w-48 rounded-full border border-white/10" />
         <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold text-blue-50 backdrop-blur">
+            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold text-white">
               <UniIcon name="assistant" weight="fill" size={14} className="text-cyan-200" /> Relevé personnel
             </div>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Mes notes</h1>
@@ -86,7 +86,7 @@ export default function GradesPage() {
         </div>
       </motion.header>
 
-      <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80 bg-white/90 p-3 shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
+      <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
           <UniIcon name="grades" size={16} className="text-teal-600" /> Évaluations enregistrées
         </div>

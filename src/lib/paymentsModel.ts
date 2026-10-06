@@ -125,3 +125,57 @@ export function annualSavingsPercent(monthlyAmount: number, annualAmount: number
   if (annualAmount >= yearAtMonthlyRate) return 0
   return Math.round(((yearAtMonthlyRate - annualAmount) / yearAtMonthlyRate) * 100)
 }
+
+export type PayoutMethod = 'CARD' | 'BANK_ACCOUNT' | 'MOBILE_MONEY'
+
+export interface FlutterwaveSettlementConfig {
+  payoutMethod: PayoutMethod
+  beneficiaryName: string
+  accountOrCardNumber: string
+  expiryDate?: string
+  bankOrProvider: string
+  currency: 'XAF' | 'EUR' | 'USD'
+  autoPayout: boolean
+  payoutSchedule: 'INSTANT' | 'DAILY' | 'WEEKLY'
+  flutterwavePublicKey: string
+  flutterwaveSecretKey: string
+  isVerified: boolean
+  lastUpdated?: string
+}
+
+export const DEFAULT_SETTLEMENT_CONFIG: FlutterwaveSettlementConfig = {
+  payoutMethod: 'CARD',
+  beneficiaryName: 'KERNEL FORGE - UNIFLOW',
+  accountOrCardNumber: '4111 2222 3333 4444',
+  expiryDate: '12/28',
+  bankOrProvider: 'UBA Cameroun (Visa Business)',
+  currency: 'XAF',
+  autoPayout: true,
+  payoutSchedule: 'INSTANT',
+  flutterwavePublicKey: 'FLWPUBK_TEST-uniflow-platform-key',
+  flutterwaveSecretKey: 'FLWSECK_TEST-********************',
+  isVerified: true,
+  lastUpdated: new Date().toISOString(),
+}
+
+export const SETTLEMENT_CONFIG_STORAGE_KEY = 'uniflow_flw_settlement_config'
+
+export function loadSettlementConfig(): FlutterwaveSettlementConfig {
+  if (typeof window === 'undefined') return DEFAULT_SETTLEMENT_CONFIG
+  try {
+    const raw = window.localStorage.getItem(SETTLEMENT_CONFIG_STORAGE_KEY)
+    if (!raw) return DEFAULT_SETTLEMENT_CONFIG
+    return { ...DEFAULT_SETTLEMENT_CONFIG, ...JSON.parse(raw) }
+  } catch {
+    return DEFAULT_SETTLEMENT_CONFIG
+  }
+}
+
+export function saveSettlementConfig(config: FlutterwaveSettlementConfig): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(SETTLEMENT_CONFIG_STORAGE_KEY, JSON.stringify(config))
+  } catch {
+    // ignore
+  }
+}

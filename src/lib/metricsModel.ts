@@ -125,6 +125,14 @@ export type RecentVisit = {
   language: string
   authenticated: boolean
   pageViews: number
+  countryCode?: string
+  timezone?: string
 }
 
-export type MetricsAdmin = { summary: MetricsSummary; series: MetricsDay[]; liveNow: number; recent: RecentVisit[] }
+export type CountryStat = {
+  countryCode: string
+  visitors: number
+  visits: number
+}
+
+export type MetricsAdmin = { summary: MetricsSummary; series: MetricsDay[]; liveNow: number; recent: RecentVisit[]; countries: CountryStat[] }

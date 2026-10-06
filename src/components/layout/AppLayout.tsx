@@ -204,7 +204,7 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const unreadCount = 0
 
   return (
-    <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm px-4 sm:px-6 shadow-sm">
+    <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-[#e5e7eb] bg-white/95 px-4 sm:px-6 shadow-sm">
       {/* Mobile Menu Button */}
       <button
         onClick={onMenuClick}

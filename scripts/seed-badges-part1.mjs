@@ -2,17 +2,11 @@
  * Seed — badges 1 à 34 : assiduité (bronze→diamond) et académique (bronze→diamond).
  * Appeler avec : node scripts/seed-badges-part1.mjs
  */
-import { Client, Databases, ID } from 'node-appwrite'
-import dotenv from 'dotenv'
-dotenv.config()
+import { createClient, databaseId, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
 
-const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setKey(process.env.APPWRITE_API_KEY)
-
-const db = new Databases(client)
-const DATABASE_ID = 'uniflow'
+requireConfig()
+const request = createClient()
+const DATABASE_ID = databaseId
 const COLLECTION_ID = 'badges_catalog'
 
 const badges = [
@@ -329,15 +323,25 @@ const badges = [
 async function seed() {
   let created = 0
   for (const badge of badges) {
+    const documentId = `badge_${String(badge.sortOrder).padStart(3, '0')}`
     try {
-      await db.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), badge)
-      created++
-      process.stdout.write(`  ✓ ${badge.name}\n`)
+      const res = await request('POST', `/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
+        documentId,
+        data: badge,
+        permissions: ['read("users")'],
+      })
+      if (res.status === 201 || res.status === 200) {
+        created++
+        process.stdout.write(`  ✓ ${badge.name}\n`)
+      } else if (res.status === 409) {
+        created++
+        process.stdout.write(`  = ${badge.name} (existant)\n`)
+      }
     } catch (e) {
       process.stderr.write(`  ✗ ${badge.name}: ${e.message}\n`)
     }
   }
-  console.log(`\nPart 1 : ${created}/${badges.length} badges créés.`)
+  console.log(`\nPart 1 : ${created}/${badges.length} badges traités.`)
 }
 
 seed()

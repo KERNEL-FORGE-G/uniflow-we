@@ -7,6 +7,7 @@ import { ExportButtons } from '../components/exports/ExportButtons'
 import { timetableDocument } from '../lib/exports'
 import { toTimetableSlots } from '../lib/exports/adapters'
 import { useBottomEdge } from '../components/layout/CornerStack'
+import { TimetableScanViewer } from '../components/timetable/TimetableScanViewer'
 
 const DAY_LABELS = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi']
 const DAY_KEYS = ['LUNDI', 'MARDI', 'MERCREDI', 'JEUDI', 'VENDREDI', 'SAMEDI']
@@ -43,6 +44,7 @@ export default function SchedulePage() {
   const [selected, setSelected] = useState<Schedule | null>(null)
   const [weekOffset, setWeekOffset] = useState(0)
   const [focusDay, setFocusDay] = useState<string | null>(null)
+  const [showScanViewer, setShowScanViewer] = useState<boolean>(false)
   const { data: schedules, loading, error, refetch } = useApi(() => schedulesApi.mine(), [], { key: 'schedules.mine' })
   // La grille (1080 px minimum, défilement horizontal) prend tout l'écran : le
   // lanceur d'Uni s'efface ici. Remplace l'exception `pathname ===
@@ -124,13 +126,42 @@ export default function SchedulePage() {
         </section>
       )}
 
-      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3"><div className="flex flex-wrap gap-3">{Object.entries(typeColors).map(([type, className]) => <span key={type} className="flex items-center gap-1.5 text-xs font-bold text-slate-600"><span className={`h-2.5 w-2.5 rounded-sm ${className.split(' ')[0]}`} /> {type}</span>)}</div><div className="flex flex-wrap items-center gap-3"><p className="text-xs font-semibold text-slate-500">Sélectionnez un jour pour le mettre en avant.</p><ExportButtons getDocument={timetableExport} disabled={!schedules?.length} disabledReason="Aucun créneau à exporter." /></div></section>
+      <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+        <div className="flex flex-wrap gap-3">
+          {Object.entries(typeColors).map(([type, className]) => (
+            <span key={type} className="flex items-center gap-1.5 text-xs font-bold text-slate-600">
+              <span className={`h-2.5 w-2.5 rounded-sm ${className.split(' ')[0]}`} /> {type}
+            </span>
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-xs font-semibold text-slate-500 mr-1 hidden sm:block">
+            Sélectionnez un jour pour le focus.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowScanViewer(true)}
+            className="flex items-center gap-1.5 rounded-lg border border-teal-700/30 bg-teal-50 px-3 py-2 text-xs font-black text-teal-800 hover:bg-teal-100 transition shadow-sm"
+          >
+            <UniIcon name="document" size={14} weight="fill" />
+            Affichage officiel (Scan)
+          </button>
+          <ExportButtons getDocument={timetableExport} disabled={!schedules?.length} disabledReason="Aucun créneau à exporter." />
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-x-auto"><div className="min-w-[1080px]"><div className="grid border-b border-slate-200" style={{ gridTemplateColumns: '68px repeat(6, minmax(168px, 1fr))' }}><div className="bg-slate-50" />{weekDays.map((day) => <button type="button" key={day.key} onClick={() => setFocusDay(day.key)} className={`border-l border-slate-200 px-2 py-3 text-center transition ${day.key === focusedDay?.key ? 'bg-sky-50 text-[#0f285f]' : day.isToday ? 'bg-blue-50 text-[#1e3a8a]' : 'text-slate-600 hover:bg-slate-50'}`}><span className="block text-xs font-black uppercase tracking-wider">{day.label}</span><span className="mt-1 block text-xs font-semibold">{day.formattedDate}</span>{day.isToday && <span className="mt-1 inline-block rounded-full bg-[#1e3a8a] px-2 py-0.5 text-[9px] font-black text-white">AUJOURD’HUI</span>}</button>)}</div><div className="grid relative" style={{ gridTemplateColumns: '68px repeat(6, minmax(168px, 1fr))' }}><div className="border-r border-slate-200 bg-slate-50/80">{hours.map((hour) => <div key={hour} className="border-b border-slate-100 pr-2 text-right text-[10px] font-bold text-slate-400" style={{ height: CELL_H }}><span className="relative -top-2">{hour}</span></div>)}</div>{weekDays.map((day) => <div key={day.key} className={`relative border-r border-slate-200 ${day.key === focusedDay?.key ? 'bg-sky-50/40' : day.isToday ? 'bg-blue-50/30' : 'bg-white'}`}>{hours.map((hour) => <div key={hour} className="border-b border-slate-100" style={{ height: CELL_H }} />)}{(grouped[day.key] ?? []).map((schedule) => { const palette = typeColors[schedule.course?.type ?? 'CM'] ?? typeColors.CM; const height = timeDuration(schedule.startTime, schedule.endTime); return <button type="button" key={schedule.id} onClick={() => setSelected(schedule)} className={`absolute left-1 right-1 overflow-hidden rounded-xl border ${palette} p-2 text-left text-white shadow-sm transition hover:-translate-y-0.5 hover:brightness-110 hover:shadow-md ${day.key === focusedDay?.key ? 'ring-2 ring-sky-300 ring-offset-1' : ''}`} style={{ top: timeToRow(schedule.startTime, firstHour), height: Math.max(height - 6, 30) }}><span className="flex items-center justify-between gap-1"><span className="flex items-center gap-1 rounded bg-white/20 px-1 py-0.5 text-[8px] font-black tracking-wide"><SubjectIcon subject={schedule.course?.name} code={schedule.course?.code} weight="fill" size={10} />{schedule.course?.code}</span><span className="text-[8px] font-bold text-white/85">{schedule.course?.type ?? 'CM'}</span></span><span className="mt-1 block line-clamp-2 text-[10px] font-black leading-tight">{schedule.course?.name}</span><span className="mt-1 block text-[9px] font-semibold text-white/90">{schedule.startTime} – {schedule.endTime}</span>{height > 64 && <span className="mt-0.5 block truncate text-[9px] text-white/75">{schedule.course?.classroom?.name}</span>}</button> })}</div>)}</div></div></section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-xs font-black uppercase tracking-wider text-[#0d9488]">Focus de journée</p><h2 className="mt-1 text-lg font-black text-slate-900">{focusedDay?.label ?? 'Aucun jour disponible'}</h2></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">{focusEntries.length} créneau(x) réel(s)</span></div>{focusEntries.length ? <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">{focusEntries.map((schedule, index) => { const palette = TYPE_HEX[schedule.course?.type ?? 'CM'] ?? TYPE_HEX.CM; return <button type="button" key={schedule.id} onClick={() => setSelected(schedule)} className="flex items-center gap-3 rounded-xl border border-slate-200 p-3 text-left transition hover:border-[#0d9488] hover:bg-teal-50/40"><IconTile subject={schedule.course?.name} subjectCode={schedule.course?.code} color={palette} variant="soft" size={44} index={index} /><span className="min-w-0 flex-1"><span className="block text-xs font-black text-slate-900">{schedule.startTime} – {schedule.endTime}</span><span className="mt-1 block truncate text-sm font-bold text-slate-700">{schedule.course?.code} · {schedule.course?.name}</span><span className="mt-1 block truncate text-xs text-slate-500">{schedule.course?.classroom?.name ?? 'Salle non renseignée'}</span></span></button> })}</div> : <p className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Aucun créneau Appwrite n’est prévu pour ce jour.</p>}</section>
 
-      {selected && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm" onClick={() => setSelected(null)}><div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}><div className={`p-5 text-white ${(typeColors[selected.course?.type ?? 'CM'] ?? typeColors.CM).split(' ')[0]}`}><p className="text-xs font-bold opacity-75">{selected.course?.code} · {selected.course?.type ?? 'CM'}</p><h2 className="mt-1 text-xl font-black">{selected.course?.name}</h2></div><div className="space-y-3 p-5 text-sm"><p className="flex items-center gap-2 text-slate-700"><UniIcon name="time" size={16} className="text-slate-400" />{selected.dayOfWeek} · {selected.startTime} – {selected.endTime}</p>{selected.course?.classroom && <p className="flex items-center gap-2 text-slate-700"><UniIcon name="room" size={16} className="text-slate-400" />{selected.course.classroom.name} · {selected.course.classroom.building}</p>}{selected.course?.teacher && <p className="flex items-center gap-2 text-slate-700"><UniIcon name="teacher" size={16} className="text-slate-400" />{selected.course.teacher.firstName} {selected.course.teacher.lastName}</p>}<button onClick={() => setSelected(null)} className="mt-2 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8]">Fermer</button></div></div></div>}
+      {selected && <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 " onClick={() => setSelected(null)}><div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}><div className={`p-5 text-white ${(typeColors[selected.course?.type ?? 'CM'] ?? typeColors.CM).split(' ')[0]}`}><p className="text-xs font-bold opacity-75">{selected.course?.code} · {selected.course?.type ?? 'CM'}</p><h2 className="mt-1 text-xl font-black">{selected.course?.name}</h2></div><div className="space-y-3 p-5 text-sm"><p className="flex items-center gap-2 text-slate-700"><UniIcon name="time" size={16} className="text-slate-400" />{selected.dayOfWeek} · {selected.startTime} – {selected.endTime}</p>{selected.course?.classroom && <p className="flex items-center gap-2 text-slate-700"><UniIcon name="room" size={16} className="text-slate-400" />{selected.course.classroom.name} · {selected.course.classroom.building}</p>}{selected.course?.teacher && <p className="flex items-center gap-2 text-slate-700"><UniIcon name="teacher" size={16} className="text-slate-400" />{selected.course.teacher.firstName} {selected.course.teacher.lastName}</p>}<button onClick={() => setSelected(null)} className="mt-2 w-full rounded-xl bg-[#1e3a8a] py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8]">Fermer</button></div></div></div>}
+
+      <TimetableScanViewer
+        initialProgram={currentUser.program || currentUser.filiere}
+        initialLevel={currentUser.level}
+        isOpen={showScanViewer}
+        onClose={() => setShowScanViewer(false)}
+      />
     </div>
   )
 }

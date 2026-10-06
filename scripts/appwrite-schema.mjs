@@ -49,7 +49,7 @@ export const chatFilesBucketId = bucketId
  * lit la limite réelle du bucket avant d'envoyer et refuse le fichier avec un
  * message explicite, donc cette constante n'a pas à être recopiée côté Flutter.
  */
-export const chatFilesMaxBytes = 50_000_000
+export const chatFilesMaxBytes = 30_000_000
 
 export const bucketDefinitions = [
   {
@@ -76,27 +76,27 @@ export const bucketDefinitions = [
 
 const string = (key, size, required = false, defaultValue) => ({
   type: 'string',
-  body: { key, size, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false, encrypt: false },
+  body: { key, size, required, ...(defaultValue === undefined || required ? {} : { default: defaultValue }), array: false, encrypt: false },
 })
 const integer = (key, required = false, defaultValue) => ({
   type: 'integer',
-  body: { key, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false, min: undefined, max: undefined },
+  body: { key, required, ...(defaultValue === undefined || required ? {} : { default: defaultValue }), array: false, min: undefined, max: undefined },
 })
 const boolean = (key, required = false, defaultValue) => ({
   type: 'boolean',
-  body: { key, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false },
+  body: { key, required, ...(defaultValue === undefined || required ? {} : { default: defaultValue }), array: false },
 })
 const datetime = (key, required = false, defaultValue) => ({
   type: 'datetime',
-  body: { key, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false },
+  body: { key, required, ...(defaultValue === undefined || required ? {} : { default: defaultValue }), array: false },
 })
 const float = (key, required = false, defaultValue) => ({
   type: 'float',
-  body: { key, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false, min: undefined, max: undefined },
+  body: { key, required, ...(defaultValue === undefined || required ? {} : { default: defaultValue }), array: false, min: undefined, max: undefined },
 })
 const enumeration = (key, elements, required = false, defaultValue) => ({
   type: 'enum',
-  body: { key, elements, required, ...(defaultValue === undefined ? {} : { default: defaultValue }), array: false },
+  body: { key, elements, required, ...(defaultValue === undefined || required ? {} : { default: defaultValue }), array: false },
 })
 
 /**

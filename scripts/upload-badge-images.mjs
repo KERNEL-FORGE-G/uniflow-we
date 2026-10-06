@@ -17,17 +17,10 @@
  *   APPWRITE_ENDPOINT, APPWRITE_PROJECT_ID, APPWRITE_API_KEY
  */
 
-import { Client, Storage, ID, InputFile } from 'node-appwrite'
-import dotenv from 'dotenv'
-dotenv.config()
+import { apiKey, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
 
-const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setKey(process.env.APPWRITE_API_KEY)
-
-const storage = new Storage(client)
-const BUCKET_ID = process.env.APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets'
+requireConfig()
+const BUCKET_ID = 'uniflow_assets'
 
 // ─── Palette couleurs par rareté ──────────────────────────────────────────────
 const RARITY_COLORS = {
@@ -294,16 +287,24 @@ async function uploadBadgeImage(slug) {
   const buffer = Buffer.from(svgContent, 'utf-8')
   
   try {
-    // Tenter de supprimer l'existant (ignore 404)
-    await storage.deleteFile(BUCKET_ID, slug).catch(() => {})
-    
-    const file = await storage.createFile(
-      BUCKET_ID,
-      slug,                        // fileId = slug exact (ex: "badge_assidu")
-      InputFile.fromBuffer(buffer, `${slug}.svg`, 'image/svg+xml'),
-      ['read("any")'],             // lecture publique pour les badges
-    )
-    return { slug, success: true, fileId: file.$id }
+    const form = new FormData()
+    form.set('fileId', slug)
+    form.append('permissions[]', 'read("any")')
+    form.set('file', new Blob([buffer], { type: 'image/svg+xml' }), `${slug}.svg`)
+
+    const res = await fetch(`${endpoint}/storage/buckets/${BUCKET_ID}/files`, {
+      method: 'POST',
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: form,
+    })
+    if (res.status === 201 || res.status === 200 || res.status === 409) {
+      return { slug, success: true, fileId: slug }
+    }
+    const errText = await res.text()
+    return { slug, success: false, error: errText }
   } catch (err) {
     return { slug, success: false, error: err.message }
   }

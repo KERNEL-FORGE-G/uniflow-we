@@ -31,8 +31,8 @@ export function guestReply(question: string): GuestReply {
   const q = normalize(question)
   if (/(tarif|prix|abonnement|payer|paiement|gratuit|combien|whatsapp|facture)/.test(q)) {
     return {
-      text: `Les comptes universitaires (étudiants, enseignants, administration) sont gratuits pour les universités partenaires. Les offres payantes (compte indépendant, options) se règlent uniquement par WhatsApp au ${CONTACT_PHONE_DISPLAY} — jamais par carte dans l'application.`,
-      links: [PRICING, { label: 'WhatsApp facturation', to: CONTACT_WHATSAPP_URL }],
+      text: `Les comptes universitaires (étudiants, enseignants, administration) sont gratuits dans le cadre de leur formation. Les formules pour comptes indépendants et fonctionnalités avancées se règlent en toute sécurité via Flutterwave (Mobile Money, Carte) ou directement par WhatsApp.`,
+      links: [PRICING],
     }
   }
   if (/(inscri|creer un compte|compte|enregistr|admin|enseignant|delegue|professeur)/.test(q)) {
