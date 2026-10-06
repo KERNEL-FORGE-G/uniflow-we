@@ -59,7 +59,7 @@ export function OfflineBanner({ className }: { className?: string }) {
           transition={{ type: 'spring', stiffness: 300, damping: 26 }}
           role="status"
           aria-live="polite"
-          className={cn('fixed bottom-4 left-1/2 z-[70] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 px-4 py-2.5 shadow-xl backdrop-blur dark:border-slate-700 dark:bg-slate-900/95', className)}
+          className={cn('fixed bottom-4 left-1/2 z-[70] flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-center gap-3 rounded-2xl border border-slate-200 bg-white/95 px-4 py-2.5 shadow-xl dark:border-slate-700 dark:bg-slate-900/95', className)}
         >
           <UniMascot pose="sleeping" size={44} safe effects={false} />
           <div className="min-w-0 text-left">

@@ -213,6 +213,8 @@ export interface IconTileProps {
   name?: UniIconName
   /** …ou composant Phosphor explicite (prioritaire)… */
   icon?: Icon
+  /** Image d'illustration prioritaire (style sticker / illustration 3D) */
+  imageSrc?: string
   /** …ou matière dont l'icône est dérivée du nom. */
   subject?: string | null
   subjectCode?: string | null
@@ -235,7 +237,7 @@ const TILE_ICON: Record<IconTileSize, number> = { 36: 18, 44: 22, 56: 28 }
 /** Courbe « easeOutBack » douce : léger dépassement avant de se poser, comme sur mobile et desktop. */
 const EASE_OUT_BACK: [number, number, number, number] = [0.34, 1.56, 0.64, 1]
 
-export function IconTile({ name, icon, subject, subjectCode, color, variant = 'filled', size = 44, index = 0, weight = 'duotone', className, children, title }: IconTileProps) {
+export function IconTile({ name, icon, imageSrc, subject, subjectCode, color, variant = 'filled', size = 44, index = 0, weight = 'duotone', className, children, title }: IconTileProps) {
   const reducedMotion = useReducedMotion()
   const Component: Icon = icon ?? (name ? UNI_ICONS[name] : SUBJECT_ICONS[subjectIconName(subject, subjectCode)])
   const iconName = icon ? undefined : name ?? subjectIconName(subject, subjectCode)
@@ -265,7 +267,18 @@ export function IconTile({ name, icon, subject, subjectCode, color, variant = 'f
       transition={reducedMotion ? { duration: 0 } : { delay: index * 0.04, duration: 0.45, ease: EASE_OUT_BACK }}
       whileHover={reducedMotion ? undefined : { y: -2, boxShadow: hoverShadow }}
     >
-      <Component size={TILE_ICON[size]} weight={weight} aria-hidden="true" focusable="false" />
+      {imageSrc ? (
+        <img
+          src={imageSrc}
+          alt=""
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.currentTarget as HTMLElement).style.display = 'none'
+          }}
+        />
+      ) : (
+        <Component size={TILE_ICON[size]} weight={weight} aria-hidden="true" focusable="false" />
+      )}
       {children}
     </motion.span>
   )

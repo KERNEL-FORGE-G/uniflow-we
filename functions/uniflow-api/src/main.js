@@ -9,6 +9,7 @@ import contactMessages from './services/contact-messages.js'
 import forumReactions from './services/forum-reactions.js'
 import messaging from './services/messaging.js'
 import metrics from './services/metrics.js'
+import openLibrary from './services/open-library.js'
 import publicStats from './services/public-stats.js'
 import subscriptionPayments from './services/subscription-payments.js'
 import teamRoster from './services/team-roster.js'
@@ -48,6 +49,7 @@ const services = {
   '/messaging': messaging,
   // Mesure d'audience (landing + administration), sans service tiers — 2026-09-21.
   '/metrics': metrics,
+  '/open-library': openLibrary,
   '/public-stats': publicStats,
   '/subscription-payments': subscriptionPayments,
   '/team-roster': teamRoster,

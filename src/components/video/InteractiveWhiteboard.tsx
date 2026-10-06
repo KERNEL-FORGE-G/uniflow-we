@@ -166,7 +166,7 @@ export default function InteractiveWhiteboard({ onClose }: InteractiveWhiteboard
   return (
     <div className="relative h-full w-full flex flex-col bg-slate-950 rounded-3xl overflow-hidden border border-[#1e3a8a]/40 shadow-2xl">
       {/* Top Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 backdrop-blur-md z-10">
+      <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-900/90 border-b border-slate-800 px-4 py-2.5 z-10">
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4 text-[#0d9488]" />
           <span className="text-xs font-bold text-white">Tableau Blanc Interactif</span>

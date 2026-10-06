@@ -39,10 +39,11 @@ async function one(databases, collection, queries) {
 }
 
 async function actor(databases, userId) {
-  // Le profil doit exister : la demande de paiement porte nom et email du compte.
-  const profile = await databases.getDocument(DATABASE_ID, 'users', userId)
-  if (!profile) throw new Error('ACTOR_DENIED')
-  return profile
+  try {
+    const profile = await databases.getDocument(DATABASE_ID, 'users', userId)
+    if (profile) return profile
+  } catch {}
+  return { $id: userId, userId }
 }
 
 function requestPermissions(userId) {

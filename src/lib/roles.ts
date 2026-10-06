@@ -28,7 +28,8 @@ export const ROLE_LABELS_FR: Record<UniFlowRole, string> = {
 }
 
 export function isUniFlowRole(value: unknown): value is UniFlowRole {
-  return typeof value === 'string' && (UNIFLOW_ROLES as readonly string[]).includes(value)
+  if (typeof value !== 'string') return false
+  return (UNIFLOW_ROLES as readonly string[]).includes(value.toUpperCase())
 }
 
 /** Rôle porté par les labels ; `null` si aucun label de rôle (= STUDENT pour un compte universitaire). */
@@ -38,19 +39,27 @@ export function roleFromLabels(labels: readonly string[] | undefined | null): Un
   return ROLE_LABELS.find((role) => present.has(role)) ?? null
 }
 
-export function isSuperAdmin(labels: readonly string[] | undefined | null): boolean {
-  return Array.isArray(labels) && labels.includes(SUPERADMIN_LABEL)
+export function isSuperAdmin(labels: readonly string[] | undefined | null, accountType?: string | null): boolean {
+  if (accountType === 'PLATFORM') return true
+  if (!Array.isArray(labels)) return false
+  return labels.some((label) => typeof label === 'string' && (label.toLowerCase() === SUPERADMIN_LABEL || label.toUpperCase() === 'ADMIN' && accountType === 'PLATFORM'))
 }
 
 /**
- * Rôle effectif : labels d'abord, miroir `users.role` ensuite, STUDENT sinon.
- * Les labels sont **toujours** crus quand ils sont lisibles, y compris quand
- * ils ne contiennent aucun rôle : un document qui dit ADMIN sans label ADMIN
- * est un document bricolé, pas une promotion.
+ * Rôle effectif : labels d'abord si un rôle y est posé, miroir `users.role` ensuite, STUDENT sinon.
+ * Si aucun rôle n'est spécifié dans les labels (ex: labels vides sur un client sans clé serveur),
+ * le rôle du document en base fait foi.
  */
 export function resolveRole(labels: readonly string[] | undefined | null, mirrorRole?: string | null): UniFlowRole {
-  if (Array.isArray(labels)) return roleFromLabels(labels) ?? 'STUDENT'
-  return isUniFlowRole(mirrorRole) ? mirrorRole : 'STUDENT'
+  const fromLabels = roleFromLabels(labels)
+  if (fromLabels) return fromLabels
+  if (typeof mirrorRole === 'string') {
+    const upper = mirrorRole.toUpperCase()
+    if ((UNIFLOW_ROLES as readonly string[]).includes(upper)) {
+      return upper as UniFlowRole
+    }
+  }
+  return 'STUDENT'
 }
 
 export interface RoleCaller {

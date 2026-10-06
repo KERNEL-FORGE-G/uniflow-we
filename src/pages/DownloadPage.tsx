@@ -194,7 +194,7 @@ export default function DownloadPage() {
               <motion.span
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-teal-100 backdrop-blur"
+                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-teal-100 "
               >
                 <UniIcon name="download" weight="bold" className="h-3.5 w-3.5" /> Téléchargements
               </motion.span>
@@ -232,7 +232,7 @@ export default function DownloadPage() {
                 <MicrosoftStoreBadge width={190} className="shadow-lg" />
                 <a
                   href="#bureau"
-                  className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15"
+                  className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/15"
                 >
                   <UniIcon name="desktop" weight="duotone" className="h-5 w-5 text-teal-200" />
                   Autres systèmes
@@ -536,7 +536,7 @@ export default function DownloadPage() {
                 Créer un compte
                 <UniIcon name="forward" weight="bold" className="h-4 w-4" />
               </Link>
-              <Link to="/presentation" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white backdrop-blur transition hover:bg-white/15">
+              <Link to="/presentation" className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-6 py-3.5 text-sm font-bold text-white transition hover:bg-white/15">
                 Voir la présentation
               </Link>
             </div>

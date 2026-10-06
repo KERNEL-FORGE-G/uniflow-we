@@ -76,7 +76,7 @@ export function YouTubePlayer({ videoId, title, className }: { videoId: string; 
         href={youtubeWatchUrl(videoId)}
         target="_blank"
         rel="noopener noreferrer"
-        className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-bold text-white backdrop-blur transition hover:bg-black/80"
+        className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/60 px-3 py-1.5 text-[11px] font-bold text-white transition hover:bg-black/80"
       >
         <ExternalLink className="h-3.5 w-3.5" /> Regarder sur YouTube
       </a>

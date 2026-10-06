@@ -1,5 +1,6 @@
 import { executeService } from './appwrite'
 import { detectBrowser, detectDevice, detectOs, normalizePath, startSessionIfNeeded, visitorIdFrom, type MetricsAdmin, type MetricsSummary } from './metricsModel'
+import { detectRegion } from '../hooks/useVisitorRegion'
 
 export * from './metricsModel'
 
@@ -26,6 +27,7 @@ export async function trackPageView(hashOrPath: string, authenticated: boolean):
   if (path === lastTracked) return
   lastTracked = path
   const ua = navigator.userAgent
+  const region = detectRegion()
   try {
     await callMetrics({
       action: 'hit',
@@ -39,6 +41,8 @@ export async function trackPageView(hashOrPath: string, authenticated: boolean):
       path,
       referrer: document.referrer ? new URL(document.referrer).hostname.slice(0, 255) : '',
       authenticated,
+      countryCode: region.countryCode,
+      timezone: region.timezone,
     })
   } catch {
     // L'audience n'est jamais bloquante : hors ligne, la visite n'est pas comptée, c'est tout.

@@ -19,6 +19,7 @@ import {
 import { type AcademicScope, filterByScope, isLearnerRole, isLearnerScopeComplete, matchesScope, mergeScope, scopeOf, teacherMatches } from './academicScope'
 import { attendanceRate, formatSubmissionGrade, isPublishedStatement, learnerStatus, matchesAudience } from './assignmentModel'
 import { fileKind, humanFileSize } from './teacherCourseModel'
+import { openLibraryService } from './openLibraryService'
 
 /**
  * Adaptateur de compatibilité UniFlow.
@@ -1032,7 +1033,6 @@ const asChatConversation = (conversation: Awaited<ReturnType<typeof executeMessa
 }
 export const messagingApi = {
   conversations: async (): Promise<ChatConversation[]> => {
-    if (getAccountType() !== 'UNIVERSITY') return []
     const response = await executeMessagingAction({ action: 'list' })
     return (response.conversations || []).map((conversation) => asChatConversation(conversation))
   },
@@ -1090,7 +1090,12 @@ export const libraryApi = {
   },
   remove: (resource: LibraryResource) => academicAppwriteApi.library.remove({ $id: resource.id, fileId: resource.fileId || '' }),
   downloadUrl: (resource: LibraryResource) => (resource.fileId ? academicAppwriteApi.library.downloadUrl(resource.fileId) : null),
+  // ── Service Bibliothèque Numérique & Ressources Académiques Libres ──
+  searchOpenBooks: (query?: string, category?: any) => openLibraryService.search(query, category),
+  cacheBookToBucket: (book: any) => openLibraryService.cacheBookToBucket(book),
+  getDbCachedBooks: () => openLibraryService.getDbCachedBooks(),
 }
+export { openLibraryService, type OpenBook, type BookCategory, BOOK_CATEGORIES } from './openLibraryService'
 
 export interface UE {
   id: string
@@ -1304,22 +1309,42 @@ async function appwriteSubscriptionPlans(): Promise<SubscriptionPlan[]> {
 async function appwriteSubscriptionStatus(): Promise<SubscriptionStatus> {
   const current = await getCurrentAccount()
   if (!current) throw new ApiError(401, 'Connectez-vous pour consulter votre statut de souscription.')
-  const row = await academicAppwriteApi.subscriptions.getStatus(current.id)
-  if (!row) {
+  try {
+    const row = await academicAppwriteApi.subscriptions.getStatus(current.id)
+    if (row) {
+      return {
+        status: row.status,
+        planCode: row.planCode || null,
+        countryCode: row.countryCode || null,
+        currency: row.currency || null,
+        monthlyAmount: row.monthlyAmount ?? null,
+        currentPeriodEnd: row.currentPeriodEnd || null,
+        isAutoRenew: !!row.isAutoRenew,
+      }
+    }
+  } catch {
+    // Statuts non encore initialisés
+  }
+
+  try {
     const requests = await executeSubscriptionPaymentAction({ action: 'list' })
     const pending = requests.requests?.find((request) => request.status === 'PENDING')
-    if (pending) return { status: 'PENDING', planCode: pending.planCode, countryCode: 'CM', currency: pending.currency, monthlyAmount: pending.amount, currentPeriodEnd: null, isAutoRenew: false }
-    return { status: 'NONE', isAutoRenew: false }
+    if (pending) {
+      return {
+        status: 'PENDING',
+        planCode: pending.planCode,
+        countryCode: 'CM',
+        currency: pending.currency,
+        monthlyAmount: pending.amount,
+        currentPeriodEnd: null,
+        isAutoRenew: false,
+      }
+    }
+  } catch {
+    // Aucune demande ou Function non initialisée
   }
-  return {
-    status: row.status,
-    planCode: row.planCode || null,
-    countryCode: row.countryCode || null,
-    currency: row.currency || null,
-    monthlyAmount: row.monthlyAmount ?? null,
-    currentPeriodEnd: row.currentPeriodEnd || null,
-    isAutoRenew: !!row.isAutoRenew,
-  }
+
+  return { status: 'NONE', isAutoRenew: false }
 }
 
 export const subscriptionApi = {
@@ -1347,7 +1372,14 @@ export const subscriptionApi = {
     if (!result.request) throw new ApiError(502, 'Appwrite n’a pas retourné de référence de demande de paiement.')
     return { transactionId: result.request.reference, paymentUrl: result.request.whatsappUrl, status: result.request.status, message: result.idempotent ? 'Votre demande de paiement en attente a été retrouvée.' : 'Votre demande a été enregistrée. Envoyez la preuve de paiement sur WhatsApp avec cette référence.', requestedAt: result.request.requestedAt }
   },
-  listPaymentRequests: async (): Promise<SubscriptionPaymentRequest[]> => (await executeSubscriptionPaymentAction({ action: 'list' })).requests || [],
+  listPaymentRequests: async (): Promise<SubscriptionPaymentRequest[]> => {
+    try {
+      const res = await executeSubscriptionPaymentAction({ action: 'list' })
+      return res.requests || []
+    } catch {
+      return []
+    }
+  },
   listPaymentRequestsForAdmin: async (filters: AdminPaymentFilters = {}): Promise<SubscriptionPaymentRequest[]> => (await executeSubscriptionPaymentAction({ action: 'admin-list', ...filters })).requests || [],
   /** Valide : passe la demande en CONFIRMED et active `subscription_statuses`. */
   validatePaymentRequest: async (requestId: string, adminNote = ''): Promise<SubscriptionPaymentRequest> => {

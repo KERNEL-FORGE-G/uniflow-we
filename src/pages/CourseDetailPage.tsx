@@ -94,12 +94,12 @@ export default function CourseDetailPage() {
       <div className="rounded-xl border border-[#e5e7eb] p-6 text-white shadow-lg" style={{ backgroundImage: `linear-gradient(135deg, ${course.color} 0%, ${darkenHex(course.color, 0.3)} 100%)` }}>
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className="hidden shrink-0 rounded-2xl bg-white/20 p-3 backdrop-blur-sm sm:block">
+            <div className="hidden shrink-0 rounded-2xl bg-white/20 p-3 sm:block">
               <SubjectIcon subject={course.name} code={course.code} size={40} />
             </div>
             <div>
             <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center rounded-md bg-white/20 px-2.5 py-1 text-xs font-bold backdrop-blur-sm">
+              <span className="inline-flex items-center rounded-md bg-white/20 px-2.5 py-1 text-xs font-bold ">
                 {course.code}
               </span>
               <Badge variant="success" className="text-xs">{course.status}</Badge>

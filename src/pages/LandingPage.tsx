@@ -384,7 +384,7 @@ export default function LandingPage() {
               <h2 className="mt-2 text-2xl font-black tracking-tight text-[#0f172a] sm:text-3xl">UniFlow en chiffres, aujourd’hui</h2>
               <p className="mt-1 text-sm font-medium text-[#64748b]">
                 {publicStats
-                  ? `Comptés dans Appwrite ${new Date(publicStats.generatedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} — ${publicStats.universities} université partenaire, ${publicStats.teamMembers} membres dans l’équipe.`
+                  ? `Comptés dans Appwrite ${new Date(publicStats.generatedAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })} — ${publicStats.universities} campus universitaire, ${publicStats.teamMembers} membres dans l’équipe.`
                   : statsError
                     ? 'Les chiffres ne sont pas joignables pour le moment ; ils reviendront avec le réseau.'
                     : 'Uni compte les unités d’enseignement, les séances et les comptes…'}

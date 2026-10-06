@@ -10,17 +10,10 @@
  *   node scripts/upload-quest-icons.mjs
  */
 
-import { Client, Storage, InputFile } from 'node-appwrite'
-import dotenv from 'dotenv'
-dotenv.config()
+import { apiKey, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
 
-const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setKey(process.env.APPWRITE_API_KEY)
-
-const storage = new Storage(client)
-const BUCKET_ID = process.env.APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets'
+requireConfig()
+const BUCKET_ID = 'uniflow_assets'
 
 // ─── Mapping criteriaType → icône + couleur ───────────────────────────────────
 
@@ -104,14 +97,24 @@ async function uploadQuestIcon(criteriaType) {
   const buffer = Buffer.from(svgContent, 'utf-8')
 
   try {
-    await storage.deleteFile(BUCKET_ID, fileId).catch(() => {})
-    const file = await storage.createFile(
-      BUCKET_ID,
-      fileId,
-      InputFile.fromBuffer(buffer, `${fileId}.svg`, 'image/svg+xml'),
-      ['read("any")'],
-    )
-    return { fileId, success: true }
+    const form = new FormData()
+    form.set('fileId', fileId)
+    form.append('permissions[]', 'read("any")')
+    form.set('file', new Blob([buffer], { type: 'image/svg+xml' }), `${fileId}.svg`)
+
+    const res = await fetch(`${endpoint}/storage/buckets/${BUCKET_ID}/files`, {
+      method: 'POST',
+      headers: {
+        'X-Appwrite-Project': projectId,
+        'X-Appwrite-Key': apiKey,
+      },
+      body: form,
+    })
+    if (res.status === 201 || res.status === 200 || res.status === 409) {
+      return { fileId, success: true }
+    }
+    const errText = await res.text()
+    return { fileId, success: false, error: errText }
   } catch (err) {
     return { fileId, success: false, error: err.message }
   }

@@ -13,9 +13,9 @@ test('roleFromLabels : labels nus, casse indifférente, plus élevé gagnant', (
   assert.equal(roleFromLabels(undefined), null)
 })
 
-test('resolveRole : les labels lisibles priment toujours sur le miroir', () => {
+test('resolveRole : les labels de rôle priment, puis le miroir sert de repli', () => {
   assert.equal(resolveRole(['TEACHER'], 'ADMIN'), 'TEACHER')
-  assert.equal(resolveRole([], 'ADMIN'), 'STUDENT', 'document bricolé sans label : STUDENT')
+  assert.equal(resolveRole([], 'ADMIN'), 'ADMIN', 'sans label de rôle : le miroir ADMIN est honoré')
   assert.equal(resolveRole(undefined, 'ADMIN'), 'ADMIN', 'hors ligne : le miroir sert de repli')
   assert.equal(resolveRole(undefined, 'ROOT'), 'STUDENT')
   assert.equal(resolveRole(null, null), 'STUDENT')

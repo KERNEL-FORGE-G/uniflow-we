@@ -3,17 +3,11 @@
  * Chaque badge possède son propre imageFileId unique dans le bucket badges_assets.
  * node scripts/seed-badges-part2.mjs
  */
-import { Client, Databases, ID } from 'node-appwrite'
-import dotenv from 'dotenv'
-dotenv.config()
+import { createClient, databaseId, endpoint, projectId, requireConfig } from './appwrite-env.mjs'
 
-const client = new Client()
-  .setEndpoint(process.env.APPWRITE_ENDPOINT)
-  .setProject(process.env.APPWRITE_PROJECT_ID)
-  .setKey(process.env.APPWRITE_API_KEY)
-
-const db = new Databases(client)
-const DATABASE_ID   = 'uniflow'
+requireConfig()
+const request = createClient()
+const DATABASE_ID = databaseId
 const COLLECTION_ID = 'badges_catalog'
 
 // imageFileId = nom du fichier dans le bucket badges_assets (sans extension)
@@ -627,16 +621,26 @@ async function run() {
   let created = 0
   let skipped = 0
   for (const badge of badges) {
+    const documentId = `badge_${String(badge.sortOrder).padStart(3, '0')}`
     try {
-      await db.createDocument(DATABASE_ID, COLLECTION_ID, ID.unique(), badge)
-      console.log(`✅ [${badge.sortOrder}] ${badge.name}`)
-      created++
+      const res = await request('POST', `/databases/${DATABASE_ID}/collections/${COLLECTION_ID}/documents`, {
+        documentId,
+        data: badge,
+        permissions: ['read("users")'],
+      })
+      if (res.status === 201 || res.status === 200) {
+        created++
+        console.log(`✅ [${badge.sortOrder}] ${badge.name}`)
+      } else if (res.status === 409) {
+        created++
+        console.log(`= [${badge.sortOrder}] ${badge.name} (existant)`)
+      }
     } catch (e) {
       console.error(`❌ [${badge.sortOrder}] ${badge.name}: ${e.message}`)
       skipped++
     }
   }
-  console.log(`\nRésultat : ${created} créés, ${skipped} erreurs sur ${badges.length} badges (35-100)`)
+  console.log(`\nRésultat : ${created} traités, ${skipped} erreurs sur ${badges.length} badges (35-100)`)
 }
 
 run()

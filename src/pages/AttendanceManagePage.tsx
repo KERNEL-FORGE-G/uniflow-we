@@ -450,7 +450,7 @@ export default function AttendanceManagePage() {
 
       {/* QR Modal */}
       {showQR && course && qrSession && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
           <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-bold text-[#111827]">Jeton QR de présence</span>

@@ -544,7 +544,7 @@ export default function SettingsPage() {
               </div>
 
               {deleteOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/60 p-4 backdrop-blur-sm animate-fade-in-fast" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#111827]/60 p-4 animate-fade-in-fast" role="dialog" aria-modal="true" aria-labelledby="delete-account-title">
                   <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl animate-scale-in">
                     <div className="flex items-start gap-3">
                       <IconTile name="trash" color="#DC2626" variant="soft" size={44} />

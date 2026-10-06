@@ -141,7 +141,7 @@ export default function ClassroomsPage() {
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur-md border border-white/30 text-white shadow-inner mb-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-bold border border-white/30 text-white shadow-inner mb-3">
               <Sparkles className="h-3.5 w-3.5 text-amber-300" />
               <span>Campus Connecté & Occupation Temps Réel</span>
             </div>
@@ -155,21 +155,21 @@ export default function ClassroomsPage() {
 
           {/* 3D Stat Badges */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
-            <div className="rounded-2xl bg-white/15 p-3.5 backdrop-blur-md border border-white/25 shadow-[0_4px_0_0_rgba(0,0,0,0.2)] text-center transition-transform hover:-translate-y-1">
+            <div className="rounded-2xl bg-white/20 p-3.5 border border-white/30 shadow-[0_4px_0_0_rgba(0,0,0,0.2)] text-center transition-transform hover:-translate-y-1">
               <div className="text-2xl font-black text-white">{stats.total}</div>
               <div className="text-[10px] font-bold text-blue-100 uppercase tracking-wider flex items-center justify-center gap-1 mt-0.5">
                 <Building2 className="h-3 w-3 text-blue-300" /> Salles
               </div>
             </div>
 
-            <div className="rounded-2xl bg-emerald-500/30 p-3.5 backdrop-blur-md border border-emerald-300/40 shadow-[0_4px_0_0_rgba(0,0,0,0.2)] text-center transition-transform hover:-translate-y-1">
+            <div className="rounded-2xl bg-emerald-600/40 p-3.5 border border-emerald-300/40 shadow-[0_4px_0_0_rgba(0,0,0,0.2)] text-center transition-transform hover:-translate-y-1">
               <div className="text-2xl font-black text-emerald-200">{stats.available}</div>
               <div className="text-[10px] font-bold text-emerald-100 uppercase tracking-wider flex items-center justify-center gap-1 mt-0.5">
                 <CheckCircle className="h-3 w-3 text-emerald-300" /> Libres
               </div>
             </div>
 
-            <div className="rounded-2xl bg-red-500/30 p-3.5 backdrop-blur-md border border-red-300/40 shadow-[0_4px_0_0_rgba(0,0,0,0.2)] text-center transition-transform hover:-translate-y-1">
+            <div className="rounded-2xl bg-rose-600/40 p-3.5 border border-rose-300/40 shadow-[0_4px_0_0_rgba(0,0,0,0.2)] text-center transition-transform hover:-translate-y-1">
               <div className="text-2xl font-black text-red-200">{stats.occupied}</div>
               <div className="text-[10px] font-bold text-red-100 uppercase tracking-wider flex items-center justify-center gap-1 mt-0.5">
                 <XCircle className="h-3 w-3 text-red-300" /> Occupées
@@ -320,7 +320,7 @@ export default function ClassroomsPage() {
 
                     <div className="flex items-start justify-between gap-2 relative z-10">
                       <div>
-                        <span className="inline-block rounded-md bg-black/20 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider backdrop-blur-md mb-1 border border-white/20">
+                        <span className="inline-block rounded-md bg-slate-900/60 px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider mb-1 border border-white/20">
                           {typeLabel[room.type] ?? room.type}
                         </span>
                         <h3 className="text-xl font-black text-white leading-tight drop-shadow-sm">{room.name}</h3>
@@ -407,7 +407,7 @@ export default function ClassroomsPage() {
       {/* 3D Classroom Detail & Reservation Modal */}
       {selected && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 animate-fade-in"
           onClick={() => setSelected(null)}
         >
           <div

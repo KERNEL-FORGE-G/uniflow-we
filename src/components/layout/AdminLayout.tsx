@@ -35,7 +35,7 @@ function AdminSidebar() {
       {/* Header with gradient */}
       <div className="admin-header-gradient px-5 py-4 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 backdrop-blur-sm">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/15 ">
             <UniIcon name="security" weight="fill" size={20} className="text-white" />
           </div>
           <div>
@@ -47,7 +47,7 @@ function AdminSidebar() {
         </div>
 
         {/* Admin user */}
-        <div className="mt-4 flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 backdrop-blur-sm">
+        <div className="mt-4 flex items-center gap-3 rounded-xl bg-white/10 px-3 py-2.5 ">
           <Avatar name={identity.name} size="sm" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-bold text-white truncate">{identity.name}</p>
@@ -190,7 +190,7 @@ export function AdminLayout() {
       <AdminSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Admin Header */}
-        <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-[#e5e7eb] bg-white/95 backdrop-blur-sm px-6 shadow-sm">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-4 border-b border-[#e5e7eb] bg-white/95 px-6 shadow-sm">
           <AdminBreadcrumb />
 
           <div className="flex-1 hidden lg:block" />

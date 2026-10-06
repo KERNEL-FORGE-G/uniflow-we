@@ -78,7 +78,7 @@ export default function PromotionPage() {
       <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1e3a8a] via-[#2d4fa8] to-[#0d9488] p-6 text-white shadow-lg">
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 backdrop-blur-md px-3.5 py-1 text-xs font-bold text-amber-300 border border-white/20 mb-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-xs font-bold text-amber-300 border border-white/20 mb-3">
               <Sparkles className="h-3.5 w-3.5" /> Espace Candidature & Promotion
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
@@ -89,7 +89,7 @@ export default function PromotionPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 p-4 text-right min-w-[200px]">
+          <div className="rounded-2xl bg-white/10 border border-white/20 p-4 text-right min-w-[200px]">
             <p className="text-xs text-slate-200">Statut actuel sur UniFlow</p>
             <div className="mt-1 flex items-center justify-end gap-2 font-black text-lg text-white">
               <ShieldCheck className="h-5 w-5 text-teal-300" />

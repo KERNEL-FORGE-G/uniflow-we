@@ -25,12 +25,12 @@ export default function DashboardCompactPage() {
 
   const lateHomework: Array<{ title: string; due: string }> = []
 
-  const quickStats: Array<{ label: string; value: string; change: string; icon: UniIconName; color: string }> = [
-    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '—', change: '—', icon: 'courses', color: '#1E3A8A' },
-    { label: 'Devoirs à rendre', value: overview?.assignmentCount == null ? '—' : `${overview.assignmentCount}`, change: '—', icon: 'assignments', color: '#D97706' },
-    { label: 'Prochain cours', value: '—', change: '—', icon: 'time', color: '#0D9488' },
-    { label: 'Moyenne', value: overview?.averageGrade == null ? '—' : `${overview.averageGrade}/20`, change: '—', icon: 'grades', color: '#7C3AED' },
-    { label: 'Présences', value: overview?.attendanceRate == null ? '—' : `${overview.attendanceRate}%`, change: '—', icon: 'attendance', color: '#059669' },
+  const quickStats: Array<{ label: string; value: string; change: string; icon: UniIconName; color: string; imageSrc?: string }> = [
+    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '—', change: '—', icon: 'courses', color: '#1E3A8A', imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Devoirs à rendre', value: overview?.assignmentCount == null ? '—' : `${overview.assignmentCount}`, change: '—', icon: 'assignments', color: '#D97706', imageSrc: '/illustrations/course_books.jpg' },
+    { label: 'Prochain cours', value: '—', change: '—', icon: 'time', color: '#0D9488', imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Moyenne', value: overview?.averageGrade == null ? '—' : `${overview.averageGrade}/20`, change: '—', icon: 'grades', color: '#7C3AED', imageSrc: '/illustrations/course_grades.jpg' },
+    { label: 'Présences', value: overview?.attendanceRate == null ? '—' : `${overview.attendanceRate}%`, change: '—', icon: 'attendance', color: '#059669', imageSrc: '/illustrations/hero_books.jpg' },
   ]
 
   return (
@@ -51,7 +51,7 @@ export default function DashboardCompactPage() {
         {quickStats.map((s, i) => {
           return (
             <div key={i} className="rounded-xl border border-[#e5e7eb] bg-white p-3 shadow-sm flex items-center gap-3">
-              <IconTile name={s.icon} color={s.color} variant="filled" size={44} index={i} />
+              <IconTile name={s.icon} imageSrc={s.imageSrc} color={s.color} variant="filled" size={44} index={i} />
               <div>
                 <p className="text-base font-extrabold text-[#111827]">{s.value}</p>
                 <p className="text-[10px] text-[#6b7280]">{s.label}</p>

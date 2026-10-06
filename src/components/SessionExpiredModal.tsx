@@ -20,7 +20,7 @@ export default function SessionExpiredModal() {
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm" role="presentation">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/50 p-4 " role="presentation">
       <div
         role="dialog"
         aria-modal="true"

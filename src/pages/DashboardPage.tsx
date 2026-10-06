@@ -9,6 +9,7 @@ import { SubscriptionWidget } from '../components/subscription/SubscriptionWidge
 import { SubscriptionStatus } from '../components/subscription/SubscriptionStatus'
 import { attendanceRate } from '../lib/assignmentModel'
 import { dueWithin, eventDaysInMonth, gradeDistribution, gradedStudentCount, passRate, relativeTime, teacherAverages, todaysSessions, weeklyAttendanceTrend } from '../lib/dashboardModel'
+import { loadDailyQuests, loadUserXp, type QuestWithProgress, type UserXp } from '../lib/gamification'
 
 /** Icône et couleur (hex, pour la tuile) d'une entrée d'activité d'après le type de notification Appwrite. */
 function activityStyle(type: string): { icon: UniIconName; color: string } {
@@ -69,7 +70,8 @@ export default function DashboardPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([])
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [attendanceRecords, setAttendanceRecords] = useState<Array<{ status: string; at: string }>>([])
-  const eventDays = eventDaysInMonth(schedules, currentYear, currentMonth)
+  const [dailyQuests, setDailyQuests] = useState<QuestWithProgress[]>([])
+  const [userXp, setUserXp] = useState<UserXp | null>(null)
   const [overview, setOverview] = useState<{ courseCount: number; assignmentCount: number; pendingAssignmentCount: number; gradeCount: number; averageGrade: number | null; attendanceRate: number | null; studentCount: number }>({ courseCount: 0, assignmentCount: 0, pendingAssignmentCount: 0, gradeCount: 0, averageGrade: null, attendanceRate: null, studentCount: 0 })
   const [overviewLoading, setOverviewLoading] = useState(true)
   const [overviewError, setOverviewError] = useState<string | null>(null)
@@ -132,15 +134,23 @@ export default function DashboardPage() {
       window.removeEventListener('uniflow:session-restored', onSessionRestored)
     }
   }, [authUser?.id, isSessionReady])
+
+  useEffect(() => {
+    const uid = authUser?.id || 'guest_user'
+    loadDailyQuests(uid).then(setDailyQuests)
+    loadUserXp(uid).then(setUserXp)
+  }, [authUser?.id])
+
+  const eventDays = eventDaysInMonth(schedules, currentYear, currentMonth)
   const isEmptyData = overview.courseCount === 0 && overview.assignmentCount === 0 && overview.gradeCount === 0
 
-  type StatCard = { label: string; value: string; delta: string; up: boolean; icon: UniIconName; color: string; to: string }
+  type StatCard = { label: string; value: string; delta: string; up: boolean; icon: UniIconName; color: string; to: string; imageSrc?: string }
   const studentStats: StatCard[] = [
-    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',    up: Boolean(overview?.courseCount),  icon: 'courses',     color: TILE.blue,   to: '/app/cours' },
-    { label: 'Devoirs à rendre', value: overview ? `${overview.pendingAssignmentCount ?? 0}` : '0',       delta: overview?.assignmentCount ? `${overview.assignmentCount} au total` : 'Aucun devoir',     up: true, icon: 'assignments', color: TILE.amber,  to: '/app/devoirs' },
-    { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',   up: Boolean(overview?.courseCount),  icon: 'schedule',    color: TILE.teal,   to: '/app/emploi-du-temps' },
-    { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note',   up: (overview?.averageGrade ?? 10) >= 10,  icon: 'grades',      color: TILE.purple, to: '/app/notes' },
-    { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75, icon: 'attendance',  color: TILE.green,  to: '/app/presences' },
+    { label: 'Cours inscrits',   value: overview ? `${overview.courseCount}` : '0',      delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',    up: Boolean(overview?.courseCount),  icon: 'courses',     color: TILE.blue,   to: '/app/cours', imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Devoirs à rendre', value: overview ? `${overview.pendingAssignmentCount ?? 0}` : '0',       delta: overview?.assignmentCount ? `${overview.assignmentCount} au total` : 'Aucun devoir',     up: true, icon: 'assignments', color: TILE.amber,  to: '/app/devoirs', imageSrc: '/illustrations/course_books.jpg' },
+    { label: 'Emploi du temps',   value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun',    delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée',   up: Boolean(overview?.courseCount),  icon: 'schedule',    color: TILE.teal,   to: '/app/emploi-du-temps', imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Moyenne',          value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note',   up: (overview?.averageGrade ?? 10) >= 10,  icon: 'grades',      color: TILE.purple, to: '/app/notes', imageSrc: '/illustrations/course_grades.jpg' },
+    { label: 'Présences',        value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',     delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75, icon: 'attendance',  color: TILE.green,  to: '/app/presences', imageSrc: '/illustrations/hero_books.jpg' },
   ]
   // Les pastilles des cartes disent d'où vient le chiffre ; les anciennes
   // valeurs fixes (« Incrémental », « 0 ») laissaient croire à des compteurs morts.
@@ -150,18 +160,18 @@ export default function DashboardPage() {
   const gradedStudents = gradedStudentCount(grades)
   const weeklySessions = schedules.length ? `${schedules.length} séance${schedules.length > 1 ? 's' : ''} / semaine` : 'Aucune séance planifiée'
   const delegateStats: StatCard[] = [
-    { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75,  icon: 'attendance',  color: TILE.teal,   to: '/app/gestion-presences' },
-    { label: 'Séances / semaine', value: `${schedules.length}`, delta: overview.courseCount ? `${overview.courseCount} cours` : 'Aucun cours', up: schedules.length > 0, icon: 'schedule', color: TILE.blue, to: '/app/emploi-du-temps' },
-    { label: 'Devoirs à rendre',  value: `${overview.pendingAssignmentCount}`, delta: dueSoon ? `${dueSoon} sous 7 jours` : 'Aucune échéance proche', up: dueSoon === 0, icon: 'assignments', color: TILE.amber, to: '/app/devoirs' },
-    { label: 'Étudiants suivis',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à la promotion' : 'Aucun inscrit',  up: overview.studentCount > 0,  icon: 'students',    color: TILE.purple, to: '/app/etudiants' },
-    { label: 'Notifications',     value: `${unreadCount}`, delta: unreadCount ? 'Non lues' : 'Tout est lu', up: unreadCount === 0, icon: 'notifications', color: TILE.green, to: '/app/notifications' },
+    { label: 'Taux présence',     value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—',  delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé',    up: (overview?.attendanceRate ?? 100) >= 75,  icon: 'attendance',  color: TILE.teal,   to: '/app/gestion-presences', imageSrc: '/illustrations/hero_books.jpg' },
+    { label: 'Séances / semaine', value: `${schedules.length}`, delta: overview.courseCount ? `${overview.courseCount} cours` : 'Aucun cours', up: schedules.length > 0, icon: 'schedule', color: TILE.blue, to: '/app/emploi-du-temps', imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Devoirs à rendre',  value: `${overview.pendingAssignmentCount}`, delta: dueSoon ? `${dueSoon} sous 7 jours` : 'Aucune échéance proche', up: dueSoon === 0, icon: 'assignments', color: TILE.amber, to: '/app/devoirs', imageSrc: '/illustrations/course_books.jpg' },
+    { label: 'Étudiants suivis',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à la promotion' : 'Aucun inscrit',  up: overview.studentCount > 0,  icon: 'students',    color: TILE.purple, to: '/app/etudiants', imageSrc: '/illustrations/hero_books.jpg' },
+    { label: 'Notifications',     value: `${unreadCount}`, delta: unreadCount ? 'Non lues' : 'Tout est lu', up: unreadCount === 0, icon: 'notifications', color: TILE.green, to: '/app/notifications', imageSrc: '/illustrations/course_grades.jpg' },
   ]
   const teacherStats: StatCard[] = [
-    { label: 'Cours créés',       value: `${overview.courseCount}`,     delta: weeklySessions, up: schedules.length > 0,  icon: 'courses',     color: TILE.blue,   to: '/app/mes-cours-enseignant' },
-    { label: 'Étudiants enregistrés',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à vos cours' : 'Aucun inscrit',    up: overview.studentCount > 0,  icon: 'students',    color: TILE.teal,   to: '/app/etudiants' },
-    { label: 'Devoirs créés',     value: `${overview.assignmentCount}`,    delta: dueSoon ? `${dueSoon} à échéance sous 7 j` : 'Aucune échéance proche',     up: true, icon: 'assignments', color: TILE.amber,  to: '/app/devoirs' },
-    { label: 'Notes saisies',     value: `${overview.gradeCount}`,     delta: gradedStudents ? `${gradedStudents} étudiant${gradedStudents > 1 ? 's' : ''} noté${gradedStudents > 1 ? 's' : ''}` : 'Aucune note',     up: gradedStudents > 0,  icon: 'grades',      color: TILE.purple, to: '/app/notes' },
-    { label: 'Moyenne générale',  value: overview.averageGrade != null ? `${overview.averageGrade}/20` : '—',     delta: successRate != null ? `${successRate} % ≥ 10/20` : 'Aucune note',     up: (successRate ?? 100) >= 50,  icon: 'stats',       color: TILE.green,  to: '/app/notes' },
+    { label: 'Cours créés',       value: `${overview.courseCount}`,     delta: weeklySessions, up: schedules.length > 0,  icon: 'courses',     color: TILE.blue,   to: '/app/mes-cours-enseignant', imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Étudiants enregistrés',  value: `${overview.studentCount}`,   delta: overview.studentCount ? 'Inscrits à vos cours' : 'Aucun inscrit',    up: overview.studentCount > 0,  icon: 'students',    color: TILE.teal,   to: '/app/etudiants', imageSrc: '/illustrations/hero_books.jpg' },
+    { label: 'Devoirs créés',     value: `${overview.assignmentCount}`,    delta: dueSoon ? `${dueSoon} à échéance sous 7 j` : 'Aucune échéance proche',     up: true, icon: 'assignments', color: TILE.amber,  to: '/app/devoirs', imageSrc: '/illustrations/course_books.jpg' },
+    { label: 'Notes saisies',     value: `${overview.gradeCount}`,     delta: gradedStudents ? `${gradedStudents} étudiant${gradedStudents > 1 ? 's' : ''} noté${gradedStudents > 1 ? 's' : ''}` : 'Aucune note',     up: gradedStudents > 0,  icon: 'grades',      color: TILE.purple, to: '/app/notes', imageSrc: '/illustrations/course_grades.jpg' },
+    { label: 'Moyenne générale',  value: overview.averageGrade != null ? `${overview.averageGrade}/20` : '—',     delta: successRate != null ? `${successRate} % ≥ 10/20` : 'Aucune note',     up: (successRate ?? 100) >= 50,  icon: 'stats',       color: TILE.green,  to: '/app/notes', imageSrc: '/illustrations/course_grades.jpg' },
   ]
 
   const stats = currentRole === 'teacher' ? teacherStats : currentRole === 'delegate' ? delegateStats : studentStats
@@ -185,24 +195,24 @@ export default function DashboardPage() {
       : []),
   ]
 
-  type QuickAction = { label: string; icon: UniIconName; to: string; color: string }
+  type QuickAction = { label: string; icon: UniIconName; to: string; color: string; imageSrc?: string }
   const studentQuickActions: QuickAction[] = [
-    { label: 'Mes cours',       icon: 'courses',     to: '/app/cours',          color: TILE.blue },
-    { label: 'Devoirs',         icon: 'assignments', to: '/app/devoirs',        color: TILE.amber },
-    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.teal },
-    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.purple },
+    { label: 'Mes cours',       icon: 'courses',     to: '/app/cours',          color: TILE.blue,   imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Devoirs',         icon: 'assignments', to: '/app/devoirs',        color: TILE.amber,  imageSrc: '/illustrations/course_books.jpg' },
+    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.teal,   imageSrc: '/illustrations/hero_books.jpg' },
+    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.purple, imageSrc: '/illustrations/course_grades.jpg' },
   ]
   const teacherQuickActions: QuickAction[] = [
-    { label: 'Espace pédago',   icon: 'teacher',     to: '/app/mes-cours-enseignant', color: TILE.blue },
-    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.teal },
-    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.purple },
-    { label: 'Planning',        icon: 'schedule',    to: '/app/emploi-du-temps', color: TILE.amber },
+    { label: 'Espace pédago',   icon: 'teacher',     to: '/app/mes-cours-enseignant', color: TILE.blue,   imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.teal,   imageSrc: '/illustrations/hero_books.jpg' },
+    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.purple, imageSrc: '/illustrations/course_grades.jpg' },
+    { label: 'Planning',        icon: 'schedule',    to: '/app/emploi-du-temps', color: TILE.amber, imageSrc: '/illustrations/course_schedule.jpg' },
   ]
   const delegateQuickActions: QuickAction[] = [
-    { label: 'Gérer présences', icon: 'attendance',  to: '/app/gestion-presences', color: TILE.teal },
-    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.blue },
-    { label: 'Planning',        icon: 'schedule',    to: '/app/emploi-du-temps', color: TILE.purple },
-    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.amber },
+    { label: 'Gérer présences', icon: 'attendance',  to: '/app/gestion-presences', color: TILE.teal,   imageSrc: '/illustrations/hero_books.jpg' },
+    { label: 'Messages',        icon: 'messages',    to: '/app/messages',       color: TILE.blue,   imageSrc: '/illustrations/course_grades.jpg' },
+    { label: 'Planning',        icon: 'schedule',    to: '/app/emploi-du-temps', color: TILE.purple, imageSrc: '/illustrations/course_schedule.jpg' },
+    { label: 'Visio',           icon: 'video',       to: '/app/visio',          color: TILE.amber,  imageSrc: '/illustrations/hero_books.jpg' },
   ]
   const quickActions = currentRole === 'teacher' ? teacherQuickActions : currentRole === 'delegate' ? delegateQuickActions : studentQuickActions
 
@@ -278,14 +288,14 @@ export default function DashboardPage() {
 
       {/* ── KPI Stats ── */}
       <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-        {stats.map(({ label, value, delta, up, icon, color, to }, i) => (
+        {stats.map(({ label, value, delta, up, icon, color, to, imageSrc }, i) => (
           <div
             key={label}
             onClick={() => navigate(to)}
             className={`rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm card-interactive animate-stagger-${i + 1} cursor-pointer`}
           >
             <div className="flex items-start justify-between gap-2 mb-3">
-              <IconTile name={icon} color={color} variant="filled" size={56} index={i} />
+              <IconTile name={icon} imageSrc={imageSrc} color={color} variant="filled" size={56} index={i} />
               <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 text-right ${up ? 'text-emerald-700 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
                 {delta}
               </span>
@@ -309,14 +319,14 @@ export default function DashboardPage() {
               <UniIcon name="lightning" weight="fill" size={16} className="text-[#0d9488]" />
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {quickActions.map(({ label, icon, to, color }, i) => (
+              {quickActions.map(({ label, icon, to, color, imageSrc }, i) => (
                 <button
                   key={to}
                   onClick={() => navigate(to)}
                   style={{ backgroundColor: hexWithAlpha(color, 0.08), borderColor: hexWithAlpha(color, 0.18) }}
                   className={`flex flex-col items-center gap-2.5 rounded-2xl border p-4 text-xs font-semibold text-[#111827] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-stagger-${i + 1}`}
                 >
-                  <IconTile name={icon} color={color} variant="filled" size={44} index={i} />
+                  <IconTile name={icon} imageSrc={imageSrc} color={color} variant="filled" size={44} index={i} />
                   {label}
                 </button>
               ))}
@@ -447,6 +457,46 @@ export default function DashboardPage() {
                     <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full bg-[#0d9488]" />
                   )}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quests Summary Widget */}
+          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-base">⚡</span>
+                <h2 className="text-sm font-bold text-[#111827]">Quêtes du jour</h2>
+              </div>
+              <Link to="/app/badges-quetes" className="text-xs font-semibold text-[#1e3a8a] hover:underline">
+                Catalogue (250) →
+              </Link>
+            </div>
+            {userXp && (
+              <div className="mb-3 flex items-center justify-between rounded-xl bg-gradient-to-r from-[#eff3ff] to-[#f0fdfa] p-2.5 text-xs border border-blue-100">
+                <span className="font-bold text-[#1e3a8a]">Niveau {userXp.level}</span>
+                <span className="font-bold text-[#0d9488]">{(userXp.totalXp ?? 1850).toLocaleString()} XP</span>
+              </div>
+            )}
+            <div className="space-y-2.5">
+              {dailyQuests.slice(0, 3).map((item) => (
+                <div key={item.definition.$id} className="rounded-xl border border-slate-100 bg-slate-50/80 p-2.5">
+                  <div className="flex items-center justify-between text-xs font-bold mb-1">
+                    <span className="truncate text-slate-800 pr-2">{item.definition.title}</span>
+                    <span className="shrink-0 text-amber-600">+{item.definition.xpReward} XP</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1.5 rounded-full bg-slate-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-[#1e3a8a] to-[#0d9488]"
+                        style={{ width: `${item.percent}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-semibold shrink-0">
+                      {item.completed ? '✓' : `${item.percent}%`}
+                    </span>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

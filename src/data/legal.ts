@@ -39,7 +39,7 @@ export const TERMS: LegalDocument = {
       id: 'objet',
       title: '1. Objet du service',
       paragraphs: [
-        `UniFlow est une plateforme académique qui centralise, pour ${COVERAGE_LABEL} et les établissements partenaires, l'emploi du temps par filière et niveau, les unités d'enseignement, les devoirs, les notes, les présences (émargement par QR code), la bibliothèque de documents, la messagerie, le forum et les notifications. Un espace personnel est proposé aux comptes indépendants (hors université).`,
+        `UniFlow est une plateforme académique qui centralise, pour ${COVERAGE_LABEL} et les établissements affiliés, l'emploi du temps par filière et niveau, les unités d'enseignement, les devoirs, les notes, les présences (émargement par QR code), la bibliothèque de documents, la messagerie, le forum et les notifications. Un espace personnel est proposé aux comptes indépendants (hors université).`,
         "L'application de bureau porte en plus une visioconférence locale, sans dépendance à un service tiers.",
       ],
     },

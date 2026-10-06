@@ -53,6 +53,8 @@ export function sanitizeHit(raw) {
     language: text(raw?.language, 16),
     authenticated: raw?.authenticated === true,
     newSession: raw?.newSession !== false,
+    countryCode: text(raw?.countryCode, 8, 'XX'),
+    timezone: text(raw?.timezone, 64, ''),
   }
 }
 
