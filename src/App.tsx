@@ -86,6 +86,7 @@ const AdminSecurityPage = lazy(() => import('./pages/admin/AdminSecurityPage'))
 const AdminPaymentsPage = lazy(() => import('./pages/admin/AdminPaymentsPage'))
 const AdminAudiencePage = lazy(() => import('./pages/admin/AdminAudiencePage'))
 const AdminTeamPage = lazy(() => import('./pages/admin/AdminTeamPage'))
+const AdminNewsAndNotificationsPage = lazy(() => import('./pages/admin/AdminNewsAndNotificationsPage'))
 const GamificationPage = lazy(() => import('./pages/GamificationPage'))
 
 /**
@@ -348,6 +349,7 @@ export default function App() {
               {/* Administration */}
               <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                 <Route index element={<AdminDashboardPage />} />
+                <Route path="actualites-notifications" element={<AdminNewsAndNotificationsPage />} />
                 <Route path="utilisateurs" element={<AdminUsersPage />} />
                 <Route path="etudiants" element={<StudentsPage />} />
                 <Route path="enseignants" element={<TeachersPage />} />

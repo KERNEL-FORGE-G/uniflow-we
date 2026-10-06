@@ -53,6 +53,7 @@ export const adminNavGroups: AdminNavGroup[] = [
     title: "Vue d'ensemble",
     items: [
       { to: '/admin',           icon: 'dashboard',  labelFr: 'Tableau de bord',      labelEn: 'Dashboard',         end: true },
+      { to: '/admin/actualites-notifications', icon: 'notifications', labelFr: 'Actualités & Notifications', labelEn: 'News & Notifications', end: false },
       { to: '/admin/rapports',  icon: 'stats',      labelFr: 'Rapports & Analyses',  labelEn: 'Reports',           end: false },
       { to: '/admin/paiements', icon: 'billing',    labelFr: 'Paiements WhatsApp',   labelEn: 'WhatsApp payments', end: false },
       { to: '/admin/audience',  icon: 'audience',   labelFr: 'Audience du site',     labelEn: 'Site audience',     end: false },

@@ -403,15 +403,25 @@ export const openLibraryService = {
 
     const searchTerms = cleanQuery || (category !== 'Tous' ? CATEGORY_KEYWORDS[category]?.[0] || 'science' : '')
 
+    // Cache mémoire côté client pour réponses instantanées
+    const clientCacheKey = `client:${cleanQuery}:${category}`
+    const cachedClient = (this as any)._searchCache?.get(clientCacheKey)
+    if (cachedClient && Date.now() - cachedClient.time < 10 * 60 * 1000) {
+      return cachedClient.results
+    }
+
     let externalBooks: OpenBook[] = []
     if (searchTerms) {
       try {
-        // Source 1 : Project Gutenberg
-        const gutenPromise = fetch(`https://gutendex.com/books/?search=${encodeURIComponent(searchTerms)}`)
+        const controller = new AbortController()
+        const timeout = setTimeout(() => controller.abort(), 4000)
+
+        // Source 1 : Project Gutenberg (20+ résultats)
+        const gutenPromise = fetch(`https://gutendex.com/books/?search=${encodeURIComponent(searchTerms)}`, { signal: controller.signal })
           .then(r => r.json())
           .then(data => {
             if (!data.results || !Array.isArray(data.results)) return []
-            return data.results.slice(0, 8).map((item: any): OpenBook => {
+            return data.results.slice(0, 20).map((item: any): OpenBook => {
               const formats = item.formats || {}
               const pdfUrl = formats['application/pdf'] || formats['application/epub+zip'] || formats['text/html'] || ''
               const coverUrl = formats['image/jpeg'] || ''
@@ -445,8 +455,8 @@ export const openLibraryService = {
           })
           .catch(() => [])
 
-        // Source 2 : Open Library
-        const openLibraryPromise = fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(searchTerms)}&limit=8`)
+        // Source 2 : Open Library (30+ résultats, recherche universelle)
+        const openLibraryPromise = fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(searchTerms)}&limit=35`, { signal: controller.signal })
           .then(r => r.json())
           .then(data => {
             if (!data.docs || !Array.isArray(data.docs)) return []
@@ -478,12 +488,13 @@ export const openLibraryService = {
           .catch(() => [])
 
         const [gutenResults, olResults] = await Promise.all([gutenPromise, openLibraryPromise])
+        clearTimeout(timeout)
         externalBooks = [...gutenResults, ...olResults]
 
         // Auto-synchronisation des premiers résultats en base de données de manière asynchrone
         if (cleanQuery && externalBooks.length > 0) {
           setTimeout(() => {
-            externalBooks.slice(0, 3).forEach(b => {
+            externalBooks.slice(0, 5).forEach(b => {
               this.syncBookToDb(b).catch(() => undefined)
             })
           }, 100)
@@ -504,6 +515,10 @@ export const openLibraryService = {
         merged.push(b)
       }
     }
+
+    // Mettre en cache local
+    if (!(this as any)._searchCache) (this as any)._searchCache = new Map()
+    ;(this as any)._searchCache.set(clientCacheKey, { results: merged, time: Date.now() })
 
     return merged
   },

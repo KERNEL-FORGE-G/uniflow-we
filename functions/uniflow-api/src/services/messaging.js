@@ -185,6 +185,7 @@ async function one(databases, collection, attribute, value) {
 }
 
 async function actor(databases, userId) {
+  if (!userId) throw new Error('UNAUTHORIZED')
   const entry = await one(databases, 'academic_directory', 'userId', userId)
   if (entry && hasScope(entry)) return entry
 
@@ -201,7 +202,13 @@ async function actor(databases, userId) {
     }
   } catch {}
 
-  throw new Error('ACTOR_DENIED')
+  return {
+    $id: userId,
+    userId,
+    name: 'Utilisateur UniFlow',
+    role: 'INDEPENDENT',
+    accountType: 'PERSONAL',
+  }
 }
 
 async function participantProfile(databases, userId) {
@@ -212,10 +219,8 @@ async function participantProfile(databases, userId) {
   const profile = profileResult.status === 'fulfilled' ? profileResult.value : null
   const directory = directoryResult.status === 'fulfilled' ? directoryResult.value : null
 
-  if (!profile && !directory) throw new Error('CONTACT_NOT_FOUND')
-
   const role = directory?.role
-    || (profile?.accountType === 'PERSONAL' ? 'INDEPENDENT' : (profile?.role || 'STUDENT'))
+    || (profile?.accountType === 'PERSONAL' ? 'INDEPENDENT' : (profile?.role || 'INDEPENDENT'))
 
   return {
     userId,

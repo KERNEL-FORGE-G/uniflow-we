@@ -50,6 +50,8 @@ export type UniFlowServicePath =
   | '/forum-reactions'
   | '/messaging'
   | '/metrics'
+  | '/news'
+  | '/open-library'
   | '/public-stats'
   | '/subscription-payments'
   | '/team-roster'
@@ -1652,6 +1654,21 @@ export async function executeTeamRosterAction(payload: TeamMemberInput & { actio
   }
   if (execution.responseStatusCode >= 400 || !response.ok) {
     throw new Error(response.message || "La Function Appwrite a refusé la modification de l'équipe.")
+  }
+  return response
+}
+
+export async function executeNewsAction(payload: Record<string, unknown>): Promise<any> {
+  const execution = await awaitAppwrite(
+    executeService('/news', payload),
+    "la gestion des actualités et alertes",
+  )
+  let response: any
+  try { response = JSON.parse(execution.responseBody || '{}') } catch {
+    throw new Error("La Function Appwrite des actualités a retourné une réponse invalide.")
+  }
+  if (execution.responseStatusCode >= 400 || !response.ok) {
+    throw new Error(response.message || "La Function Appwrite a refusé l'opération.")
   }
   return response
 }

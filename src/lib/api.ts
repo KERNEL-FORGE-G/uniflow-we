@@ -14,6 +14,7 @@ import {
   listAppwriteNotifications,
   markAppwriteNotificationRead,
   deleteAppwriteNotification,
+  executeNewsAction,
   personalAppwriteApi,
 } from './appwrite'
 import { type AcademicScope, filterByScope, isLearnerRole, isLearnerScopeComplete, matchesScope, mergeScope, scopeOf, teacherMatches } from './academicScope'
@@ -776,6 +777,63 @@ export const notificationsApi = {
     return (await appwriteNotifications()).find((item) => item.id === id) as Notification
   },
   delete: (id: string) => deleteAppwriteNotification(id),
+  broadcast: async (payload: { targetGroup: 'ALL' | 'STUDENT' | 'TEACHER' | 'DELEGATE' | 'PERSONAL'; title: string; message: string; type?: string; link?: string }) => {
+    const res = await executeNewsAction({ action: 'broadcast-notification', ...payload })
+    return res
+  },
+}
+
+export interface NewsItem {
+  id: string
+  title: string
+  content: string
+  channel: string
+  icon?: string
+  color?: string
+  author?: string
+  createdAt: string
+  pinned?: boolean
+  important?: boolean
+}
+
+export interface UserStatusItem {
+  id: string
+  userId: string
+  name: string
+  content: string
+  role?: string
+  preview?: string
+  createdAt: string
+}
+
+export const newsApi = {
+  list: async (): Promise<NewsItem[]> => {
+    try {
+      const res = await executeNewsAction({ action: 'list' })
+      return res.news || []
+    } catch {
+      return []
+    }
+  },
+  create: async (dto: { title: string; content: string; channel?: string; important?: boolean; pinned?: boolean }): Promise<NewsItem> => {
+    const res = await executeNewsAction({ action: 'create', ...dto })
+    return res.news
+  },
+  delete: async (id: string): Promise<void> => {
+    await executeNewsAction({ action: 'delete', id })
+  },
+  listStatuses: async (): Promise<UserStatusItem[]> => {
+    try {
+      const res = await executeNewsAction({ action: 'list-statuses' })
+      return res.statuses || []
+    } catch {
+      return []
+    }
+  },
+  postStatus: async (content: string, preview?: string): Promise<UserStatusItem> => {
+    const res = await executeNewsAction({ action: 'post-status', content, preview })
+    return res.status
+  },
 }
 
 export interface Assignment { id: string; title: string; code: string; due: string; progress: number; status: 'À rendre' | 'En retard' | 'Soumis' | 'Noté'; grade?: string; description?: string; feedback?: string; submittedAt?: string; submittedFile?: string; submissionNote?: string }

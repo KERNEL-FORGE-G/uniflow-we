@@ -306,12 +306,12 @@ export default function LibraryPage() {
               className={cn(
                 'flex items-center gap-2 rounded-xl px-5 py-2.5 text-xs font-black transition-all duration-150',
                 mainMode === 'open-books'
-                  ? 'bg-[#1E3A8A] text-white shadow-md shadow-blue-900/20'
+                  ? 'bg-gradient-to-r from-[#1E3A8A] to-[#0D9488] text-white shadow-md shadow-blue-900/20'
                   : 'text-slate-600 hover:text-slate-900'
               )}
             >
-              <HiBookOpen className="h-4 w-4" />
-              <span>Manuels & Livres Numériques</span>
+              <HiSparkles className="h-4 w-4 text-amber-300" />
+              <span>Uni Book · Bibliothèque Libre</span>
               <span className={cn('rounded-full px-2 py-0.5 text-[10px] font-bold', mainMode === 'open-books' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700')}>
                 {totalBooksCount}
               </span>
