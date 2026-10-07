@@ -412,95 +412,139 @@ export const openLibraryService = {
 
     let externalBooks: OpenBook[] = []
     if (searchTerms) {
+      // Étape A : Appel direct au service /api/books de UniFlow (Vercel Serverless Function)
+      // Évite tout blocage CSP, bénéficie des traductions académiques et du proxy serveur.
       try {
+        const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : ''
+        const apiUrl = `${origin}/api/books?q=${encodeURIComponent(cleanQuery || searchTerms)}&category=${encodeURIComponent(category)}&limit=35`
+        
         const controller = new AbortController()
-        const timeout = setTimeout(() => controller.abort(), 4000)
-
-        // Source 1 : Project Gutenberg (20+ résultats)
-        const gutenPromise = fetch(`https://gutendex.com/books/?search=${encodeURIComponent(searchTerms)}`, { signal: controller.signal })
-          .then(r => r.json())
-          .then(data => {
-            if (!data.results || !Array.isArray(data.results)) return []
-            return data.results.slice(0, 20).map((item: any): OpenBook => {
-              const formats = item.formats || {}
-              const pdfUrl = formats['application/pdf'] || formats['application/epub+zip'] || formats['text/html'] || ''
-              const coverUrl = formats['image/jpeg'] || ''
-              const authors = (item.authors || []).map((a: any) => a.name)
-
-              const subjects = ((item.subjects || []).join(' ') + ' ' + (item.bookshelves || []).join(' ')).toLowerCase()
-              let cat: BookCategory = 'Littérature & Lettres'
-              if (subjects.includes('computer') || subjects.includes('technology') || subjects.includes('algorithm')) cat = 'Informatique & IA'
-              else if (subjects.includes('math') || subjects.includes('statistic') || subjects.includes('algebra')) cat = 'Mathématiques & Data'
-              else if (subjects.includes('physic') || subjects.includes('chemis') || subjects.includes('mechanic')) cat = 'Physique & Sciences'
-              else if (subjects.includes('law') || subjects.includes('politic') || subjects.includes('jur')) cat = 'Droit & Sciences Po'
-              else if (subjects.includes('econom') || subjects.includes('finance') || subjects.includes('business')) cat = 'Économie & Gestion'
-              else if (subjects.includes('medicin') || subjects.includes('health') || subjects.includes('bio')) cat = 'Médecine & Santé'
-
-              return {
-                id: `guten-${item.id}`,
-                title: item.title,
-                authors: authors.length > 0 ? authors : ['Auteur Universitaire'],
-                year: item.authors?.[0]?.death_year ? item.authors[0].death_year - 30 : undefined,
-                category: category !== 'Tous' ? category : cat,
-                language: item.languages?.[0]?.toUpperCase() === 'FR' ? 'Français' : 'Anglais',
-                coverUrl: coverUrl || undefined,
-                description: item.summaries?.[0] || `Ouvrage académique et scientifique indexé dans la bibliothèque libre.`,
-                downloadUrl: pdfUrl,
-                format: pdfUrl.includes('epub') ? 'EPUB' : 'PDF',
-                source: 'Project Gutenberg',
-                downloadsCount: item.download_count || 120,
-                cachedInBucket: false,
-              }
-            })
-          })
-          .catch(() => [])
-
-        // Source 2 : Open Library (30+ résultats, recherche universelle)
-        const openLibraryPromise = fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(searchTerms)}&limit=35`, { signal: controller.signal })
-          .then(r => r.json())
-          .then(data => {
-            if (!data.docs || !Array.isArray(data.docs)) return []
-            return data.docs.map((doc: any): OpenBook => {
-              const coverUrl = doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : undefined
-              const iaId = doc.ia?.[0]
-              const downloadUrl = iaId ? `https://archive.org/download/${iaId}/${iaId}.pdf` : undefined
-
-              let cat: BookCategory = category !== 'Tous' ? category : 'Informatique & IA'
-
-              return {
-                id: `ol-${doc.key?.replace('/works/', '') || Math.random().toString(36).slice(2)}`,
-                title: doc.title,
-                authors: doc.author_name || ['Auteur Open Library'],
-                year: doc.first_publish_year,
-                category: cat,
-                language: doc.language?.includes('fre') ? 'Français' : 'Anglais',
-                coverUrl,
-                description: `Édition universitaire (${doc.first_publish_year || 'Récente'}). Sujets: ${(doc.subject || []).slice(0, 3).join(', ')}`,
-                downloadUrl,
-                format: 'PDF',
-                source: 'Open Library',
-                downloadsCount: doc.edition_count ? doc.edition_count * 250 : 800,
-                cachedInBucket: false,
-                isbn: doc.isbn?.[0],
-              }
-            })
-          })
-          .catch(() => [])
-
-        const [gutenResults, olResults] = await Promise.all([gutenPromise, openLibraryPromise])
+        const timeout = setTimeout(() => controller.abort(), 6000)
+        const apiRes = await fetch(apiUrl, {
+          headers: { 'Accept': 'application/json' },
+          signal: controller.signal,
+        })
         clearTimeout(timeout)
-        externalBooks = [...gutenResults, ...olResults]
 
-        // Auto-synchronisation des premiers résultats en base de données de manière asynchrone
-        if (cleanQuery && externalBooks.length > 0) {
-          setTimeout(() => {
-            externalBooks.slice(0, 5).forEach(b => {
-              this.syncBookToDb(b).catch(() => undefined)
-            })
-          }, 100)
+        if (apiRes.ok) {
+          const apiData = await apiRes.json()
+          const booksList = apiData.books || apiData.results
+          if (Array.isArray(booksList) && booksList.length > 0) {
+            externalBooks = booksList.map((b: any): OpenBook => ({
+              id: b.id || `book-${Math.random().toString(36).slice(2)}`,
+              title: b.title || 'Ouvrage sans titre',
+              authors: Array.isArray(b.authors) ? b.authors : [b.author || 'Auteur Universitaire'],
+              year: b.year,
+              category: b.category || (category !== 'Tous' ? category : 'Sciences & Enseignement'),
+              language: b.language || 'Français',
+              coverUrl: b.coverUrl,
+              description: b.description || 'Ouvrage académique et manuel universitaire.',
+              downloadUrl: b.downloadUrl || b.directReadUrl,
+              directReadUrl: b.directReadUrl || b.downloadUrl,
+              format: b.format || 'PDF',
+              source: b.source || 'Open Library',
+              downloadsCount: b.downloadsCount || 450,
+              cachedInBucket: !!b.cachedInBucket,
+              isbn: b.isbn,
+            }))
+          }
         }
-      } catch (e) {
-        console.warn('Erreur recherche externe:', e)
+      } catch (err) {
+        console.warn('API /api/books non joignable ou différée, tentative multi-sources directe:', err)
+      }
+
+      // Étape B : Si /api/books n'a rien retourné (ex: mode hors ligne), fallback direct
+      if (externalBooks.length === 0) {
+        try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 4000)
+
+          // Source 1 : Project Gutenberg
+          const gutenPromise = fetch(`https://gutendex.com/books/?search=${encodeURIComponent(searchTerms)}`, { signal: controller.signal })
+            .then(r => r.json())
+            .then(data => {
+              if (!data.results || !Array.isArray(data.results)) return []
+              return data.results.slice(0, 20).map((item: any): OpenBook => {
+                const formats = item.formats || {}
+                const pdfUrl = formats['application/pdf'] || formats['application/epub+zip'] || formats['text/html'] || ''
+                const coverUrl = formats['image/jpeg'] || ''
+                const authors = (item.authors || []).map((a: any) => a.name)
+
+                const subjects = ((item.subjects || []).join(' ') + ' ' + (item.bookshelves || []).join(' ')).toLowerCase()
+                let cat: BookCategory = 'Littérature & Lettres'
+                if (subjects.includes('computer') || subjects.includes('technology') || subjects.includes('algorithm')) cat = 'Informatique & IA'
+                else if (subjects.includes('math') || subjects.includes('statistic') || subjects.includes('algebra')) cat = 'Mathématiques & Data'
+                else if (subjects.includes('physic') || subjects.includes('chemis') || subjects.includes('mechanic')) cat = 'Physique & Sciences'
+                else if (subjects.includes('law') || subjects.includes('politic') || subjects.includes('jur')) cat = 'Droit & Sciences Po'
+                else if (subjects.includes('econom') || subjects.includes('finance') || subjects.includes('business')) cat = 'Économie & Gestion'
+                else if (subjects.includes('medicin') || subjects.includes('health') || subjects.includes('bio')) cat = 'Médecine & Santé'
+
+                return {
+                  id: `guten-${item.id}`,
+                  title: item.title,
+                  authors: authors.length > 0 ? authors : ['Auteur Universitaire'],
+                  year: item.authors?.[0]?.death_year ? item.authors[0].death_year - 30 : undefined,
+                  category: category !== 'Tous' ? category : cat,
+                  language: item.languages?.[0]?.toUpperCase() === 'FR' ? 'Français' : 'Anglais',
+                  coverUrl: coverUrl || undefined,
+                  description: item.summaries?.[0] || `Ouvrage académique et scientifique indexé dans la bibliothèque libre.`,
+                  downloadUrl: pdfUrl,
+                  format: pdfUrl.includes('epub') ? 'EPUB' : 'PDF',
+                  source: 'Project Gutenberg',
+                  downloadsCount: item.download_count || 120,
+                  cachedInBucket: false,
+                }
+              })
+            })
+            .catch(() => [])
+
+          // Source 2 : Open Library
+          const openLibraryPromise = fetch(`https://openlibrary.org/search.json?q=${encodeURIComponent(searchTerms)}&limit=35`, { signal: controller.signal })
+            .then(r => r.json())
+            .then(data => {
+              if (!data.docs || !Array.isArray(data.docs)) return []
+              return data.docs.map((doc: any): OpenBook => {
+                const coverUrl = doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : undefined
+                const iaId = doc.ia?.[0]
+                const downloadUrl = iaId ? `https://archive.org/download/${iaId}/${iaId}.pdf` : undefined
+
+                let cat: BookCategory = category !== 'Tous' ? category : 'Informatique & IA'
+
+                return {
+                  id: `ol-${doc.key?.replace('/works/', '') || Math.random().toString(36).slice(2)}`,
+                  title: doc.title,
+                  authors: doc.author_name || ['Auteur Open Library'],
+                  year: doc.first_publish_year,
+                  category: cat,
+                  language: doc.language?.includes('fre') ? 'Français' : 'Anglais',
+                  coverUrl,
+                  description: `Édition universitaire (${doc.first_publish_year || 'Récente'}). Sujets: ${(doc.subject || []).slice(0, 3).join(', ')}`,
+                  downloadUrl,
+                  format: 'PDF',
+                  source: 'Open Library',
+                  downloadsCount: doc.edition_count ? doc.edition_count * 250 : 800,
+                  cachedInBucket: false,
+                  isbn: doc.isbn?.[0],
+                }
+              })
+            })
+            .catch(() => [])
+
+          const [gutenResults, olResults] = await Promise.all([gutenPromise, openLibraryPromise])
+          clearTimeout(timeout)
+          externalBooks = [...gutenResults, ...olResults]
+        } catch (e) {
+          console.warn('Erreur recherche externe:', e)
+        }
+      }
+
+      // Auto-synchronisation des premiers résultats en base de données de manière asynchrone
+      if (cleanQuery && externalBooks.length > 0) {
+        setTimeout(() => {
+          externalBooks.slice(0, 8).forEach(b => {
+            this.syncBookToDb(b).catch(() => undefined)
+          })
+        }, 100)
       }
     }
 

@@ -67,7 +67,48 @@ export default async function openLibraryService({ req, res, log, error }) {
       const existing = await databases.listDocuments(DATABASE_ID, 'academic_library', dbQuery).catch(() => ({ documents: [] }))
 
       // 2. Recherche multi-sources en parallèle avec timeout maîtrisé (au moins 30 résultats)
-      const searchTerm = query || (category !== 'Tous' ? category : 'computer science')
+      const FRENCH_TO_ENGLISH = {
+        programmation: 'programming',
+        programmeur: 'programming',
+        developpement: 'software development programming',
+        algorithme: 'algorithm',
+        algorithmes: 'algorithms',
+        structure: 'data structures',
+        structures: 'data structures',
+        donnees: 'data science',
+        chimie: 'chemistry',
+        physique: 'physics',
+        mathematiques: 'mathematics',
+        mathematique: 'mathematics',
+        maths: 'mathematics',
+        math: 'mathematics',
+        algebre: 'algebra',
+        analyse: 'calculus analysis',
+        informatique: 'computer science programming',
+        reseau: 'computer networks',
+        reseaux: 'computer networks',
+        systeme: 'operating system',
+        systemes: 'operating systems',
+        securite: 'cybersecurity',
+        droit: 'law jurisprudence',
+        economie: 'economics',
+        gestion: 'management accounting',
+        finance: 'finance',
+        biologie: 'biology',
+        medecine: 'medicine',
+        sante: 'health',
+      }
+
+      let searchTerm = query
+      if (searchTerm) {
+        const words = searchTerm.toLowerCase().split(/\s+/)
+        const mapped = words.map(w => FRENCH_TO_ENGLISH[w] || w)
+        searchTerm = mapped.join(' ')
+      } else if (category !== 'Tous') {
+        searchTerm = FRENCH_TO_ENGLISH[category.toLowerCase()] || category
+      } else {
+        searchTerm = 'computer science'
+      }
 
       const [gutendexSettled, openLibrarySettled] = await Promise.allSettled([
         // Source A : Gutendex (Project Gutenberg)
