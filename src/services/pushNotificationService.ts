@@ -51,7 +51,8 @@ class PushNotificationService {
           installingWorker.onstatechange = () => {
             if (installingWorker.state === 'installed') {
               if (navigator.serviceWorker.controller) {
-                console.log('[UniFlow PWA] New Service Worker content available.')
+                console.log('[UniFlow PWA] New Service Worker content available, updating automatically...')
+                installingWorker.postMessage({ type: 'SKIP_WAITING' })
               } else {
                 console.log('[UniFlow PWA] Content cached for offline use.')
               }
