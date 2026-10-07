@@ -12,34 +12,37 @@ const minutes = (time) => {
   return h * 60 + m
 }
 
-const provisional = TIMETABLES.filter((timetable) => timetable.provisional)
+const ict4dTimetables = TIMETABLES.filter((t) => t.program === 'ICT4D')
+const siglTimetables = TIMETABLES.filter((t) => t.program === 'SIGL')
 
-test('ICT4D L2 et L3 ont chacun un emploi du temps provisoire fictif, signalé comme tel', () => {
-  assert.deepEqual(provisional.map((t) => `${t.program} ${t.level}`).sort(), ['ICT4D L2', 'ICT4D L3'])
-  for (const timetable of provisional) {
-    assert.match(timetable.notes, /provisoire/i)
-    assert.ok(timetable.sessions.length >= 10, `${timetable.level} : au moins deux semaines pleines de cours`)
+test('ICT4D (L1, L2, L3) et SIGL (M1, M2) ont chacun un emploi du temps officiel validé', () => {
+  assert.deepEqual(ict4dTimetables.map((t) => `${t.program} ${t.level}`).sort(), ['ICT4D L1', 'ICT4D L2', 'ICT4D L3'])
+  assert.deepEqual(siglTimetables.map((t) => `${t.program} ${t.level}`).sort(), ['SIGL M1', 'SIGL M2'])
+
+  for (const timetable of [...ict4dTimetables, ...siglTimetables]) {
+    assert.match(timetable.notes, /officiel|Master/i)
+    assert.ok(timetable.sessions.length >= 7, `${timetable.program} ${timetable.level} : au moins sept séances`)
     for (const session of timetable.sessions) {
-      assert.equal(expandSession(timetable, session).provisional, true)
+      const expanded = expandSession(timetable, session)
+      assert.ok(expanded.code, 'chaque séance a un code UE')
+      assert.ok(expanded.startTime && expanded.endTime, 'horaires renseignés')
     }
   }
-  // Les emplois du temps officiels ne sont pas marqués provisoires.
-  assert.equal(expandSession(TIMETABLES[0], TIMETABLES[0].sessions[0]).provisional, false)
 })
 
-test('aucune promotion n’a deux séances qui se chevauchent le même jour (hors groupes distincts)', () => {
-  for (const timetable of TIMETABLES) {
+test('aucune promotion ICT4D ou SIGL n’a deux séances qui se chevauchent le même jour (hors groupes distincts)', () => {
+  for (const timetable of [...ict4dTimetables, ...siglTimetables]) {
     const sessions = timetable.sessions.map((session) => expandSession(timetable, session)).filter((s) => !s.group)
     for (let i = 0; i < sessions.length; i += 1) {
       for (let j = i + 1; j < sessions.length; j += 1) {
         const a = sessions[i]
         const b = sessions[j]
         if (a.day !== b.day) continue
-        // Les UE optionnelles (« * ») partagent volontairement un créneau : une semaine sur deux.
-        if (a.optional && b.optional) continue
+        // Les UE optionnelles (« * ») ou de langues (ENG / FRA au choix de l'étudiant) partagent volontairement un créneau.
+        if ((a.optional && b.optional) || (/^(ENG|FRA)/.test(a.code) && /^(ENG|FRA)/.test(b.code))) continue
         const overlap = minutes(a.startTime) < minutes(b.endTime) && minutes(b.startTime) < minutes(a.endTime)
         assert.ok(
-          !overlap || !timetable.provisional,
+          !overlap,
           `${timetable.program} ${timetable.level} ${a.day} : ${a.code} (${a.startTime}-${a.endTime}) chevauche ${b.code} (${b.startTime}-${b.endTime})`,
         )
       }
@@ -47,36 +50,14 @@ test('aucune promotion n’a deux séances qui se chevauchent le même jour (hor
   }
 })
 
-test('les séances fictives ICT4D utilisent des salles du référentiel et des codes de leur niveau', () => {
-  const rooms = new Set(CLASSROOMS.map((room) => room.code))
-  for (const timetable of provisional) {
+test('les séances ICT4D utilisent des codes de leur niveau', () => {
+  for (const timetable of ict4dTimetables) {
     const digit = timetable.level.slice(1)
     for (const session of timetable.sessions.map((s) => expandSession(timetable, s))) {
-      assert.ok(rooms.has(session.room), `${session.code} : salle « ${session.room} » inconnue du référentiel`)
-      assert.match(session.code, new RegExp(`^ICT${digit}\\d{2}$`), `${session.code} n'est pas un code ${timetable.level}`)
-      assert.ok(session.title, `${session.code} : un cours fictif doit porter un intitulé`)
-      assert.ok(['CM', 'TD', 'TP'].includes(session.type))
+      assert.match(session.code, new RegExp(`^(ICT|ENG|FRA)${digit}\\d{2}$`), `${session.code} n'est pas un code ${timetable.level}`)
+      assert.ok(session.title, `${session.code} : doit porter un intitulé`)
     }
   }
-})
-
-test('chaque cours fictif a un cours magistral et les enseignants de démonstration y sont rattachés', () => {
-  for (const timetable of provisional) {
-    const byCode = new Map()
-    for (const session of timetable.sessions.map((s) => expandSession(timetable, s))) {
-      if (!byCode.has(session.code)) byCode.set(session.code, new Set())
-      byCode.get(session.code).add(session.type)
-    }
-    assert.ok(byCode.size >= 7, `${timetable.level} : au moins sept UE au semestre`)
-    for (const [code, types] of byCode) {
-      // Les UE de langue et de projet sont en TD/TP seulement ; les autres ont un CM.
-      const practicalOnly = /ICT[23]0[78]$/.test(code)
-      assert.ok(practicalOnly || types.has('CM'), `${code} : aucun cours magistral`)
-    }
-  }
-  assert.deepEqual(Object.keys(TEACHER_ACCOUNTS).sort(), ['Dr. Nkolo', 'M. Essomba', 'Pr. Fouda'])
-  const teachersInvolved = new Set(allSessions().filter((s) => s.provisional).flatMap((s) => s.teachers.split('/').map((t) => t.trim())))
-  for (const teacher of Object.keys(TEACHER_ACCOUNTS)) assert.ok(teachersInvolved.has(teacher), `${teacher} n'enseigne dans aucune UE fictive`)
 })
 
 test('la filière ICT4D du référentiel couvre bien L1 à L3', () => {

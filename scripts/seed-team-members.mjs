@@ -60,11 +60,14 @@ const members = [
     email: 'ravelnghomsi@gmail.com',
     team: 'Leadership',
     subTeam: 'Architecture & Direction',
-    role: 'Chef de projet & Architecte',
-    badge: 'Lead Architect',
+    role: 'Fondateur KERNEL FORGE & Architecte',
+    badge: 'Fondateur & Lead',
     // Valeur choisie depuis la page Réglages > Équipe ; le seed la reflète
     // pour ne pas l'écraser à la prochaine exécution.
     accent: 'cyan',
+    website: 'https://ravelnghomsi.me',
+    linkedin: 'https://cm.linkedin.com/in/ravel-nghomsi-feukouo-60866b366',
+    bio: 'Fondateur de KERNEL FORGE (kernelforge.codes) et architecte principal d\'UniFlow. Étudiant à l\'UY1.',
   },
   {
     slug: 'aliya',
@@ -122,6 +125,8 @@ const members = [
     role: 'Backend Developer',
     badge: 'NestJS Backend',
     accent: 'rose',
+    website: 'https://hawadja.github.io/portfolio/',
+    bio: 'Développeur Backend KERNEL FORGE. Spécialisé en microservices et architectures distribuées.',
   },
   {
     slug: 'ange',

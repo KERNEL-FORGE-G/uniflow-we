@@ -213,8 +213,8 @@ export const TIMETABLES = [
       ['Lundi', S3, 'GEO 4077', 'ONANA / NGO BIDJECK', 'AIII'],
       ['Mardi', S4, 'GEO 4057', 'METANG / TCHAPTCHET', 'R101'],
       ['Mercredi', S1, 'GEO 4027', 'NGO BIDJECK / TEHNA', 'R108'],
-      ['Mercredi', S4, 'GEO 4017', '', 'A135', TD],
-      ['Mercredi', S4, 'GEO 4077', '', 'A135', TD],
+      ['Mercredi', S4, 'GEO 4017', '', 'A135', { ...TD, optional: true }],
+      ['Mercredi', S4, 'GEO 4077', '', 'A135', { ...TD, optional: true }],
       ['Vendredi', S2, 'GEO 4017', 'ONANA', 'AIII'],
       ['Vendredi', S4, 'GEO 4047', 'NDJIGUI / SABABA', 'A250'],
       ['Samedi', S1, 'GEO 4037', 'YENE / BISSO / MBIDA YEM', 'AIII'],
@@ -887,22 +887,28 @@ export const TIMETABLES = [
     program: 'ICT4D', level: 'L2', defaultRoom: 'S003/S008',
     notes: 'Emploi du temps officiel Semestre 1 — Département d\'Informatique, Faculté des Sciences, UY1.',
     sessions: [
-      ['Lundi', ICT_H1, 'ICT207', '', 'S003/S008', { group: 'G2', title: 'ICT207-G2' }],
+      // Lundi
       ['Lundi', ICT_L2_H2, 'ICT207', '', 'S003/S008', { group: 'G1', title: 'ICT207-G1' }],
       ['Lundi', ICT_H3, 'ICT217', '', 'S003/S008', { group: 'G1', title: 'ICT217-G1' }],
-      ['Mardi', ICT_H1, 'ICT203', '', 'S003/S008', { group: 'G2', title: 'ICT203-G2' }],
+      // Mardi
+      ['Mardi', ICT_H1, 'ICT207', '', 'S003/S008', { group: 'G2', title: 'ICT207-G2' }],
       ['Mardi', ICT_L2_H2, 'ICT201', '', 'S003/S008', { group: 'G1', title: 'ICT201-G1' }],
       ['Mardi', ICT_H3, 'ENG203', '', 'S003/S008', { group: 'G2', title: 'ENG203-G2' }],
       ['Mardi', ICT_H3, 'FRA203', '', 'S003/S008', { group: 'G1', title: 'FRA203-G1' }],
-      ['Mercredi', ICT_H1, 'ICT205', '', 'S003/S008', { group: 'G2', title: 'ICT205-G2' }],
+      // Mercredi
+      ['Mercredi', ICT_H1, 'ICT203', '', 'S003/S008', { group: 'G2', title: 'ICT203-G2' }],
       ['Mercredi', ICT_L2_H2, 'ICT213', '', 'S003/S008', { group: 'G1', title: 'ICT213-G1' }],
       ['Mercredi', ICT_H3, 'ICT215', '', 'S003/S008', { group: 'G1', title: 'ICT215-G1' }],
-      ['Jeudi', ICT_H1, 'ICT205', '', 'S003/S008', { group: 'G1', title: 'ICT205-G1' }],
+      // Jeudi
+      ['Jeudi', ICT_H1, 'ICT205', '', 'S003/S008', { group: 'G2', title: 'ICT205-G2' }],
       ['Jeudi', ICT_L2_H2, 'ICT215', '', 'S003/S008', { group: 'G2', title: 'ICT215-G2' }],
       ['Jeudi', ICT_H3, 'ICT217', '', 'S003/S008', { group: 'G2', title: 'ICT217-G2' }],
-      ['Vendredi', ICT_H1, 'ENG203', '', 'S003/S008', { group: 'G1', title: 'ENG203-G1' }],
+      // Vendredi
+      ['Vendredi', ICT_H1, 'ICT205', '', 'S003/S008', { group: 'G1', title: 'ICT205-G1' }],
       ['Vendredi', ICT_L2_H2, 'ICT201', '', 'S003/S008', { group: 'G2', title: 'ICT201-G2' }],
       ['Vendredi', ICT_H3, 'ICT213', '', 'S003/S008', { group: 'G2', title: 'ICT213-G2' }],
+      // Samedi
+      ['Samedi', ICT_H1, 'ENG203', '', 'S003/S008', { group: 'G1', title: 'ENG203-G1' }],
       ['Samedi', ICT_L2_H2, 'ICT203', '', 'S003/S008', { group: 'G1', title: 'ICT203-G1' }],
       ['Samedi', ICT_H3, 'FRA203', '', 'S003/S008', { group: 'G2', title: 'FRA203-G2' }],
     ],

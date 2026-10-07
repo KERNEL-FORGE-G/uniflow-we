@@ -1,0 +1,43 @@
+name: UniFlow Web CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  qualite:
+    name: Qualité (types, tests, build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v4
+
+      - name: Installer pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.34.5
+
+      - name: Configurer Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Installer les dépendances
+        run: pnpm install --frozen-lockfile
+
+      - name: Vérification des types
+        run: pnpm run typecheck
+
+      - name: Tests unitaires
+        run: pnpm test
+
+      - name: Build de production
+        run: pnpm run build

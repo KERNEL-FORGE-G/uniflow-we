@@ -40,7 +40,7 @@ export function Sidebar() {
               alt="Accueil UniFlow"
               loading="eager"
               decoding="async"
-              className="h-9 w-auto object-contain"
+              className="h-11 w-auto object-contain"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
                 if (!target.dataset.triedFallback1) {

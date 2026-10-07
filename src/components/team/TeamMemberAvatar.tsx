@@ -16,6 +16,11 @@ import { avatarViewUrl } from '../../lib/appwrite'
  * On n'utilise jamais ui-avatars.com ni d'initiales générées : un rond neutre
  * se lit comme « pas encore de photo », pas comme une photo ratée.
  */
+const LOCAL_AVATAR_FALLBACKS: Record<string, string> = {
+  'nghomsi feukouo ravel': '/team/ravel.jpg',
+  'hassane youssouf oumar': '/team/hassane.jpg',
+}
+
 export function TeamMemberAvatar({
   avatarFileId,
   name,
@@ -27,24 +32,22 @@ export function TeamMemberAvatar({
   className?: string
   iconClassName?: string
 }) {
-  const src = avatarViewUrl(avatarFileId)
-  const [state, setState] = useState<'loading' | 'ready' | 'error'>(
-    src ? 'loading' : 'error'
-  )
-  const imgRef = useRef<HTMLImageElement | null>(null)
+  const localFallback = LOCAL_AVATAR_FALLBACKS[name.toLowerCase().trim()]
+  const appwriteUrl = avatarViewUrl(avatarFileId)
+  const initialSrc = appwriteUrl || localFallback || ''
 
-  useEffect(() => {
-    if (!src) { setState('error'); return }
-    setState('loading')
-    const probe = new Image()
-    probe.onload = () => setState('ready')
-    probe.onerror = () => setState('error')
-    probe.src = src
-    imgRef.current = probe
-    return () => { probe.onload = null; probe.onerror = null }
-  }, [src])
+  const [currentSrc, setCurrentSrc] = useState(initialSrc)
+  const [hasError, setHasError] = useState(!initialSrc)
 
-  if (state === 'error' || !src) {
+  const handleError = () => {
+    if (currentSrc && localFallback && currentSrc !== localFallback) {
+      setCurrentSrc(localFallback)
+    } else {
+      setHasError(true)
+    }
+  }
+
+  if (hasError || !currentSrc) {
     return (
       <div
         role="img"
@@ -59,22 +62,13 @@ export function TeamMemberAvatar({
     )
   }
 
-  if (state === 'loading') {
-    return (
-      <div
-        aria-hidden
-        className={cn('animate-pulse bg-slate-700/60 shrink-0', className)}
-      />
-    )
-  }
-
   return (
     <img
-      src={src}
+      src={currentSrc}
       alt={name}
       loading="lazy"
       decoding="async"
-      onError={() => setState('error')}
+      onError={handleError}
       className={cn('object-cover bg-slate-100 shrink-0', className)}
     />
   )

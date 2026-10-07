@@ -66,13 +66,13 @@ const persistOptions = {
 /** Restaure le cache avant le premier rendu, avec un délai de garde pour ne jamais bloquer l'application. */
 export async function restorePersistedQueries(queryClient: QueryClient): Promise<void> {
   await Promise.race([
-    persistQueryClientRestore({ queryClient, ...persistOptions }).catch(() => undefined),
+    persistQueryClientRestore({ queryClient: queryClient as any, ...persistOptions }).catch(() => undefined),
     new Promise<void>((resolve) => setTimeout(resolve, RESTORE_TIMEOUT_MS)),
   ])
 }
 
 export function subscribePersistedQueries(queryClient: QueryClient): () => void {
-  return persistQueryClientSubscribe({ queryClient, ...persistOptions })
+  return persistQueryClientSubscribe({ queryClient: queryClient as any, ...persistOptions })
 }
 
 /** À la déconnexion : le cache d'un compte ne doit pas réapparaître pour le suivant sur le même navigateur. */

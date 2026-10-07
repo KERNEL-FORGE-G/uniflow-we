@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "vite --host 0.0.0.0 --port 3000",
     "build": "tsc -b && vite build",
@@ -16,7 +17,7 @@
     "@hookform/resolvers": "^3.10.0",
     "@phosphor-icons/react": "^2.1.10",
     "@tanstack/query-persist-client-core": "^5.103.1",
-    "@tanstack/react-query": "^5.64.2",
+    "@tanstack/react-query": "^5.103.1",
     "appwrite": "^17.0.2",
     "axios": "^1.19.0",
     "class-variance-authority": "^0.7.1",

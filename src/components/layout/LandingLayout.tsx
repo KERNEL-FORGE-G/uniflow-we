@@ -49,7 +49,7 @@ export function LandingNavbar() {
             loading="eager"
             decoding="async"
             onError={restoreOriginalLogo}
-            className="h-10 w-auto object-contain"
+            className="h-12 w-auto object-contain"
           />
         </Link>
 

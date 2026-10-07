@@ -21,6 +21,8 @@ export const CONTACT_EMAIL_SECONDARY = 'uniflow@kernelforge.codes'
 /** Groupe WhatsApp public de KERNEL FORGE (lien fourni par le propriétaire le 2026-09-21). */
 export const KERNEL_FORGE_WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/IFkGMr4Ev2KCFAKw9EmEde'
 export const KERNEL_FORGE_GITHUB_URL = 'https://github.com/KERNEL-FORGE-G'
+export const KERNEL_FORGE_WEBSITE_URL = 'https://kernelforge.codes'
+export const FOUNDER_PORTFOLIO_URL = 'https://ravelnghomsi.me'
 
 export const COVERAGE_UNIVERSITY = 'Université de Yaoundé I'
 export const COVERAGE_FACULTY = 'Faculté des Sciences'
