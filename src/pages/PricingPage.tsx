@@ -54,7 +54,7 @@ const faqs = [
   },
   {
     q: 'Comment régler un abonnement ?',
-    a: `Les abonnements se règlent en toute simplicité en ligne via Flutterwave (Orange Money, MTN Mobile Money, carte bancaire Visa / Mastercard) directement depuis les applications mobiles et desktop, ou par validation administrative assistée.`,
+    a: `Les abonnements se règlent en toute simplicité (Orange Money, MTN Mobile Money, virement bancaire) avec validation et accompagnement officiel direct via WhatsApp (+237 6 57 63 56 44).`,
     cat: 'Général'
   },
   {
@@ -143,10 +143,10 @@ export default function PricingPage() {
 
           <div className="inline-flex flex-wrap items-center justify-center gap-2 pt-2">
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Activation instantanée par Flutterwave
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Activation immédiate
             </span>
             <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-white border border-slate-200 text-xs font-semibold text-slate-700 shadow-xs">
-              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> Assistance facturation WhatsApp
+              <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> Assistance facturation WhatsApp (+237 6 57 63 56 44)
             </span>
           </div>
         </div>
@@ -282,7 +282,7 @@ export default function PricingPage() {
         <div className="mx-auto max-w-5xl px-4 sm:px-8">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-black text-slate-900 sm:text-3xl">Modalités de règlement sécurisées</h2>
-            <p className="text-xs sm:text-sm text-slate-500 mt-2">Passerelle Flutterwave avec activation instantanée ou accompagnement par WhatsApp.</p>
+            <p className="text-xs sm:text-sm text-slate-500 mt-2">Activation instantanée et accompagnement officiel par WhatsApp (+237 6 57 63 56 44).</p>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
             {howItWorks.map((step, index) => (

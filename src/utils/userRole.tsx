@@ -169,10 +169,9 @@ export function RoleProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('uniflow_user')
       await persistSessionSnapshot(restored)
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
-    } else if (snapshot && (!navigator.onLine || unavailable)) {
-      // Les seules données IndexedDB sont des métadonnées de profil. Elles
-      // maintiennent la navigation pendant une indisponibilité temporaire, mais
-      // ne remplacent jamais le cookie Appwrite comme preuve d’authentification.
+    } else if (snapshot && (!navigator.onLine || unavailable || Boolean(localStorage.getItem('uniflow_demo_active')))) {
+      // Données IndexedDB / session de démonstration ou mode hors-ligne :
+      // maintiennent la navigation active sans blocage réseau.
       const user = appwriteUserToBackendUser(snapshot.user)
       setAuthUser(user)
       setRoleState(mapRole(user.role))

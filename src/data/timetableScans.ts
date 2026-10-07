@@ -41,6 +41,11 @@ export const TIMETABLE_SCANS: TimetableScan[] = [
   { photo: 31, program: 'BCH', level: 'L3', fileId: 'edt_scan_bch_l3', label: 'Biochimie L3', classroom: 'P1 / P2 / AI / AII' },
   { photo: 33, program: 'BIOS', level: 'L2', fileId: 'edt_scan_bios_l2', label: 'Biosciences L2', classroom: 'A1002 / A250 / R101' },
   { photo: 34, program: 'BIOS', level: 'L1', fileId: 'edt_scan_bios_l1', label: 'Biosciences L1 & Géosciences L1 (Groupes)', classroom: 'A1001 / A1002' },
+  { photo: 35, program: 'ICT4D', level: 'L1', fileId: 'edt_scan_ict4d_l1', label: 'ICT4D L1 (Licence Pro)', classroom: 'R101' },
+  { photo: 36, program: 'ICT4D', level: 'L2', fileId: 'edt_scan_ict4d_l2', label: 'ICT4D L2 (Licence Pro)', classroom: 'S003 / S008' },
+  { photo: 37, program: 'ICT4D', level: 'L3', fileId: 'edt_scan_ict4d_l3', label: 'ICT4D L3 (Licence Pro)', classroom: 'S107' },
+  { photo: 38, program: 'SIGL', level: 'M1', fileId: 'edt_scan_sigl_m1', label: 'Master SIGL M1 (Professionnel)', classroom: 'S111' },
+  { photo: 39, program: 'SIGL', level: 'M2', fileId: 'edt_scan_sigl_m2', label: 'Master SIGL M2 (Professionnel)', classroom: 'S105' },
 ]
 
 export function getScanUrl(scan: TimetableScan): { appwriteUrl: string; localUrl: string } {

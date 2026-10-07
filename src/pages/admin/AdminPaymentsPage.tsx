@@ -131,7 +131,7 @@ export default function AdminPaymentsPage() {
         <div className="relative flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Facturation & Flux Financiers</p>
-            <h1 className="mt-1 text-2xl sm:text-3xl font-black">Abonnements & Passerelle Flutterwave</h1>
+            <h1 className="mt-1 text-2xl sm:text-3xl font-black">Abonnements & Règlements</h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
               Gérez les souscriptions et réglez la carte bancaire ou le compte de versement où les revenus de la plateforme sont transférés en toute sécurité.
             </p>

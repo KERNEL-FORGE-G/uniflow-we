@@ -31,7 +31,7 @@ export function guestReply(question: string): GuestReply {
   const q = normalize(question)
   if (/(tarif|prix|abonnement|payer|paiement|gratuit|combien|whatsapp|facture)/.test(q)) {
     return {
-      text: `Les comptes universitaires (étudiants, enseignants, administration) sont gratuits dans le cadre de leur formation. Les formules pour comptes indépendants et fonctionnalités avancées se règlent en toute sécurité via Flutterwave (Mobile Money, Carte) ou directement par WhatsApp.`,
+      text: `Les comptes universitaires (étudiants, enseignants, administration) sont gratuits dans le cadre de leur formation. Les formules pour comptes indépendants et fonctionnalités avancées se règlent en toute sécurité par Mobile Money, virement bancaire ou directement par WhatsApp (+237 6 57 63 56 44).`,
       links: [PRICING],
     }
   }

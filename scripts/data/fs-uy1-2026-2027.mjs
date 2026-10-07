@@ -47,8 +47,9 @@ export const PROGRAMS = [
   { code: 'BOV', name: 'Biologie des Organismes Végétaux', levels: 'L3,M1', description: 'Spécialité des Biosciences à partir de la L3.' },
   { code: 'BCH', name: 'Biochimie', levels: 'L3,M1', description: 'Spécialité des Biosciences à partir de la L3.' },
   { code: 'ENR', name: 'Énergies Renouvelables', levels: 'L1,L2,L3' },
-  // Périmètre historique d'UniFlow : les comptes de démonstration y sont inscrits.
+  // Périmètre professionnel du Département d'Informatique.
   { code: 'ICT4D', name: 'Licence professionnelle ICT4D', levels: 'L1,L2,L3', description: 'Technologies de l’information et de la communication pour le développement.' },
+  { code: 'SIGL', name: 'Master Professionnel SIGL', levels: 'M1,M2', description: 'Systèmes d’Information et Génie Logiciel (Master Professionnel).' },
 ]
 
 /**
@@ -87,6 +88,11 @@ export const CLASSROOMS = [
   { code: 'S110', name: 'Salle S110', kind: 'SALLE', building: 'Bâtiment S' },
   { code: 'S24A', name: 'Salle S24A', kind: 'SALLE', building: 'Bâtiment S' },
   { code: 'S24B', name: 'Salle S24B', kind: 'SALLE', building: 'Bâtiment S' },
+  { code: 'S003', name: 'Salle S003', kind: 'SALLE', building: 'Bâtiment S' },
+  { code: 'S003/S008', name: 'Salles S003-S008 (réunies)', kind: 'SALLE', building: 'Bâtiment S' },
+  { code: 'S105', name: 'Salle S105', kind: 'SALLE', building: 'Bâtiment S' },
+  { code: 'S107', name: 'Salle S107', kind: 'SALLE', building: 'Bâtiment S' },
+  { code: 'S111', name: 'Salle S111', kind: 'SALLE', building: 'Bâtiment S' },
   { code: 'P1', name: 'Salle P1', kind: 'TD' },
   { code: 'P2', name: 'Salle P2', kind: 'TD' },
   { code: 'LANGUES', name: 'Salle de langues', kind: 'SALLE' },
@@ -118,6 +124,16 @@ const E1 = '07:30-10:30'
 const E2 = '11:00-14:00'
 const E3 = '14:30-17:30'
 const E4 = '17:35-19:55'
+
+// Créneaux officiels de la filière ICT4D (L1, L2, L3) et Master SIGL (M1, M2)
+const ICT_H1 = '08:00-11:00'
+const ICT_H2 = '12:00-15:00'
+const ICT_H3 = '15:00-18:00'
+const ICT_L2_H2 = '11:30-14:30'
+
+const SIGL_SOIR = '16:00-20:00'
+const SIGL_MATIN = '08:00-12:00'
+const SIGL_APRES = '13:00-17:00'
 
 const TD = { type: 'TD' }
 const opt = { optional: true }
@@ -846,69 +862,104 @@ export const TIMETABLES = [
   },
 
   // ---------------------------------------------------------------------
-  // ICT4D L1, L2 et L3 — Licence professionnelle ICT4D.
+  // ICT4D L1, L2, L3 et Master SIGL M1, M2 — Département d'Informatique
+  // Transcrits des emplois du temps officiels signés du Doyen.
   // ---------------------------------------------------------------------
   {
-    program: 'ICT4D', level: 'L1', provisional: true,
-    notes: 'Emploi du temps de Licence professionnelle ICT4D Niveau 1.',
+    program: 'ICT4D', level: 'L1', defaultRoom: 'R101',
+    notes: 'Emploi du temps officiel Semestre 1 — Département d\'Informatique, Faculté des Sciences, UY1.',
     sessions: [
-      ['Lundi', S1, 'ICT101', 'Pr. Fouda', 'A250', { title: 'Introduction aux TIC' }],
-      ['Lundi', S2, 'ICT102', 'Dr. Nkolo', 'S101', { title: 'Algorithmique et programmation' }],
-      ['Lundi', S3, 'ICT105', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Développement web' }],
-      ['Mardi', S1, 'ICT103', 'Dr. Atangana', 'A150', { title: 'Mathématiques pour l’informatique' }],
-      ['Mardi', S2, 'ICT104', 'Pr. Fouda', 'S102', { title: 'Bases de données relationnelles' }],
-      ['Mardi', S4, 'ICT106', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais scientifique' }],
-      ['Mercredi', S1, 'ICT102', 'Dr. Nkolo', 'INFO2', { type: 'TP', title: 'Algorithmique et programmation' }],
-      ['Mercredi', S2, 'ICT104', 'Pr. Fouda', 'INFO1', { type: 'TP', title: 'Bases de données relationnelles' }],
-      ['Mercredi', S3, 'ICT105', 'M. Essomba', 'S103', { title: 'Développement web' }],
-      ['Jeudi', S1, 'ICT101', 'Pr. Fouda', 'S102', { type: 'TD', title: 'Introduction aux TIC' }],
-      ['Jeudi', S2, 'ICT103', 'Dr. Atangana', 'S110', { type: 'TD', title: 'Mathématiques pour l’informatique' }],
-      ['Jeudi', S3, 'ICT105', 'M. Essomba', 'INFO2', { type: 'TP', title: 'Développement web' }],
-      ['Vendredi', S1, 'ICT102', 'Dr. Nkolo', 'S101', { type: 'TD', title: 'Algorithmique et programmation' }],
-      ['Vendredi', S2, 'ICT104', 'Pr. Fouda', 'S102', { title: 'Bases de données relationnelles' }],
-      ['Samedi', S1, 'ICT106', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais scientifique' }],
+      ['Lundi', ICT_H1, 'ICT105', '', 'R101', { group: 'G1', title: 'ICT105-G1' }],
+      ['Lundi', ICT_H2, 'ICT107', '', 'R101', { group: 'G1', title: 'ICT107-G1' }],
+      ['Mardi', ICT_H1, 'ICT103', '', 'R101', { group: 'G2', title: 'ICT103-G2' }],
+      ['Mardi', ICT_H2, 'ICT109', '', 'R101', { group: 'G2', title: 'ICT109-G2' }],
+      ['Mercredi', ICT_H1, 'ICT111', '', 'R101', { group: 'G1', title: 'ICT111-G1' }],
+      ['Mercredi', ICT_H2, 'ICT101', '', 'R101', { group: 'G1', title: 'ICT101-G1' }],
+      ['Jeudi', ICT_H1, 'ICT107', '', 'R101', { group: 'G2', title: 'ICT107-G2' }],
+      ['Jeudi', ICT_H2, 'ICT109', '', 'R101', { group: 'G1', title: 'ICT109-G1' }],
+      ['Vendredi', ICT_H1, 'ICT101', '', 'R101', { group: 'G2', title: 'ICT101-G2' }],
+      ['Vendredi', ICT_H2, 'ICT103', '', 'R101', { group: 'G1', title: 'ICT103-G1' }],
+      ['Samedi', ICT_H1, 'ICT111', '', 'R101', { group: 'G2', title: 'ICT111-G2' }],
+      ['Samedi', ICT_H2, 'ICT105', '', 'R101', { group: 'G2', title: 'ICT105-G2' }],
     ],
   },
   {
-    program: 'ICT4D', level: 'L2', provisional: true,
-    notes: 'Emploi du temps provisoire fictif, en attente de l’officiel.',
+    program: 'ICT4D', level: 'L2', defaultRoom: 'S003/S008',
+    notes: 'Emploi du temps officiel Semestre 1 — Département d\'Informatique, Faculté des Sciences, UY1.',
     sessions: [
-      ['Lundi', S1, 'ICT201', 'Dr. Nkolo', 'A135', { title: 'Programmation orientée objet (Java)' }],
-      ['Lundi', S2, 'ICT202', 'M. Essomba', 'S101', { title: 'Réseaux informatiques' }],
-      ['Lundi', S3, 'ICT206', 'Dr. Atangana', 'S101', { title: 'Statistiques et analyse de données' }],
-      ['Mardi', S1, 'ICT203', 'Pr. Fouda', 'S102', { title: 'Systèmes d’exploitation (Linux)' }],
-      ['Mardi', S2, 'ICT201', 'Dr. Nkolo', 'INFO1', { type: 'TP', title: 'Programmation orientée objet (Java)' }],
-      ['Mardi', S4, 'ICT207', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais professionnel' }],
-      ['Mercredi', S1, 'ICT204', 'Pr. Fouda', 'S102', { title: 'Bases de données avancées' }],
-      ['Mercredi', S2, 'ICT205', 'M. Essomba', 'S103', { title: 'Développement mobile' }],
-      ['Mercredi', S3, 'ICT202', 'M. Essomba', 'INFO2', { type: 'TP', title: 'Réseaux informatiques' }],
-      ['Jeudi', S1, 'ICT205', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Développement mobile' }],
-      ['Jeudi', S2, 'ICT206', 'Dr. Atangana', 'S110', { type: 'TD', title: 'Statistiques et analyse de données' }],
-      ['Jeudi', S3, 'ICT208', 'Dr. Nkolo', 'S103', { title: 'TIC pour le développement : projet' }],
-      ['Vendredi', S1, 'ICT204', 'Pr. Fouda', 'INFO2', { type: 'TP', title: 'Bases de données avancées' }],
-      ['Vendredi', S2, 'ICT203', 'Pr. Fouda', 'INFO1', { type: 'TP', title: 'Systèmes d’exploitation (Linux)' }],
-      ['Samedi', S1, 'ICT208', 'Dr. Nkolo', 'S110', { type: 'TD', title: 'TIC pour le développement : projet' }],
+      ['Lundi', ICT_H1, 'ICT207', '', 'S003/S008', { group: 'G2', title: 'ICT207-G2' }],
+      ['Lundi', ICT_L2_H2, 'ICT207', '', 'S003/S008', { group: 'G1', title: 'ICT207-G1' }],
+      ['Lundi', ICT_H3, 'ICT217', '', 'S003/S008', { group: 'G1', title: 'ICT217-G1' }],
+      ['Mardi', ICT_H1, 'ICT203', '', 'S003/S008', { group: 'G2', title: 'ICT203-G2' }],
+      ['Mardi', ICT_L2_H2, 'ICT201', '', 'S003/S008', { group: 'G1', title: 'ICT201-G1' }],
+      ['Mardi', ICT_H3, 'ENG203', '', 'S003/S008', { group: 'G2', title: 'ENG203-G2' }],
+      ['Mardi', ICT_H3, 'FRA203', '', 'S003/S008', { group: 'G1', title: 'FRA203-G1' }],
+      ['Mercredi', ICT_H1, 'ICT205', '', 'S003/S008', { group: 'G2', title: 'ICT205-G2' }],
+      ['Mercredi', ICT_L2_H2, 'ICT213', '', 'S003/S008', { group: 'G1', title: 'ICT213-G1' }],
+      ['Mercredi', ICT_H3, 'ICT215', '', 'S003/S008', { group: 'G1', title: 'ICT215-G1' }],
+      ['Jeudi', ICT_H1, 'ICT205', '', 'S003/S008', { group: 'G1', title: 'ICT205-G1' }],
+      ['Jeudi', ICT_L2_H2, 'ICT215', '', 'S003/S008', { group: 'G2', title: 'ICT215-G2' }],
+      ['Jeudi', ICT_H3, 'ICT217', '', 'S003/S008', { group: 'G2', title: 'ICT217-G2' }],
+      ['Vendredi', ICT_H1, 'ENG203', '', 'S003/S008', { group: 'G1', title: 'ENG203-G1' }],
+      ['Vendredi', ICT_L2_H2, 'ICT201', '', 'S003/S008', { group: 'G2', title: 'ICT201-G2' }],
+      ['Vendredi', ICT_H3, 'ICT213', '', 'S003/S008', { group: 'G2', title: 'ICT213-G2' }],
+      ['Samedi', ICT_L2_H2, 'ICT203', '', 'S003/S008', { group: 'G1', title: 'ICT203-G1' }],
+      ['Samedi', ICT_H3, 'FRA203', '', 'S003/S008', { group: 'G2', title: 'FRA203-G2' }],
     ],
   },
   {
-    program: 'ICT4D', level: 'L3', provisional: true,
-    notes: 'Emploi du temps provisoire fictif, en attente de l’officiel.',
+    program: 'ICT4D', level: 'L3', defaultRoom: 'S107',
+    notes: 'Emploi du temps officiel Semestre 1 — Département d\'Informatique, Faculté des Sciences, UY1.',
     sessions: [
-      ['Lundi', S1, 'ICT301', 'Pr. Fouda', 'A135', { title: 'Génie logiciel et gestion de projet agile' }],
-      ['Lundi', S2, 'ICT303', 'Dr. Nkolo', 'S101', { title: 'Sécurité des systèmes d’information' }],
-      ['Lundi', S3, 'ICT302', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Développement web avancé' }],
-      ['Mardi', S1, 'ICT305', 'Dr. Atangana', 'S103', { title: 'Intelligence artificielle et science des données' }],
-      ['Mardi', S2, 'ICT304', 'M. Essomba', 'S102', { title: 'Cloud computing et DevOps' }],
-      ['Mardi', S3, 'ICT306', 'M. Ondoa', 'S110', { title: 'Entrepreneuriat numérique et innovation' }],
-      ['Mercredi', S1, 'ICT302', 'M. Essomba', 'S101', { title: 'Développement web avancé' }],
-      ['Mercredi', S2, 'ICT305', 'Dr. Atangana', 'INFO2', { type: 'TP', title: 'Intelligence artificielle et science des données' }],
-      ['Mercredi', S4, 'ICT308', 'Mme Bilé', 'LANGUES', { type: 'TD', title: 'Anglais des affaires' }],
-      ['Jeudi', S1, 'ICT304', 'M. Essomba', 'INFO1', { type: 'TP', title: 'Cloud computing et DevOps' }],
-      ['Jeudi', S2, 'ICT303', 'Dr. Nkolo', 'INFO2', { type: 'TP', title: 'Sécurité des systèmes d’information' }],
-      ['Jeudi', S3, 'ICT301', 'Pr. Fouda', 'S102', { type: 'TD', title: 'Génie logiciel et gestion de projet agile' }],
-      ['Vendredi', S1, 'ICT307', 'Pr. Fouda / Dr. Nkolo', 'S110', { type: 'TD', title: 'Projet tutoré et stage professionnel' }],
-      ['Vendredi', S2, 'ICT306', 'M. Ondoa', 'S110', { type: 'TD', title: 'Entrepreneuriat numérique et innovation' }],
-      ['Samedi', S1, 'ICT307', 'Pr. Fouda / Dr. Nkolo', 'INFO1', { type: 'TP', title: 'Projet tutoré et stage professionnel' }],
+      ['Lundi', ICT_H1, 'ENG303', '', 'S107', { group: 'G1', title: 'ENG303-G1' }],
+      ['Lundi', ICT_H1, 'FRA303', '', 'S107', { group: 'G1', title: 'FRA303-G1' }],
+      ['Lundi', ICT_H2, 'ICT307', '', 'S107', { group: 'G1', title: 'ICT307-G1' }],
+      ['Lundi', ICT_H3, 'ICT305', '', 'S107', { group: 'G2', title: 'ICT305-G2' }],
+      ['Mardi', ICT_H1, 'ICT313', '', 'S107', { group: 'G2', title: 'ICT313-G2' }],
+      ['Mardi', ICT_H1, 'ICT315', '', 'S107', { group: 'G2', title: 'ICT315-G2' }],
+      ['Mardi', ICT_H2, 'ICT301', '', 'S107', { group: 'G1', title: 'ICT301-G1' }],
+      ['Mardi', ICT_H3, 'ICT317', '', 'S107', { group: 'G1', title: 'ICT317-G1' }],
+      ['Mercredi', ICT_H1, 'ICT317', '', 'S107', { group: 'G2', title: 'ICT317-G2' }],
+      ['Mercredi', ICT_H2, 'ICT303', '', 'S107', { group: 'G2', title: 'ICT303-G2' }],
+      ['Mercredi', ICT_H3, 'ICT303', '', 'S107', { group: 'G1', title: 'ICT303-G1' }],
+      ['Jeudi', ICT_H1, 'ICT300', '', 'S107', { group: 'G1', title: 'ICT300-G1' }],
+      ['Jeudi', ICT_H2, 'ICT307', '', 'S107', { group: 'G2', title: 'ICT307-G2' }],
+      ['Jeudi', ICT_H3, 'ENG303', '', 'S107', { group: 'G2', title: 'ENG303-G2' }],
+      ['Jeudi', ICT_H3, 'FRA303', '', 'S107', { group: 'G2', title: 'FRA303-G2' }],
+      ['Vendredi', ICT_H1, 'ICT305', '', 'S107', { group: 'G1', title: 'ICT305-G1' }],
+      ['Vendredi', ICT_H2, 'ICT313', '', 'S107', { group: 'G1', title: 'ICT313-G1' }],
+      ['Vendredi', ICT_H2, 'ICT315', '', 'S107', { group: 'G1', title: 'ICT315-G1' }],
+      ['Vendredi', ICT_H3, 'ICT300', '', 'S107', { group: 'G2', title: 'ICT300-G2' }],
+      ['Samedi', ICT_H1, 'ICT301', '', 'S107', { group: 'G2', title: 'ICT301-G2' }],
+      ['Samedi', ICT_H2, 'ICT300', '', 'S107', { group: 'G3', title: 'ICT300-G3' }],
+      ['Samedi', ICT_H3, 'ICT300', '', 'S107', { group: 'G4', title: 'ICT300-G4' }],
+    ],
+  },
+  {
+    program: 'SIGL', level: 'M1', defaultRoom: 'S111',
+    notes: 'Master Professionnel SIGL M1 — Département d\'Informatique, Faculté des Sciences, UY1.',
+    sessions: [
+      ['Lundi', SIGL_SOIR, 'INF471', '', 'S111', { title: 'INF471' }],
+      ['Mardi', SIGL_SOIR, 'INF463', '', 'S111', { title: 'INF463' }],
+      ['Mercredi', SIGL_SOIR, 'INF461', '', 'S111', { title: 'INF461' }],
+      ['Jeudi', SIGL_SOIR, 'INF467', '', 'S111', { title: 'INF467' }],
+      ['Vendredi', SIGL_SOIR, 'INF469', '', 'S111', { title: 'INF469' }],
+      ['Samedi', SIGL_MATIN, 'INF465', '', 'S111', { title: 'INF465' }],
+      ['Samedi', SIGL_APRES, 'INF463', '', 'S111', { title: 'INF463' }],
+    ],
+  },
+  {
+    program: 'SIGL', level: 'M2', defaultRoom: 'S105',
+    notes: 'Master Professionnel SIGL M2 — Département d\'Informatique, Faculté des Sciences, UY1.',
+    sessions: [
+      ['Lundi', SIGL_SOIR, 'INF561', '', 'S105', { title: 'INF561' }],
+      ['Mardi', SIGL_SOIR, 'INF560', '', 'S105', { group: 'G2', title: 'INF560 -G2' }],
+      ['Mardi', SIGL_SOIR, 'INF560', '', 'S105', { group: 'G3', title: 'INF560 - G3' }],
+      ['Mercredi', SIGL_SOIR, 'INF560', '', 'S105', { group: 'G1', title: 'INF560 –G1' }],
+      ['Mercredi', SIGL_SOIR, 'INF560', '', 'S105', { group: 'G4', title: 'INF560 –G4' }],
+      ['Jeudi', SIGL_SOIR, 'INF565', '', 'S105', { title: 'INF565' }],
+      ['Vendredi', SIGL_SOIR, 'INF563', '', 'S105', { title: 'INF563' }],
+      ['Samedi', SIGL_MATIN, 'INF563', '', 'S105', { title: 'INF563' }],
     ],
   },
 ]

@@ -14,6 +14,7 @@ export const LOCAL_SESSION_KEYS = [
   'uniflow_user',
   'uniflow_access_token',
   'uniflow_refresh_token',
+  'uniflow_demo_active',
 ] as const
 
 export type LogoutReason = 'user' | 'idle_timeout' | 'account_deleted' | 'expired'

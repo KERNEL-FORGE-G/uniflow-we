@@ -159,6 +159,7 @@ export default async function openLibraryService({ req, res, log, error }) {
       const responsePayload = {
         cachedInDb: existing.documents,
         results,
+        books: results,
         totalReturned: results.length,
       }
 
