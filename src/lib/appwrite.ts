@@ -850,6 +850,9 @@ const AVATAR_TYPES: Record<string, string> = {
 /** URL publique d'une photo de profil, ou chaîne vide s'il n'y en a pas. */
 export function avatarViewUrl(fileId?: string | null): string {
   if (!fileId) return ''
+  if (fileId.startsWith('/') || fileId.startsWith('http://') || fileId.startsWith('https://')) {
+    return fileId
+  }
   return `${endpoint}/storage/buckets/${APPWRITE_AVATAR_BUCKET_ID}/files/${fileId}/view?project=${projectId}`
 }
 

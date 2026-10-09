@@ -131,7 +131,11 @@ export default function RegisterPage() {
         </div>
 
         {/* Bas de page gauche */}
-        <div className="z-10 text-center lg:text-left">
+        <div className="z-10 text-center lg:text-left space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold bg-white/80 border border-slate-200 text-slate-600 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-[#1E3A8A]" />
+            Avec le soutien technologique de <span className="font-extrabold text-[#1E3A8A] ml-1">Axora</span>
+          </div>
           <p className="text-xs text-slate-500">
             Archlord et Uni vous accompagnent dès le premier jour sur votre campus.
           </p>
@@ -159,9 +163,9 @@ export default function RegisterPage() {
         <div className="my-auto max-w-md w-full mx-auto flex flex-col justify-center">
           {/* Header compact */}
           <div className="mb-4">
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Créer un compte</h1>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Rejoindre UniFlow</h1>
             <p className="text-slate-400 text-xs mt-1">
-              {step === 1 ? 'Vos informations personnelles' : accountType === 'PERSONAL' ? 'Sécurité du compte indépendant' : 'Votre cursus universitaire'}
+              {step === 1 ? 'Vos informations personnelles · étape 1 sur 2' : accountType === 'PERSONAL' ? 'Finalisez votre compte indépendant' : 'Choisissez votre filière et niveau'}
             </p>
           </div>
 

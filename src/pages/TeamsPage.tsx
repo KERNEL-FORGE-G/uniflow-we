@@ -12,6 +12,7 @@ import {
   KERNEL_FORGE_WHATSAPP_GROUP_URL,
 } from '../lib/contactInfo'
 import { MascotDialogue } from '../components/mascot/ArchlordMascot'
+import { DEFAULT_TEAM_ROSTER } from '../lib/teamModel'
 
 /**
  * Page publique de l'équipe.
@@ -33,10 +34,16 @@ export default function TeamsPage() {
     setLoading(true)
     setError(null)
     listTeamMembers()
-      .then((docs) => { if (!cancelled) setMembers(docs) })
+      .then((docs) => {
+        if (!cancelled) {
+          setMembers(docs.length > 0 ? docs : (DEFAULT_TEAM_ROSTER as unknown as TeamMemberDocument[]))
+        }
+      })
       .catch((err) => {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : "L'équipe n'a pas pu être chargée.")
+        if (!cancelled) {
+          console.warn("Appwrite team_members non disponible, affichage du roster KERNEL FORGE:", err)
+          setMembers(DEFAULT_TEAM_ROSTER as unknown as TeamMemberDocument[])
+        }
       })
       .finally(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
