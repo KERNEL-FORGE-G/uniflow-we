@@ -45,17 +45,27 @@ export default function ForgotPasswordPage() {
           status="success"
           title="Lien envoyé avec succès"
           description={
-            <div className="space-y-2.5 text-xs text-slate-600 leading-relaxed">
+            <div className="space-y-3 text-xs text-slate-600 leading-relaxed text-left">
               <p>
                 Un email de réinitialisation a été envoyé à <strong>{email.trim()}</strong>. Le lien est valable pendant 1 heure.
               </p>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-amber-900">
-                <strong>Attention boîte de réception :</strong> Pensez à vérifier votre dossier <strong>Spam / Courrier indésirable</strong> ainsi que l'onglet <strong>Promotions</strong>. L'expéditeur est <strong>uniflow@kernelforge.codes</strong>.
+              <div className="rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-4 text-amber-950 shadow-sm">
+                <div className="flex items-center gap-2 font-bold text-amber-900 text-sm mb-1.5">
+                  <span className="text-base">⚠️</span>
+                  <span>Vérifiez impérativement votre dossier SPAM</span>
+                </div>
+                <p className="text-xs text-amber-900 leading-normal">
+                  Selon les filtres de votre boîte mail (Gmail, Outlook, Yahoo, etc.), nos messages automatiques peuvent arriver dans le dossier <strong>Spam / Courrier indésirable</strong> ou dans l'onglet <strong>Promotions</strong>.
+                </p>
+                <div className="mt-2.5 pt-2 border-t border-amber-200 text-[11px] text-amber-800 flex items-center justify-between">
+                  <span>Expéditeur : <strong>uniflow@kernelforge.codes</strong></span>
+                  <span className="italic">Cliquez sur « Non-spam »</span>
+                </div>
               </div>
             </div>
           }
           actions={[
-            { label: 'Renvoyer un lien', onClick: () => setSent(false), variant: 'secondary' },
+            { label: 'Renvoyer un nouveau lien', onClick: () => setSent(false), variant: 'secondary' },
             {
               label: 'Assistance WhatsApp (+237 6 57 63 56 44)',
               to: 'https://wa.me/237657635644?text=Bonjour%20UniFlow,%20je%20ne%20re%C3%A7ois%20pas%20mon%20email%20de%20r%C3%A9initialisation%20pour%20' + encodeURIComponent(email.trim()),
@@ -108,6 +118,16 @@ export default function ForgotPasswordPage() {
             </>
           )}
         </motion.button>
+
+        <div className="rounded-xl border border-slate-200 bg-slate-50/80 p-3 text-left text-xs text-slate-600">
+          <p className="font-semibold text-slate-700 flex items-center gap-1.5 mb-1">
+            <span className="text-sm">💡</span>
+            <span>Où trouver l'email de réinitialisation ?</span>
+          </p>
+          <p className="leading-relaxed text-[11px] text-slate-500">
+            Les messages envoyés par nos serveurs automatiques arrivent parfois dans le dossier <strong>Spam / Courriers indésirables</strong> ou <strong>Promotions</strong> selon votre fournisseur (Gmail, Outlook, Yahoo). Pensez à vérifier ces dossiers après envoi.
+          </p>
+        </div>
       </form>
     </AuthShell>
   )

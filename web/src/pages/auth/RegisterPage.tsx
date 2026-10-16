@@ -555,6 +555,10 @@ export default function RegisterPage() {
               </>
             )}
           </button>
+
+          <p className="text-center text-[11px] text-slate-500 leading-normal">
+            ℹ️ Si un e-mail de confirmation vous est envoyé, pensez à vérifier votre dossier <strong>Spam / Courriers indésirables</strong> s'il n'apparaît pas immédiatement dans votre boîte principale.
+          </p>
         </form>
       )}
     </AuthShell>
