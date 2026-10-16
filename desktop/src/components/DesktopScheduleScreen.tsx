@@ -126,7 +126,8 @@ const DAYS: Array<'Lundi' | 'Mardi' | 'Mercredi' | 'Jeudi' | 'Vendredi' | 'Samed
 export const DesktopScheduleScreen: React.FC<{
   userRole?: string;
   userMatricule?: string;
-}> = () => {
+}> = ({ userRole }) => {
+  const isStudent = userRole === 'STUDENT' || userRole === 'student';
   const [selectedProgram, setSelectedProgram] = useState<'ICT4D' | 'SIGL' | 'INF'>('ICT4D');
   const [selectedLevel, setSelectedLevel] = useState<string>('L3');
 
@@ -149,9 +150,13 @@ export const DesktopScheduleScreen: React.FC<{
               Semestre 1 2026-2027
             </span>
           </div>
-          <h1 className="text-2xl font-black text-white">Constructeur & Emploi du Temps Universitaire</h1>
+          <h1 className="text-2xl font-black text-white">
+            {isStudent ? 'Emploi du Temps Officiel de Ma Filière' : 'Constructeur & Emploi du Temps Universitaire'}
+          </h1>
           <p className="text-xs text-slate-300 mt-1">
-            Grille officielle synchronisée en direct avec le VPS Appwrite et le cache hors-ligne natif Rust.
+            {isStudent
+              ? 'Grille de cours officielle UY1 verrouillée sur votre promotion (ICT4D · Licence 3).'
+              : 'Grille officielle synchronisée en direct avec le VPS Appwrite et le cache hors-ligne natif Rust.'}
           </p>
         </div>
 
@@ -165,59 +170,80 @@ export const DesktopScheduleScreen: React.FC<{
         </div>
       </div>
 
-      {/* Program and Level Switcher */}
-      <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#101E33] border border-[#1E293B]">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">
-            Filière :
+      {/* Program and Level Switcher ou Badge Étudiant exclusif */}
+      {isStudent ? (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#101E33] border border-blue-500/30">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center font-bold text-xs">
+              {selectedProgram}
+            </div>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-blue-300 block">
+                Ma Promotion Universitaire
+              </span>
+              <span className="text-sm font-extrabold text-white">
+                ICT for Development (ICT4D) · {selectedLevel}
+              </span>
+            </div>
+          </div>
+          <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-500/30">
+            {filteredSlots.length} séances programmées
           </span>
-          {[
-            { code: 'ICT4D', label: 'ICT4D (Licence Pro)' },
-            { code: 'SIGL', label: 'SIGL (Master Pro)' },
-            { code: 'INF', label: 'Informatique Fondamentale' },
-          ].map((prog) => {
-            const active = selectedProgram === prog.code;
-            return (
-              <button
-                key={prog.code}
-                onClick={() => {
-                  setSelectedProgram(prog.code as any);
-                  if (prog.code === 'SIGL') setSelectedLevel('M1');
-                  else if (prog.code === 'INF') setSelectedLevel('L1');
-                  else setSelectedLevel('L3');
-                }}
-                className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
-                  active
-                    ? 'bg-[#2563EB] text-white shadow-md'
-                    : 'bg-[#0A1220] text-slate-400 hover:text-white border border-[#1E293B]'
-                }`}
-              >
-                {prog.label}
-              </button>
-            );
-          })}
         </div>
+      ) : (
+        <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-[#101E33] border border-[#1E293B]">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-2">
+              Filière :
+            </span>
+            {[
+              { code: 'ICT4D', label: 'ICT4D (Licence Pro)' },
+              { code: 'SIGL', label: 'SIGL (Master Pro)' },
+              { code: 'INF', label: 'Informatique Fondamentale' },
+            ].map((prog) => {
+              const active = selectedProgram === prog.code;
+              return (
+                <button
+                  key={prog.code}
+                  onClick={() => {
+                    setSelectedProgram(prog.code as any);
+                    if (prog.code === 'SIGL') setSelectedLevel('M1');
+                    else if (prog.code === 'INF') setSelectedLevel('L1');
+                    else setSelectedLevel('L3');
+                  }}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                    active
+                      ? 'bg-[#2563EB] text-white shadow-md'
+                      : 'bg-[#0A1220] text-slate-400 hover:text-white border border-[#1E293B]'
+                  }`}
+                >
+                  {prog.label}
+                </button>
+              );
+            })}
+          </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-semibold text-slate-400 mr-2">Niveau :</span>
-          {(selectedProgram === 'SIGL' ? ['M1', 'M2'] : ['L1', 'L2', 'L3']).map((lvl) => {
-            const active = selectedLevel === lvl;
-            return (
-              <button
-                key={lvl}
-                onClick={() => setSelectedLevel(lvl)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                  active
-                    ? 'bg-[#0D9488] text-white'
-                    : 'bg-[#0A1220] text-slate-400 hover:text-white border border-[#1E293B]'
-                }`}
-              >
-                {lvl}
-              </button>
-            );
-          })}
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-slate-400 mr-2">Niveau :</span>
+            {(selectedProgram === 'SIGL' ? ['M1', 'M2'] : ['L1', 'L2', 'L3']).map((lvl) => {
+              const active = selectedLevel === lvl;
+              return (
+                <button
+                  key={lvl}
+                  onClick={() => setSelectedLevel(lvl)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    active
+                      ? 'bg-[#0D9488] text-white'
+                      : 'bg-[#0A1220] text-slate-400 hover:text-white border border-[#1E293B]'
+                  }`}
+                >
+                  {lvl}
+                </button>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Weekly Schedule Grid */}
       <div className="p-5 rounded-3xl bg-[#101E33] border border-[#1E293B] shadow-xl overflow-x-auto">
