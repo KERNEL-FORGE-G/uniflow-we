@@ -304,6 +304,7 @@ export default function App() {
               <Route path="/register" element={<GuestRoute><PublicPage><RegisterPage /></PublicPage></GuestRoute>} />
               <Route path="/mot-de-passe-oublie" element={<GuestRoute><PublicPage><ForgotPasswordPage /></PublicPage></GuestRoute>} />
               <Route path="/reinitialiser-mot-de-passe" element={<PublicPage><ResetPasswordPage /></PublicPage>} />
+              <Route path="/reset-password" element={<PublicPage><ResetPasswordPage /></PublicPage>} />
               <Route path="/sentinelle" element={<PublicPage><SentinellePage /></PublicPage>} />
               <Route path="/forum" element={<PublicPage><ForumPage /></PublicPage>} />
               <Route path="/teams" element={<PublicPage><TeamsPage /></PublicPage>} />
