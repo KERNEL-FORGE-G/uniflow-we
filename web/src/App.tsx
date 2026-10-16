@@ -67,6 +67,7 @@ const SubscriptionFlowPage = lazy(() => import('./pages/SubscriptionFlowPage'))
 const BillingPage = lazy(() => import('./pages/billing/BillingPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const SentinellePage = lazy(() => import('./pages/SentinellePage'))
+const ActualitesPage = lazy(() => import('./pages/ActualitesPage'))
 const ForumPage = lazy(() => import('./pages/ForumPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
 const LegalDocumentPage = lazy(() => import('./pages/legal/LegalDocumentPage'))
@@ -294,6 +295,8 @@ export default function App() {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/actualites" element={<PublicPage><ActualitesPage /></PublicPage>} />
+              <Route path="/actualite" element={<Navigate to="/actualites" replace />} />
               <Route path="/about" element={<PublicPage><AboutPage /></PublicPage>} />
               <Route path="/pricing" element={<PublicPage><PricingPage /></PublicPage>} />
               <Route path="/download" element={<PublicPage><DownloadPage /></PublicPage>} />

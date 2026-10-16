@@ -19,6 +19,7 @@ const restoreOriginalLogo = (event: React.SyntheticEvent<HTMLImageElement>) => {
 // l'APK Android et la version de bureau, dont les liens vivent dans la
 // collection `app_releases` et sont réglés depuis la page Administration.
 const navLinks = [
+  { to: '/actualites',   label: 'Actualités' },
   { to: '/about',        label: 'À propos' },
   { to: '/teams',        label: 'Équipe' },
   { to: '/sentinelle',   label: 'Sentinelle' },
@@ -213,6 +214,7 @@ export function LandingFooter() {
             <h4 className="text-sm font-semibold text-white mb-4">Ressources</h4>
             <ul className="space-y-2.5 text-sm">
               {[
+                { to: '/actualites', label: 'Actualités & Mises à jour' },
                 { to: '/presentation', label: 'Documentation du projet' },
                 { to: '/contact', label: 'Support' },
                 { to: '/forum', label: 'Forum' },
