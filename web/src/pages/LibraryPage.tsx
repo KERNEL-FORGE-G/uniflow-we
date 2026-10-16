@@ -19,18 +19,27 @@ import {
   HiCloudArrowDown,
   HiArrowPath,
   HiEye,
-  HiSparkles
+  HiSparkles,
+  HiGlobeAlt,
+  HiLanguage
 } from 'react-icons/hi2'
 import { cn } from '../utils/cn'
 import { libraryApi, type LibraryResource } from '../lib/api'
-import { openLibraryService, type OpenBook, type BookCategory, BOOK_CATEGORIES } from '../lib/openLibraryService'
+import {
+  openLibraryService,
+  type OpenBook,
+  type BookCategory,
+  BOOK_CATEGORIES,
+  ZLIB_LANGUAGES,
+  type ApiLanguage
+} from '../lib/openLibraryService'
 import { useApi } from '../hooks/useApi'
 import { CornerSlot } from '../components/layout/CornerStack'
 
 type MainMode = 'open-books' | 'course-docs'
 type DocTabCategory = 'Tout' | 'Documents' | 'Vidéos' | 'Audios'
 type ViewMode = 'grid' | 'list'
-type SortOption = 'recent' | 'popular' | 'alpha' | 'cached'
+type SortOption = 'recent' | 'popular' | 'alpha' | 'cached' | 'language'
 
 interface ResourceItem {
   id: string
@@ -55,7 +64,7 @@ export default function LibraryPage() {
   // Navigation principale
   const [mainMode, setMainMode] = useState<MainMode>('open-books')
 
-  // Livres numériques ouverts & manuels libres
+  // Livres 100% Z-Library avec téléchargements réels
   const [openBooks, setOpenBooks] = useState<OpenBook[]>([])
   const [selectedBookCategory, setSelectedBookCategory] = useState<BookCategory>('Tous')
   const [bookSearch, setBookSearch] = useState('')
@@ -67,6 +76,20 @@ export default function LibraryPage() {
   const [activeBookModal, setActiveBookModal] = useState<OpenBook | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
   const [, startTransition] = useTransition()
+
+  // Filtrage et sélection dynamique de langue
+  const [selectedLanguage, setSelectedLanguage] = useState<string>('Toutes')
+  const [languageSearchInput, setLanguageSearchInput] = useState<string>('')
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false)
+  const [availableLanguages, setAvailableLanguages] = useState<ApiLanguage[]>(ZLIB_LANGUAGES)
+
+  useEffect(() => {
+    openLibraryService.getLanguages().then(langs => {
+      if (langs && langs.length > 0) {
+        setAvailableLanguages(langs)
+      }
+    })
+  }, [])
 
   const toggleBookFavorite = (bookId: string, e?: React.MouseEvent) => {
     e?.stopPropagation()
@@ -91,27 +114,37 @@ export default function LibraryPage() {
   // API Integration pour les supports de cours
   const { data: backendData } = useApi(() => libraryApi.list(), [], { key: 'library.list' })
 
-  // Chargement initial et recherche des livres numériques libres
-  const loadOpenBooks = async (query = '', category: BookCategory = 'Tous') => {
+  // Chargement initial et recherche 100% Z-Library avec filtrage et tri par langue
+  const loadOpenBooks = async (
+    query = bookSearch,
+    category: BookCategory = selectedBookCategory,
+    lang = selectedLanguage,
+    sort = bookSortBy
+  ) => {
     setIsLoadingBooks(true)
     try {
-      const results = await openLibraryService.search(query, category)
+      const results = await openLibraryService.search(
+        query,
+        category,
+        lang === 'Toutes' ? '' : lang,
+        sort
+      )
       setOpenBooks(results)
     } catch (err) {
-      console.error('Erreur chargement livres:', err)
+      console.error('Erreur chargement livres Z-Library:', err)
     } finally {
       setIsLoadingBooks(false)
     }
   }
 
   useEffect(() => {
-    loadOpenBooks(bookSearch, selectedBookCategory)
-  }, [selectedBookCategory])
+    loadOpenBooks(bookSearch, selectedBookCategory, selectedLanguage, bookSortBy)
+  }, [selectedBookCategory, selectedLanguage, bookSortBy])
 
   // Déclencheur recherche en direct avec debounce
   useEffect(() => {
     const timer = setTimeout(() => {
-      loadOpenBooks(bookSearch, selectedBookCategory)
+      loadOpenBooks(bookSearch, selectedBookCategory, selectedLanguage, bookSortBy)
     }, 450)
     return () => clearTimeout(timer)
   }, [bookSearch])
@@ -160,8 +193,11 @@ export default function LibraryPage() {
     }
   }
 
-  // Filtrage et Tri des Livres Numériques
+  // Filtrage et Tri des Livres Numériques 100% Z-Library
   const sortedOpenBooks = [...openBooks].sort((a, b) => {
+    if (bookSortBy === 'language') {
+      return (a.language || '').localeCompare(b.language || '', 'fr')
+    }
     if (bookSortBy === 'cached') {
       if (a.cachedInBucket && !b.cachedInBucket) return -1
       if (!a.cachedInBucket && b.cachedInBucket) return 1
@@ -345,14 +381,15 @@ export default function LibraryPage() {
 
           {/* Outils secondaires (Recherche & Tri) */}
           {mainMode === 'open-books' ? (
-            <div className="flex items-center gap-3 w-full lg:w-auto">
-              <div className="relative flex-1 lg:w-80 flex items-center bg-slate-50 rounded-full border border-slate-200 px-4 py-2">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full lg:w-auto">
+              {/* Barre de recherche par titre/auteur */}
+              <div className="relative flex-1 lg:w-72 flex items-center bg-slate-50 rounded-full border border-slate-200 px-4 py-2">
                 <HiMagnifyingGlass className="h-4 w-4 text-slate-400 shrink-0 mr-2" />
                 <input
                   type="text"
                   value={bookSearch}
                   onChange={e => setBookSearch(e.target.value)}
-                  placeholder="Rechercher par titre, auteur ou matière..."
+                  placeholder="Rechercher dans Z-Library..."
                   className="w-full bg-transparent text-xs font-medium text-slate-900 placeholder-slate-400 outline-none"
                 />
                 {bookSearch && (
@@ -365,14 +402,94 @@ export default function LibraryPage() {
                 )}
               </div>
 
-              <div className="relative flex items-center bg-slate-50 rounded-full border border-slate-200 px-4 py-2 text-xs font-bold text-slate-700 shrink-0">
-                <HiAdjustmentsHorizontal className="h-3.5 w-3.5 mr-2 text-slate-500" />
+              {/* Saisie de langue avec autocomplétion dynamique */}
+              <div className="relative">
+                <div
+                  className="flex items-center bg-slate-50 hover:bg-slate-100 rounded-full border border-slate-200 px-3.5 py-2 cursor-pointer transition-colors"
+                  onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                >
+                  <HiGlobeAlt className="h-3.5 w-3.5 text-blue-600 mr-1.5 shrink-0" />
+                  <span className="text-xs font-bold text-slate-700 truncate max-w-[110px]">
+                    {selectedLanguage === 'Toutes' ? 'Toutes langues' : selectedLanguage}
+                  </span>
+                  <span className="ml-1 text-[10px] text-slate-400">▼</span>
+                </div>
+
+                {isLangDropdownOpen && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-2 z-50 animate-fade-in">
+                    <div className="p-1.5 border-b border-slate-100 mb-1.5">
+                      <input
+                        type="text"
+                        value={languageSearchInput}
+                        onChange={e => setLanguageSearchInput(e.target.value)}
+                        placeholder="Saisir une langue (ex: fr, eng, esp)..."
+                        autoFocus
+                        className="w-full text-xs bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-slate-800 outline-none placeholder-slate-400 font-medium"
+                      />
+                    </div>
+                    <div className="max-h-56 overflow-y-auto no-scrollbar space-y-0.5">
+                      <button
+                        onClick={() => {
+                          setSelectedLanguage('Toutes')
+                          setIsLangDropdownOpen(false)
+                          setLanguageSearchInput('')
+                        }}
+                        className={cn(
+                          'w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-between',
+                          selectedLanguage === 'Toutes' ? 'bg-blue-50 text-[#1E3A8A]' : 'text-slate-700 hover:bg-slate-50'
+                        )}
+                      >
+                        <span>🌐 Toutes les langues</span>
+                        {selectedLanguage === 'Toutes' && <HiCheckCircle className="h-4 w-4 text-blue-600" />}
+                      </button>
+
+                      {availableLanguages
+                        .filter(l => {
+                          if (!languageSearchInput) return true
+                          const q = languageSearchInput.toLowerCase()
+                          return (
+                            l.name.toLowerCase().includes(q) ||
+                            l.nativeName.toLowerCase().includes(q) ||
+                            l.code.toLowerCase().includes(q) ||
+                            l.zlibKey.toLowerCase().includes(q)
+                          )
+                        })
+                        .map(lang => (
+                          <button
+                            key={lang.code}
+                            onClick={() => {
+                              setSelectedLanguage(lang.name)
+                              setIsLangDropdownOpen(false)
+                              setLanguageSearchInput('')
+                            }}
+                            className={cn(
+                              'w-full text-left px-3 py-1.5 rounded-xl text-xs font-bold transition-colors flex items-center justify-between',
+                              selectedLanguage === lang.name ? 'bg-blue-50 text-[#1E3A8A]' : 'text-slate-700 hover:bg-slate-50'
+                            )}
+                          >
+                            <span className="flex items-center gap-2">
+                              <span>{lang.flag}</span>
+                              <span>{lang.name}</span>
+                              <span className="text-[10px] text-slate-400 font-normal">({lang.nativeName})</span>
+                            </span>
+                            {selectedLanguage === lang.name && <HiCheckCircle className="h-4 w-4 text-blue-600" />}
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Sélecteur de Tri */}
+              <div className="relative flex items-center bg-slate-50 rounded-full border border-slate-200 px-3.5 py-2 text-xs font-bold text-slate-700 shrink-0">
+                <HiAdjustmentsHorizontal className="h-3.5 w-3.5 mr-1.5 text-slate-500" />
                 <select
                   value={bookSortBy}
                   onChange={e => setBookSortBy(e.target.value as any)}
                   className="bg-transparent text-xs font-bold text-slate-800 outline-none cursor-pointer"
                 >
                   <option value="popular">Plus populaires</option>
+                  <option value="language">🌐 Tri par langue</option>
                   <option value="recent">Plus récents</option>
                   <option value="alpha">Titre A-Z</option>
                   <option value="cached">Dans le Bucket d'abord</option>
@@ -462,13 +579,59 @@ export default function LibraryPage() {
             </button>
           </div>
 
+          {/* BARRE DE SÉLECTION RAPIDE DE LANGUES Z-LIBRARY */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs">
+            <span className="text-[11px] font-extrabold uppercase text-slate-400 tracking-wider flex items-center gap-1 shrink-0 mr-1">
+              <HiGlobeAlt className="h-3.5 w-3.5 text-blue-600" />
+              Langues :
+            </span>
+
+            <button
+              onClick={() => setSelectedLanguage('Toutes')}
+              className={cn(
+                'rounded-full px-3.5 py-1 text-xs font-bold transition-all shrink-0 border',
+                selectedLanguage === 'Toutes'
+                  ? 'bg-blue-900 text-white border-blue-900 shadow-sm'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-600 border-transparent'
+              )}
+            >
+              🌐 Toutes
+            </button>
+
+            {availableLanguages.slice(0, 8).map(lang => (
+              <button
+                key={lang.code}
+                onClick={() => setSelectedLanguage(lang.name)}
+                className={cn(
+                  'rounded-full px-3 py-1 text-xs font-bold transition-all shrink-0 border flex items-center gap-1.5',
+                  selectedLanguage === lang.name
+                    ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                    : 'bg-white hover:bg-slate-100 text-slate-700 border-slate-200'
+                )}
+              >
+                <span>{lang.flag}</span>
+                <span>{lang.name}</span>
+              </button>
+            ))}
+
+            {selectedLanguage !== 'Toutes' && !availableLanguages.slice(0, 8).some(l => l.name === selectedLanguage) && (
+              <button
+                onClick={() => {}}
+                className="rounded-full px-3 py-1 text-xs font-bold bg-blue-600 text-white border border-blue-600 shadow-sm shrink-0 flex items-center gap-1.5"
+              >
+                <HiLanguage className="h-3 w-3" />
+                <span>{selectedLanguage}</span>
+              </button>
+            )}
+          </div>
+
           {/* ÉTAT DE CHARGEMENT OU RÉSULTATS */}
           {isLoadingBooks && openBooks.length === 0 ? (
             <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-xs space-y-4">
               <HiArrowPath className="mx-auto h-10 w-10 text-blue-600 animate-spin" />
-              <h3 className="text-base font-bold text-slate-900">Recherche dans la bibliothèque numérique...</h3>
+              <h3 className="text-base font-bold text-slate-900">Recherche dans Z-Library...</h3>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Interrogation des catalogues ouverts et synchronisation automatique avec la base UniFlow.
+                Interrogation 100% Z-Library avec tri par langue et synchronisation des manuels universitaires.
               </p>
             </div>
           ) : visibleOpenBooks.length > 0 ? (
@@ -512,15 +675,14 @@ export default function LibraryPage() {
                           <span className="rounded-lg bg-black/75 px-2 py-0.5 text-[10px] font-black text-white tracking-wide">
                             {book.format}
                           </span>
-                          {book.cachedInBucket ? (
+                          <span className="rounded-lg bg-blue-600/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white flex items-center gap-1">
+                            <HiGlobeAlt className="h-3 w-3" />
+                            {book.language}
+                          </span>
+                          {book.cachedInBucket && (
                             <span className="rounded-lg bg-teal-600/90 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white flex items-center gap-1">
                               <HiCheckCircle className="h-3 w-3" />
                               Bucket
-                            </span>
-                          ) : (
-                            <span className="rounded-lg bg-blue-600/85 backdrop-blur-xs px-2 py-0.5 text-[10px] font-bold text-white flex items-center gap-1">
-                              <HiSparkles className="h-3 w-3" />
-                              Open Access
                             </span>
                           )}
                         </div>
@@ -537,19 +699,25 @@ export default function LibraryPage() {
                           <HiStar className="h-3.5 w-3.5" />
                         </button>
 
-                        {/* Téléchargements */}
-                        {book.downloadsCount && (
-                          <div className="absolute bottom-2.5 right-2.5 rounded-lg bg-black/60 px-2 py-0.5 text-[10px] font-bold text-slate-200 flex items-center gap-1 z-10">
-                            <HiFire className="h-3 w-3 text-amber-400" />
-                            {book.downloadsCount}
-                          </div>
-                        )}
+                        {/* Téléchargements & Source Z-Library */}
+                        <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between z-10">
+                          <span className="rounded-lg bg-black/65 px-2 py-0.5 text-[9px] font-black text-teal-300">
+                            Z-Library
+                          </span>
+                          {book.downloadsCount && (
+                            <div className="rounded-lg bg-black/65 px-2 py-0.5 text-[10px] font-bold text-slate-200 flex items-center gap-1">
+                              <HiFire className="h-3 w-3 text-amber-400" />
+                              {book.downloadsCount}
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Métadonnées du livre */}
                       <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488] mb-1">
-                          {book.category}
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#0D9488] mb-1 flex items-center justify-between">
+                          <span>{book.category}</span>
+                          {book.size && <span className="text-slate-400 font-normal">{book.size}</span>}
                         </div>
                         <h3 className="font-extrabold text-slate-900 text-sm leading-snug line-clamp-2 group-hover:text-blue-700 transition-colors">
                           {book.title}
@@ -559,7 +727,7 @@ export default function LibraryPage() {
                         </p>
                         {book.year && (
                           <span className="text-[10px] font-medium text-slate-400 mt-0.5 block">
-                            Édition : {book.year} • {book.language}
+                            Édition : {book.year} • Langue : {book.language}
                           </span>
                         )}
                         {book.description && (
