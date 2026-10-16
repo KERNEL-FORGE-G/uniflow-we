@@ -82,15 +82,13 @@ export async function askGroq(
   }
 
   // 2. Appel direct vers l'API Groq
-  const apiKey =
+  const rawKey =
     apiKeyOverride ||
-    (import.meta.env.VITE_GROQ_API_KEY as string | undefined) ||
     (import.meta.env.GROQ as string | undefined) ||
+    (import.meta.env.VITE_GROQ_API_KEY as string | undefined) ||
     DEFAULT_GROQ_API_KEY
 
-  if (!apiKey) {
-    throw new Error('Clé API Groq non configurée (variable GROQ ou VITE_GROQ_API_KEY).')
-  }
+  const apiKey = (rawKey && rawKey.trim().length > 0) ? rawKey.trim() : DEFAULT_GROQ_API_KEY
 
   const formattedMessages: GroqChatMessage[] = [
     { role: 'system', content: effectiveSystemPrompt },
@@ -105,9 +103,9 @@ export async function askGroq(
 
   const candidateModels = [
     (import.meta.env.VITE_GROQ_MODEL as string | undefined),
+    (import.meta.env.GROQ_MODEL as string | undefined),
     'openai/gpt-oss-120b',
     'qwen/qwen3.8-27b',
-    'openai/gpt-oss-20b',
     'llama-3.3-70b-versatile',
   ].filter(Boolean) as string[]
 

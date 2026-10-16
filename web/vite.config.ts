@@ -53,6 +53,12 @@ export default defineConfig({
     outDir: 'dist',
     emptyOutDir: true,
   },
+  envPrefix: ['VITE_', 'GROQ'],
+  define: {
+    'import.meta.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || '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'),
+    'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || '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'),
+    'process.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || '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'),
+  },
   server: {
     port: 3000,
     host: '0.0.0.0',
