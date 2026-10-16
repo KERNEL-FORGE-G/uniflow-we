@@ -22,7 +22,12 @@ const SHELL_ASSETS = [
   '/logos/uniflow-wordmark-white.svg',
   '/logos/uniflow-emblem.svg',
   // Le PNG reste utilisé par les exports PDF (jsPDF ne lit pas le SVG).
-  '/logos/uniflow-wordmark.png'
+  '/logos/uniflow-wordmark.png',
+  '/logos/uniflow-landing-original.webp',
+  '/logos/uniflow-landing-original.png',
+  '/logos/uniflow_logo_final.png',
+  '/illustrations/landing_hero_student.png',
+  '/illustrations/about_campus_hero.png'
 ]
 
 let manifestAssets = null
