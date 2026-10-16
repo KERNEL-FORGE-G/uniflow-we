@@ -320,23 +320,29 @@ export default function LandingPage() {
 
               {/* Central Hero Landing Image Container */}
               <div className="relative mx-auto w-full max-w-[540px] rounded-3xl border-4 border-slate-200/90 bg-white shadow-2xl overflow-hidden p-4 sm:p-5 text-center transform hover:scale-[1.01] transition-transform">
-                <div className="absolute inset-0 bg-gradient-to-b from-blue-50/50 via-transparent to-teal-50/50 pointer-events-none" />
-                <img
-                  src={landingImg}
-                  alt="Aperçu UniFlow"
-                  width={540}
-                  height={440}
-                  className="w-full h-auto object-cover max-h-[440px] rounded-2xl relative z-10 mx-auto shadow-sm"
-                  loading="eager"
-                  decoding="async"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement
-                    if (!target.dataset.triedFallback1) {
-                      target.dataset.triedFallback1 = 'true'
-                      target.src = UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL
-                    }
-                  }}
-                />
+                <picture className="relative z-10 block w-full">
+                  <source srcSet="/logos/uniflow-landing-original.webp" type="image/webp" />
+                  <source srcSet="/logos/uniflow-landing-original.png" type="image/png" />
+                  <img
+                    src="/logos/uniflow-landing-original.png"
+                    alt="Aperçu UniFlow - Espace Étudiant"
+                    width={540}
+                    height={440}
+                    className="w-full h-auto object-cover max-h-[440px] rounded-2xl relative z-10 mx-auto shadow-sm"
+                    loading="eager"
+                    decoding="async"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement
+                      if (!target.dataset.tried1) {
+                        target.dataset.tried1 = 'true'
+                        target.src = '/illustrations/landing_hero_student.png'
+                      } else if (!target.dataset.tried2) {
+                        target.dataset.tried2 = 'true'
+                        target.src = '/illustrations/about_campus_hero.png'
+                      }
+                    }}
+                  />
+                </picture>
                 <div className="mt-4 pt-3 border-t border-slate-100 relative z-10 flex items-center justify-between text-xs font-extrabold text-slate-600 px-2">
                   <span className="flex items-center gap-1 text-blue-700">
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" /> Campus Numérique
