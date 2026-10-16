@@ -31,9 +31,6 @@ const NAV_IMAGES: Record<string, string> = {
   '/app/bibliotheque': 'library',
   '/app/parametres': 'settings',
   '/app/visio': 'visio',
-  '/app/inscriptions': 'inscriptions',
-  '/app/paiements': 'paiements',
-  '/app/bourses': 'bourses',
   '/app/gamification': 'gamification',
   '/app/sentinelle': 'sentinelle',
   '/app/abonnement': 'abonnement',
@@ -88,9 +85,6 @@ export const navItems: NavItem[] = ([
   // Commun
   { to: '/app/parametres',         icon: 'settings',    labelFr: 'Paramètres',         labelEn: 'Settings',        roles: ['student', 'delegate', 'teacher', 'admin'], accounts: ['UNIVERSITY', 'PERSONAL'] },
   { to: '/app/visio',              icon: 'video',      labelFr: 'Visioconférence',    labelEn: 'Video Conference', roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
-  { to: '/app/inscriptions',       icon: 'add',  labelFr: 'Inscriptions',       labelEn: 'Enrollments',       roles: ['student', 'delegate'], accounts: ['UNIVERSITY', 'PERSONAL'] },
-  { to: '/app/paiements',         icon: 'coins',     labelFr: 'Paiements',          labelEn: 'Payments',          roles: ['student', 'delegate'], accounts: ['UNIVERSITY', 'PERSONAL'] },
-  { to: '/app/bourses',           icon: 'badges',     labelFr: 'Bourses',            labelEn: 'Scholarships',      roles: ['student', 'delegate'], accounts: ['UNIVERSITY', 'PERSONAL'] },
   { to: '/app/gamification',      icon: 'trophy',     labelFr: 'Gamification',       labelEn: 'Gamification',      roles: ['student', 'delegate'], accounts: ['UNIVERSITY', 'PERSONAL'] },
   { to: '/app/sentinelle',        icon: 'assistant',  labelFr: 'Sentinelle IA',      labelEn: 'Sentinelle AI',     roles: ['student', 'delegate', 'teacher'], accounts: ['UNIVERSITY', 'PERSONAL'] },
   // Pointait vers la page tarifaire publique : la personne connectée sortait de

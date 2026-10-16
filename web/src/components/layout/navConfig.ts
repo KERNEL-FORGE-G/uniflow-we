@@ -30,8 +30,8 @@ export const NAV_IMAGES: Record<string, string> = {
   '/app/devoirs': 'assignments', '/app/notes': 'grades', '/app/evaluations': 'grades', '/app/bibliotheque': 'library',
   '/app/presences': 'attendance', '/app/promotion': 'coordination', '/app/gestion-presences': 'attendance',
   '/app/messages': 'messages', '/app/notifications': 'notifications', '/app/badges-quetes': 'gamification',
-  '/app/visio': 'visio', '/app/sentinelle': 'sentinelle', '/app/inscriptions': 'inscriptions', '/app/paiements': 'paiements',
-  '/app/bourses': 'bourses', '/app/profil': 'students', '/app/abonnement': 'abonnement', '/app/parametres': 'settings', '/app/aide': 'aide',
+  '/app/visio': 'visio', '/app/sentinelle': 'sentinelle',
+  '/app/profil': 'students', '/app/abonnement': 'abonnement', '/app/parametres': 'settings', '/app/aide': 'aide',
 }
 
 const withImage = <T extends { to: string; image?: string }>(item: T): T =>
@@ -54,9 +54,6 @@ export const APP_NAV_ITEMS: AppNavItem[] = ([
   { to: '/app/messages', icon: 'messages', labelFr: 'Messages', labelEn: 'Messages', roles: ALL, group: 'echanger' },
   { to: '/app/notifications', icon: 'notifications', labelFr: 'Notifications', labelEn: 'Notifications', roles: ALL, group: 'echanger' },
   { to: '/app/badges-quetes', icon: 'badges', labelFr: 'Badges & quêtes', labelEn: 'Badges & quests', roles: ALL, group: 'echanger' },
-  { to: '/app/inscriptions', icon: 'students', labelFr: 'Inscriptions', labelEn: 'Enrollments', roles: LEARNERS, group: 'compte' },
-  { to: '/app/paiements', icon: 'coins', labelFr: 'Paiements & frais', labelEn: 'Tuition payments', roles: LEARNERS, group: 'compte' },
-  { to: '/app/bourses', icon: 'badges', labelFr: 'Bourses & aides', labelEn: 'Scholarships', roles: LEARNERS, group: 'compte' },
   { to: '/app/profil', icon: 'profile', labelFr: 'Mon profil', labelEn: 'Profile', roles: ALL, group: 'compte' },
   { to: '/app/abonnement', icon: 'billing', labelFr: 'Abonnement', labelEn: 'Subscription', roles: ALL, group: 'compte' },
   { to: '/app/parametres', icon: 'settings', labelFr: 'Paramètres', labelEn: 'Settings', roles: ALL, group: 'compte' },

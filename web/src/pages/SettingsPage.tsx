@@ -11,12 +11,11 @@ import { authApi } from '../lib/api'
 import { removeAvatar, uploadAvatar, validateAvatarFile } from '../lib/appwrite'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 
-const sections = ['Profil', 'Abonnement', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
+const sections = ['Profil', 'Abonnement', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
 
 const sectionIcons: Record<string, UniIconName> = {
   Profil: 'profile',
   Abonnement: 'billing',
-  'Inscriptions UEs': 'courseUnit',
   Notifications: 'notifications',
   Apparence: 'globe',
   Confidentialité: 'security',
@@ -416,25 +415,6 @@ export default function SettingsPage() {
                 </p>
               </div>
               <SubscriptionWidget />
-            </div>
-          )}
-
-          {/* ── Inscriptions UEs ── */}
-          {section === 'Inscriptions UEs' && (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-5">
-              <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Inscriptions aux unités d’enseignement</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Référentiel universitaire actif : {[user.university, user.scopeLabel].filter(Boolean).join(' · ') || 'périmètre non renseigné'}.
-                </p>
-              </div>
-              <div className="rounded-xl border border-dashed border-[#0d9488]/40 bg-teal-50/60 dark:bg-teal-950/20 p-5">
-                <IconTile name="courseUnit" color="#0D9488" variant="soft" size={44} />
-                <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white">Aucune unité d’enseignement attribuée</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
-                  Les unités, inscriptions et crédits seront affichés ici lorsqu’ils auront été enregistrés dans Appwrite par l’administration universitaire. Aucun catalogue local ou choix fictif n’est présenté.
-                </p>
-              </div>
             </div>
           )}
 

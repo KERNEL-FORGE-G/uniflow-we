@@ -347,10 +347,10 @@ export default function App() {
               {/* Visioconférence (Cloud + LAN campus) */}
               <Route path="/app/visio/*" element={<Shell><VideoConferencePage /></Shell>} />
               <Route path="/app/visioconference/*" element={<Shell><VideoConferencePage /></Shell>} />
-               {/* New feature routes */}
-               <Route path="/app/inscriptions" element={<Shell><EnrollmentsPage /></Shell>} />
-               <Route path="/app/paiements" element={<Shell><TuitionPaymentsPage /></Shell>} />
-               <Route path="/app/bourses" element={<Shell><ScholarshipsPage /></Shell>} />
+              {/* Sections retirées (non maîtrisées) — redirection fluide vers /app */}
+              <Route path="/app/inscriptions" element={<Navigate to="/app" replace />} />
+              <Route path="/app/paiements" element={<Navigate to="/app" replace />} />
+              <Route path="/app/bourses" element={<Navigate to="/app" replace />} />
                <Route path="/app/gamification" element={<Shell><GamificationPage /></Shell>} />
                <Route path="/app/sentinelle" element={<Shell><SentinellePage /></Shell>} />
                <Route path="/app/evaluations" element={<Shell><TeacherGradingPage /></Shell>} />
