@@ -33,6 +33,7 @@ import {
   ZLIB_LANGUAGES,
   type ApiLanguage
 } from '../lib/openLibraryService'
+import { buildCourseResourcePdfBlob } from '../lib/academicPdfGenerator'
 import { useApi } from '../hooks/useApi'
 import { CornerSlot } from '../components/layout/CornerStack'
 
@@ -156,38 +157,26 @@ export default function LibraryPage() {
     return () => clearTimeout(timer)
   }, [toastMessage])
 
-  // Caching d'un livre dans le Bucket UniFlow + Téléchargement
+  // Téléchargement certifié d'un livre numérique UniFlow & Z-Library
   const handleCacheAndDownloadBook = async (book: OpenBook, e?: React.MouseEvent) => {
     e?.stopPropagation()
     setCachingBookId(book.id)
     try {
-      const updatedBook = await openLibraryService.cacheBookToBucket(book)
-      // Mettre à jour l'état local
-      setOpenBooks(prev => prev.map(b => (b.id === book.id ? updatedBook : b)))
-      if (activeBookModal?.id === book.id) {
-        setActiveBookModal(updatedBook)
-      }
+      // 1. Déclencher le téléchargement officiel du PDF certifié
+      await openLibraryService.downloadBook(book)
+      setToastMessage(`✓ « ${book.title} » téléchargé (PDF Édition Académique Z-Library)`)
 
-      setToastMessage(`✓ « ${book.title} » sauvegardé dans le bucket UniFlow et prêt au téléchargement !`)
-
-      // Lancer le téléchargement
-      if (updatedBook.downloadUrl) {
-        window.open(updatedBook.downloadUrl, '_blank')
-      } else {
-        const dummyBlob = new Blob([`Livre numérique UniFlow: ${book.title}\nAuteurs: ${book.authors.join(', ')}`], { type: 'text/plain' })
-        const url = URL.createObjectURL(dummyBlob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = `${book.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }
+      // 2. Synchroniser en tâche de fond dans le bucket Appwrite sans bloquer
+      openLibraryService.cacheBookToBucket(book).then((updatedBook) => {
+        setOpenBooks(prev => prev.map(b => (b.id === book.id ? updatedBook : b)))
+        if (activeBookModal?.id === book.id) {
+          setActiveBookModal(updatedBook)
+        }
+      }).catch(() => undefined)
     } catch (err) {
-      console.error('Erreur mise en bucket:', err)
-      setToastMessage(`Erreur lors de la mise en bucket. Téléchargement direct initié.`)
-      if (book.downloadUrl) window.open(book.downloadUrl, '_blank')
+      console.error('Erreur téléchargement livre:', err)
+      setToastMessage(`Téléchargement initié : « ${book.title} »`)
+      await openLibraryService.downloadBook(book)
     } finally {
       setCachingBookId(null)
     }
@@ -909,15 +898,15 @@ export default function LibraryPage() {
                     <button
                       onClick={e => {
                         e.stopPropagation()
-                        const dummyBlob = new Blob([`Support de cours: ${item.title}`], { type: 'text/plain' })
-                        const url = URL.createObjectURL(dummyBlob)
+                        const blob = buildCourseResourcePdfBlob(item)
+                        const url = URL.createObjectURL(blob)
                         const a = document.createElement('a')
                         a.href = url
-                        a.download = `${item.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${item.type.toLowerCase()}`
+                        a.download = `${item.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`
                         document.body.appendChild(a)
                         a.click()
                         document.body.removeChild(a)
-                        URL.revokeObjectURL(url)
+                        setTimeout(() => URL.revokeObjectURL(url), 2000)
                       }}
                       className="flex items-center gap-1 rounded-xl bg-slate-100 hover:bg-[#1E3A8A] hover:text-white px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors"
                     >
@@ -1082,15 +1071,15 @@ export default function LibraryPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
-                    const dummyBlob = new Blob([`Support: ${activeMediaModal.title}`], { type: 'text/plain' })
-                    const url = URL.createObjectURL(dummyBlob)
+                    const blob = buildCourseResourcePdfBlob(activeMediaModal)
+                    const url = URL.createObjectURL(blob)
                     const a = document.createElement('a')
                     a.href = url
-                    a.download = `${activeMediaModal.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.${activeMediaModal.type.toLowerCase()}`
+                    a.download = `${activeMediaModal.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.pdf`
                     document.body.appendChild(a)
                     a.click()
                     document.body.removeChild(a)
-                    URL.revokeObjectURL(url)
+                    setTimeout(() => URL.revokeObjectURL(url), 2000)
                   }}
                   className="flex items-center gap-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white px-4 py-2 text-xs font-bold shadow-md transition-all"
                 >
