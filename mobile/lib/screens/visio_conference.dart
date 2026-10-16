@@ -1,5 +1,9 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../providers/providers.dart';
 import '../theme/app_theme.dart';
 import '../widgets/phosphor.dart';
@@ -142,6 +146,13 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
   int _activeSideTab = 0; // 0: Chat, 1: Participants, 2: Documents, 3: Sondages
   final _messageController = TextEditingController();
   final ScrollController _chatScroll = ScrollController();
+
+  // Métadonnées de session Meet & Synchronisation Desktop <-> Android
+  String _roomId = 'ICT313_AMPHI502_2026';
+  String _courseTitle = 'ICT313 · Architecture des Ordinateurs & Systèmes';
+  String _roomSubtitle = 'Amphi 502 · Relais Campus LAN 0 ms · Présence LMD active';
+  bool _isCompanionMode = false;
+  String? _syncedDesktopName;
 
   late List<VisioParticipant> _participants;
   late List<VisioMessage> _messages;
@@ -298,6 +309,349 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
     });
   }
 
+  void _showMeetQrDialog() {
+    final payload = jsonEncode({
+      'protocol': 'uniflow-meet',
+      'version': '1.0',
+      'roomId': _roomId,
+      'title': _courseTitle,
+      'location': _roomSubtitle,
+      'host': 'Pr. Jean-Paul Ndiaye',
+      'hostMatricule': 'ENS-UY1-014',
+      'lanRelay': '192.168.1.100:8443',
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary50,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: PhosphorIcon(PhosphorIconsBold.qrCode, color: AppColors.primaryBlue, size: 22),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'QR d\'accès Meet & Synchronisation',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Scannez ce QR Code avec l\'application Android UniFlow pour rejoindre le cours ou coupler votre téléphone en caméra/micro HD déporté sans fil.',
+                style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.4),
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.08),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: SizedBox(
+                  width: 220,
+                  height: 220,
+                  child: QrImageView(
+                    data: payload,
+                    version: QrVersions.auto,
+                    size: 220,
+                    eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.primaryBlue),
+                    dataModuleStyle: const QrDataModuleStyle(
+                      dataModuleShape: QrDataModuleShape.square,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppColors.background,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.inputBorder),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    PhosphorIcon(PhosphorIconsFill.shieldCheck, size: 16, color: const Color(0xFF10B981)),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Session : $_roomId',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'monospace'),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Fermer', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openMeetQrScanner() async {
+    final scannedData = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (ctx) => const _MeetQrScannerView(),
+      ),
+    );
+
+    if (scannedData != null && scannedData.isNotEmpty) {
+      _handleScannedMeetCode(scannedData);
+    }
+  }
+
+  void _handleScannedMeetCode(String code) {
+    String scannedRoomId = _roomId;
+    String scannedTitle = _courseTitle;
+    String scannedSubtitle = _roomSubtitle;
+    String host = 'Desktop Hôte';
+
+    try {
+      if (code.startsWith('{') && code.endsWith('}')) {
+        final Map<String, dynamic> data = jsonDecode(code) as Map<String, dynamic>;
+        if (data['roomId'] != null) scannedRoomId = data['roomId'].toString();
+        if (data['title'] != null) scannedTitle = data['title'].toString();
+        if (data['location'] != null) scannedSubtitle = data['location'].toString();
+        if (data['host'] != null) host = data['host'].toString();
+      } else if (code.contains('meet:')) {
+        scannedRoomId = code.replaceFirst('meet:', '').trim();
+      }
+    } catch (_) {}
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const PhosphorIcon(PhosphorIconsFill.checkCircle, color: Color(0xFF10B981), size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'QR Meet détecté avec succès !',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            scannedTitle,
+                            style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                InkWell(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _activateCompanionMode(scannedRoomId, scannedTitle, scannedSubtitle, host);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.teal.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.teal.withValues(alpha: 0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.teal,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const PhosphorIcon(PhosphorIconsFill.deviceMobile, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Mode Caméra & Micro Déporté (Recommandé)',
+                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.teal),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Utilise cet appareil Android comme source vidéo HD et audio sans fil pour la réunion sur le Desktop.',
+                                style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                InkWell(
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    _joinAsParticipant(scannedRoomId, scannedTitle, scannedSubtitle);
+                  },
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: AppColors.background,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.inputBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryBlue,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const PhosphorIcon(PhosphorIconsFill.usersThree, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Rejoindre en tant que Participant',
+                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Accéder à la visio, au chat, aux documents et voter aux sondages directement sur ce smartphone.',
+                                style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _activateCompanionMode(String roomId, String title, String subtitle, String host) {
+    setState(() {
+      _roomId = roomId;
+      _courseTitle = title;
+      _roomSubtitle = subtitle;
+      _isCompanionMode = true;
+      _syncedDesktopName = host;
+      _messages.add(VisioMessage(
+        id: 'msg_sync_${DateTime.now().millisecondsSinceEpoch}',
+        sender: 'Système UniFlow',
+        role: 'RELAY LAN',
+        text: '📱 Point de réception Android actif : Couplé à [$host] en caméra et micro déporté 0 ms.',
+        time: 'Direct',
+        isMe: false,
+      ));
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('📱 Couplé avec succès au Desktop ($host) en caméra/micro sans fil !'),
+        backgroundColor: AppColors.teal,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _joinAsParticipant(String roomId, String title, String subtitle) {
+    final user = ref.read(currentUserProvider);
+    setState(() {
+      _roomId = roomId;
+      _courseTitle = title;
+      _roomSubtitle = subtitle;
+      _isCompanionMode = false;
+      _syncedDesktopName = 'Connecté via QR';
+      _messages.add(VisioMessage(
+        id: 'msg_join_${DateTime.now().millisecondsSinceEpoch}',
+        sender: 'Système UniFlow',
+        role: 'SÉCURITÉ',
+        text: '✅ ${user?.name ?? 'Vous'} a rejoint la session $roomId via QR Code Desktop.',
+        time: 'Direct',
+        isMe: false,
+      ));
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('✅ Connecté au cours : $title !'),
+        backgroundColor: const Color(0xFF10B981),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
@@ -398,20 +752,50 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'ICT313 · Architecture des Ordinateurs & Systèmes',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        _courseTitle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    if (_isCompanionMode) ...[
+                      const SizedBox(width: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.teal.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: AppColors.teal),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const PhosphorIcon(PhosphorIconsFill.deviceMobile, size: 11, color: AppColors.teal),
+                            const SizedBox(width: 3),
+                            Text(
+                              _syncedDesktopName != null
+                                  ? 'Point Réception Android · $_syncedDesktopName'
+                                  : 'Point Réception Android',
+                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.teal),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: 2),
-                const Text(
-                  'Amphi 502 · Relais Campus LAN 0 ms · Présence LMD active',
-                  style: TextStyle(
+                Text(
+                  _roomSubtitle,
+                  style: const TextStyle(
                     fontSize: 11,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
@@ -423,6 +807,30 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
             ),
           ),
           const SizedBox(width: 8),
+          // Bouton Générer/Afficher QR Meet (pour Desktop ou animateur)
+          IconButton(
+            tooltip: 'Afficher le QR code du salon Meet',
+            onPressed: _showMeetQrDialog,
+            icon: const PhosphorIcon(PhosphorIconsBold.qrCode, size: 20, color: AppColors.primaryBlue),
+            style: IconButton.styleFrom(
+              backgroundColor: AppColors.primary50,
+              padding: const EdgeInsets.all(8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(width: 6),
+          // Bouton Scanner QR Meet (Point de réception pour Android)
+          IconButton(
+            tooltip: 'Scanner le QR Meet d\'un Desktop',
+            onPressed: _openMeetQrScanner,
+            icon: const PhosphorIcon(PhosphorIconsBold.scan, size: 20, color: Color(0xFF0D9488)),
+            style: IconButton.styleFrom(
+              backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.10),
+              padding: const EdgeInsets.all(8),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+          ),
+          const SizedBox(width: 6),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
             decoration: BoxDecoration(
@@ -433,7 +841,7 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                PhosphorIcon(PhosphorIconsFill.usersThree, size: 14, color: AppColors.primaryBlue),
+                const PhosphorIcon(PhosphorIconsFill.usersThree, size: 14, color: AppColors.primaryBlue),
                 const SizedBox(width: 4),
                 Text(
                   isDesktop ? '${_participants.length} en ligne' : '${_participants.length}',
@@ -1084,3 +1492,266 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
     );
   }
 }
+
+/// Vue caméra dédiée pour scanner le QR Meet projeté sur un Desktop ou écran d'amphithéâtre
+class _MeetQrScannerView extends StatefulWidget {
+  const _MeetQrScannerView();
+
+  @override
+  State<_MeetQrScannerView> createState() => _MeetQrScannerViewState();
+}
+
+class _MeetQrScannerViewState extends State<_MeetQrScannerView> {
+  final MobileScannerController _controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    formats: [BarcodeFormat.qrCode],
+  );
+  bool _detected = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onDetect(BarcodeCapture capture) {
+    if (_detected) return;
+    final barcode = capture.barcodes.firstOrNull;
+    final value = barcode?.rawValue?.trim();
+    if (value != null && value.isNotEmpty) {
+      _detected = true;
+      HapticFeedback.mediumImpact();
+      Navigator.of(context).pop(value);
+    }
+  }
+
+  void _enterCodeManually() {
+    final textController = TextEditingController();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: const Text('Entrer le code du salon', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+          content: TextField(
+            controller: textController,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'Ex: ICT313_AMPHI502_2026',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final text = textController.text.trim();
+                if (text.isNotEmpty) {
+                  Navigator.of(ctx).pop();
+                  Navigator.of(context).pop(text);
+                }
+              },
+              child: const Text('Valider'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Scanner le QR Meet Desktop', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+            Text('Pointez vers l\'écran du PC ou du vidéoprojecteur', style: TextStyle(fontSize: 11, color: Colors.white70)),
+          ],
+        ),
+        actions: [
+          IconButton(
+            tooltip: 'Changer de caméra',
+            onPressed: () => _controller.switchCamera(),
+            icon: const PhosphorIcon(PhosphorIconsBold.arrowsClockwise, color: Colors.white),
+          ),
+          IconButton(
+            tooltip: 'Lampe torche',
+            onPressed: () => _controller.toggleTorch(),
+            icon: const PhosphorIcon(PhosphorIconsBold.flashlight, color: Colors.white),
+          ),
+        ],
+      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          MobileScanner(
+            controller: _controller,
+            onDetect: _onDetect,
+            errorBuilder: (context, error) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const PhosphorIcon(PhosphorIconsBold.warningCircle, color: Colors.orange, size: 48),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Caméra indisponible : ${error.errorDetails?.message ?? error.errorCode.name}',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: _enterCodeManually,
+                      child: const Text('Saisir le code du salon manuellement'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // Cadre de visée animé
+          Center(
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0.95, end: 1.05),
+              duration: const Duration(milliseconds: 900),
+              curve: Curves.easeInOut,
+              builder: (context, scale, child) {
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    width: 260,
+                    height: 260,
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: _detected ? const Color(0xFF10B981) : const Color(0xFF0D9488),
+                        width: 3.5,
+                      ),
+                      borderRadius: BorderRadius.circular(28),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF0D9488).withValues(alpha: 0.25),
+                          blurRadius: 24,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned(
+                          top: 12,
+                          left: 12,
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                top: BorderSide(color: Colors.white, width: 3),
+                                left: BorderSide(color: Colors.white, width: 3),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 12,
+                          right: 12,
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                top: BorderSide(color: Colors.white, width: 3),
+                                right: BorderSide(color: Colors.white, width: 3),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 12,
+                          left: 12,
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(color: Colors.white, width: 3),
+                                left: BorderSide(color: Colors.white, width: 3),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 12,
+                          right: 12,
+                          child: Container(
+                            width: 20,
+                            height: 20,
+                            decoration: const BoxDecoration(
+                              border: Border(
+                                bottom: BorderSide(color: Colors.white, width: 3),
+                                right: BorderSide(color: Colors.white, width: 3),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+          // Aide en bas avec bouton manuel
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 32,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.75),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
+                  ),
+                  child: const Row(
+                    children: [
+                      PhosphorIcon(PhosphorIconsFill.info, color: Color(0xFF0D9488), size: 20),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Placez le QR Code affiché sur l\'écran du Desktop au centre pour synchroniser immédiatement.',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextButton.icon(
+                  onPressed: _enterCodeManually,
+                  icon: const PhosphorIcon(PhosphorIconsBold.pencilSimpleLine, color: Colors.white70, size: 16),
+                  label: const Text(
+                    'Entrer le code du salon manuellement',
+                    style: TextStyle(color: Colors.white70, fontSize: 12, decoration: TextDecoration.underline),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
