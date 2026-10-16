@@ -72,6 +72,9 @@ jobs:
           channel: 'stable'
           cache: true
 
+      - name: Setup environment file
+        run: cp .env.example .env 2>/dev/null || touch .env
+
       - name: Install Flutter packages
         run: flutter pub get
 
