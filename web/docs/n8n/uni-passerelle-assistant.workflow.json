@@ -1,0 +1,80 @@
+{
+  "name": "Uni · Passerelle assistant",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "uniflow-assistant",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-820, 0],
+      "id": "uni-gw-trg-0001",
+      "name": "Webhook UniFlow",
+      "webhookId": "3d9a51b7-6f24-4c08-90e1-7b5a2d8c4016",
+      "credentials": {
+        "httpHeaderAuth": { "id": "A_CREER", "name": "UniFlow · Jeton passerelle" }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googlePaalmApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ system_instruction: { parts: [{ text: $json.body.system }] }, contents: ($json.body.messages || []).map((m) => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: String(m.content || '') }] })), generationConfig: { temperature: $json.body.temperature ?? 0.6, maxOutputTokens: $json.body.max_tokens ?? 1024, thinkingConfig: { thinkingLevel: 'minimal' } }, safetySettings: [ { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }, { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }, { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }, { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' } ] }) }}",
+        "options": {
+          "timeout": 20000,
+          "response": { "response": { "responseFormat": "json" } }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [-540, 0],
+      "id": "uni-gw-http-0002",
+      "name": "Gemini 3.1 Flash-Lite",
+      "credentials": {
+        "googlePaalmApi": { "id": "xv1JUvtY1df3Bmsn", "name": "Google Gemini(PaLM) Api account" }
+      },
+      "notesInFlow": true,
+      "notes": " Corps construit ici d'après `toGeminiRequest`, la forme que la Function envoyait à Google avant le 2026-09-25 (system_instruction + contents + thinkingConfig minimal + 4 safetySettings) — vérifié identique par scripts/n8n-workflows.test.mjs. Un nœud LLM de type agent réécrirait la consigne et perdrait l'historique multi-tours ; ici la Function reste maîtresse du prompt."
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Lit la réponse Gemini et rend l’enveloppe exactement ce qu'attend le service\n// `/assistant` (`askN8n` / `extractN8nReply`, src/lib/assistant.js) :\n// { ok, reply, provider, model }. Les suggestions et l’ancrage dans les données\n// réelles restent produits par la Function, qui seule a la clé serveur Appwrite\n// — n8n ne voit jamais la base.\n//\n// Une réponse vide ou filtrée lève : le nœud « Répondre » renvoie alors une\n// erreur, la Function la compte comme un échec de la passerelle et bascule sur\n// Mistral. C'est le comportement voulu, pas une panne.\n//\n// provider reste « gemini » et le modèle reste verrouillé ici, en dur : les\n// trois clients affichent déjà ce libellé (UniAssistant.tsx côté web,\n// uni_assistant.dart côté mobile et desktop), donc aucun code client ne bouge.\n// Le modèle n'est PAS lu depuis la requête — l'invariant du 2026-09-21 est\n// conservé, il a juste changé de place : la main sur le coût du modèle est\n// désormais dans l’éditeur n8n, et donc à toute personne ayant accès à cette\n// console.\n\nconst payload = $input.first().json || {}\nconst parts = payload?.candidates?.[0]?.content?.parts\nconst text = (Array.isArray(parts) ? parts : []).map((p) => (typeof p?.text === 'string' ? p.text : '')).join('').trim()\n\nif (!text) {\n  const motif = payload?.promptFeedback?.blockReason || payload?.candidates?.[0]?.finishReason || 'ABSENT'\n  throw new Error(`GEMINI_EMPTY ${motif}`)\n}\n\n// Le reply part en TEXTE BRUT, jamais en HTML : le chat web rend le message\n// échappé et les bulles Flutter sont des widgets Text() — un étudiant lirait les\n// balises. Le HTML est réservé aux canaux que n8n possède (Gmail, Telegram, PDF).\nreturn [{ json: { ok: true, reply: text, provider: 'gemini', model: 'gemini-3.1-flash-lite', assistant: 'Uni' } }]"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-260, 0],
+      "id": "uni-gw-code-0003",
+      "name": "Extraire la réponse"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [20, 0],
+      "id": "uni-gw-resp-0004",
+      "name": "Répondre à UniFlow"
+    }
+  ],
+  "connections": {
+    "Webhook UniFlow": { "main": [[{ "node": "Gemini 3.1 Flash-Lite", "type": "main", "index": 0 }]] },
+    "Gemini 3.1 Flash-Lite": { "main": [[{ "node": "Extraire la réponse", "type": "main", "index": 0 }]] },
+    "Extraire la réponse": { "main": [[{ "node": "Répondre à UniFlow", "type": "main", "index": 0 }]] }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" },
+  "pinData": {},
+  "tags": ["uniflow", "assistant"]
+}

@@ -1,0 +1,39 @@
+{
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "X-XSS-Protection", "value": "1; mode=block" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Cross-Origin-Resource-Policy", "value": "same-origin" },
+        { "key": "Permissions-Policy", "value": "accelerometer=(), camera=(self), geolocation=(self), gyroscope=(), magnetometer=(), microphone=(self), payment=(), usb=()" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; base-uri 'self'; connect-src 'self' https://vps.kernelforge.codes wss://vps.kernelforge.codes https://*.kernelforge.codes wss://*.kernelforge.codes https://fra.cloud.appwrite.io wss://fra.cloud.appwrite.io https://vercel.live wss://ws-us3.pusher.com https://sockjs-us3.pusher.com https://openlibrary.org https://*.openlibrary.org https://covers.openlibrary.org https://gutendex.com https://*.gutendex.com https://archive.org https://*.archive.org; font-src 'self' data: https://fonts.gstatic.com; form-action 'self'; frame-ancestors 'self'; frame-src 'self' https://www.youtube-nocookie.com https://www.youtube.com https://vercel.live; img-src 'self' data: blob: https://vps.kernelforge.codes https://*.kernelforge.codes https://fra.cloud.appwrite.io https://i.ytimg.com https://ui-avatars.com https://github.com https://avatars.githubusercontent.com https://get.microsoft.com https://covers.openlibrary.org https://openlibrary.org https://*.openlibrary.org https://archive.org https://*.archive.org https://gutendex.com https://*.gutendex.com https://images.unsplash.com https://images-na.ssl-images-amazon.com https://*.google.com https://*.googleusercontent.com; media-src 'self' blob: https://vps.kernelforge.codes https://*.kernelforge.codes https://fra.cloud.appwrite.io; object-src 'none'; script-src 'self' https://vercel.live; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; worker-src 'self' blob:" }
+      ]
+    },
+    {
+      "source": "/(assets|logos|icons)/(.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/(robots.txt|sitemap.xml|manifest.json)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=3600, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(sw.js|precache-manifest.json)",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    }
+  ]
+}
