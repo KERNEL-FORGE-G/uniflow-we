@@ -257,6 +257,7 @@ const EASE_OUT_BACK: [number, number, number, number] = [0.34, 1.56, 0.64, 1]
 
 export function IconTile({ name, icon, imageSrc, subject, subjectCode, color, variant = 'filled', size = 44, index = 0, weight = 'duotone', className, children, title }: IconTileProps) {
   const reducedMotion = useReducedMotion()
+  const [imgFailed, setImgFailed] = useState(false)
   const Component: Icon = icon ?? (name ? UNI_ICONS[name] : SUBJECT_ICONS[subjectIconName(subject, subjectCode)])
   const iconName = icon ? undefined : name ?? subjectIconName(subject, subjectCode)
   const restingShadow = variant === 'filled' ? `0 8px 20px -6px ${hexWithAlpha(color, 0.25)}` : 'none'
@@ -272,6 +273,8 @@ export function IconTile({ name, icon, imageSrc, subject, subjectCode, color, va
       : { backgroundColor: hexWithAlpha(color, 0.14), color }),
   }
 
+  const showImage = Boolean(imageSrc) && !imgFailed
+
   return (
     <motion.span
       data-variant={variant}
@@ -285,14 +288,12 @@ export function IconTile({ name, icon, imageSrc, subject, subjectCode, color, va
       transition={reducedMotion ? { duration: 0 } : { delay: index * 0.04, duration: 0.45, ease: EASE_OUT_BACK }}
       whileHover={reducedMotion ? undefined : { y: -2, boxShadow: hoverShadow }}
     >
-      {imageSrc ? (
+      {showImage ? (
         <img
           src={imageSrc}
           alt=""
-          className="h-full w-full object-cover"
-          onError={(e) => {
-            (e.currentTarget as HTMLElement).style.display = 'none'
-          }}
+          className="h-full w-full object-contain p-1.5 transition-transform"
+          onError={() => setImgFailed(true)}
         />
       ) : (
         <Component size={TILE_ICON[size]} weight={weight} aria-hidden="true" focusable="false" />

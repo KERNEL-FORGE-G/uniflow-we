@@ -17,10 +17,10 @@ export const UNIFLOW_PRIMARY_LOGO_ALT = 'UniFlow — logo officiel'
  * La version blanche sert sur les fonds bleus/sombres ; ses traces de circuit
  * sont des creux, pour laisser passer le fond.
  */
-export const UNIFLOW_WORDMARK_SVG = '/logos/uniflow-wordmark.svg'
-export const UNIFLOW_WORDMARK_WHITE_SVG = '/logos/uniflow-wordmark-white.svg'
-export const UNIFLOW_EMBLEM_SVG = '/logos/uniflow-emblem.svg'
-export const UNIFLOW_EMBLEM_WHITE_SVG = '/logos/uniflow-emblem-white.svg'
+export const UNIFLOW_WORDMARK_SVG = '/brand/uniflow_logo_final.png'
+export const UNIFLOW_WORDMARK_WHITE_SVG = '/brand/uniflow_logo_final.png'
+export const UNIFLOW_EMBLEM_SVG = '/brand/uniflow_logo_final.png'
+export const UNIFLOW_EMBLEM_WHITE_SVG = '/brand/uniflow_logo_final.png'
 
 /** Illustration d'accueil originale, optimisée côté site pour un chargement fiable. */
 export const UNIFLOW_LANDING_ILLUSTRATION_FALLBACK_URL = '/logos/uniflow-landing-original.webp'

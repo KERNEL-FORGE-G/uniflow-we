@@ -40,9 +40,17 @@ function SidebarContent({ onNavigate, compact }: { onNavigate?: () => void; comp
           type="button"
           onClick={() => { navigate('/'); onNavigate?.() }}
           title="Retour à l’accueil — session conservée"
-          className="rounded-xl p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a8a]/40"
+          className="rounded-xl p-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a8a]/40 group"
         >
-          <img src="/logos/uniflow-wordmark.svg" alt="UniFlow — accueil" className={compact ? 'h-8 w-auto' : 'h-10 w-auto'} />
+          <div className="flex items-center gap-2.5">
+            <img src="/brand/uniflow_logo_final.png" alt="UniFlow" className={compact ? 'h-9 w-9 object-contain' : 'h-11 w-11 object-contain drop-shadow-sm transition-transform group-hover:scale-105'} />
+            {!compact && (
+              <div className="flex flex-col">
+                <span className="text-xl font-black tracking-tight text-[#1e3a8a] leading-none">Uni<span className="text-[#0d9488]">Flow</span></span>
+                <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mt-0.5">Plateforme Universitaire</span>
+              </div>
+            )}
+          </div>
         </button>
       </div>
 
