@@ -1,0 +1,19 @@
+const endpoint = (process.env.APPWRITE_SELF_HOSTED_ENDPOINT || 'https://fra.cloud.appwrite.io/v1').replace(/\/+$/, '')
+const projectId = process.env.APPWRITE_SELF_HOSTED_PROJECT_ID || 'uniflow'
+const apiKey = process.env.APPWRITE_SELF_HOSTED_API_KEY
+if (!apiKey) throw new Error('APPWRITE_SELF_HOSTED_API_KEY est requise pour vérifier le seed.')
+
+const headers = { 'X-Appwrite-Project': projectId, 'X-Appwrite-Key': apiKey }
+async function count(collectionId) {
+  const response = await fetch(`${endpoint}/databases/uniflow/collections/${collectionId}/documents`, { headers })
+  const payload = await response.json()
+  if (!response.ok) throw new Error(`${collectionId}: ${payload.message || response.status}`)
+  return payload.total
+}
+
+const [courses, schedules, enrollments, library, users, assignments, grades, attendanceSessions, attendanceRecords, subscriptionPlans, subscriptionStatuses] = await Promise.all([
+  count('academic_courses'), count('academic_schedules'), count('academic_enrollments'), count('academic_library'), count('users'),
+  count('academic_assignments'), count('academic_grades'), count('attendance_sessions'), count('attendance_records'), count('subscription_plans'), count('subscription_statuses'),
+])
+
+console.log(JSON.stringify({ endpoint, courses, schedules, enrollments, library, users, assignments, grades, attendanceSessions, attendanceRecords, subscriptionPlans, subscriptionStatuses }, null, 2))

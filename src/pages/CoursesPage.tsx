@@ -1,0 +1,180 @@
+import { useState } from 'react'
+import { SquaresFour, ListBullets } from '@phosphor-icons/react'
+import { Badge } from '../components/ui/Badge'
+import { IconTile, SubjectIcon, UniIcon } from '../components/ui/UniIcon'
+import { darkenHex, subjectColor } from '../lib/subjectIcon'
+import { useNavigate } from 'react-router-dom'
+import { useApi } from '../hooks/useApi'
+import { coursesApi, type Course } from '../lib/api'
+
+// L'icône et la couleur d'un cours se déduisent de son nom et de son code
+// (`subjectIcon`) : la table codée en dur par code (INFO101 → Code2…) ne
+// couvrait que six cours de démonstration, tous les autres tombaient sur la
+// même toque.
+
+const typeLabel: Record<string, string> = { CM: 'Cours Magistral', TD: 'Travaux Dirigés', TP: 'Travaux Pratiques' }
+
+const tabs = ['Tous', 'CM', 'TD', 'TP'] as const
+type Tab = typeof tabs[number]
+
+export default function CoursesPage() {
+  const [activeTab, setActiveTab] = useState<Tab>('Tous')
+  const [view, setView] = useState<'grid' | 'list'>('grid')
+  const [search, setSearch] = useState('')
+  const navigate = useNavigate()
+
+  const { data: courses, loading, error, refetch } = useApi(() => coursesApi.mine(), [], { key: 'courses.mine' })
+
+  const filtered = (courses ?? []).filter((c: Course) => {
+    const matchTab = activeTab === 'Tous' || c.type === activeTab
+    const matchSearch = !search
+      || c.name.toLowerCase().includes(search.toLowerCase())
+      || c.code.toLowerCase().includes(search.toLowerCase())
+      || `${c.teacher?.firstName} ${c.teacher?.lastName}`.toLowerCase().includes(search.toLowerCase())
+    return matchTab && matchSearch
+  })
+
+  if (loading) return (
+    <div className="space-y-4 animate-fade-in">
+      <div className="h-8 w-48 rounded-lg bg-[#f3f4f6] animate-pulse" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[1,2,3,4,5,6].map(i => <div key={i} className="h-52 rounded-xl bg-[#f3f4f6] animate-pulse" />)}
+      </div>
+    </div>
+  )
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center py-20 gap-4">
+      <UniIcon name="alert" size={48} className="text-red-400" />
+      <p className="text-sm text-[#6b7280]">{error}</p>
+      <button onClick={refetch} className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white">
+        <UniIcon name="refresh" weight="bold" size={16} /> Réessayer
+      </button>
+    </div>
+  )
+
+  return (
+    <div className="space-y-5 animate-fade-in">
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-bold text-[#111827]">Mes cours</h1>
+          <p className="text-sm text-[#6b7280] mt-0.5">{(courses ?? []).length} cours inscrits</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <input value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher un cours..."
+              className="rounded-lg border border-[#e5e7eb] bg-[#f9fafb] py-2 pl-9 pr-4 text-sm outline-none focus:border-[#1e3a8a] focus:bg-white w-64" />
+            <UniIcon name="search" weight="bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+          </div>
+          <div className="flex rounded-lg border border-[#e5e7eb] overflow-hidden">
+            <button onClick={() => setView('grid')} aria-label="Vue en grille" aria-pressed={view === 'grid'} className={`p-2 transition-colors ${view === 'grid' ? 'bg-[#1e3a8a] text-white' : 'bg-white text-[#6b7280]'}`}>
+              <SquaresFour weight={view === 'grid' ? 'fill' : 'bold'} size={16} aria-hidden="true" />
+            </button>
+            <button onClick={() => setView('list')} aria-label="Vue en liste" aria-pressed={view === 'list'} className={`p-2 transition-colors ${view === 'list' ? 'bg-[#1e3a8a] text-white' : 'bg-white text-[#6b7280]'}`}>
+              <ListBullets weight={view === 'list' ? 'fill' : 'bold'} size={16} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-[#e5e7eb]">
+        {tabs.map(tab => (
+          <button key={tab} onClick={() => setActiveTab(tab)}
+            className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              activeTab === tab ? 'border-[#1e3a8a] text-[#1e3a8a]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'
+            }`}>
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {/* Cards */}
+      <div className={view === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3' : 'space-y-3'}>
+        {filtered.length === 0 && (
+          <div className="col-span-3 flex flex-col items-center justify-center py-16 text-[#9ca3af]">
+            <IconTile name="courses" color="#1E3A8A" variant="soft" size={56} className="mb-3" />
+            <p className="font-medium">Aucun cours trouvé</p>
+          </div>
+        )}
+        {filtered.map((course: Course, idx: number) => {
+          const color = subjectColor(course.code)
+          const teacherName = course.teacher
+            ? `${course.teacher.firstName} ${course.teacher.lastName}`
+            : 'Enseignant non assigné'
+
+          return view === 'grid' ? (
+            <div key={course.id} onClick={() => navigate(`/app/cours/${course.id}`)}
+              className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm hover:shadow-md transition-all overflow-hidden cursor-pointer group">
+              <div className="h-28 relative p-4 flex flex-col justify-between" style={{ backgroundImage: `linear-gradient(135deg, ${color} 0%, ${darkenHex(color, 0.3)} 100%)` }}>
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center rounded-md bg-white/25 px-2 py-0.5 text-[10px] font-bold text-white border border-white/30">
+                    {course.code}
+                  </span>
+                  <span className="rounded-md bg-white/25 px-2 py-0.5 text-[10px] font-bold text-white border border-white/30">
+                    {course.type}
+                  </span>
+                </div>
+                <div className="flex justify-center">
+                  <div className="rounded-xl bg-white/25 border border-white/30 p-3 text-white group-hover:scale-110 transition-transform">
+                    <SubjectIcon subject={course.name} code={course.code} size={32} />
+                  </div>
+                </div>
+              </div>
+              <div className="p-4">
+                <h3 className="font-bold text-[#111827] text-sm leading-tight mb-1">{course.name}</h3>
+                <p className="text-xs text-[#6b7280] mb-1">{teacherName}</p>
+                {course.teachingUnit && (
+                  <p className="text-xs text-[#9ca3af]">UE : {course.teachingUnit.name}</p>
+                )}
+                <div className="mt-3 flex items-center gap-3 text-xs text-[#9ca3af]">
+                  <span className="flex items-center gap-1"><UniIcon name="time" size={14} />{course.hours}h</span>
+                  <span className="flex items-center gap-1"><UniIcon name="badges" size={14} />{course.credits} crédits</span>
+                </div>
+                <div className="mt-3 flex items-center justify-between">
+                  <Badge variant="primary">{typeLabel[course.type] ?? course.type}</Badge>
+                  <UniIcon name="chevronRight" weight="bold" size={16} className="text-[#9ca3af] group-hover:text-[#1e3a8a] transition-colors" />
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div key={course.id} onClick={() => navigate(`/app/cours/${course.id}`)}
+              className="flex items-center gap-4 rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm hover:shadow-md transition-all cursor-pointer">
+              <IconTile subject={course.name} subjectCode={course.code} color={color} variant="filled" size={56} index={idx} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-[#111827] text-sm truncate">{course.name}</h3>
+                  <Badge variant="primary">{course.type}</Badge>
+                </div>
+                <p className="text-xs text-[#6b7280] mt-0.5">{teacherName}</p>
+                {course.teachingUnit && (
+                  <p className="text-xs text-[#9ca3af]">{course.teachingUnit.name} · {course.credits} crédits</p>
+                )}
+              </div>
+              <UniIcon name="chevronRight" weight="bold" size={20} className="text-[#9ca3af] shrink-0" />
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Stats bottom */}
+      {(courses ?? []).length > 0 && (
+        <div className="grid grid-cols-3 gap-4 rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+          {[
+            { label: 'Cours total', value: (courses ?? []).length, color: 'text-[#1e3a8a]' },
+            { label: 'Crédits total', value: (courses ?? []).reduce((s: number, c: Course) => s + (c.credits ?? 0), 0), color: 'text-[#0d9488]' },
+            { label: 'Heures total', value: `${(courses ?? []).reduce((s: number, c: Course) => s + (c.hours ?? 0), 0)}h`, color: 'text-[#7c3aed]' },
+          ].map(s => (
+            <div key={s.label} className="text-center">
+              <p className={`text-2xl font-extrabold ${s.color}`}>{s.value}</p>
+              <p className="text-xs text-[#6b7280]">{s.label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+

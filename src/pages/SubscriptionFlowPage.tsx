@@ -1,0 +1,707 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import {
+  Check, ArrowRight, ArrowLeft, ShieldCheck, Smartphone,
+  Sparkles, CheckCircle2, RefreshCw, Zap, ExternalLink,
+} from 'lucide-react'
+import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { personalSubscriptionApi, type CheckoutResult, type SubscriptionPlan, ApiError } from '../lib/api'
+import { CONTACT_PHONE_DISPLAY } from '../lib/contactInfo'
+import { annualSavingsPercent, whatsappBillingUrl } from '../lib/paymentsModel'
+import { plansForCountry } from '../lib/pricingModel'
+import { ActionResult } from '../components/feedback/ActionResult'
+import { useUserRole } from '../utils/userRole'
+
+export default function SubscriptionFlowPage() {
+  const { planId } = useParams<{ planId?: string }>()
+  const { currentUser, authUser } = useUserRole()
+
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null)
+  const [loading, setLoading] = useState<boolean>(true)
+  const [loadError, setLoadError] = useState<string | null>(null)
+
+  // Step state: 1 = Plan & Cycle, 2 = Infos & Contact, 3 = Paiement, 4 = Confirmation
+  const [currentStep, setCurrentStep] = useState<number>(1)
+  const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'ANNUALLY'>('MONTHLY')
+
+  // Form state
+  const [fullName, setFullName] = useState<string>('')
+  const [email, setEmail] = useState<string>('')
+  const [phoneNumber, setPhoneNumber] = useState<string>('')
+  const [institution, setInstitution] = useState<string>('')
+  const [paymentError, setPaymentError] = useState<string | null>(null)
+
+  // Payment state
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
+  const [transactionResult, setTransactionResult] = useState<CheckoutResult | null>(null)
+  // `null` tant qu'aucune ouverture n'a été tentée ; `false` quand le navigateur
+  // a bloqué la fenêtre (window.open renvoie null) — l'écran de confirmation
+  // affiche alors le lien à ouvrir à la main au lieu d'annoncer une ouverture
+  // qui n'a pas eu lieu.
+  const [whatsappOpened, setWhatsappOpened] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true)
+      try {
+        setLoadError(null)
+        const fetchedPlans = await personalSubscriptionApi.getPlans()
+        setPlans(fetchedPlans)
+
+        const targetCode = planId || 'personal_cm'
+        const match = fetchedPlans.find(p => p.code === targetCode || p.id === targetCode)
+        if (match) {
+          setSelectedPlan(match)
+        } else if (fetchedPlans.length > 0) {
+          setSelectedPlan(fetchedPlans.find((plan) => plan.category !== 'INSTITUTION') || fetchedPlans[0])
+        }
+      } catch (err) {
+        const message = err instanceof ApiError ? err.message : 'Les offres personnelles ne sont pas disponibles.'
+        setLoadError(message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadData()
+  }, [planId])
+
+  // Pré-remplissage depuis la session : le localStorage « uniflow_user » n'est plus alimenté.
+  useEffect(() => {
+    if (!authUser) return
+    if (authUser.email && !email) setEmail(authUser.email)
+    if (currentUser.name && !fullName && currentUser.name !== 'Utilisateur non connecté') setFullName(currentUser.name)
+    if (currentUser.phone && !phoneNumber) setPhoneNumber(currentUser.phone)
+    const declared = [currentUser.university, currentUser.faculty].filter(Boolean).join(' — ')
+    if (declared && !institution) setInstitution(declared)
+  }, [authUser, currentUser, email, fullName, phoneNumber, institution])
+
+  // Formules proposées à l'étape 1 : celles de la devise de la formule choisie,
+  // sans l'offre campus (sur devis, hors parcours). Afficher tout le catalogue
+  // mettait trois « UniFlow Personnel » de devises différentes côte à côte.
+  const selectablePlans = useMemo(() => {
+    if (!selectedPlan) return plans
+    return plansForCountry(plans, selectedPlan.countryCode || 'CM').filter((plan) => plan.category !== 'INSTITUTION')
+  }, [plans, selectedPlan])
+
+  const handleProcessPayment = async () => {
+    if (!selectedPlan) return
+    if (!includedAccess && (!fullName.trim() || !email.trim())) {
+      setPaymentError('Le nom complet et l’adresse email sont obligatoires.')
+      return
+    }
+    setIsSubmitting(true)
+    setPaymentError(null)
+    try {
+      const res = await personalSubscriptionApi.createCheckout({
+        planCode: selectedPlan.code || selectedPlan.id,
+        countryCode: selectedPlan.countryCode || 'CM',
+        paymentProvider: includedAccess ? undefined : 'WHATSAPP',
+        phoneNumber: phoneNumber.trim() || undefined,
+        billingCycle: billingCycle.toLowerCase() as 'monthly' | 'annually',
+        email: email.trim(),
+        fullName: fullName.trim(),
+        institution: institution.trim() || undefined,
+      })
+      // L'URL vient de la Function (référence incluse) ; on la reconstruit
+      // localement si elle manque, avec le même numéro de facturation.
+      const url = res.paymentUrl || (res.transactionId ? whatsappBillingUrl({ reference: res.transactionId, planName: selectedPlan.name, billingCycle, amount: finalPrice, currency: selectedPlan.currency || 'XAF', fullName: fullName.trim(), email: email.trim(), institution: institution.trim() }) : undefined)
+      setTransactionResult({ ...res, paymentUrl: url })
+      setCurrentStep(4)
+      if (url && !includedAccess) {
+        const opened = window.open(url, '_blank', 'noopener')
+        setWhatsappOpened(opened !== null)
+      }
+    } catch (err) {
+      console.warn('Subscription checkout creation fallback:', err)
+      // En cas de non-réponse de la Function Appwrite, on ne bloque pas l'utilisateur :
+      // le règlement s'effectue manuellement par WhatsApp (+237 6 57 63 56 44).
+      // On génère une référence unique sécurisée et on transmet la commande sur WhatsApp.
+      const fallbackRef = `UF-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`
+      const fallbackUrl = whatsappBillingUrl({
+        reference: fallbackRef,
+        planName: selectedPlan.name,
+        billingCycle,
+        amount: finalPrice,
+        currency: selectedPlan.currency || 'XAF',
+        fullName: fullName.trim(),
+        email: email.trim(),
+        institution: institution.trim(),
+      })
+      setTransactionResult({
+        transactionId: fallbackRef,
+        paymentUrl: fallbackUrl,
+        status: 'PENDING',
+        message: 'Demande préparée pour transmission WhatsApp. Envoyez votre preuve de paiement avec la référence.',
+      })
+      setCurrentStep(4)
+      if (fallbackUrl && !includedAccess) {
+        const opened = window.open(fallbackUrl, '_blank', 'noopener')
+        setWhatsappOpened(opened !== null)
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  // Cost calculation
+  const getBasePrice = () => {
+    if (!selectedPlan) return 0
+    return billingCycle === 'ANNUALLY' 
+      ? (selectedPlan.priceAnnuallyAmount || selectedPlan.priceMonthlyAmount * 10)
+      : selectedPlan.priceMonthlyAmount
+  }
+
+  const basePrice = getBasePrice()
+  const finalPrice = basePrice
+  const checkoutStatus = transactionResult?.status?.toUpperCase()
+  const paymentConfirmed = checkoutStatus === 'SUCCESS' || checkoutStatus === 'ACTIVE' || checkoutStatus === 'PAID'
+  const includedAccess = !!selectedPlan && selectedPlan.priceMonthlyAmount === 0 && selectedPlan.providers.length === 0
+  const savings = selectedPlan ? annualSavingsPercent(selectedPlan.priceMonthlyAmount, selectedPlan.priceAnnuallyAmount) : 0
+
+  const continueFromPlan = () => {
+    if (!includedAccess) {
+      setCurrentStep(2)
+      return
+    }
+    // Le statut universitaire est déjà persistant dans Appwrite : aucun moyen
+    // de paiement, checkout ou document fictif n’est créé par ce parcours.
+    setTransactionResult({ status: 'ACTIVE', message: 'Votre accès académique Appwrite est déjà inclus et actif.' })
+    setCurrentStep(4)
+  }
+
+  const getCurrencyLabel = () => {
+    if (!selectedPlan) return 'FCFA'
+    if (selectedPlan.currency === 'EUR') return '€'
+    if (selectedPlan.currency === 'USD') return '$'
+    return 'FCFA'
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col justify-between">
+        <LandingNavbar />
+        <div className="flex flex-col items-center justify-center py-24 text-slate-600 dark:text-slate-300">
+          <RefreshCw className="h-10 w-10 animate-spin text-[#1e3a8a] mb-4" />
+          <p className="text-sm font-semibold">Chargement des détails de souscription depuis la base de données...</p>
+        </div>
+        <LandingFooter />
+      </div>
+    )
+  }
+
+  if (!selectedPlan) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100">
+        <LandingNavbar />
+        <div className="mx-auto max-w-xl px-6 py-24 text-center">
+          <div className="rounded-3xl border border-amber-200 bg-amber-50 p-8 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <h1 className="text-2xl font-black">Souscription indisponible</h1>
+            <p className="mt-3 text-sm">{loadError || 'Aucune formule active n’est encore enregistrée dans Appwrite.'}</p>
+            <Link to="/pricing" className="mt-6 inline-flex rounded-xl bg-[#1e3a8a] px-5 py-3 text-xs font-bold uppercase tracking-wider text-white">Retour aux tarifs</Link>
+          </div>
+        </div>
+        <LandingFooter />
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 font-sans">
+      <LandingNavbar />
+
+      <div className="mx-auto max-w-5xl px-4 sm:px-6 py-10">
+        
+        {/* Navigation Breadcrumb */}
+        <div className="mb-6 flex items-center justify-between">
+          <Link 
+            to="/pricing" 
+            className="inline-flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-[#1e3a8a] dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>Retour aux Formules d'Abonnement</span>
+          </Link>
+
+          <span className="text-xs font-semibold text-slate-500 bg-slate-200/60 dark:bg-slate-800 px-3 py-1 rounded-full">
+            Page de Souscription Sécurisée
+          </span>
+        </div>
+
+        {/* STEP PROGRESS BAR */}
+        <div className="mb-10 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 sm:p-6 shadow-sm">
+          <div className="flex items-center justify-between max-w-3xl mx-auto">
+            
+            {/* Step 1 */}
+            <div className={`flex flex-col items-center gap-1.5 ${currentStep >= 1 ? 'text-[#1e3a8a] dark:text-blue-400 font-bold' : 'text-slate-400'}`}>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                currentStep > 1 
+                  ? 'bg-emerald-600 text-white' 
+                  : currentStep === 1 
+                  ? 'bg-[#1e3a8a] text-white shadow-md ring-4 ring-[#1e3a8a]/20' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+              }`}>
+                {currentStep > 1 ? <Check className="h-4 w-4" /> : '1'}
+              </div>
+              <span className="text-[11px] sm:text-xs hidden sm:inline">Formule & Cycle</span>
+            </div>
+
+            <div className={`flex-1 h-1 mx-2 rounded-full ${currentStep >= 2 ? 'bg-[#1e3a8a] dark:bg-blue-500' : 'bg-slate-200 dark:bg-slate-800'}`} />
+
+            {/* Step 2 */}
+            <div className={`flex flex-col items-center gap-1.5 ${currentStep >= 2 ? 'text-[#1e3a8a] dark:text-blue-400 font-bold' : 'text-slate-400'}`}>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                currentStep > 2 
+                  ? 'bg-emerald-600 text-white' 
+                  : currentStep === 2 
+                  ? 'bg-[#1e3a8a] text-white shadow-md ring-4 ring-[#1e3a8a]/20' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+              }`}>
+                {currentStep > 2 ? <Check className="h-4 w-4" /> : '2'}
+              </div>
+              <span className="text-[11px] sm:text-xs hidden sm:inline">Informations</span>
+            </div>
+
+            <div className={`flex-1 h-1 mx-2 rounded-full ${currentStep >= 3 ? 'bg-[#1e3a8a] dark:bg-blue-500' : 'bg-slate-200 dark:bg-slate-800'}`} />
+
+            {/* Step 3 */}
+            <div className={`flex flex-col items-center gap-1.5 ${currentStep >= 3 ? 'text-[#1e3a8a] dark:text-blue-400 font-bold' : 'text-slate-400'}`}>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                currentStep > 3 
+                  ? 'bg-emerald-600 text-white' 
+                  : currentStep === 3 
+                  ? 'bg-[#1e3a8a] text-white shadow-md ring-4 ring-[#1e3a8a]/20' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+              }`}>
+                {currentStep > 3 ? <Check className="h-4 w-4" /> : '3'}
+              </div>
+              <span className="text-[11px] sm:text-xs hidden sm:inline">Paiement</span>
+            </div>
+
+            <div className={`flex-1 h-1 mx-2 rounded-full ${currentStep >= 4 ? 'bg-[#1e3a8a] dark:bg-blue-500' : 'bg-slate-200 dark:bg-slate-800'}`} />
+
+            {/* Step 4 */}
+            <div className={`flex flex-col items-center gap-1.5 ${currentStep === 4 ? 'text-[#1e3a8a] dark:text-blue-400 font-bold' : 'text-slate-400'}`}>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold transition-all ${
+                currentStep === 4 
+                  ? 'bg-emerald-600 text-white shadow-md ring-4 ring-emerald-600/20' 
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-400'
+              }`}>
+                4
+              </div>
+              <span className="text-[11px] sm:text-xs hidden sm:inline">Confirmation</span>
+            </div>
+
+          </div>
+        </div>
+
+        {/* STEP CONTENT CONTAINER */}
+        <div className="grid lg:grid-cols-12 gap-8 items-start">
+          
+          {/* Main Form Box */}
+          <div className="lg:col-span-8">
+            <AnimatePresence mode="wait">
+              
+              {/* STEP 1: PLAN & CYCLE */}
+              {currentStep === 1 && (
+                <motion.div
+                  key="step1"
+                  initial={{ opacity: 0, x: -15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 15 }}
+                  className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-md"
+                >
+                  <div className="mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+                    <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-300 text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 mb-2">
+                      Étape 1 sur 4
+                    </span>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Choisissez Votre Formule d'Abonnement</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Sélectionnez la formule issue de la base de données et votre fréquence de facturation.</p>
+                  </div>
+
+                  {/* Plan Selector Grid */}
+                  <div className="space-y-4 mb-8">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500">
+                      Formules disponibles :
+                    </label>
+
+                    <div className="grid gap-3" role="radiogroup" aria-label="Formule d’abonnement">
+                      {selectablePlans.map((p) => {
+                        const isSelected = selectedPlan?.id === p.id || selectedPlan?.code === p.code
+                        return (
+                          <div
+                            key={p.id}
+                            role="radio"
+                            aria-checked={isSelected}
+                            tabIndex={0}
+                            onClick={() => { setSelectedPlan(p); setPaymentError(null) }}
+                            onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setSelectedPlan(p); setPaymentError(null) } }}
+                            className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-4 ${
+                              isSelected
+                                ? 'bg-blue-50/70 dark:bg-blue-950/40 border-[#1e3a8a] dark:border-blue-500 shadow-sm'
+                                : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700/60 hover:border-slate-300'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className={`flex h-10 w-10 items-center justify-center rounded-xl shrink-0 ${
+                                isSelected ? 'bg-[#1e3a8a] text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200'
+                              }`}>
+                                <Zap className="h-5 w-5" />
+                              </div>
+
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h4 className="font-bold text-sm text-slate-900 dark:text-white">{p.name}</h4>
+                                  {p.badge && (
+                                    <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-teal-100 text-teal-800 dark:bg-teal-900/60 dark:text-teal-300">
+                                      {p.badge}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{p.description}</p>
+                              </div>
+                            </div>
+
+                            <div className="text-right shrink-0">
+                              <span className="font-black text-sm sm:text-base text-slate-900 dark:text-white">
+                                {billingCycle === 'ANNUALLY' ? p.priceAnnually : p.priceMonthly}
+                              </span>
+                              <div className="mt-1">
+                                <span className={`inline-block h-4 w-4 rounded-full border-2 ${
+                                  isSelected ? 'border-[#1e3a8a] bg-[#1e3a8a]' : 'border-slate-400'
+                                }`} />
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Billing Frequency Switch */}
+                  <div className="mb-8 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">
+                      Fréquence de Facturation :
+                    </label>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setBillingCycle('MONTHLY')}
+                        className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer ${
+                          billingCycle === 'MONTHLY'
+                            ? 'bg-white dark:bg-slate-900 border-[#1e3a8a] text-[#1e3a8a] dark:text-blue-400 shadow-sm'
+                            : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        Mensuel sans engagement
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setBillingCycle('ANNUALLY')}
+                        className={`py-3 px-4 rounded-xl text-xs font-bold border transition-all text-center cursor-pointer relative ${
+                          billingCycle === 'ANNUALLY'
+                            ? 'bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] border-transparent text-white shadow-sm'
+                            : 'bg-transparent border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
+                        }`}
+                      >
+                        <span>Annuel</span>
+                        {savings > 0 && (
+                          <span className="ml-1 text-[10px] uppercase font-extrabold bg-amber-400 text-slate-950 px-1.5 py-0.5 rounded">
+                            -{savings} %
+                          </span>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={continueFromPlan}
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#1e3a8a] hover:bg-[#2d4fa8] text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
+                    >
+                      <span>{includedAccess ? 'Accéder à mon espace' : 'Continuer vers Informations'}</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 2: USER INFOS & PROMO */}
+              {currentStep === 2 && (
+                <motion.div
+                  key="step2"
+                  initial={{ opacity: 0, x: -15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 15 }}
+                  className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-md"
+                >
+                  <div className="mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+                    <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-300 text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 mb-2">
+                      Étape 2 sur 4
+                    </span>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Vos Coordonnées & Identité</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Renseignez les détails d'identification de votre compte UniFlow.</p>
+                  </div>
+
+                  <div className="space-y-4 mb-6">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Nom complet ou Raison sociale <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Ex: Paul Biya / Faculté des Sciences"
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm focus:border-[#1e3a8a] focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="grid sm:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                          Adresse Email de réception <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          placeholder="votre.email@uniflow.edu"
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm focus:border-[#1e3a8a] focus:outline-none"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                          Numéro de Téléphone / WhatsApp <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="tel"
+                          required
+                          value={phoneNumber}
+                          onChange={(e) => setPhoneNumber(e.target.value)}
+                          placeholder="+237 6XX XX XX XX"
+                          className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm focus:border-[#1e3a8a] focus:outline-none"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                        Établissement / Université (Optionnel)
+                      </label>
+                      <input
+                        type="text"
+                        value={institution}
+                        onChange={(e) => setInstitution(e.target.value)}
+                        placeholder="Ex: Université de Yaoundé I, Douala, Dschang..."
+                        className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 text-sm focus:border-[#1e3a8a] focus:outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mb-8 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600 dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-300">
+                    Les éventuelles réductions et offres sont lues depuis Appwrite. Aucun code promo local n’est appliqué par cette interface.
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(1)}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider cursor-pointer"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Étape Précédente</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={!fullName || !email}
+                      onClick={() => setCurrentStep(3)}
+                      className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-[#1e3a8a] hover:bg-[#2d4fa8] disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer"
+                    >
+                      <span>Passer au Paiement</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {/* STEP 3: PAYMENT METHOD */}
+              {currentStep === 3 && (
+                <motion.div
+                  key="step3"
+                  initial={{ opacity: 0, x: -15 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: 15 }}
+                  className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 sm:p-8 shadow-md"
+                >
+                  <div className="mb-6 pb-4 border-b border-slate-200 dark:border-slate-800">
+                    <span className="inline-block rounded-full bg-blue-100 dark:bg-blue-900/50 text-[#1e3a8a] dark:text-blue-300 text-[11px] font-extrabold uppercase tracking-wider px-3 py-1 mb-2">
+                      Étape 3 sur 4
+                    </span>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white">Règlement par WhatsApp</h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{includedAccess ? 'Cet accès académique est déjà inclus et ne requiert aucun paiement.' : 'La demande est enregistrée dans Appwrite puis ouvre WhatsApp avec une référence. Aucun paiement n’est validé automatiquement.'}</p>
+                  </div>
+
+                  {paymentError && <div className="mb-6"><ActionResult status="error" title="Demande non enregistrée" description={paymentError} /></div>}
+
+                  <div className="mb-8 rounded-2xl border border-[#1e3a8a]/20 bg-blue-50 p-5 text-sm text-slate-700 dark:bg-slate-900">
+                    {includedAccess ? <p className="font-semibold text-emerald-800">Accès académique inclus : aucune transaction ni donnée de paiement ne sont nécessaires.</p> : <><p className="font-bold text-[#1e3a8a]">WhatsApp — confirmation manuelle</p><p className="mt-2">UniFlow va créer une demande Appwrite avec une référence unique, puis ouvrir WhatsApp vers le {CONTACT_PHONE_DISPLAY}. Joignez votre preuve de paiement à ce message. Votre accès restera <strong>en attente</strong> jusqu’à la confirmation manuelle d’un administrateur.</p></>}
+                  </div>
+
+                  {/* Guarantee banner */}
+                  <div className="flex items-center gap-2 text-xs text-slate-500 mb-8 bg-slate-50 dark:bg-slate-800/60 p-3 rounded-xl">
+                    <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                    <span>Le clic ne débite aucun compte et n’active aucun abonnement. Seule la confirmation administrative après vérification de preuve met à jour le statut Appwrite.</span>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setCurrentStep(2)}
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs uppercase tracking-wider cursor-pointer"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>Étape Précédente</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={handleProcessPayment}
+                      className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] hover:opacity-95 disabled:opacity-50 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-lg active:scale-95 cursor-pointer"
+                    >
+                      {isSubmitting ? (
+                        <>
+                          <RefreshCw className="h-4 w-4 animate-spin" />
+                          <span>Création de la demande...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Smartphone className="h-4 w-4" />
+                          <span>{includedAccess ? 'Activer l’accès inclus' : `Payer par WhatsApp — ${finalPrice.toLocaleString()} ${getCurrencyLabel()}`}</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+                  {/* STEP 4: CONFIRMATION */}
+              {currentStep === 4 && (
+                <motion.div key="step4" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.3 }}>
+                  <ActionResult
+                    layout="screen"
+                    status={paymentConfirmed ? 'success' : 'pending'}
+                    icon={paymentConfirmed ? CheckCircle2 : Smartphone}
+                    title={paymentConfirmed
+                      ? (includedAccess ? 'Accès académique inclus' : 'Votre abonnement est actif')
+                      : whatsappOpened === false ? 'Demande enregistrée — ouvrez WhatsApp' : 'Demande enregistrée — finalisez sur WhatsApp'}
+                    description={includedAccess
+                      ? 'Votre accès universitaire est déjà actif. Aucune transaction n’a été créée.'
+                      : paymentConfirmed
+                        ? 'Le statut de souscription confirme l’activation de votre abonnement.'
+                        : whatsappOpened === false
+                          ? `Votre navigateur a bloqué l’ouverture automatique. Cliquez sur « Ouvrir WhatsApp » pour envoyer le message pré-rempli au ${CONTACT_PHONE_DISPLAY}, avec votre preuve de paiement.`
+                          : `WhatsApp s’est ouvert dans un nouvel onglet avec un message pré-rempli vers le ${CONTACT_PHONE_DISPLAY}. Envoyez-le avec votre preuve de paiement : l’administration valide ensuite votre abonnement.`}
+                    className="max-w-none"
+                    actions={[
+                      ...(transactionResult?.paymentUrl && !paymentConfirmed ? [{ label: whatsappOpened === false ? 'Ouvrir WhatsApp' : 'Rouvrir WhatsApp', href: transactionResult.paymentUrl }] : []),
+                      { label: 'Suivre ma demande', to: '/app/abonnement', variant: (transactionResult?.paymentUrl && !paymentConfirmed ? 'secondary' : 'primary') as 'primary' | 'secondary' },
+                      { label: 'Voir les offres', to: '/pricing', variant: 'secondary' as const },
+                    ]}
+                  >
+                    <div className="mx-auto max-w-md space-y-2.5 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left text-xs dark:border-slate-700 dark:bg-slate-800/60">
+                      {transactionResult?.transactionId && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Référence :</span><span className="select-all font-mono font-bold text-slate-900 dark:text-white">{transactionResult.transactionId}</span></div>}
+                      <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Formule :</span><span className="font-bold text-slate-900 dark:text-white">{selectedPlan?.name}</span></div>
+                      {institution.trim() && <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Établissement :</span><span className="font-bold text-right text-slate-900 dark:text-white">{institution.trim()}</span></div>}
+                      <div className="flex justify-between gap-4 border-b border-slate-200 pb-2 dark:border-slate-700"><span className="text-slate-500">Statut :</span><span className="font-bold text-slate-900 dark:text-white">{paymentConfirmed ? 'Actif' : 'En attente de validation'}</span></div>
+                      <div className="flex justify-between gap-4"><span className="text-slate-500">Montant :</span><span className="font-extrabold text-[#0d9488]">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span></div>
+                    </div>
+                    {!paymentConfirmed && !includedAccess && transactionResult?.message && (
+                      <p className="mx-auto mt-4 max-w-md text-center text-xs text-slate-500 dark:text-slate-400">{transactionResult.message}</p>
+                    )}
+                    {!paymentConfirmed && !includedAccess && transactionResult?.paymentUrl && (
+                      <a href={transactionResult.paymentUrl} target="_blank" rel="noopener noreferrer" className="mx-auto mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-[#1e3a8a] underline-offset-2 hover:underline dark:text-blue-300">
+                        <ExternalLink className="h-3.5 w-3.5" /> Voir le message pré-rempli
+                      </a>
+                    )}
+                  </ActionResult>
+                </motion.div>
+              )}
+
+            </AnimatePresence>
+          </div>
+
+          {/* Sidebar Summary Card */}
+          <div className="lg:col-span-4 sticky top-24">
+            <div className="rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 shadow-md">
+              <div className="flex items-center gap-3 pb-4 mb-4 border-b border-slate-200 dark:border-slate-800">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#1e3a8a] text-white shrink-0">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white">Récapitulatif de Commande</h3>
+                  <p className="text-[11px] text-slate-500">Données issues de la BD UniFlow</p>
+                </div>
+              </div>
+
+              {selectedPlan ? (
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-xs text-slate-500">Formule sélectionnée :</span>
+                    <h4 className="font-bold text-base text-slate-900 dark:text-white">{selectedPlan.name}</h4>
+                    <p className="text-xs text-slate-500 mt-0.5">{selectedPlan.description}</p>
+                  </div>
+
+                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-slate-500">Cycle :</span>
+                      <span className="font-semibold">{billingCycle === 'ANNUALLY' ? (savings > 0 ? `Annuel (-${savings} %)` : 'Annuel') : 'Mensuel'}</span>
+                    </div>
+                    {institution.trim() && (
+                      <div className="flex justify-between gap-3">
+                        <span className="text-slate-500 shrink-0">Établissement :</span>
+                        <span className="font-semibold text-right">{institution.trim()}</span>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center font-bold text-sm text-slate-900 dark:text-white">
+                      <span>Total à régler :</span>
+                      <span className="text-lg text-[#0d9488] font-black">{finalPrice.toLocaleString()} {getCurrencyLabel()}</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Services inclus :</p>
+                    {selectedPlan.features.map((feat, i) => (
+                      <div key={i} className="flex items-start gap-2 text-xs text-slate-600 dark:text-slate-300">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-teal-600 shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-xs text-slate-500">Aucune formule sélectionnée.</p>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <LandingFooter />
+    </div>
+  )
+}
