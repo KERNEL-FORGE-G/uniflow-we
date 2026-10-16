@@ -194,29 +194,23 @@ export function UniAssistant() {
     const userTurn = makeMessage('user', content)
     const next = [...messages, userTurn]
     setMessages(next)
-    if (guest) {
-      // Guide local : petite pause pour que la réponse « arrive », comme une vraie.
-      setPending(true)
-      const reply = guestReply(content)
-      window.setTimeout(() => {
-        setMessages((current) => [...current, makeMessage('assistant', reply.text, { local: true })])
-        setLinks(reply.links)
-        setSuggestions(GUEST_SUGGESTIONS.filter((item) => item !== content))
-        setPending(false)
-        say(reply.text)
-      }, 450)
-      return
-    }
     setPending(true)
     try {
       let reply: string = ''
       try {
         reply = await askGroq(historyForServer(next))
       } catch (groqErr) {
-        console.warn('Groq non joignable, repli vers le routeur Appwrite:', groqErr)
-        const response = await executeAssistantAction({ action: 'chat', messages: historyForServer(next), platform: 'web', voice: voiceOn && canSpeak })
-        reply = response.reply || '…'
-        if (response.suggestions?.length) setSuggestions(response.suggestions)
+        console.warn('Groq non joignable, tentative via le repli adapté:', groqErr)
+        if (guest) {
+          const fallback = guestReply(content)
+          reply = fallback.text
+          setLinks(fallback.links)
+          setSuggestions(GUEST_SUGGESTIONS.filter((item) => item !== content))
+        } else {
+          const response = await executeAssistantAction({ action: 'chat', messages: historyForServer(next), platform: 'web', voice: voiceOn && canSpeak })
+          reply = response.reply || '…'
+          if (response.suggestions?.length) setSuggestions(response.suggestions)
+        }
       }
 
       setMessages((current) => [...current, makeMessage('assistant', reply)])

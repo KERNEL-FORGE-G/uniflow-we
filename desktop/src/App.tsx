@@ -48,12 +48,14 @@ import {
   RoomsManagementScreen,
 } from './screens/Part1And2Screens';
 import { DesktopScheduleScreen } from './components/DesktopScheduleScreen';
+import { DesktopAssistantScreen } from './components/DesktopAssistantScreen';
 import { getStoreIdentity, getSystemDiagnostics, StoreIdentity, SystemDiagnostics } from './lib/tauri';
 import { MS_STORE_IDENTITY, APPWRITE_CONFIG } from './lib/appwrite';
 
 type ScreenId =
   | 'login'
   | 'dashboard'
+  | 'assistant'
   | 'students'
   | 'student_detail'
   | 'teachers'
@@ -116,6 +118,7 @@ export default function App() {
 
   const navItems: { id: ScreenId; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
+    { id: 'assistant', label: 'Uni IA (Groq 70B)', icon: Sparkles },
     { id: 'students', label: 'Étudiants', icon: GraduationCap },
     { id: 'teachers', label: 'Enseignants', icon: Users },
     { id: 'structure', label: 'Arborescence Facultés', icon: FolderTree },
@@ -274,6 +277,8 @@ export default function App() {
               onNavigate={(screen) => setActiveScreen(screen as ScreenId)}
             />
           )}
+
+          {activeScreen === 'assistant' && <DesktopAssistantScreen />}
 
           {activeScreen === 'students' && (
             <StudentsListScreen

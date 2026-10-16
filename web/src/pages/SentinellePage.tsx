@@ -42,6 +42,7 @@ import {
   Camera,
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
+import { askGroq } from '../lib/groqAssistantService'
 
 const CAM_FEEDS = [
   {
@@ -247,29 +248,82 @@ export default function SentinellePage() {
     }, 8000)
   }
 
-  const handleGenerateFlashcard = () => {
-    const extra: Flashcard = {
-      id: `fc-${Date.now()}`,
-      course: selectedCourseTopic.split('—')[0].trim(),
-      question: `Question générée sur ${selectedCourseTopic} : Comment garantir l'idempotence des requêtes ?`,
-      answer: `En associant un identifiant de séquence unique par client et en mémorisant la dernière réponse validée dans la machine à états.`,
+  const [isAskingCopilot, setIsAskingCopilot] = useState(false)
+
+  const handleGenerateFlashcard = async () => {
+    const courseCode = selectedCourseTopic.split('—')[0].trim()
+    try {
+      const prompt = `Génère une question et une réponse précises de flashcard pour réviser l'examen universitaire sur : ${selectedCourseTopic}. Formate ta réponse exactement comme suit :
+Question: [Ta question courte et percutante]
+Réponse: [Ta réponse synthétique en 1 ou 2 phrases]`
+      const reply = await askGroq([
+        { role: 'user', content: prompt }
+      ])
+      const lines = reply.split('\n').map(l => l.trim()).filter(Boolean)
+      const qLine = lines.find(l => l.toLowerCase().startsWith('question:')) || lines[0] || `Question d'examen sur ${courseCode}`
+      const aLine = lines.find(l => l.toLowerCase().startsWith('réponse:') || l.toLowerCase().startsWith('reponse:')) || lines[1] || reply
+
+      const extra: Flashcard = {
+        id: `fc-${Date.now()}`,
+        course: courseCode,
+        question: qLine.replace(/^question:\s*/i, ''),
+        answer: aLine.replace(/^r[ée]ponse:\s*/i, ''),
+      }
+      setFlashcards((prev) => [extra, ...prev])
+    } catch {
+      const extra: Flashcard = {
+        id: `fc-${Date.now()}`,
+        course: courseCode,
+        question: `Question sur ${selectedCourseTopic} : Comment garantir l'idempotence des requêtes ?`,
+        answer: `En associant un identifiant de séquence unique par client et en mémorisant la dernière réponse validée dans la machine à états.`,
+      }
+      setFlashcards((prev) => [extra, ...prev])
     }
-    setFlashcards((prev) => [extra, ...prev])
   }
 
-  const handleAskCopilot = (e: React.FormEvent) => {
+  const handleAskCopilot = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!qaInput.trim()) return
+    if (!qaInput.trim() || isAskingCopilot) return
     const q = qaInput.trim()
+    setQaInput('')
     setQaMessages((prev) => [
       ...prev,
       { sender: 'Vous', text: q },
-      {
-        sender: 'Uni & Archlord (Sentinelle IA)',
-        text: `Analyse locale Sentinelle pour « ${q} » : D’après le référentiel UY1 Faculté des Sciences, privilégie les annales de session normale et vérifie les démonstrations de TD (chapitres 3 et 4).`,
-      },
     ])
-    setQaInput('')
+    setIsAskingCopilot(true)
+
+    try {
+      const history = qaMessages
+        .filter(m => m.sender !== 'Uni & Archlord (Sentinelle IA)' || m.text.length > 0)
+        .map(m => ({
+          role: (m.sender === 'Vous' ? 'user' : 'assistant') as 'user' | 'assistant',
+          content: m.text
+        }))
+
+      const reply = await askGroq([
+        ...history,
+        { role: 'user', content: q }
+      ], `Tu es Uni & Archlord, le copilote académique Sentinelle Edge AI de l'Université de Yaoundé I (UY1) créé par KERNEL FORGE. Tu réponds de manière précise, pédagogique, encourageante et concise en français sur les cours universitaires, l'organisation du travail et la réussite aux examens.`)
+
+      setQaMessages((prev) => [
+        ...prev,
+        {
+          sender: 'Uni & Archlord (Sentinelle IA)',
+          text: reply,
+        },
+      ])
+    } catch (err) {
+      console.warn('Erreur Groq Sentinelle, repli local:', err)
+      setQaMessages((prev) => [
+        ...prev,
+        {
+          sender: 'Uni & Archlord (Sentinelle IA)',
+          text: `Analyse locale Sentinelle pour « ${q} » : D’après le référentiel UY1 Faculté des Sciences, privilégie les annales de session normale et vérifie les démonstrations de TD (chapitres 3 et 4).`,
+        },
+      ])
+    } finally {
+      setIsAskingCopilot(false)
+    }
   }
 
   return (
@@ -444,24 +498,32 @@ export default function SentinellePage() {
                 {qaMessages.map((m, idx) => (
                   <div key={idx} className="rounded-2xl bg-slate-950 border border-slate-800 p-3.5 text-xs">
                     <p className="font-black text-teal-400">{m.sender}</p>
-                    <p className="mt-1 text-slate-200 leading-relaxed">{m.text}</p>
+                    <p className="mt-1 text-slate-200 leading-relaxed whitespace-pre-wrap">{m.text}</p>
                   </div>
                 ))}
+                {isAskingCopilot && (
+                  <div className="rounded-2xl bg-slate-950 border border-teal-500/30 p-3.5 text-xs flex items-center gap-2 text-teal-300 animate-pulse">
+                    <Sparkles className="h-4 w-4 animate-spin text-amber-300" />
+                    <span>Uni & Archlord (Groq Llama-3.3 70B) analyse et formule la réponse…</span>
+                  </div>
+                )}
               </div>
               <form onSubmit={handleAskCopilot} className="flex gap-2">
                 <input
                   type="text"
                   value={qaInput}
+                  disabled={isAskingCopilot}
                   onChange={(e) => setQaInput(e.target.value)}
-                  placeholder="Demander une explication de cours à Uni & Archlord…"
-                  className="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-xs text-white focus:border-teal-400 focus:outline-none"
+                  placeholder="Demander une explication de cours à Uni & Archlord (propulsé par Groq)…"
+                  className="flex-1 rounded-xl bg-slate-950 border border-slate-700 px-3.5 py-2.5 text-xs text-white focus:border-teal-400 focus:outline-none disabled:opacity-50"
                 />
                 <button
                   type="submit"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#0D9488] px-4 py-2.5 text-xs font-black text-white hover:bg-teal-600"
+                  disabled={isAskingCopilot || !qaInput.trim()}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-[#0D9488] px-4 py-2.5 text-xs font-black text-white hover:bg-teal-600 disabled:opacity-50 cursor-pointer"
                 >
                   <Send className="h-3.5 w-3.5" />
-                  <span>Envoyer</span>
+                  <span>{isAskingCopilot ? 'Réflexion…' : 'Envoyer'}</span>
                 </button>
               </form>
             </div>
