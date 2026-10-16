@@ -87,42 +87,64 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       })),
     ]
 
-    const groqResponse = await fetch(GROQ_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey.trim()}`,
-      },
-      body: JSON.stringify({
-        model: GROQ_MODEL,
-        messages: formattedMessages,
-        temperature: 0.65,
-        max_tokens: 1200,
-        top_p: 0.95,
-      }),
-    })
+    const candidateModels = [
+      process.env.GROQ_MODEL,
+      'openai/gpt-oss-120b',
+      'qwen/qwen3.8-27b',
+      'openai/gpt-oss-20b',
+      'llama-3.3-70b-versatile',
+    ].filter(Boolean) as string[]
 
-    if (!groqResponse.ok) {
-      const errorText = await groqResponse.text()
-      console.error('Erreur API Groq:', groqResponse.status, errorText)
-      return res.status(groqResponse.status).json({
-        error: `Erreur API Groq (${groqResponse.status})`,
-        detail: errorText.slice(0, 300),
-      })
+    let lastError = ''
+    let reply = ''
+    let chosenModel = candidateModels[0]
+
+    for (const model of candidateModels) {
+      try {
+        const groqResponse = await fetch(GROQ_API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${apiKey.trim()}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: formattedMessages,
+            temperature: 0.65,
+            max_tokens: 1200,
+            top_p: 0.95,
+          }),
+        })
+
+        if (!groqResponse.ok) {
+          const errorText = await groqResponse.text()
+          lastError = `Groq (${model} - ${groqResponse.status}): ${errorText.slice(0, 200)}`
+          console.warn(`Groq model ${model} non disponible:`, errorText)
+          continue
+        }
+
+        const data = await groqResponse.json()
+        const choiceMessage = data.choices?.[0]?.message
+        const text = choiceMessage?.content || choiceMessage?.reasoning
+        if (text && typeof text === 'string' && text.trim().length > 0) {
+          reply = text.trim()
+          chosenModel = model
+          break
+        }
+      } catch (e: any) {
+        lastError = e?.message || 'Erreur réseau Groq'
+      }
     }
 
-    const data = await groqResponse.json()
-    const reply = data.choices?.[0]?.message?.content
-
     if (!reply) {
-      return res.status(502).json({ error: 'Réponse vide retournée par Groq.' })
+      return res.status(502).json({ error: `Réponse vide ou modèles Groq indisponibles. ${lastError}` })
     }
 
     return res.status(200).json({
       ok: true,
       assistant: 'Uni',
       provider: 'groq',
-      model: GROQ_MODEL,
+      model: chosenModel,
       reply: reply.trim(),
     })
   } catch (err: unknown) {

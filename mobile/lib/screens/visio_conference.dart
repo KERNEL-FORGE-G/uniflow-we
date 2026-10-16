@@ -1383,7 +1383,7 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
               const SizedBox(width: 8),
               IconButton(
                 onPressed: _sendMessage,
-                icon: PhosphorIcon(PhosphorIconsFill.paperPlaneRight, color: AppColors.primaryBlue),
+                icon: const PhosphorIcon(PhosphorIconsFill.paperPlaneRight, color: AppColors.primaryBlue),
               ),
             ],
           ),
@@ -1496,7 +1496,7 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
                 ),
               ),
               IconButton(
-                icon: PhosphorIcon(PhosphorIconsDuotone.downloadSimple, size: 20, color: AppColors.teal),
+                icon: const PhosphorIcon(PhosphorIconsDuotone.downloadSimple, size: 20, color: AppColors.teal),
                 onPressed: () {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Support téléchargé pour consultation hors-ligne : ${d.$1}')),
@@ -1516,11 +1516,11 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          const Row(
             children: [
               PhosphorIcon(PhosphorIconsDuotone.sparkle, size: 18, color: AppColors.amber),
-              const SizedBox(width: 6),
-              const Text(
+              SizedBox(width: 6),
+              Text(
                 'Sondage instantané de cours',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
               ),
@@ -1631,7 +1631,7 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
               onPressed: () {
                 Navigator.of(context).maybePop();
               },
-              icon: PhosphorIcon(PhosphorIconsFill.phoneDisconnect, size: 16, color: Colors.white),
+              icon: const PhosphorIcon(PhosphorIconsFill.phoneDisconnect, size: 16, color: Colors.white),
               label: const Text('Quitter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFFDC2626),

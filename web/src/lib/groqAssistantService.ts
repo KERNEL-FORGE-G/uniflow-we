@@ -103,31 +103,49 @@ export async function askGroq(
     })
   }
 
-  const res = await fetch(GROQ_API_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey.trim()}`,
-    },
-    body: JSON.stringify({
-      model: GROQ_MODEL,
-      messages: formattedMessages,
-      temperature: 0.65,
-      max_tokens: 1200,
-      top_p: 0.95,
-    }),
-  })
+  const candidateModels = [
+    (import.meta.env.VITE_GROQ_MODEL as string | undefined),
+    'openai/gpt-oss-120b',
+    'qwen/qwen3.8-27b',
+    'openai/gpt-oss-20b',
+    'llama-3.3-70b-versatile',
+  ].filter(Boolean) as string[]
 
-  if (!res.ok) {
-    const errorBody = await res.text()
-    throw new Error(`Groq API error (${res.status}): ${errorBody.slice(0, 200)}`)
+  let lastError = ''
+  for (const model of candidateModels) {
+    try {
+      const res = await fetch(GROQ_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${apiKey.trim()}`,
+        },
+        body: JSON.stringify({
+          model,
+          messages: formattedMessages,
+          temperature: 0.65,
+          max_tokens: 1200,
+          top_p: 0.95,
+        }),
+      })
+
+      if (!res.ok) {
+        const errorBody = await res.text()
+        lastError = `Groq API error (${res.status}): ${errorBody.slice(0, 200)}`
+        console.warn(`Modèle Groq ${model} non utilisable:`, errorBody)
+        continue
+      }
+
+      const data = await res.json()
+      const choiceMessage = data.choices?.[0]?.message
+      const text = choiceMessage?.content || choiceMessage?.reasoning
+      if (text && typeof text === 'string' && text.trim().length > 0) {
+        return text.trim()
+      }
+    } catch (e: any) {
+      lastError = e?.message || 'Erreur réseau Groq'
+    }
   }
 
-  const data = await res.json()
-  const reply = data.choices?.[0]?.message?.content
-  if (!reply) {
-    throw new Error('Réponse vide de Groq')
-  }
-
-  return reply.trim()
+  throw new Error(`Aucun modèle Groq n'a pu répondre. ${lastError}`)
 }

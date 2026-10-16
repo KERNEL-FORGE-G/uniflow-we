@@ -60,43 +60,58 @@ UniFlow unifie et modernise l'expérience académique et l'apprentissage indépe
             }),
       ];
 
-      final uri = Uri.parse(groqApiUrl);
-      final request = await client.postUrl(uri).timeout(const Duration(seconds: 12));
-      request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
-      request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $apiKey');
+      const candidateModels = [
+        'openai/gpt-oss-120b',
+        'qwen/qwen3.8-27b',
+        'openai/gpt-oss-20b',
+        'llama-3.3-70b-versatile',
+      ];
 
-      final payload = jsonEncode({
-        'model': groqModel,
-        'messages': messages,
-        'temperature': 0.65,
-        'max_tokens': 1200,
-        'top_p': 0.95,
-      });
+      String? lastError;
+      for (final model in candidateModels) {
+        try {
+          final uri = Uri.parse(groqApiUrl);
+          final request = await client.postUrl(uri).timeout(const Duration(seconds: 12));
+          request.headers.set(HttpHeaders.contentTypeHeader, 'application/json');
+          request.headers.set(HttpHeaders.authorizationHeader, 'Bearer $apiKey');
 
-      request.write(payload);
-      final response = await request.close().timeout(const Duration(seconds: 12));
+          final payload = jsonEncode({
+            'model': model,
+            'messages': messages,
+            'temperature': 0.65,
+            'max_tokens': 1200,
+            'top_p': 0.95,
+          });
 
-      if (response.statusCode != HttpStatus.ok) {
-        final errBody = await response.transform(utf8.decoder).join();
-        throw HttpException('Groq API error (${response.statusCode}): $errBody');
+          request.write(payload);
+          final response = await request.close().timeout(const Duration(seconds: 12));
+
+          if (response.statusCode != HttpStatus.ok) {
+            final errBody = await response.transform(utf8.decoder).join();
+            lastError = 'Groq ($model - ${response.statusCode}): $errBody';
+            continue;
+          }
+
+          final body = await response.transform(utf8.decoder).join();
+          final data = jsonDecode(body) as Map<String, dynamic>;
+          final choices = data['choices'] as List<dynamic>?;
+          if (choices == null || choices.isEmpty) continue;
+
+          final firstChoice = choices[0] as Map<String, dynamic>;
+          final message = firstChoice['message'] as Map<String, dynamic>?;
+          final content = message?['content'] as String?;
+          final reasoning = message?['reasoning'] as String?;
+          final text = (content != null && content.trim().isNotEmpty) ? content : reasoning;
+
+          if (text != null && text.trim().isNotEmpty) {
+            return text.trim();
+          }
+        } catch (e) {
+          lastError = e.toString();
+        }
       }
 
-      final body = await response.transform(utf8.decoder).join();
-      final data = jsonDecode(body) as Map<String, dynamic>;
-      final choices = data['choices'] as List<dynamic>?;
-      if (choices == null || choices.isEmpty) {
-        throw const FormatException('Choix de réponse Groq vides');
-      }
-
-      final firstChoice = choices[0] as Map<String, dynamic>;
-      final message = firstChoice['message'] as Map<String, dynamic>?;
-      final content = message?['content'] as String?;
-
-      if (content == null || content.trim().isEmpty) {
-        throw const FormatException('Contenu de réponse Groq vide');
-      }
-
-      return content.trim();
+      throw HttpException('Groq API error: ${lastError ?? "Aucun modèle disponible"}');
     } finally {
       client.close();
     }
