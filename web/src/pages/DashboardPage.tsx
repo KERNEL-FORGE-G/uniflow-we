@@ -146,11 +146,11 @@ export default function DashboardPage() {
 
  type StatCard = { label: string; value: string; delta: string; up: boolean; icon: UniIconName; color: string; to: string; imageSrc?: string }
  const studentStats: StatCard[] = [
- { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '0', delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée', up: Boolean(overview?.courseCount), icon: 'courses', color: TILE.blue, to: '/app/cours', imageSrc: '/illustrations/course_schedule.jpg' },
- { label: 'Devoirs à rendre', value: overview ? `${overview.pendingAssignmentCount ?? 0}` : '0', delta: overview?.assignmentCount ? `${overview.assignmentCount} au total` : 'Aucun devoir', up: true, icon: 'assignments', color: TILE.amber, to: '/app/devoirs', imageSrc: '/illustrations/course_books.jpg' },
- { label: 'Emploi du temps', value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun', delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée', up: Boolean(overview?.courseCount), icon: 'schedule', color: TILE.teal, to: '/app/emploi-du-temps', imageSrc: '/illustrations/course_schedule.jpg' },
- { label: 'Moyenne', value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note', up: (overview?.averageGrade ?? 10) >= 10, icon: 'grades', color: TILE.purple, to: '/app/notes', imageSrc: '/illustrations/course_grades.jpg' },
- { label: 'Présences', value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—', delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé', up: (overview?.attendanceRate ?? 100) >= 75, icon: 'attendance', color: TILE.green, to: '/app/presences', imageSrc: '/illustrations/hero_books.jpg' },
+ { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '0', delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée', up: Boolean(overview?.courseCount), icon: 'courses', color: TILE.blue, to: '/app/cours', imageSrc: '/icons/nav/courses.png' },
+ { label: 'Devoirs à rendre', value: overview ? `${overview.pendingAssignmentCount ?? 0}` : '0', delta: overview?.assignmentCount ? `${overview.assignmentCount} au total` : 'Aucun devoir', up: true, icon: 'assignments', color: TILE.amber, to: '/app/devoirs', imageSrc: '/icons/nav/assignments.png' },
+ { label: 'Emploi du temps', value: overview?.courseCount ? `${overview.courseCount} cours` : 'Aucun', delta: overview?.courseCount ? 'Données réelles' : 'Aucune donnée', up: Boolean(overview?.courseCount), icon: 'schedule', color: TILE.teal, to: '/app/emploi-du-temps', imageSrc: '/icons/nav/schedule.png' },
+ { label: 'Moyenne', value: overview?.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: overview?.gradeCount ? `${overview.gradeCount} notes` : 'Aucune note', up: (overview?.averageGrade ?? 10) >= 10, icon: 'grades', color: TILE.purple, to: '/app/notes', imageSrc: '/icons/nav/grades.png' },
+ { label: 'Présences', value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—', delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé', up: (overview?.attendanceRate ?? 100) >= 75, icon: 'attendance', color: TILE.green, to: '/app/presences', imageSrc: '/icons/nav/attendance.png' },
  ]
  // Les pastilles des cartes disent d'où vient le chiffre ; les anciennes
  // valeurs fixes (« Incrémental », « 0 ») laissaient croire à des compteurs morts.
@@ -160,18 +160,18 @@ export default function DashboardPage() {
  const gradedStudents = gradedStudentCount(grades)
  const weeklySessions = schedules.length ? `${schedules.length} séance${schedules.length > 1 ? 's' : ''} / semaine` : 'Aucune séance planifiée'
  const delegateStats: StatCard[] = [
- { label: 'Taux présence', value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—', delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé', up: (overview?.attendanceRate ?? 100) >= 75, icon: 'attendance', color: TILE.teal, to: '/app/gestion-presences', imageSrc: '/illustrations/hero_books.jpg' },
- { label: 'Séances / semaine', value: `${schedules.length}`, delta: overview.courseCount ? `${overview.courseCount} cours` : 'Aucun cours', up: schedules.length > 0, icon: 'schedule', color: TILE.blue, to: '/app/emploi-du-temps', imageSrc: '/illustrations/course_schedule.jpg' },
- { label: 'Devoirs à rendre', value: `${overview.pendingAssignmentCount}`, delta: dueSoon ? `${dueSoon} sous 7 jours` : 'Aucune échéance proche', up: dueSoon === 0, icon: 'assignments', color: TILE.amber, to: '/app/devoirs', imageSrc: '/illustrations/course_books.jpg' },
- { label: 'Étudiants suivis', value: `${overview.studentCount}`, delta: overview.studentCount ? 'Inscrits à la promotion' : 'Aucun inscrit', up: overview.studentCount > 0, icon: 'students', color: TILE.purple, to: '/app/etudiants', imageSrc: '/illustrations/hero_books.jpg' },
- { label: 'Notifications', value: `${unreadCount}`, delta: unreadCount ? 'Non lues' : 'Tout est lu', up: unreadCount === 0, icon: 'notifications', color: TILE.green, to: '/app/notifications', imageSrc: '/illustrations/course_grades.jpg' },
+ { label: 'Taux présence', value: overview?.attendanceRate != null ? `${overview.attendanceRate}%` : '—', delta: attendanceRecords.length ? `${attendanceRecords.length} séances` : 'Aucun relevé', up: (overview?.attendanceRate ?? 100) >= 75, icon: 'attendance', color: TILE.teal, to: '/app/gestion-presences', imageSrc: '/icons/nav/attendance.png' },
+ { label: 'Séances / semaine', value: `${schedules.length}`, delta: overview.courseCount ? `${overview.courseCount} cours` : 'Aucun cours', up: schedules.length > 0, icon: 'schedule', color: TILE.blue, to: '/app/emploi-du-temps', imageSrc: '/icons/nav/schedule.png' },
+ { label: 'Devoirs à rendre', value: `${overview.pendingAssignmentCount}`, delta: dueSoon ? `${dueSoon} sous 7 jours` : 'Aucune échéance proche', up: dueSoon === 0, icon: 'assignments', color: TILE.amber, to: '/app/devoirs', imageSrc: '/icons/nav/assignments.png' },
+ { label: 'Étudiants suivis', value: `${overview.studentCount}`, delta: overview.studentCount ? 'Inscrits à la promotion' : 'Aucun inscrit', up: overview.studentCount > 0, icon: 'students', color: TILE.purple, to: '/app/etudiants', imageSrc: '/icons/nav/students.png' },
+ { label: 'Notifications', value: `${unreadCount}`, delta: unreadCount ? 'Non lues' : 'Tout est lu', up: unreadCount === 0, icon: 'notifications', color: TILE.green, to: '/app/notifications', imageSrc: '/icons/nav/notifications.png' },
  ]
  const teacherStats: StatCard[] = [
- { label: 'Cours créés', value: `${overview.courseCount}`, delta: weeklySessions, up: schedules.length > 0, icon: 'courses', color: TILE.blue, to: '/app/mes-cours-enseignant', imageSrc: '/illustrations/course_schedule.jpg' },
- { label: 'Étudiants enregistrés', value: `${overview.studentCount}`, delta: overview.studentCount ? 'Inscrits à vos cours' : 'Aucun inscrit', up: overview.studentCount > 0, icon: 'students', color: TILE.teal, to: '/app/etudiants', imageSrc: '/illustrations/hero_books.jpg' },
- { label: 'Devoirs créés', value: `${overview.assignmentCount}`, delta: dueSoon ? `${dueSoon} à échéance sous 7 j` : 'Aucune échéance proche', up: true, icon: 'assignments', color: TILE.amber, to: '/app/devoirs', imageSrc: '/illustrations/course_books.jpg' },
- { label: 'Notes saisies', value: `${overview.gradeCount}`, delta: gradedStudents ? `${gradedStudents} étudiant${gradedStudents > 1 ? 's' : ''} noté${gradedStudents > 1 ? 's' : ''}` : 'Aucune note', up: gradedStudents > 0, icon: 'grades', color: TILE.purple, to: '/app/notes', imageSrc: '/illustrations/course_grades.jpg' },
- { label: 'Moyenne générale', value: overview.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: successRate != null ? `${successRate} % ≥ 10/20` : 'Aucune note', up: (successRate ?? 100) >= 50, icon: 'stats', color: TILE.green, to: '/app/notes', imageSrc: '/illustrations/course_grades.jpg' },
+ { label: 'Cours créés', value: `${overview.courseCount}`, delta: weeklySessions, up: schedules.length > 0, icon: 'courses', color: TILE.blue, to: '/app/mes-cours-enseignant', imageSrc: '/icons/nav/courses.png' },
+ { label: 'Étudiants enregistrés', value: `${overview.studentCount}`, delta: overview.studentCount ? 'Inscrits à vos cours' : 'Aucun inscrit', up: overview.studentCount > 0, icon: 'students', color: TILE.teal, to: '/app/etudiants', imageSrc: '/icons/nav/students.png' },
+ { label: 'Devoirs créés', value: `${overview.assignmentCount}`, delta: dueSoon ? `${dueSoon} à échéance sous 7 j` : 'Aucune échéance proche', up: true, icon: 'assignments', color: TILE.amber, to: '/app/devoirs', imageSrc: '/icons/nav/assignments.png' },
+ { label: 'Notes saisies', value: `${overview.gradeCount}`, delta: gradedStudents ? `${gradedStudents} étudiant${gradedStudents > 1 ? 's' : ''} noté${gradedStudents > 1 ? 's' : ''}` : 'Aucune note', up: gradedStudents > 0, icon: 'grades', color: TILE.purple, to: '/app/notes', imageSrc: '/icons/nav/grades.png' },
+ { label: 'Moyenne générale', value: overview.averageGrade != null ? `${overview.averageGrade}/20` : '—', delta: successRate != null ? `${successRate} % ≥ 10/20` : 'Aucune note', up: (successRate ?? 100) >= 50, icon: 'stats', color: TILE.green, to: '/app/notes', imageSrc: '/icons/nav/analytics.png' },
  ]
 
  const stats = currentRole === 'teacher' ? teacherStats : currentRole === 'delegate' ? delegateStats : studentStats
@@ -197,22 +197,22 @@ export default function DashboardPage() {
 
  type QuickAction = { label: string; icon: UniIconName; to: string; color: string; imageSrc?: string }
  const studentQuickActions: QuickAction[] = [
- { label: 'Mes cours', icon: 'courses', to: '/app/cours', color: TILE.blue, imageSrc: '/illustrations/course_schedule.jpg' },
- { label: 'Devoirs', icon: 'assignments', to: '/app/devoirs', color: TILE.amber, imageSrc: '/illustrations/course_books.jpg' },
- { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.teal, imageSrc: '/illustrations/hero_books.jpg' },
- { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.purple, imageSrc: '/illustrations/course_grades.jpg' },
+ { label: 'Mes cours', icon: 'courses', to: '/app/cours', color: TILE.blue, imageSrc: '/icons/nav/courses.png' },
+ { label: 'Devoirs', icon: 'assignments', to: '/app/devoirs', color: TILE.amber, imageSrc: '/icons/nav/assignments.png' },
+ { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.teal, imageSrc: '/icons/nav/visio.png' },
+ { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.purple, imageSrc: '/icons/nav/messages.png' },
  ]
  const teacherQuickActions: QuickAction[] = [
- { label: 'Espace pédago', icon: 'teacher', to: '/app/mes-cours-enseignant', color: TILE.blue, imageSrc: '/illustrations/course_schedule.jpg' },
- { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.teal, imageSrc: '/illustrations/hero_books.jpg' },
- { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.purple, imageSrc: '/illustrations/course_grades.jpg' },
- { label: 'Planning', icon: 'schedule', to: '/app/emploi-du-temps', color: TILE.amber, imageSrc: '/illustrations/course_schedule.jpg' },
+ { label: 'Espace pédago', icon: 'teacher', to: '/app/mes-cours-enseignant', color: TILE.blue, imageSrc: '/icons/nav/teacher.png' },
+ { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.teal, imageSrc: '/icons/nav/visio.png' },
+ { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.purple, imageSrc: '/icons/nav/messages.png' },
+ { label: 'Planning', icon: 'schedule', to: '/app/emploi-du-temps', color: TILE.amber, imageSrc: '/icons/nav/schedule.png' },
  ]
  const delegateQuickActions: QuickAction[] = [
- { label: 'Gérer présences', icon: 'attendance', to: '/app/gestion-presences', color: TILE.teal, imageSrc: '/illustrations/hero_books.jpg' },
- { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.blue, imageSrc: '/illustrations/course_grades.jpg' },
- { label: 'Planning', icon: 'schedule', to: '/app/emploi-du-temps', color: TILE.purple, imageSrc: '/illustrations/course_schedule.jpg' },
- { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.amber, imageSrc: '/illustrations/hero_books.jpg' },
+ { label: 'Gérer présences', icon: 'attendance', to: '/app/gestion-presences', color: TILE.teal, imageSrc: '/icons/nav/attendance.png' },
+ { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.blue, imageSrc: '/icons/nav/messages.png' },
+ { label: 'Planning', icon: 'schedule', to: '/app/emploi-du-temps', color: TILE.purple, imageSrc: '/icons/nav/schedule.png' },
+ { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.amber, imageSrc: '/icons/nav/visio.png' },
  ]
  const quickActions = currentRole === 'teacher' ? teacherQuickActions : currentRole === 'delegate' ? delegateQuickActions : studentQuickActions
 
@@ -324,14 +324,14 @@ export default function DashboardPage() {
  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
  {quickActions.map(({ label, icon, to, color, imageSrc }, i) => (
  <button
- key={to}
- onClick={() => navigate(to)}
- style={{ backgroundColor: hexWithAlpha(color, 0.08), borderColor: hexWithAlpha(color, 0.18) }}
- className={`flex flex-col items-center gap-2.5 rounded-2xl border p-4 text-xs font-semibold text-[#111827] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-stagger-${i + 1}`}
- >
- <IconTile name={icon} imageSrc={imageSrc} color={color} variant="filled" size={44} index={i} />
- {label}
- </button>
+              key={to}
+              onClick={() => navigate(to)}
+              style={{ backgroundColor: hexWithAlpha(color, 0.08), borderColor: hexWithAlpha(color, 0.2) }}
+              className={`group flex flex-col items-center justify-center gap-2 rounded-2xl border py-4 px-3 text-xs font-semibold text-[#111827] hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 animate-stagger-${i + 1}`}
+            >
+              <IconTile name={icon} imageSrc={imageSrc} color={color} variant="filled" size={44} index={i} />
+              <span className="mt-1 text-center font-bold text-slate-800 group-hover:text-[#1e3a8a] transition-colors truncate max-w-full">{label}</span>
+            </button>
  ))}
  </div>
  </div>

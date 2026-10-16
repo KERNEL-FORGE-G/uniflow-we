@@ -37,8 +37,12 @@ export function AuthShell({
         <img src={illustrationSrc} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#1E3A8A] via-[#1E3A8A]/70 to-[#0D9488]/30" />
         <div className="relative z-10 flex h-full flex-col justify-between p-12 text-white">
-          <Link to="/" className="inline-block" tabIndex={-1}>
-            <img src="/logos/uniflow-wordmark-white.svg" alt="UniFlow" className="h-9 object-contain" />
+          <Link to="/" className="inline-flex items-center gap-3" tabIndex={-1}>
+            <img src="/brand/uniflow_logo_final.png" alt="UniFlow" className="h-12 w-12 object-contain drop-shadow" />
+            <div className="flex flex-col">
+              <span className="text-2xl font-black tracking-tight text-white leading-none">Uni<span className="text-[#14B8A6]">Flow</span></span>
+              <span className="text-[10px] font-bold text-white/70 tracking-widest uppercase mt-0.5">Plateforme Universitaire</span>
+            </div>
           </Link>
           <div>
             <h2 className="text-4xl font-extrabold leading-tight tracking-tight">Apprenez à votre rythme, organisez-vous à votre façon.</h2>
@@ -57,8 +61,12 @@ export function AuthShell({
           animate={{ opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } }}
           className={`w-full ${maxWidth}`}
         >
-          <Link to="/" className="mb-6 inline-block lg:hidden">
-            <img src="/logos/uniflow_logo_horizontal.png" alt="UniFlow" className="h-9 object-contain" />
+          <Link to="/" className="mb-6 inline-flex items-center gap-2.5 lg:hidden">
+            <img src="/brand/uniflow_logo_final.png" alt="UniFlow" className="h-10 w-10 object-contain drop-shadow-sm" />
+            <div className="flex flex-col">
+              <span className="text-xl font-black tracking-tight text-[#1E3A8A] leading-none">Uni<span className="text-[#0D9488]">Flow</span></span>
+              <span className="text-[9px] font-bold text-slate-500 tracking-wider uppercase">Plateforme Universitaire</span>
+            </div>
           </Link>
           <div className="rounded-3xl bg-white p-6 shadow-xl shadow-slate-200/70 ring-1 ring-slate-100 sm:p-8">
             <header className="mb-6">

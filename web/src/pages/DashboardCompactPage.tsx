@@ -26,11 +26,11 @@ export default function DashboardCompactPage() {
   const lateHomework: Array<{ title: string; due: string }> = []
 
   const quickStats: Array<{ label: string; value: string; change: string; icon: UniIconName; color: string; imageSrc?: string }> = [
-    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '—', change: '—', icon: 'courses', color: '#1E3A8A', imageSrc: '/illustrations/course_schedule.jpg' },
-    { label: 'Devoirs à rendre', value: overview?.assignmentCount == null ? '—' : `${overview.assignmentCount}`, change: '—', icon: 'assignments', color: '#D97706', imageSrc: '/illustrations/course_books.jpg' },
-    { label: 'Prochain cours', value: '—', change: '—', icon: 'time', color: '#0D9488', imageSrc: '/illustrations/course_schedule.jpg' },
-    { label: 'Moyenne', value: overview?.averageGrade == null ? '—' : `${overview.averageGrade}/20`, change: '—', icon: 'grades', color: '#7C3AED', imageSrc: '/illustrations/course_grades.jpg' },
-    { label: 'Présences', value: overview?.attendanceRate == null ? '—' : `${overview.attendanceRate}%`, change: '—', icon: 'attendance', color: '#059669', imageSrc: '/illustrations/hero_books.jpg' },
+    { label: 'Cours inscrits', value: overview ? `${overview.courseCount}` : '—', change: '—', icon: 'courses', color: '#1E3A8A', imageSrc: '/icons/nav/courses.png' },
+    { label: 'Devoirs à rendre', value: overview?.assignmentCount == null ? '—' : `${overview.assignmentCount}`, change: '—', icon: 'assignments', color: '#D97706', imageSrc: '/icons/nav/assignments.png' },
+    { label: 'Prochain cours', value: '—', change: '—', icon: 'time', color: '#0D9488', imageSrc: '/icons/nav/courses.png' },
+    { label: 'Moyenne', value: overview?.averageGrade == null ? '—' : `${overview.averageGrade}/20`, change: '—', icon: 'grades', color: '#7C3AED', imageSrc: '/icons/nav/grades.png' },
+    { label: 'Présences', value: overview?.attendanceRate == null ? '—' : `${overview.attendanceRate}%`, change: '—', icon: 'attendance', color: '#059669', imageSrc: '/icons/nav/attendance.png' },
   ]
 
   return (
