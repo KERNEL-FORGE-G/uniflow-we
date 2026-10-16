@@ -68,6 +68,7 @@ const BillingPage = lazy(() => import('./pages/billing/BillingPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const SentinellePage = lazy(() => import('./pages/SentinellePage'))
 const ActualitesPage = lazy(() => import('./pages/ActualitesPage'))
+const WebmailPage = lazy(() => import('./pages/WebmailPage'))
 const ForumPage = lazy(() => import('./pages/ForumPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
 const LegalDocumentPage = lazy(() => import('./pages/legal/LegalDocumentPage'))
@@ -342,6 +343,8 @@ export default function App() {
               {/* Universitaire uniquement */}
               <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />
               <Route path="/app/gestion-presences" element={<Shell><UniversityRoute roles={['delegate', 'teacher']}><AttendanceManagePage /></UniversityRoute></Shell>} />
+              <Route path="/app/mail" element={<Shell><WebmailPage /></Shell>} />
+              <Route path="/app/webmail" element={<Navigate to="/app/mail" replace />} />
               <Route path="/app/notifications" element={<Shell><NotificationsPage /></Shell>} />
               <Route path="/app/messages" element={<Shell><MessagingPage /></Shell>} />
               <Route path="/app/messages/:conversationId" element={<Shell><MessagingPage /></Shell>} />

@@ -42,6 +42,7 @@ export const UNI_ICONS = {
   grades: ChartLineUp,
   attendance: QrCode,
   messages: ChatsCircle,
+  email: Envelope,
   forum: UsersThree,
   library: Books,
   directory: AddressBook,

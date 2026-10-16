@@ -29,7 +29,7 @@ export const NAV_IMAGES: Record<string, string> = {
   '/app': 'dashboard', '/app/cours': 'courses', '/app/mes-cours-enseignant': 'teacher', '/app/emploi-du-temps': 'schedule',
   '/app/devoirs': 'assignments', '/app/notes': 'grades', '/app/evaluations': 'grades', '/app/bibliotheque': 'library',
   '/app/presences': 'attendance', '/app/promotion': 'coordination', '/app/gestion-presences': 'attendance',
-  '/app/messages': 'messages', '/app/notifications': 'notifications', '/app/badges-quetes': 'gamification',
+  '/app/mail': 'messages', '/app/messages': 'messages', '/app/notifications': 'notifications', '/app/badges-quetes': 'gamification',
   '/app/visio': 'visio', '/app/sentinelle': 'sentinelle',
   '/app/profil': 'students', '/app/abonnement': 'abonnement', '/app/parametres': 'settings', '/app/aide': 'aide',
 }
@@ -51,7 +51,8 @@ export const APP_NAV_ITEMS: AppNavItem[] = ([
   { to: '/app/promotion', icon: 'coordination', labelFr: 'Ma promotion', labelEn: 'My Class', roles: LEARNERS, group: 'animer' },
   { to: '/app/gestion-presences', icon: 'attendance', labelFr: 'Faire l’appel', labelEn: 'Take attendance', roles: ['delegate', 'teacher'], group: 'animer' },
   { to: '/app/visio', icon: 'video', labelFr: 'Visioconférence', labelEn: 'Video conference', roles: ALL, group: 'animer' },
-  { to: '/app/messages', icon: 'messages', labelFr: 'Messages', labelEn: 'Messages', roles: ALL, group: 'echanger' },
+  { to: '/app/mail', icon: 'email', labelFr: 'Messagerie Webmail', labelEn: 'UniFlow Mail', roles: ALL, group: 'echanger' },
+  { to: '/app/messages', icon: 'messages', labelFr: 'Discussions', labelEn: 'Chats', roles: ALL, group: 'echanger' },
   { to: '/app/notifications', icon: 'notifications', labelFr: 'Notifications', labelEn: 'Notifications', roles: ALL, group: 'echanger' },
   { to: '/app/badges-quetes', icon: 'badges', labelFr: 'Badges & quêtes', labelEn: 'Badges & quests', roles: ALL, group: 'echanger' },
   { to: '/app/profil', icon: 'profile', labelFr: 'Mon profil', labelEn: 'Profile', roles: ALL, group: 'compte' },
