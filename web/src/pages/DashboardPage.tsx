@@ -229,84 +229,219 @@ export default function DashboardPage() {
 
  return (
  <div className="space-y-6 animate-fade-in">
- {/* ── Hero Header ── */}
- <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#1e3a8a] via-[#1e4080] to-[#0d9488] p-6 shadow-lg">
- {/* Background decoration */}
- <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/4" />
- <div className="absolute bottom-0 left-1/3 w-40 h-40 bg-white/5 rounded-full translate-y-1/2" />
+ {/* ── Hero Header Bento Style ── */}
+ <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 shadow-xl text-white border border-blue-900/40">
+  {/* Motifs géométriques & halos d'ambiance */}
+  <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-400/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+  <div className="absolute bottom-0 left-1/4 w-64 h-64 bg-teal-400/10 rounded-full blur-2xl translate-y-1/2 pointer-events-none" />
 
- <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
- <div className="animate-slide-in-left">
- <p className="text-white/70 text-sm font-medium mb-1">
- {formattedToday}
- </p>
- <h1 className="text-2xl sm:text-3xl font-black text-white">
- {now.getHours() < 6 ? 'Bonne nuit,' : now.getHours() < 12 ? 'Bonjour,' : now.getHours() < 18 ? 'Bon après-midi,' : 'Bonsoir,'} {firstName}
- </h1>
- <div className="flex flex-wrap items-center gap-2 mt-2">
- <span className="flex items-center gap-1.5 rounded-full bg-white/15 border border-white/20 px-3 py-1 text-xs font-semibold text-white">
- <UniIcon name={roleIcon} weight="fill" size={14} />
- {roleLabel}
- </span>
- <span className="flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 px-3 py-1 text-xs font-medium text-white/70">
+  <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+   <div className="animate-slide-in-left max-w-xl">
+    <div className="flex flex-wrap items-center gap-2 mb-2.5">
+     <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md px-3 py-1 text-xs font-bold text-white border border-white/20">
+      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+      {formattedToday}
+     </span>
+     <span className="inline-flex items-center gap-1 rounded-full bg-teal-500/20 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-teal-200 border border-teal-400/30">
+      <UniIcon name={roleIcon} weight="fill" size={13} />
+      {roleLabel}
+     </span>
+     {currentUser.scopeLabel && (
+      <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/20 backdrop-blur-md px-2.5 py-1 text-xs font-semibold text-blue-200 border border-blue-400/30">
+       {currentUser.scopeLabel}
+      </span>
+     )}
+    </div>
+
+    <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+     {now.getHours() < 6 ? 'Bonne nuit,' : now.getHours() < 12 ? 'Bonjour,' : now.getHours() < 18 ? 'Bon après-midi,' : 'Bonsoir,'} <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-teal-200">{firstName}</span>
+    </h1>
+
+    <p className="mt-2 text-xs sm:text-sm text-blue-100/90 leading-relaxed font-medium">
+     Votre espace d'apprentissage UniFlow est actif · Données officielles UY1 synchronisées hors-ligne & en direct.
+    </p>
+
+    {/* Boutons d'accès direct sur le Hero */}
+    <div className="mt-5 flex flex-wrap items-center gap-2.5">
+     <Link
+      to="/app/visio"
+      className="inline-flex items-center gap-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md px-3.5 py-2 text-xs font-bold text-white border border-white/25 transition-all shadow-xs active:scale-95"
+     >
+      <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+      <UniIcon name="video" weight="fill" size={15} />
+      <span>Visioconférence Campus</span>
+     </Link>
+     <Link
+      to="/app/presences"
+      className="inline-flex items-center gap-2 rounded-xl bg-teal-500/30 hover:bg-teal-500/40 backdrop-blur-md px-3.5 py-2 text-xs font-bold text-teal-100 border border-teal-300/30 transition-all shadow-xs active:scale-95"
+     >
+      <UniIcon name="attendance" weight="bold" size={15} />
+      <span>Émarger ma présence</span>
+     </Link>
+    </div>
+   </div>
+
+   {/* Mascotte 3D Uni et actions de contrôle */}
+   <div className="flex flex-col sm:flex-row items-center gap-4 animate-slide-in-right shrink-0">
+    <div className="hidden xl:flex relative h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md p-1 border border-white/20 shadow-lg">
+     <img
+      src="/illustrations/uni_copilot_3d.png"
+      alt="Uni Copilote 3D"
+      className="h-full w-full object-contain drop-shadow-md hover:scale-105 transition-transform duration-300"
+     />
+    </div>
+
+    <div className="flex items-center gap-2 sm:gap-3">
+     <button
+      onClick={() => refetchOverview()}
+      disabled={overviewLoading}
+      className="flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 px-4 py-2.5 text-xs font-bold text-white transition-all active:scale-95 disabled:opacity-50"
+      title="Actualiser les données en direct"
+     >
+      <UniIcon name="refresh" weight="bold" size={15} className={overviewLoading ? 'animate-spin' : ''} />
+      <span>Actualiser</span>
+     </button>
+     {currentRole === 'student' && (
+      <Link
+       to="/app/accueil-compact"
+       className="flex items-center justify-center gap-2 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 px-4 py-2.5 text-xs font-bold text-white transition-all text-center"
+      >
+       <span>Vue compacte</span>
+      </Link>
+     )}
+     <Link
+      to="/app/notifications"
+      className="relative flex items-center justify-center rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 p-2.5 text-white transition-all"
+      aria-label="Notifications"
+     >
+      <UniIcon name="notifications" weight="fill" size={18} />
+      {unreadCount > 0 && (
+       <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white shadow-xs">
+        {unreadCount > 9 ? '9+' : unreadCount}
+       </span>
+      )}
+     </Link>
+    </div>
+   </div>
+  </div>
+ </div>
+
+ {overviewError && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm">{overviewError}</div>}
  
- </span>
- </div>
- </div>
-
- <div className="flex items-center gap-2 sm:gap-3 animate-slide-in-right">
- <button
- onClick={() => refetchOverview()}
- disabled={overviewLoading}
- className="flex items-center gap-1.5 rounded-xl bg-white/10 border border-white/20 px-3.5 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-all active:scale-95 disabled:opacity-50"
- title="Actualiser les données en direct"
- >
- <UniIcon name="refresh" weight="bold" size={16} className={overviewLoading ? 'animate-spin' : ''} />
- <span className="hidden sm:inline">Actualiser</span>
- </button>
- {currentRole === 'student' && (
- <Link
- to="/app/accueil-compact"
- className="rounded-xl bg-white/10 border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 transition-all"
- >
- Vue compacte
- </Link>
- )}
- <Link
- to="/app/notifications"
- className="relative rounded-xl bg-white/10 border border-white/20 p-2.5 text-white hover:bg-white/20 transition-all"
- aria-label="Notifications"
- >
- <UniIcon name="notifications" weight="fill" size={20} />
- </Link>
- </div>
- </div>
- </div>
-
- {overviewError && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{overviewError}</div>}
  {/* ── Card Statut d'Abonnement / Plan Académique ── */}
  <div className="animate-fade-in">
- <SubscriptionStatus />
+  <SubscriptionStatus />
  </div>
 
- {/* ── KPI Stats ── */}
- <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
- {stats.map(({ label, value, delta, up, icon, color, to, imageSrc }, i) => (
- <div
- key={label}
- onClick={() => navigate(to)}
- className={`rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm card-interactive animate-stagger-${i + 1} cursor-pointer`}
- >
- <div className="flex items-start justify-between gap-2 mb-3">
- <IconTile name={icon} imageSrc={imageSrc} color={color} variant="filled" size={56} index={i} />
- <span className={`text-[11px] font-bold rounded-full px-1.5 py-0.5 text-right ${up ? 'text-emerald-700 bg-emerald-50' : 'text-red-600 bg-red-50'}`}>
- {delta}
- </span>
+ {/* ── Module Bento : Prochaine Séance & Copilote d'Études GROQ ── */}
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  {/* Carte 1 : Prochain Cours du Jour */}
+  <div className="relative overflow-hidden rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50/80 via-white to-slate-50 p-5 shadow-sm hover:shadow-md transition-shadow">
+   <div className="flex items-center justify-between mb-3">
+    <div className="flex items-center gap-2">
+     <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#1E3A8A] text-white shadow-xs">
+      <UniIcon name="schedule" weight="fill" size={16} />
+     </span>
+     <div>
+      <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#1E3A8A]">Séance du jour</h2>
+      <p className="text-[11px] text-slate-500 font-medium">Emploi du temps officiel UY1</p>
+     </div>
+    </div>
+    <Link to="/app/emploi-du-temps" className="text-xs font-bold text-[#1E3A8A] hover:underline">
+     Planning complet →
+    </Link>
+   </div>
+
+   {upcomingEvents.length > 0 ? (
+    <div className="rounded-2xl border border-blue-200/60 bg-white p-4 shadow-2xs">
+     <div className="flex items-start justify-between gap-3">
+      <div>
+       <span className={`inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-md mb-1.5 ${typeColor[upcomingEvents[0].type] || 'bg-blue-100 text-blue-800'}`}>
+        {upcomingEvents[0].type} · {upcomingEvents[0].time}
+       </span>
+       <h3 className="text-base font-bold text-slate-900 leading-snug">
+        {upcomingEvents[0].title}
+       </h3>
+       <p className="mt-1 text-xs text-slate-600 flex items-center gap-1.5 font-medium">
+        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Salle / Amphi : <strong>{upcomingEvents[0].room}</strong>
+       </p>
+      </div>
+      <Link
+       to="/app/presences"
+       className="shrink-0 flex items-center gap-1.5 rounded-xl bg-[#1E3A8A] px-3 py-2 text-xs font-bold text-white shadow-xs hover:bg-blue-800 transition-colors"
+      >
+       <UniIcon name="attendance" weight="bold" size={14} />
+       <span>Présence</span>
+      </Link>
+     </div>
+    </div>
+   ) : (
+    <div className="rounded-2xl border border-dashed border-slate-200 bg-white/60 p-4 text-center">
+     <p className="text-xs font-semibold text-slate-600">Aucune séance restante prévue aujourd’hui.</p>
+     <p className="text-[11px] text-slate-400 mt-0.5">Profitez-en pour réviser ou avancer sur vos devoirs.</p>
+    </div>
+   )}
+  </div>
+
+  {/* Carte 2 : Copilote Intelligent GROQ */}
+  <div className="relative overflow-hidden rounded-3xl border border-teal-100 bg-gradient-to-br from-teal-50/80 via-white to-slate-50 p-5 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
+   <div>
+    <div className="flex items-center justify-between mb-3">
+     <div className="flex items-center gap-2">
+      <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0D9488] text-white shadow-xs">
+       <UniIcon name="assistant" weight="fill" size={16} />
+      </span>
+      <div>
+       <div className="flex items-center gap-1.5">
+        <h2 className="text-xs font-extrabold uppercase tracking-wider text-[#0D9488]">Uni Copilote</h2>
+        <span className="rounded-full bg-teal-100 text-teal-800 text-[10px] font-bold px-1.5 py-0.2">GROQ</span>
+       </div>
+       <p className="text-[11px] text-slate-500 font-medium">Inférence IA Llama 3.3 & GPT-OSS</p>
+      </div>
+     </div>
+     <span className="flex items-center gap-1 text-[11px] text-emerald-600 font-bold">
+      <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+      En ligne
+     </span>
+    </div>
+
+    <p className="text-xs text-slate-600 leading-relaxed">
+     Une question sur un théorème, un algorithme ou vos crédits LMD ? Posez-la directement à Uni via la bulle en bas à droite.
+    </p>
+   </div>
+
+   <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
+    <span className="text-[11px] text-slate-400 italic">Disponible 24h/24 hors-ligne & en direct</span>
+    <Link
+     to="/app/cours"
+     className="shrink-0 inline-flex items-center gap-1.5 rounded-xl border border-teal-300/80 bg-white px-3 py-1.5 text-xs font-bold text-teal-700 hover:bg-teal-50 transition-colors shadow-2xs"
+    >
+     <span>Mes cours & supports</span>
+     <span aria-hidden="true">→</span>
+    </Link>
+   </div>
+  </div>
  </div>
- <p className="text-2xl font-extrabold text-[#111827] stat-number leading-none">{value}</p>
- <p className="text-xs text-[#6b7280] mt-1 leading-tight">{label}</p>
- </div>
- ))}
+
+ {/* ── KPI Stats Bento Cards ── */}
+ <div className="grid gap-3.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+  {stats.map(({ label, value, delta, up, icon, color, to, imageSrc }, i) => (
+   <div
+    key={label}
+    onClick={() => navigate(to)}
+    className={`rounded-2xl border border-slate-200/80 bg-white p-4 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 card-interactive animate-stagger-${i + 1} cursor-pointer group`}
+   >
+    <div className="flex items-start justify-between gap-2 mb-3">
+     <IconTile name={icon} imageSrc={imageSrc} color={color} variant="filled" size={56} index={i} />
+     <span className={`text-[10px] font-bold rounded-full px-2 py-0.5 text-right whitespace-nowrap ${up ? 'text-emerald-700 bg-emerald-50 border border-emerald-200/60' : 'text-slate-600 bg-slate-100'}`}>
+      {delta}
+     </span>
+    </div>
+    <p className="text-2xl font-black text-slate-900 stat-number leading-none tracking-tight group-hover:text-[#1E3A8A] transition-colors">{value}</p>
+    <p className="text-xs font-semibold text-slate-500 mt-1.5 leading-tight">{label}</p>
+   </div>
+  ))}
  </div>
 
  {/* ── Main Content Grid ── */}
