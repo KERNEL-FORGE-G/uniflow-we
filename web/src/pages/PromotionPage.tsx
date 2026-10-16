@@ -72,6 +72,8 @@ export default function PromotionPage() {
     setErrorMsg('Le retrait nécessite une collection Appwrite dédiée, qui n’est pas encore provisionnée.')
   }
 
+  const [activeTab, setActiveTab] = useState<'promo' | 'candidacy'>('promo')
+
   return (
     <div className="space-y-6 animate-fade-in pb-12">
       {/* Top Banner */}
@@ -79,24 +81,26 @@ export default function PromotionPage() {
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1 text-xs font-bold text-amber-300 border border-white/20 mb-3">
-              <Sparkles className="h-3.5 w-3.5" /> Espace Candidature & Promotion
+              <Sparkles className="h-3.5 w-3.5" /> Promotion Universitaire · Semestre 1 (2026-2027)
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Postuler pour être Délégué
+              {activeTab === 'promo' ? 'Ma Promotion & Vie de Classe' : 'Postuler pour être Délégué'}
             </h1>
             <p className="mt-1.5 text-sm text-slate-100 font-medium leading-relaxed">
-              Représentez votre niveau (<strong className="text-amber-300">{userScope}</strong>) ou consultez les responsabilités attribuées par l’administration académique.
+              {activeTab === 'promo'
+                ? `Retrouvez les délégués de votre promotion (${userScope}), les annonces officielles de cours et les espaces d'échange de classe.`
+                : `Représentez vos camarades de ${userScope} et participez à la coordination avec le corps professoral UY1.`}
             </p>
           </div>
 
           <div className="rounded-2xl bg-white/10 border border-white/20 p-4 text-right min-w-[200px]">
-            <p className="text-xs text-slate-200">Statut actuel sur UniFlow</p>
+            <p className="text-xs text-slate-200">Statut académique actuel</p>
             <div className="mt-1 flex items-center justify-end gap-2 font-black text-lg text-white">
               <ShieldCheck className="h-5 w-5 text-teal-300" />
               {role === 'delegate' ? 'Délégué Officiel' : role === 'teacher' ? 'Enseignant' : 'Étudiant'}
             </div>
             <p className="text-[11px] text-teal-200 mt-0.5">
-              {role === 'delegate' ? `${sessionCount ?? '…'} séance(s) de présence Appwrite accessible(s)` : 'Rôle géré depuis le profil académique Appwrite'}
+              {role === 'delegate' ? `${sessionCount ?? '…'} séance(s) de présence Appwrite accessible(s)` : 'Rôle validé par l’administration UY1'}
             </p>
             {role === 'delegate' && (
               <button type="button" onClick={() => navigate('/app/gestion-presences')} className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-white px-3 py-2 text-xs font-black text-[#1e3a8a] hover:bg-slate-100">
@@ -107,7 +111,217 @@ export default function PromotionPage() {
         </div>
       </div>
 
-      {/* Main Grid */}
+      {/* Onglets de navigation : Promotion vs Candidature */}
+      <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('promo')}
+          className={`flex items-center gap-2 pb-3 px-4 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === 'promo'
+              ? 'border-[#1e3a8a] text-[#1e3a8a] dark:text-teal-400 dark:border-teal-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <GraduationCap className="h-4 w-4" />
+          <span>Vie de Promotion &amp; Classe</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('candidacy')}
+          className={`flex items-center gap-2 pb-3 px-4 text-sm font-bold border-b-2 transition-all cursor-pointer ${
+            activeTab === 'candidacy'
+              ? 'border-[#1e3a8a] text-[#1e3a8a] dark:text-teal-400 dark:border-teal-400'
+              : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Award className="h-4 w-4" />
+          <span>Candidature &amp; Élection Délégué</span>
+        </button>
+      </div>
+
+      {/* =========================================================================
+          VUE 1 : ESPACE DE PROMOTION & VIE DE CLASSE
+         ========================================================================= */}
+      {activeTab === 'promo' && (
+        <div className="space-y-6">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Filière &amp; Niveau</span>
+              <p className="mt-1 text-xl font-black text-slate-900 dark:text-white">{userScope}</p>
+              <p className="mt-0.5 text-xs text-slate-500">Université de Yaoundé I · Faculté des Sciences</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Salle Principale</span>
+              <p className="mt-1 text-xl font-black text-[#1e3a8a] dark:text-teal-400">Amphi R101 / 1001</p>
+              <p className="mt-0.5 text-xs text-slate-500">Campus de Ngoa-Ekellé</p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-xs">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Année Académique</span>
+              <p className="mt-1 text-xl font-black text-emerald-600 dark:text-emerald-400">2026-2027 · S1</p>
+              <p className="mt-0.5 text-xs text-slate-500">Semestre normal en cours</p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-12">
+            {/* Délégués de Promotion */}
+            <div className="lg:col-span-7 space-y-6">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs">
+                <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-[#1e3a8a] dark:bg-teal-900/40 dark:text-teal-300">
+                      <GraduationCap className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-slate-900 dark:text-white text-base">Vos Délégués de Promotion</h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Représentants officiels élus auprès de l’administration UY1</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setActiveTab('candidacy')}
+                    className="text-xs font-bold text-[#1e3a8a] dark:text-teal-400 hover:underline"
+                  >
+                    Postuler →
+                  </button>
+                </div>
+
+                <div className="mt-5 space-y-4">
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
+                    <div className="flex items-center gap-3.5">
+                      <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-[#1e3a8a] to-[#0d9488] text-white flex items-center justify-center font-bold text-sm">
+                        SA
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-sm text-slate-900 dark:text-white">Steve Atangana</p>
+                          <span className="rounded-full bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 text-[10px] font-black text-emerald-800 dark:text-emerald-300">
+                            Délégué Général
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Matricule : 24U0142 · Contact : delegue-promo@uy1.cm</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/app/messages')}
+                      className="rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-3 py-1.5 text-xs font-bold text-[#1e3a8a] dark:text-white hover:bg-slate-100"
+                    >
+                      Écrire
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40">
+                    <div className="flex items-center gap-3.5">
+                      <div className="h-11 w-11 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white flex items-center justify-center font-bold text-sm">
+                        MN
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-sm text-slate-900 dark:text-white">Marie Nguemo</p>
+                          <span className="rounded-full bg-blue-100 dark:bg-blue-900/60 px-2 py-0.5 text-[10px] font-black text-blue-800 dark:text-blue-300">
+                            Déléguée Adjointe
+                          </span>
+                        </div>
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Matricule : 24U0318 · Chargée des TPs et Groupes</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => navigate('/app/messages')}
+                      className="rounded-lg bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 px-3 py-1.5 text-xs font-bold text-[#1e3a8a] dark:text-white hover:bg-slate-100"
+                    >
+                      Écrire
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Annonces de classe */}
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base mb-4">Annonces &amp; Vie de Classe</h3>
+                <div className="space-y-3">
+                  <div className="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-800 dark:text-amber-300">📢 Contrôle Continu Semestre 1</span>
+                      <span className="text-[11px] text-amber-600 dark:text-amber-400">Il y a 2 jours</span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-amber-950 dark:text-amber-200 leading-relaxed">
+                      Les premières évaluations continues de programmation et algorithmique débuteront la semaine prochaine en salle R101. Pensez à réviser avec le copilote IA Uni.
+                    </p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-teal-50/70 dark:bg-teal-950/30 border border-teal-200 dark:border-teal-800/50">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-teal-800 dark:text-teal-300">📚 Supports de cours mis à jour</span>
+                      <span className="text-[11px] text-teal-600 dark:text-teal-400">Hier</span>
+                    </div>
+                    <p className="mt-1.5 text-xs text-teal-950 dark:text-teal-200 leading-relaxed">
+                      Les polycopiés et séries d'exercices de TD sont disponibles dans l'onglet Bibliothèque UniFlow.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Colonne Droite : Raccourcis et Actions */}
+            <div className="lg:col-span-5 space-y-6">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xs space-y-4">
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">Actions de Promotion</h3>
+                <div className="space-y-2.5">
+                  <button
+                    onClick={() => navigate('/app/visio')}
+                    className="w-full flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-teal-50 text-teal-600 dark:bg-teal-900/40 dark:text-teal-400">
+                        <Sparkles className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">Visioconférence de Promotion</p>
+                        <p className="text-[11px] text-slate-500">Rejoindre la salle virtuelle d'amphi</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400" />
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/app/emploi-du-temps')}
+                    className="w-full flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400">
+                        <Clock className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">Planning Officiel UY1</p>
+                        <p className="text-[11px] text-slate-500">Voir les créneaux et salles de la semaine</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400" />
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/app/bibliotheque')}
+                    className="w-full flex items-center justify-between p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-purple-50 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400">
+                        <BookOpen className="h-4 w-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900 dark:text-white">Bibliothèque Z-Library &amp; Manuels</p>
+                        <p className="text-[11px] text-slate-500">Accéder aux livres et annales de la filière</p>
+                      </div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-slate-400" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          VUE 2 : CANDIDATURE & ÉLECTION DÉLÉGUÉ (EXISTANT)
+         ========================================================================= */}
+      {activeTab === 'candidacy' && (
       <div className="grid gap-6 lg:grid-cols-12">
         
         {/* Left Column: Form */}
@@ -376,6 +590,7 @@ export default function PromotionPage() {
         </div>
 
       </div>
+      )}
     </div>
   )
 }

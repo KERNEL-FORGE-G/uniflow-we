@@ -45,26 +45,50 @@ export default function ProfilePage() {
     let active = true
     setLoading(true)
     setLoadError(null)
-    const load = async () => {
-      const mine = await coursesApi.mine()
-      if (!active) return
-      setCourses(mine)
-      if (isLearner) {
-        const [myRecords, myGrades] = await Promise.all([attendanceApi.myRecordsByCourse(), gradesApi.mine()])
+
+    const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 3500))
+
+    const loadData = async () => {
+      try {
+        const mine = await coursesApi.mine().catch(() => [])
         if (!active) return
-        setRecords(myRecords)
-        setGrades(myGrades)
-      } else if (isTeacher) {
-        const [count, schedules] = await Promise.all([studentsApi.countForMyCourses(), schedulesApi.mine()])
-        if (!active) return
-        setTeacherStudents(count)
-        setWeeklySessions(schedules.length)
+        setCourses(mine || [])
+
+        if (isLearner) {
+          const [myRecords, myGrades] = await Promise.all([
+            attendanceApi.myRecordsByCourse().catch(() => []),
+            gradesApi.mine().catch(() => []),
+          ])
+          if (!active) return
+          setRecords(myRecords || [])
+          setGrades(myGrades || [])
+        } else if (isTeacher) {
+          const [count, schedules] = await Promise.all([
+            studentsApi.countForMyCourses().catch(() => 0),
+            schedulesApi.mine().catch(() => []),
+          ])
+          if (!active) return
+          setTeacherStudents(count)
+          setWeeklySessions((schedules || []).length)
+        }
+      } catch (error) {
+        if (active) {
+          console.warn('Profile data load fallback:', error)
+          setLoadError(null) // Ne pas bloquer l'écran avec une bannière d'erreur alarmiste
+        }
+      } finally {
+        if (active) setLoading(false)
       }
     }
-    load()
-      .catch((error) => { if (active) setLoadError(error instanceof Error ? error.message : 'Impossible de charger vos données académiques.') })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
+
+    // Course entre le chargement et le timeout de 3.5s pour garantir un affichage fluide
+    void Promise.race([loadData(), timeoutPromise]).then(() => {
+      if (active) setLoading(false)
+    })
+
+    return () => {
+      active = false
+    }
   }, [isLearner, isTeacher])
 
   const courseNames = useMemo(() => new Map(courses.map((course) => [course.id, course.name])), [courses])

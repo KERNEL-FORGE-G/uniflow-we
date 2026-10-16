@@ -226,17 +226,17 @@ function PersonalLearningRoute({
   return <>{children}</>
 }
 
-/** Espace connecté : layout + transition de page animée sur le contenu seulement. */
+/** Espace connecté : layout + transition de page fluide immédiate, sans rétention de l'ancien écran. */
 function Shell({ children }: { children: ReactNode }) {
   const location = useLocation()
   return (
     <AuthenticatedRoute>
       <AppLayout>
-        <AnimatePresence mode="wait" initial={false}>
-          <PageTransition key={location.pathname}>
-            <Suspense fallback={<PageLoader />}>{children}</Suspense>
-          </PageTransition>
-        </AnimatePresence>
+        <Suspense fallback={<PageLoader />}>
+          <div key={location.pathname} className="min-h-full animate-fade-in">
+            {children}
+          </div>
+        </Suspense>
       </AppLayout>
     </AuthenticatedRoute>
   )
@@ -245,9 +245,9 @@ function Shell({ children }: { children: ReactNode }) {
 function PublicPage({ children }: { children: ReactNode }) {
   const location = useLocation()
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <PageTransition key={location.pathname}>{children}</PageTransition>
-    </AnimatePresence>
+    <div key={location.pathname} className="min-h-full animate-fade-in">
+      {children}
+    </div>
   )
 }
 

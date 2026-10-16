@@ -7,6 +7,10 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
+    },
+    {
+      "source": "/((?!api/|assets/|icons/|logos/|illustrations/|badges/|sw.js|manifest.json|robots.txt|sitemap.xml|favicon).*|[^.]*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [

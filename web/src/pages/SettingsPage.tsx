@@ -101,8 +101,20 @@ export default function SettingsPage() {
       lastName: nameParts.slice(1).join(' ') || '',
       email,
       phone,
-      address
+      address,
     }).catch(() => null)
+
+    if (authUser) {
+      setAuthUser({
+        ...authUser,
+        fullName,
+        email,
+        phone,
+        address,
+        program: filiere,
+        level,
+      })
+    }
 
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)

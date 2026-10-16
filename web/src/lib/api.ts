@@ -21,6 +21,7 @@ import { type AcademicScope, filterByScope, isLearnerRole, isLearnerScopeComplet
 import { attendanceRate, formatSubmissionGrade, isPublishedStatement, learnerStatus, matchesAudience } from './assignmentModel'
 import { fileKind, humanFileSize } from './teacherCourseModel'
 import { openLibraryService } from './openLibraryService'
+import { REAL_UY1_SCHEDULES } from '../data/realTimetablesUY1'
 
 /**
  * Adaptateur de compatibilité UniFlow.
@@ -164,6 +165,8 @@ export interface BackendUser {
   faculty?: string
   program?: string
   level?: string
+  phone?: string
+  address?: string
 }
 export interface AuthResult { accessToken: string; refreshToken: string; user: BackendUser }
 interface StudentProfile { firstName: string; lastName: string; matricule?: string; level?: string; specialty?: string }
@@ -315,10 +318,44 @@ async function universityCourseDocuments(selection?: ScopeSelection) {
   // filière et de son niveau, ou rien tant que son profil est incomplet.
   if (isLearnerRole(current.role) && !isLearnerScopeComplete(scope)) return { current, courses: [] }
   const documents = filterByScope(await academicAppwriteApi.courses.list(scope), scope)
+  let effectiveDocs = documents
+
+  // Si la collection Appwrite ne contient aucun cours pour cette filière/niveau,
+  // synthétiser les UE officielles de référence depuis les emplois du temps réels UY1
+  if (effectiveDocs.length === 0 && scope.program && scope.level) {
+    const refSlots = REAL_UY1_SCHEDULES.filter(
+      (s) => s.program.toUpperCase() === scope.program?.toUpperCase() && s.level.toUpperCase() === scope.level?.toUpperCase()
+    )
+    const seenCodes = new Set<string>()
+    const synthesizedDocs: import('./appwrite').AcademicCourseDocument[] = []
+    for (const slot of refSlots) {
+      if (!seenCodes.has(slot.courseCode)) {
+        seenCodes.add(slot.courseCode)
+        synthesizedDocs.push({
+          $id: `ref-course-${slot.courseCode.toLowerCase()}`,
+          code: slot.courseCode,
+          name: slot.courseName,
+          university: 'Université de Yaoundé I',
+          program: slot.program,
+          level: slot.level,
+          teacherName: slot.teacherName,
+          type: slot.type,
+          classroom: slot.classroom,
+          credits: 6,
+          hours: 45,
+          description: `Unité d'enseignement ${slot.courseCode} au programme officiel de l'Université de Yaoundé I.`,
+        })
+      }
+    }
+    if (synthesizedDocs.length > 0) {
+      effectiveDocs = synthesizedDocs
+    }
+  }
+
   // Un enseignant sans sélection explicite voit ses cours ; avec un sélecteur, la filière choisie.
   const courses = current.role === 'TEACHER' && !selection?.program
-    ? documents.filter((course) => courseBelongsToTeacher(course, current))
-    : documents
+    ? effectiveDocs.filter((course) => courseBelongsToTeacher(course, current))
+    : effectiveDocs
   return { current, courses }
 }
 

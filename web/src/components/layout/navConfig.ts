@@ -48,7 +48,7 @@ export const APP_NAV_ITEMS: AppNavItem[] = ([
   { to: '/app/evaluations', icon: 'grades', labelFr: 'Correction & évaluations', labelEn: 'Grading', roles: ['teacher'], group: 'apprendre' },
   { to: '/app/sentinelle', icon: 'assistant', labelFr: 'Sentinelle IA', labelEn: 'Sentinelle AI', roles: ALL, group: 'apprendre' },
   { to: '/app/presences', icon: 'attendance', labelFr: 'Mes présences', labelEn: 'My attendance', roles: LEARNERS, group: 'apprendre' },
-  { to: '/app/promotion', icon: 'users', labelFr: 'Mon groupe', labelEn: 'My group', roles: LEARNERS, group: 'animer' },
+  { to: '/app/promotion', icon: 'coordination', labelFr: 'Ma promotion', labelEn: 'My Class', roles: LEARNERS, group: 'animer' },
   { to: '/app/gestion-presences', icon: 'attendance', labelFr: 'Faire l’appel', labelEn: 'Take attendance', roles: ['delegate', 'teacher'], group: 'animer' },
   { to: '/app/visio', icon: 'video', labelFr: 'Visioconférence', labelEn: 'Video conference', roles: ALL, group: 'animer' },
   { to: '/app/messages', icon: 'messages', labelFr: 'Messages', labelEn: 'Messages', roles: ALL, group: 'echanger' },

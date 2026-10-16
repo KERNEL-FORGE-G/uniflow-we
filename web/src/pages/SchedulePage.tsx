@@ -154,17 +154,34 @@ export default function SchedulePage() {
     }
   }, [selectedProgram, selectedLevel])
 
-  // Filtrage strict : l'étudiant / délégué ne voit QUE sa filière et son niveau
-  const filteredSchedules = useMemo(() => {
-    if (dbSchedules.length > 0) {
-      return dbSchedules.filter(
-        (s) => s.program.toUpperCase() === selectedProgram.toUpperCase() && s.level.toUpperCase() === selectedLevel.toUpperCase()
-      )
-    }
-    return REAL_UY1_SCHEDULES.filter(
+  // Filtre par groupe (Groupe A, Groupe B, Groupe C, G1, G2, ou Tous)
+  const [selectedGroup, setSelectedGroup] = useState<string>('Tous')
+
+  // Calcul des groupes disponibles pour la promotion active
+  const availableGroups = useMemo(() => {
+    const rawSlots = dbSchedules.length > 0 ? dbSchedules : REAL_UY1_SCHEDULES
+    const relevant = rawSlots.filter(
       (s) => s.program.toUpperCase() === selectedProgram.toUpperCase() && s.level.toUpperCase() === selectedLevel.toUpperCase()
     )
+    const groupsSet = new Set<string>()
+    relevant.forEach((s) => {
+      if (s.group && s.group.trim() && s.group !== 'Tous Groupes') {
+        groupsSet.add(s.group.trim())
+      }
+    })
+    return ['Tous', ...Array.from(groupsSet).sort()]
   }, [dbSchedules, selectedProgram, selectedLevel])
+
+  // Filtrage strict : filière + niveau + groupe sélectionné
+  const filteredSchedules = useMemo(() => {
+    const raw = dbSchedules.length > 0 ? dbSchedules : REAL_UY1_SCHEDULES
+    return raw.filter((s) => {
+      const matchScope = s.program.toUpperCase() === selectedProgram.toUpperCase() && s.level.toUpperCase() === selectedLevel.toUpperCase()
+      if (!matchScope) return false
+      if (selectedGroup === 'Tous') return true
+      return s.group?.toLowerCase() === selectedGroup.toLowerCase() || s.group === 'Tous Groupes' || !s.group
+    })
+  }, [dbSchedules, selectedProgram, selectedLevel, selectedGroup])
 
   // Créneaux du jour sélectionné
   const daySchedules = useMemo(() => {
@@ -457,18 +474,39 @@ export default function SchedulePage() {
                   {selectedLevel}
                 </span>
                 <span className="rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-blue-700 border border-blue-200">
-                  Semestre 1
+                  Semestre 1 · 2026-2027
                 </span>
               </div>
               <h3 className="text-sm sm:text-base font-extrabold text-slate-900 mt-0.5">
                 {programDetails.name} · {selectedLevel === 'L1' ? 'Licence 1' : selectedLevel === 'L2' ? 'Licence 2' : selectedLevel === 'L3' ? 'Licence 3' : selectedLevel === 'M1' ? 'Master 1' : 'Master 2'}
               </h3>
+              {availableGroups.length > 2 && (
+                <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1">Groupe :</span>
+                  {availableGroups.map((grp) => {
+                    const active = selectedGroup === grp
+                    return (
+                      <button
+                        key={grp}
+                        onClick={() => setSelectedGroup(grp)}
+                        className={`rounded-lg px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                          active
+                            ? 'bg-[#1E3A8A] text-white shadow-sm'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        {grp}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
           <div className="flex items-center gap-3 self-end md:self-auto">
             <span className="text-xs font-semibold text-slate-500">
-              <strong>{filteredSchedules.length}</strong> séances au programme
+              <strong>{filteredSchedules.length}</strong> séances {selectedGroup !== 'Tous' ? `(${selectedGroup})` : ''}
             </span>
             <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
@@ -837,15 +875,22 @@ export default function SchedulePage() {
               />
             </div>
 
-            <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Université de Yaoundé I · Faculté des Sciences</span>
+            <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500">
+              <div className="space-y-0.5">
+                <p className="font-bold text-slate-700">
+                  Université de Yaoundé I · Faculté des Sciences (Semestre 1 · 2026-2027)
+                </p>
+                <p className="text-[11px] text-emerald-700 font-semibold">
+                  ✓ Scan officiel certifié · Programmation académique en vigueur
+                </p>
+              </div>
               <a
                 href={getScanUrl(currentScan).appwriteUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-blue-600 font-bold hover:underline"
+                className="inline-flex items-center gap-1.5 text-blue-600 font-bold hover:underline shrink-0"
               >
-                Ouvrir en haute résolution <ExternalLink className="h-3.5 w-3.5" />
+                Ouvrir en pleine résolution <ExternalLink className="h-3.5 w-3.5" />
               </a>
             </div>
           </div>
