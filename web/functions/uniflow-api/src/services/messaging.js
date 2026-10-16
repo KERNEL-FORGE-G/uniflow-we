@@ -4,37 +4,16 @@ import { Client, Databases, ID, Permission, Query, Role, Storage } from 'node-ap
 const DATABASE_ID = 'uniflow'
 const UNIVERSITY = 'Université de Yaoundé I'
 const PROGRAM = 'ICT4D'
-// La filière ICT4D couvre la Licence 1 à la Licence 3 (demande du propriétaire) :
-// le périmètre n'est plus figé sur `L1`, un compte L2 ou L3 est dans le champ.
 const LEVELS = ['L1', 'L2', 'L3']
 const inScope = (document) => document?.university === UNIVERSITY && document?.program === PROGRAM && LEVELS.includes(document?.level)
 const ALLOWED_ROLES = ['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN']
 
-/**
- * Bucket des pièces jointes de discussion.
- *
- * Appwrite Cloud plafonne tout fichier à 50 000 000 octets sur le plan
- * gratuit ; cette constante n'est qu'un garde-fou côté Function, la vraie
- * limite restant celle du bucket. Un fichier plus gros est refusé au
- * téléversement par Appwrite, avec un message que le client relaie.
- *
- * Le bucket est l'unique bucket du projet (le plan gratuit n'en autorise
- * qu'un) : l'isolement des pièces jointes repose sur les permissions par
- * fichier, que cette Function pose elle-même sur les deux participants.
- */
 const CHAT_FILES_BUCKET = 'uniflow_assets'
 const MAX_ATTACHMENT_BYTES = 50_000_000
 
 /** Types MIME affichés comme des images dans la conversation. */
 const IMAGE_MIME_PREFIX = 'image/'
 
-// Le contrôle d'accès exigeait auparavant que le compte appartienne
-// simultanément à UY1, au programme ICT4D ET au niveau L1. Tout étudiant d'une
-// autre promotion, ou tout enseignant rattaché à un autre programme, recevait
-// donc un 403 sur chacune des actions de messagerie — y compris « list ».
-// Par défaut on n'exige plus que l'appartenance à l'annuaire académique avec un
-// rôle autorisé. Le verrou d'origine reste activable sans redéploiement via la
-// variable d'environnement UNIFLOW_MESSAGING_STRICT_SCOPE=true.
 const STRICT_SCOPE = String(process.env.UNIFLOW_MESSAGING_STRICT_SCOPE || '').toLowerCase() === 'true'
 
 function json(res, body, status = 200) {
@@ -76,17 +55,6 @@ function participantPermissions(participantA, participantB) {
   return [Permission.read(Role.user(participantA)), Permission.read(Role.user(participantB))]
 }
 
-/**
- * Permissions d'une pièce jointe une fois envoyée.
- *
- * Le client téléverse avec ses seules permissions — Appwrite 1.6.1 refuse
- * qu'il en accorde à un autre utilisateur — donc c'est ici, avec la clé API,
- * que le destinataire reçoit la lecture.
- *
- * `update` et `delete` restent à l'expéditeur. `updateFile` **remplace** la
- * liste complète : les omettre les retirerait, et un fichier envoyé par erreur
- * deviendrait indestructible, par son auteur comme par la Function.
- */
 function attachmentPermissions(uploaderId, participantA, participantB) {
   return [
     Permission.read(Role.user(participantA)),
@@ -96,15 +64,24 @@ function attachmentPermissions(uploaderId, participantA, participantB) {
   ]
 }
 
-function asMessage(document, actorId) {
+function groupAttachmentPermissions(uploaderId) {
+  return [
+    Permission.read(Role.users()),
+    Permission.update(Role.user(uploaderId)),
+    Permission.delete(Role.user(uploaderId)),
+  ]
+}
+
+function asMessage(document, actorId, senderProfile = null) {
   return {
     id: document.$id,
     from: document.senderId === actorId ? 'me' : 'them',
     text: document.body,
     time: document.createdAt || document.$createdAt,
     senderId: document.senderId,
-    // Une pièce jointe est décrite par quatre champs ; `kind` distingue les
-    // images (aperçu inline) des autres fichiers (carte à ouvrir).
+    senderName: senderProfile?.name || document.senderName || '',
+    senderUsername: senderProfile?.username || '',
+    senderAvatar: senderProfile?.avatarFileId || '',
     fileId: document.fileId || '',
     fileName: document.fileName || '',
     fileSize: Number(document.fileSize || 0),
@@ -114,18 +91,6 @@ function asMessage(document, actorId) {
   }
 }
 
-/**
- * Vérifie une pièce jointe auprès du Storage avant de la référencer.
- *
- * Un client pourrait sinon annoncer un `fileId` qui ne lui appartient pas — ou
- * qui n'existe pas — et la conversation afficherait une carte cassée. On lit
- * les métadonnées réelles du fichier et on refuse au-delà du plafond du bucket,
- * en s'appuyant sur la taille réelle et non sur celle déclarée par le client.
- *
- * `permissions` est renvoyé pour que l'appelant puisse vérifier la propriété du
- * fichier : le téléversement n'accorde la lecture qu'à son auteur, donc sa
- * présence dans cette liste identifie qui l'a déposé.
- */
 async function inspectAttachment(storage, fileId) {
   let file
   try {
@@ -152,12 +117,6 @@ async function inspectAttachment(storage, fileId) {
   }
 }
 
-/**
- * Notifie le destinataire d'un message urgent.
- *
- * L'`eventKey` rend l'opération idempotente : rejouer une livraison ne crée pas
- * une seconde notification, le récepteur la retrouvant par cette clé.
- */
 async function notifyUrgent(databases, { recipientId, senderName, text, messageId, conversationId, hasFile }) {
   const eventKey = `msg:${messageId}`
   const existing = await databases.listDocuments(DATABASE_ID, 'notifications', [Query.equal('eventKey', eventKey), Query.limit(1)])
@@ -198,6 +157,7 @@ async function actor(databases, userId) {
         name: userDoc.name || 'Utilisateur UniFlow',
         role: userDoc.accountType === 'PERSONAL' ? 'INDEPENDENT' : (userDoc.role || 'STUDENT'),
         accountType: userDoc.accountType || 'PERSONAL',
+        username: userDoc.username || '',
       }
     }
   } catch {}
@@ -208,6 +168,7 @@ async function actor(databases, userId) {
     name: 'Utilisateur UniFlow',
     role: 'INDEPENDENT',
     accountType: 'PERSONAL',
+    username: '',
   }
 }
 
@@ -250,9 +211,7 @@ async function serializeConversation(databases, conversation, actorId) {
   const unread = messages.documents.filter((message) => message.senderId !== actorId && !message[unreadField])
   return {
     id: conversation.$id,
-    // Identifiant du correspondant : le client en a besoin pour donner au
-    // fichier téléversé les permissions des deux participants, Appwrite
-    // n'accordant au créateur que ce qu'il demande explicitement.
+    isGroup: false,
     userId: otherId,
     name: profile.name,
     role: profile.role,
@@ -263,7 +222,7 @@ async function serializeConversation(databases, conversation, actorId) {
     time: conversation.lastMessageAt || conversation.$updatedAt,
     preview: conversation.lastMessage || 'Nouvelle conversation',
     unread: unread.length,
-    messages: messages.documents.map((message) => asMessage(message, actorId)),
+    messages: messages.documents.map((message) => asMessage(message, actorId, message.senderId === otherId ? profile : null)),
   }
 }
 
@@ -276,12 +235,64 @@ async function markConversationRead(databases, conversation, actorId) {
   return unread.length
 }
 
+/**
+ * Fonctions pour les Groupes de discussion (style WhatsApp)
+ */
+async function getGroupMembers(databases, groupId, limit = 100) {
+  const result = await databases.listDocuments(DATABASE_ID, 'chat_group_members', [
+    Query.equal('groupId', groupId),
+    Query.limit(limit),
+  ])
+  return result.documents
+}
+
+async function isGroupMember(databases, groupId, userId) {
+  const result = await databases.listDocuments(DATABASE_ID, 'chat_group_members', [
+    Query.equal('groupId', groupId),
+    Query.equal('userId', userId),
+    Query.limit(1),
+  ])
+  return result.documents.length > 0 ? result.documents[0] : null
+}
+
+async function serializeGroup(databases, group, actorId) {
+  const [membersDoc, messages] = await Promise.all([
+    databases.listDocuments(DATABASE_ID, 'chat_group_members', [Query.equal('groupId', group.$id), Query.limit(100)]),
+    databases.listDocuments(DATABASE_ID, 'chat_messages', [Query.equal('conversationId', group.$id), Query.orderAsc('createdAt'), Query.limit(100)]),
+  ])
+
+  // Charger les profils des expéditeurs des messages récents
+  const senderIds = [...new Set(messages.documents.map(m => m.senderId))]
+  const profilesMap = new Map()
+  await Promise.all(senderIds.map(async (sid) => {
+    try {
+      const p = await participantProfile(databases, sid)
+      profilesMap.set(sid, p)
+    } catch {}
+  }))
+
+  return {
+    id: group.$id,
+    groupId: group.$id,
+    isGroup: true,
+    name: group.name,
+    description: group.description || '',
+    adminId: group.adminId,
+    avatarFileId: group.avatarFileId || '',
+    role: 'GROUP',
+    online: false,
+    time: group.lastMessageAt || group.createdAt || group.$createdAt,
+    preview: group.lastMessage ? (group.lastSenderName ? `${group.lastSenderName}: ${group.lastMessage}` : group.lastMessage) : 'Groupe créé',
+    unread: 0,
+    memberCount: membersDoc.total || membersDoc.documents.length,
+    messages: messages.documents.map((message) => asMessage(message, actorId, profilesMap.get(message.senderId))),
+  }
+}
+
 export default async ({ req, res, error }) => {
   const actorId = actorIdOf(req)
   if (!actorId) return json(res, { ok: false, code: 'AUTH_REQUIRED', message: 'Connexion Appwrite requise.' }, 401)
-  // Clé dynamique d'Appwrite ≥ 1.6 : elle arrive dans l'en-tête `x-appwrite-key`,
-  // limitée aux `scopes` déclarés sur la Function. Aucune clé serveur n'a donc à
-  // être stockée en variable ; celle-ci reste lue en premier si elle existe.
+  
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
     .setProject(process.env.APPWRITE_FUNCTION_PROJECT_ID)
@@ -291,27 +302,47 @@ export default async ({ req, res, error }) => {
   const body = bodyOf(req)
 
   try {
-    await actor(databases, actorId)
+    const currentActor = await actor(databases, actorId)
+
+    // 1. LISTE GLOBALE DES CONVERSATIONS (DIRECTES + GROUPES)
     if (body.action === 'list') {
-      const conversations = await conversationsFor(databases, actorId)
-      // Une conversation dont l'interlocuteur n'est plus un contact valide
-      // (compte supprimé, sorti de l'annuaire) faisait échouer toute la liste.
-      // On l'écarte au lieu de priver l'utilisateur de ses autres échanges.
-      const serialized = await Promise.all(conversations.map(async (conversation) => {
+      const [directConversations, memberEntries] = await Promise.all([
+        conversationsFor(databases, actorId),
+        databases.listDocuments(DATABASE_ID, 'chat_group_members', [Query.equal('userId', actorId), Query.limit(100)]),
+      ])
+
+      const directSerializedPromises = directConversations.map(async (conversation) => {
         try {
           return await serializeConversation(databases, conversation, actorId)
         } catch {
           return null
         }
-      }))
-      return json(res, { ok: true, action: 'list', conversations: serialized.filter(Boolean) })
+      })
+
+      const groupSerializedPromises = memberEntries.documents.map(async (entry) => {
+        try {
+          const group = await databases.getDocument(DATABASE_ID, 'chat_groups', entry.groupId)
+          return await serializeGroup(databases, group, actorId)
+        } catch {
+          return null
+        }
+      })
+
+      const [directList, groupList] = await Promise.all([
+        Promise.all(directSerializedPromises),
+        Promise.all(groupSerializedPromises),
+      ])
+
+      const all = [...directList.filter(Boolean), ...groupList.filter(Boolean)].sort((left, right) =>
+        String(right.time || '').localeCompare(String(left.time || ''))
+      )
+
+      return json(res, { ok: true, action: 'list', conversations: all })
     }
 
-    // Recherche de contacts par pseudo ou par nom, pour alimenter le sélecteur
-    // des clients. Nécessite un terme d'au moins 2 caractères afin de ne pas
-    // exposer tout l'annuaire à une requête vide.
+    // 2. RECHERCHE DE CONTACTS (PAR PSEUDO, NOM OU EMAIL)
     if (body.action === 'search') {
-      const term = cleanText(body.query, 'query', 64).toLowerCase()
+      const term = cleanText(body.query, 'query', 64).toLowerCase().replace(/^@/, '')
       if (term.length < 2) return json(res, { ok: false, code: 'QUERY_TOO_SHORT', message: 'Saisissez au moins deux caractères.' }, 400)
       const result = await databases.listDocuments(DATABASE_ID, 'users', [Query.limit(200)])
       const contacts = result.documents
@@ -331,16 +362,37 @@ export default async ({ req, res, error }) => {
       return json(res, { ok: true, action: 'search', contacts })
     }
 
+    // 3. OUVERTURE D'UNE CONVERSATION OU D'UN GROUPE
     if (body.action === 'open') {
-      // Le pseudo devient le référent principal ; l'email reste accepté pour ne
-      // pas casser les clients qui l'utilisent encore.
+      if (body.groupId) {
+        const groupId = cleanText(body.groupId, 'groupId', 64)
+        const membership = await isGroupMember(databases, groupId, actorId)
+        if (!membership) return json(res, { ok: false, code: 'GROUP_ACCESS_DENIED', message: 'Vous ne faites pas partie de ce groupe.' }, 403)
+        const group = await databases.getDocument(DATABASE_ID, 'chat_groups', groupId)
+        return json(res, { ok: true, action: 'open', conversation: await serializeGroup(databases, group, actorId) })
+      }
+
       const username = typeof body.username === 'string' ? body.username.trim().replace(/^@/, '').toLowerCase() : ''
       const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
-      if (!username && !email) return json(res, { ok: false, code: 'CONTACT_REQUIRED', message: 'Renseignez un pseudo ou une adresse e-mail.' }, 400)
-      const lookup = username ? Query.equal('username', username) : Query.equal('email', email)
-      const contacts = await databases.listDocuments(DATABASE_ID, 'users', [lookup, Query.limit(1)])
-      const contact = contacts.documents[0]
-      if (!contact || contact.$id === actorId) return json(res, { ok: false, code: 'CONTACT_NOT_FOUND', message: username ? `Aucun compte ne correspond au pseudo « ${username} ».` : 'Ce contact est introuvable.' }, 404)
+      const userId = typeof body.userId === 'string' ? body.userId.trim() : ''
+      if (!username && !email && !userId) return json(res, { ok: false, code: 'CONTACT_REQUIRED', message: 'Renseignez un pseudo, un id ou une adresse e-mail.' }, 400)
+      
+      let contact = null
+      if (userId) {
+        try { contact = await databases.getDocument(DATABASE_ID, 'users', userId) } catch {}
+      }
+      if (!contact && username) {
+        const lookup = Query.equal('username', username)
+        const contacts = await databases.listDocuments(DATABASE_ID, 'users', [lookup, Query.limit(1)])
+        contact = contacts.documents[0]
+      }
+      if (!contact && email) {
+        const lookup = Query.equal('email', email)
+        const contacts = await databases.listDocuments(DATABASE_ID, 'users', [lookup, Query.limit(1)])
+        contact = contacts.documents[0]
+      }
+
+      if (!contact || contact.$id === actorId) return json(res, { ok: false, code: 'CONTACT_NOT_FOUND', message: username ? `Aucun compte ne correspond au pseudo « @${username} ».` : 'Ce contact est introuvable.' }, 404)
       const profile = await participantProfile(databases, contact.$id)
       const [participantA, participantB] = pairFor(actorId, profile.userId)
       const conversationId = conversationIdFor(participantA, participantB)
@@ -359,17 +411,186 @@ export default async ({ req, res, error }) => {
       return json(res, { ok: true, action: 'open', conversation: await serializeConversation(databases, conversation, actorId) })
     }
 
+    // 4. CRÉATION DE GROUPE (STYLE WHATSAPP)
+    if (body.action === 'create_group') {
+      const name = cleanText(body.name, 'name', 100)
+      const description = typeof body.description === 'string' ? body.description.trim().slice(0, 500) : ''
+      const avatarFileId = typeof body.avatarFileId === 'string' ? body.avatarFileId.trim() : ''
+      
+      const groupId = `grp_${ID.unique().slice(0, 24)}`
+      const now = new Date().toISOString()
+      
+      const groupDoc = await databases.createDocument(DATABASE_ID, 'chat_groups', groupId, {
+        name,
+        description,
+        adminId: actorId,
+        avatarFileId,
+        lastMessage: 'Groupe créé',
+        lastMessageAt: now,
+        lastSenderName: currentActor.name || '',
+        createdAt: now,
+      }, [Permission.read(Role.users()), Permission.update(Role.users()), Permission.delete(Role.user(actorId))])
+
+      // Ajouter le créateur comme administrateur du groupe
+      await databases.createDocument(DATABASE_ID, 'chat_group_members', ID.unique(), {
+        groupId,
+        userId: actorId,
+        role: 'admin',
+        joinedAt: now,
+      }, [Permission.read(Role.users()), Permission.update(Role.user(actorId)), Permission.delete(Role.user(actorId))])
+
+      // Résoudre les membres invités (par pseudo ou par userId)
+      const memberIdentifiers = Array.isArray(body.members) ? body.members : []
+      const resolvedUserIds = new Set()
+
+      for (const raw of memberIdentifiers) {
+        if (!raw || typeof raw !== 'string') continue
+        const clean = raw.trim()
+        if (clean === actorId) continue
+        if (clean.startsWith('@') || !clean.includes('-')) {
+          // Rechercher par username
+          const uname = clean.replace(/^@/, '').toLowerCase()
+          const users = await databases.listDocuments(DATABASE_ID, 'users', [Query.equal('username', uname), Query.limit(1)])
+          if (users.documents.length > 0) resolvedUserIds.add(users.documents[0].$id)
+        } else {
+          resolvedUserIds.add(clean)
+        }
+      }
+
+      for (const targetUserId of resolvedUserIds) {
+        try {
+          await databases.createDocument(DATABASE_ID, 'chat_group_members', ID.unique(), {
+            groupId,
+            userId: targetUserId,
+            role: 'member',
+            joinedAt: now,
+          }, [Permission.read(Role.users()), Permission.update(Role.user(targetUserId)), Permission.delete(Role.user(actorId))])
+        } catch (addErr) {
+          error(`Failed to add initial member ${targetUserId} to group ${groupId}: ${addErr?.message}`)
+        }
+      }
+
+      const serialized = await serializeGroup(databases, groupDoc, actorId)
+      return json(res, { ok: true, action: 'create_group', group: serialized })
+    }
+
+    // 5. AJOUT DE MEMBRES DANS UN GROUPE
+    if (body.action === 'add_group_members') {
+      const groupId = cleanText(body.groupId, 'groupId', 64)
+      const membership = await isGroupMember(databases, groupId, actorId)
+      if (!membership) return json(res, { ok: false, code: 'NOT_A_MEMBER', message: 'Vous devez faire partie du groupe pour inviter des membres.' }, 403)
+
+      const memberIdentifiers = Array.isArray(body.members) ? body.members : []
+      if (!memberIdentifiers.length) return json(res, { ok: false, code: 'NO_MEMBERS', message: 'Indiquez au moins un contact à ajouter.' }, 400)
+
+      const now = new Date().toISOString()
+      const added = []
+
+      for (const raw of memberIdentifiers) {
+        if (!raw || typeof raw !== 'string') continue
+        let targetUserId = raw.trim()
+        if (targetUserId.startsWith('@')) {
+          const uname = targetUserId.replace(/^@/, '').toLowerCase()
+          const users = await databases.listDocuments(DATABASE_ID, 'users', [Query.equal('username', uname), Query.limit(1)])
+          if (users.documents.length > 0) targetUserId = users.documents[0].$id
+          else continue
+        }
+
+        const existing = await isGroupMember(databases, groupId, targetUserId)
+        if (!existing) {
+          try {
+            await databases.createDocument(DATABASE_ID, 'chat_group_members', ID.unique(), {
+              groupId,
+              userId: targetUserId,
+              role: 'member',
+              joinedAt: now,
+            }, [Permission.read(Role.users()), Permission.update(Role.user(targetUserId)), Permission.delete(Role.user(actorId))])
+            added.push(targetUserId)
+          } catch (e) {
+            error(`Failed to add member ${targetUserId}: ${e?.message}`)
+          }
+        }
+      }
+
+      const group = await databases.getDocument(DATABASE_ID, 'chat_groups', groupId)
+      return json(res, { ok: true, action: 'add_group_members', addedCount: added.length, group: await serializeGroup(databases, group, actorId) })
+    }
+
+    // 6. QUITTER UN GROUPE
+    if (body.action === 'leave_group') {
+      const groupId = cleanText(body.groupId, 'groupId', 64)
+      const membership = await isGroupMember(databases, groupId, actorId)
+      if (!membership) return json(res, { ok: false, code: 'NOT_A_MEMBER', message: 'Vous ne faites pas partie de ce groupe.' }, 404)
+
+      await databases.deleteDocument(DATABASE_ID, 'chat_group_members', membership.$id)
+
+      // Si l'admin quitte, transférer les droits au membre le plus ancien s'il en reste
+      const group = await databases.getDocument(DATABASE_ID, 'chat_groups', groupId)
+      if (group.adminId === actorId) {
+        const remaining = await databases.listDocuments(DATABASE_ID, 'chat_group_members', [Query.equal('groupId', groupId), Query.limit(1)])
+        if (remaining.documents.length > 0) {
+          const newAdminId = remaining.documents[0].userId
+          await databases.updateDocument(DATABASE_ID, 'chat_groups', groupId, { adminId: newAdminId })
+          await databases.updateDocument(DATABASE_ID, 'chat_group_members', remaining.documents[0].$id, { role: 'admin' })
+        }
+      }
+
+      return json(res, { ok: true, action: 'leave_group', groupId })
+    }
+
+    // 7. INFOS D'UN GROUPE (AVEC DÉTAIL DES MEMBRES SANS LIMITE)
+    if (body.action === 'group_info') {
+      const groupId = cleanText(body.groupId, 'groupId', 64)
+      const membership = await isGroupMember(databases, groupId, actorId)
+      if (!membership) return json(res, { ok: false, code: 'GROUP_ACCESS_DENIED', message: 'Vous ne faites pas partie de ce groupe.' }, 403)
+
+      const group = await databases.getDocument(DATABASE_ID, 'chat_groups', groupId)
+      const membersDoc = await databases.listDocuments(DATABASE_ID, 'chat_group_members', [
+        Query.equal('groupId', groupId),
+        Query.limit(200),
+      ])
+
+      const detailedMembers = await Promise.all(membersDoc.documents.map(async (doc) => {
+        const p = await participantProfile(databases, doc.userId)
+        return {
+          userId: doc.userId,
+          name: p.name,
+          username: p.username,
+          avatarFileId: p.avatarFileId,
+          role: doc.role,
+          joinedAt: doc.joinedAt || doc.$createdAt,
+        }
+      }))
+
+      return json(res, {
+        ok: true,
+        action: 'group_info',
+        group: {
+          id: group.$id,
+          name: group.name,
+          description: group.description || '',
+          adminId: group.adminId,
+          avatarFileId: group.avatarFileId || '',
+          createdAt: group.createdAt || group.$createdAt,
+          memberCount: membersDoc.total,
+          members: detailedMembers,
+        },
+      })
+    }
+
+    // 8. MARQUER COMME LU
     if (body.action === 'read') {
-      const conversationId = cleanText(body.conversationId, 'conversationId', 36)
+      const conversationId = cleanText(body.conversationId, 'conversationId', 64)
+      if (conversationId.startsWith('grp_')) {
+        return json(res, { ok: true, action: 'read', conversationId, markedRead: 0 })
+      }
       const conversation = await databases.getDocument(DATABASE_ID, 'chat_conversations', conversationId)
       return json(res, { ok: true, action: 'read', conversationId, markedRead: await markConversationRead(databases, conversation, actorId) })
     }
 
+    // 9. ENVOI DE MESSAGE (DIRECT OU GROUPE)
     if (body.action === 'send') {
-      const conversationId = cleanText(body.conversationId, 'conversationId', 36)
-      // Un message peut désormais ne porter qu'un fichier : le texte devient
-      // facultatif dès qu'une pièce jointe est présente, et prend alors le nom
-      // du fichier comme contenu — `body` reste un attribut `required` en base.
+      const conversationId = cleanText(body.conversationId, 'conversationId', 64)
       const attachment = typeof body.fileId === 'string' && body.fileId.trim()
         ? await inspectAttachment(storage, body.fileId.trim())
         : null
@@ -381,32 +602,65 @@ export default async ({ req, res, error }) => {
           : ''
       if (!text) return json(res, { ok: false, code: 'MESSAGE_EMPTY', message: 'Saisissez un message ou joignez un fichier.' }, 400)
       const urgent = body.urgent === true
-      const conversation = await databases.getDocument(DATABASE_ID, 'chat_conversations', conversationId)
-      if (![conversation.participantA, conversation.participantB].includes(actorId)) return json(res, { ok: false, code: 'CONVERSATION_DENIED', message: 'Cette conversation ne vous appartient pas.' }, 403)
+      const now = new Date().toISOString()
 
-      // La pièce jointe a été téléversée par l'expéditeur avec ses seules
-      // permissions : Appwrite 1.6.1 refuse qu'un client accorde une permission
-      // à un autre utilisateur — il répond
-      //   « Permissions must be one of: (any, users, user:<soi>, …) », code 401.
-      // Le client ne peut donc *pas* donner la lecture au destinataire, et une
-      // pièce jointe envoyée depuis le mobile restait lisible par son seul
-      // auteur. La Function, elle, agit avec la clé API et peut accorder les
-      // deux. Le faire ici, au moment de l'envoi, évite un fichier orphelin
-      // si l'utilisateur téléverse puis renonce.
+      // --- CAS 1 : MESSAGE DANS UN GROUPE ---
+      if (conversationId.startsWith('grp_')) {
+        const membership = await isGroupMember(databases, conversationId, actorId)
+        if (!membership) return json(res, { ok: false, code: 'GROUP_DENIED', message: 'Vous ne faites pas partie de ce groupe.' }, 403)
+
+        if (attachment) {
+          if (!attachment.permissions.includes(Permission.read(Role.user(actorId)))) {
+            return json(res, { ok: false, code: 'ATTACHMENT_DENIED', message: 'Cette pièce jointe ne vous appartient pas.' }, 403)
+          }
+          await storage.updateFile(
+            CHAT_FILES_BUCKET,
+            attachment.fileId,
+            attachment.fileName,
+            groupAttachmentPermissions(actorId),
+          )
+        }
+
+        const message = await databases.createDocument(DATABASE_ID, 'chat_messages', ID.unique(), {
+          conversationId,
+          senderId: actorId,
+          senderName: currentActor.name || 'Membre',
+          body: text,
+          createdAt: now,
+          readByA: true,
+          readByB: true,
+          fileId: attachment?.fileId || '',
+          fileName: attachment?.fileName || '',
+          fileSize: attachment?.fileSize || 0,
+          fileType: attachment?.fileType || '',
+          kind: attachment?.kind || 'text',
+          urgent,
+        }, [Permission.read(Role.users()), Permission.delete(Role.user(actorId))])
+
+        const groupUpdated = await databases.updateDocument(DATABASE_ID, 'chat_groups', conversationId, {
+          lastMessage: text.slice(0, 5000),
+          lastMessageAt: now,
+          lastSenderName: currentActor.name || '',
+        })
+
+        return json(res, {
+          ok: true,
+          action: 'send',
+          notified: false,
+          conversation: await serializeGroup(databases, groupUpdated, actorId),
+        })
+      }
+
+      // --- CAS 2 : MESSAGE DIRECT (1-TO-1) ---
+      const conversation = await databases.getDocument(DATABASE_ID, 'chat_conversations', conversationId)
+      if (![conversation.participantA, conversation.participantB].includes(actorId)) {
+        return json(res, { ok: false, code: 'CONVERSATION_DENIED', message: 'Cette conversation ne vous appartient pas.' }, 403)
+      }
+
       if (attachment) {
-        // Le fichier doit avoir été déposé par l'expéditeur : sans ce contrôle,
-        // annoncer le `fileId` d'autrui suffirait à se voir accorder `update`
-        // et `delete` dessus, c'est-à-dire à pouvoir supprimer le fichier d'un
-        // autre. Le téléversement n'accordant la lecture qu'à son auteur, sa
-        // présence dans les permissions du fichier l'identifie.
         if (!attachment.permissions.includes(Permission.read(Role.user(actorId)))) {
           return json(res, { ok: false, code: 'ATTACHMENT_DENIED', message: 'Cette pièce jointe ne vous appartient pas.' }, 403)
         }
-        // `node-appwrite` 12 attend `name` puis `permissions`, en positionnels.
-        // Passer un objet `{ permissions }` en troisième position l'envoyait
-        // comme `name` : Appwrite rejetait la requête, et tout envoi de pièce
-        // jointe échouait en `MESSAGING_ERROR`. Un message texte, lui, traverse
-        // ce bloc sans y entrer et n'était donc pas affecté.
         await storage.updateFile(
           CHAT_FILES_BUCKET,
           attachment.fileId,
@@ -415,10 +669,10 @@ export default async ({ req, res, error }) => {
         )
       }
 
-      const now = new Date().toISOString()
       const message = await databases.createDocument(DATABASE_ID, 'chat_messages', ID.unique(), {
         conversationId,
         senderId: actorId,
+        senderName: currentActor.name || '',
         body: text,
         createdAt: now,
         readByA: actorId === conversation.participantA,
@@ -430,13 +684,13 @@ export default async ({ req, res, error }) => {
         kind: attachment?.kind || 'text',
         urgent,
       }, participantPermissions(conversation.participantA, conversation.participantB))
+
       const preview = urgent ? `Urgent — ${text}` : text
       const updated = await databases.updateDocument(DATABASE_ID, 'chat_conversations', conversationId, {
         lastMessage: preview.slice(0, 5000),
         lastMessageAt: now,
       })
-      // La notification ne doit jamais faire échouer l'envoi : le message est
-      // déjà écrit, et une erreur ici priverait l'expéditeur de sa réponse.
+
       let notified = false
       if (urgent) {
         const recipientId = conversation.participantA === actorId ? conversation.participantB : conversation.participantA
@@ -457,10 +711,7 @@ export default async ({ req, res, error }) => {
       return json(res, { ok: true, action: 'send', notified, conversation: await serializeConversation(databases, updated, actorId) })
     }
 
-    // Notifications de l'utilisateur courant. Elles sont lues par la Function
-    // plutôt que directement par le client : la liste reste ainsi filtrée sur
-    // `ownerId`, et un compte ne peut pas remonter celles d'un autre en
-    // falsifiant une requête.
+    // 10. NOTIFICATIONS
     if (body.action === 'notifications') {
       const result = await databases.listDocuments(DATABASE_ID, 'notifications', [
         Query.equal('ownerId', actorId),
@@ -485,7 +736,6 @@ export default async ({ req, res, error }) => {
 
     if (body.action === 'notificationsRead') {
       const notificationId = typeof body.notificationId === 'string' ? body.notificationId.trim() : ''
-      // Sans identifiant, on marque tout comme lu : c'est l'action « tout lire ».
       const queries = [Query.equal('ownerId', actorId), Query.equal('isRead', false), Query.limit(200)]
       if (notificationId) queries.unshift(Query.equal('$id', notificationId))
       const result = await databases.listDocuments(DATABASE_ID, 'notifications', queries)
@@ -502,21 +752,20 @@ export default async ({ req, res, error }) => {
         : "Ce fichier est introuvable dans l'espace de stockage UniFlow."
       return json(res, { ok: false, code: message, message: denial }, 400)
     }
-    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND', 'CONVERSATION_DENIED'].includes(message)) {
+    if (['ACTOR_DENIED', 'CONTACT_NOT_FOUND', 'CONVERSATION_DENIED', 'GROUP_ACCESS_DENIED', 'GROUP_DENIED'].includes(message)) {
       const denial = message === 'CONVERSATION_DENIED'
         ? 'Cette conversation ne vous appartient pas.'
         : message === 'CONTACT_NOT_FOUND'
           ? 'Ce contact est introuvable.'
-          : 'Accès refusé au service de messagerie.'
+          : (message === 'GROUP_ACCESS_DENIED' || message === 'GROUP_DENIED')
+            ? 'Vous ne faites pas partie de ce groupe.'
+            : 'Accès refusé au service de messagerie.'
       return json(res, { ok: false, code: message, message: denial }, 403)
     }
-    // Conversation absente : le document a pu être supprimé, ou l'identifiant
-    // vient d'un cache client périmé. Un 404 explicite vaut mieux que le
-    // « La messagerie Appwrite a échoué » générique, qui n'indique rien.
     if (Number(exception?.code) === 404) {
-      return json(res, { ok: false, code: 'CONVERSATION_NOT_FOUND', message: 'Cette conversation n’existe plus.' }, 404)
+      return json(res, { ok: false, code: 'CONVERSATION_NOT_FOUND', message: 'Cette conversation ou ce groupe n’existe plus.' }, 404)
     }
     error(`messaging action=${body.action || 'unknown'} failed=${message || 'unknown'}`)
-    return json(res, { ok: false, code: 'MESSAGING_ERROR', message: 'La messagerie Appwrite a échoué.' }, 400)
+    return json(res, { ok: false, code: 'MESSAGING_ERROR', message: `La messagerie Appwrite a échoué: ${message}` }, 400)
   }
 }

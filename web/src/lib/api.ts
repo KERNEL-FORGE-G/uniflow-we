@@ -1053,7 +1053,30 @@ export const gradesApi = {
   },
 }
 
-export interface ChatMessage { id: string; from: 'me' | 'them'; text: string; time: string; file?: string }
+export interface ChatMessage {
+  id: string
+  from: 'me' | 'them'
+  text: string
+  time: string
+  file?: string
+  senderId?: string
+  senderName?: string
+  senderUsername?: string
+  senderAvatar?: string
+  fileId?: string
+  fileName?: string
+  kind?: string
+}
+
+export interface ChatGroupMember {
+  userId: string
+  name: string
+  username?: string
+  avatarFileId?: string
+  role: string
+  joinedAt?: string
+}
+
 export interface ChatConversation {
   id: string
   name: string
@@ -1067,8 +1090,14 @@ export interface ChatConversation {
   time: string
   preview: string
   unread: number
+  isGroup?: boolean
+  groupId?: string
+  description?: string
+  adminId?: string
+  memberCount?: number
   messages: ChatMessage[]
 }
+
 export interface ChatContact {
   userId: string
   name: string
@@ -1077,10 +1106,12 @@ export interface ChatContact {
   avatarFileId: string
   role: string
 }
+
 const asChatTime = (value: string) => {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
+
 const asChatConversation = (conversation: Awaited<ReturnType<typeof executeMessagingAction>>['conversation']): ChatConversation => {
   if (!conversation) throw new ApiError(500, 'La messagerie Appwrite a renvoyé une conversation incomplète.')
   return {
@@ -1089,6 +1120,7 @@ const asChatConversation = (conversation: Awaited<ReturnType<typeof executeMessa
     messages: conversation.messages.map((message) => ({ ...message, time: asChatTime(message.time) })),
   }
 }
+
 export const messagingApi = {
   conversations: async (): Promise<ChatConversation[]> => {
     const response = await executeMessagingAction({ action: 'list' })
@@ -1097,10 +1129,31 @@ export const messagingApi = {
   openByEmail: async (email: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', email })).conversation),
   /** Ouvre (ou crée) la conversation avec le compte portant ce pseudo. */
   openByUsername: async (username: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', username })).conversation),
+  openGroup: async (groupId: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', groupId })).conversation),
   /** Recherche des contacts par pseudo ou par nom, pour le sélecteur. */
   searchContacts: async (query: string): Promise<ChatContact[]> => {
     const response = await executeMessagingAction({ action: 'search', query })
     return (response.contacts || []) as ChatContact[]
+  },
+  createGroup: async (name: string, description: string = '', members: string[] = []): Promise<ChatConversation> => {
+    const response = await executeMessagingAction({ action: 'create_group', name, description, members })
+    return asChatConversation(response.group || response.conversation)
+  },
+  addGroupMembers: async (groupId: string, members: string[]): Promise<ChatConversation> => {
+    const response = await executeMessagingAction({ action: 'add_group_members', groupId, members })
+    return asChatConversation(response.group || response.conversation)
+  },
+  leaveGroup: async (groupId: string): Promise<void> => {
+    await executeMessagingAction({ action: 'leave_group', groupId })
+  },
+  groupInfo: async (groupId: string): Promise<{ group: ChatConversation; members: ChatGroupMember[] }> => {
+    const response = await executeMessagingAction({ action: 'group_info', groupId })
+    const g = response.group
+    if (!g) throw new ApiError(500, 'Informations du groupe introuvables.')
+    return {
+      group: asChatConversation(g),
+      members: (g.members || []) as ChatGroupMember[],
+    }
   },
   sendMessage: async (convId: string, text: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'send', conversationId: convId, text })).conversation),
   markRead: async (convId: string): Promise<number> => (await executeMessagingAction({ action: 'read', conversationId: convId })).markedRead || 0,

@@ -317,21 +317,26 @@ export type MessagingContact = {
 }
 
 export type MessagingRequest = {
-  action: 'list' | 'open' | 'send' | 'read' | 'search'
+  action: 'list' | 'open' | 'send' | 'read' | 'search' | 'create_group' | 'add_group_members' | 'leave_group' | 'group_info'
   /** Référent principal de la messagerie : le pseudo. */
   username?: string
   /** Conservé pour les clients qui adressent encore un contact par email. */
   email?: string
   conversationId?: string
+  groupId?: string
   text?: string
   /** Terme de recherche de l'action `search`. */
   query?: string
+  name?: string
+  description?: string
+  avatarFileId?: string
+  members?: string[]
 }
 
 export type MessagingConversation = {
   id: string
   name: string
-  role: UniFlowRole
+  role: UniFlowRole | 'GROUP'
   email: string
   username?: string
   avatarFileId?: string
@@ -339,16 +344,37 @@ export type MessagingConversation = {
   time: string
   preview: string
   unread: number
-  messages: Array<{ id: string; from: 'me' | 'them'; text: string; time: string; senderId: string }>
+  isGroup?: boolean
+  groupId?: string
+  description?: string
+  adminId?: string
+  memberCount?: number
+  messages: Array<{
+    id: string
+    from: 'me' | 'them'
+    text: string
+    time: string
+    senderId?: string
+    senderName?: string
+    senderUsername?: string
+    senderAvatar?: string
+    fileId?: string
+    fileName?: string
+    fileSize?: number
+    fileType?: string
+    kind?: string
+    urgent?: boolean
+  }>
 }
 
 export type MessagingResponse = {
   ok: boolean
   code?: string
   message?: string
-  action?: 'list' | 'open' | 'send' | 'read' | 'search'
+  action?: 'list' | 'open' | 'send' | 'read' | 'search' | 'create_group' | 'add_group_members' | 'leave_group' | 'group_info'
   conversations?: MessagingConversation[]
   conversation?: MessagingConversation
+  group?: MessagingConversation & { members?: Array<{ userId: string; name: string; username?: string; avatarFileId?: string; role: string }> }
   conversationId?: string
   markedRead?: number
   contacts?: MessagingContact[]
