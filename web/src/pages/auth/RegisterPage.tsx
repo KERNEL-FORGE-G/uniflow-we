@@ -15,60 +15,6 @@ const INDEPENDENT_PROFILES: { value: IndependentRole; label: string; hint: strin
   { value: 'TEACHER', label: 'Enseignant / Tuteur', hint: 'Je publie des ateliers, devoirs et ressources', icon: Presentation },
 ]
 
-const DEFAULT_UNIVERSITIES = [
-  { code: 'UY1', name: 'Université de Yaoundé I' },
-  { code: 'UD', name: 'Université de Douala' },
-  { code: 'UDS', name: 'Université de Dschang' },
-  { code: 'UN', name: 'Université de Ngaoundéré' },
-  { code: 'UM', name: 'Université de Maroua' },
-  { code: 'UB', name: 'University of Buea' },
-  { code: 'UBa', name: 'The University of Bamenda' },
-  { code: 'UBert', name: 'Université de Bertoua' },
-  { code: 'UEb', name: 'Université d’Ebolowa' },
-]
-
-const DEFAULT_FACULTIES: Record<string, { code: string; name: string }[]> = {
-  UY1: [
-    { code: 'FS', name: 'Faculté des Sciences (FS)' },
-    { code: 'FALSH', name: 'Faculté des Arts, Lettres et Sciences Humaines' },
-    { code: 'FMSB', name: 'Faculté de Médecine et Sciences Biomédicales' },
-    { code: 'POLYTECH', name: 'École Nationale Supérieure Polytechnique' },
-    { code: 'ENS', name: 'École Normale Supérieure' },
-  ],
-  DEFAULT: [
-    { code: 'FS', name: 'Faculté des Sciences' },
-    { code: 'FSJP', name: 'Faculté des Sciences Juridiques et Politiques' },
-    { code: 'FSEG', name: 'Faculté des Sciences Économiques et de Gestion' },
-    { code: 'TECH', name: 'Institut Universitaire de Technologie' },
-  ],
-}
-
-const DEFAULT_PROGRAMS: Record<string, { code: string; name: string }[]> = {
-  FS: [
-    { code: 'ICT4D', name: 'ICT for Development (ICT4D)' },
-    { code: 'INFO', name: 'Informatique Fondamentale' },
-    { code: 'MATH', name: 'Mathématiques' },
-    { code: 'PHYS', name: 'Physique' },
-    { code: 'CHIM', name: 'Chimie' },
-    { code: 'BIO', name: 'Biosciences' },
-  ],
-  DEFAULT: [
-    { code: 'INFO', name: 'Informatique & Numérique' },
-    { code: 'GEST', name: 'Gestion & Économie' },
-    { code: 'DROIT', name: 'Droit Privé / Public' },
-    { code: 'GENIE', name: 'Ingénierie & Technologie' },
-  ],
-}
-
-const ACADEMIC_LEVELS = [
-  { code: 'L1', label: 'Licence 1 (L1)' },
-  { code: 'L2', label: 'Licence 2 (L2)' },
-  { code: 'L3', label: 'Licence 3 (L3)' },
-  { code: 'M1', label: 'Master 1 (M1)' },
-  { code: 'M2', label: 'Master 2 (M2)' },
-  { code: 'DOC', label: 'Doctorat (PhD)' },
-]
-
 const COUNTRIES = [
   { code: 'CM', label: 'Cameroun' },
   { code: 'FR', label: 'France' },
@@ -100,28 +46,50 @@ export default function RegisterPage() {
   const [countryCode, setCountryCode] = useState('CM')
   const [freeLevel, setFreeLevel] = useState('')
 
-  // Données hiérarchiques académiques
-  const [selectedUniv, setSelectedUniv] = useState('Université de Yaoundé I')
-  const [selectedUnivCode, setSelectedUnivCode] = useState('UY1')
-  const [selectedFaculty, setSelectedFaculty] = useState('Faculté des Sciences (FS)')
-  const [selectedFacultyCode, setSelectedFacultyCode] = useState('FS')
-  const [selectedProgram, setSelectedProgram] = useState('ICT for Development (ICT4D)')
-  const [selectedLevel, setSelectedLevel] = useState('L1')
+  // Données hiérarchiques académiques chargées 100% depuis la BD Appwrite
+  const [selectedUniv, setSelectedUniv] = useState('')
+  const [selectedUnivCode, setSelectedUnivCode] = useState('')
+  const [selectedFaculty, setSelectedFaculty] = useState('')
+  const [selectedFacultyCode, setSelectedFacultyCode] = useState('')
+  const [selectedProgram, setSelectedProgram] = useState('')
+  const [selectedProgramCode, setSelectedProgramCode] = useState('')
+  const [selectedLevel, setSelectedLevel] = useState('')
 
   const [step, setStep] = useState<1 | 2>(1)
 
-  // Référentiel en ligne Appwrite avec repli local
-  const { data: dbUniversities } = useUniversities()
-  const { data: dbFaculties } = useFaculties(selectedUnivCode)
-  const { data: dbPrograms } = usePrograms(selectedUnivCode, selectedFacultyCode)
+  // Référentiel en ligne Appwrite lu directement depuis la base
+  const { data: dbUniversities, isLoading: loadingUnivs } = useUniversities()
+  const { data: dbFaculties, isLoading: loadingFacs } = useFaculties(selectedUnivCode)
+  const { data: dbPrograms, isLoading: loadingProgs } = usePrograms(selectedUnivCode, selectedFacultyCode)
 
-  const universitiesList = dbUniversities?.length ? dbUniversities : DEFAULT_UNIVERSITIES
-  const facultiesList = dbFaculties?.length
-    ? dbFaculties
-    : (DEFAULT_FACULTIES[selectedUnivCode] || DEFAULT_FACULTIES.DEFAULT)
-  const programsList = dbPrograms?.length
-    ? dbPrograms
-    : (DEFAULT_PROGRAMS[selectedFacultyCode] || DEFAULT_PROGRAMS.DEFAULT)
+  const universitiesList = dbUniversities || []
+  const facultiesList = dbFaculties || []
+  const programsList = dbPrograms || []
+
+  // Synchronisation dynamique dès que la BD répond
+  if (universitiesList.length > 0 && !selectedUnivCode) {
+    const firstU = universitiesList[0]
+    setSelectedUniv(firstU.name)
+    setSelectedUnivCode(firstU.code)
+  }
+
+  if (facultiesList.length > 0 && (!selectedFacultyCode || !facultiesList.some(f => f.code === selectedFacultyCode))) {
+    const firstF = facultiesList[0]
+    setSelectedFaculty(firstF.name)
+    setSelectedFacultyCode(firstF.code)
+  }
+
+  if (programsList.length > 0 && (!selectedProgramCode || !programsList.some(p => p.code === selectedProgramCode))) {
+    const firstP = programsList[0]
+    setSelectedProgram(firstP.name)
+    setSelectedProgramCode(firstP.code)
+    if (firstP.levels?.length) {
+      setSelectedLevel(firstP.levels[0])
+    }
+  }
+
+  const currentProgramObj = programsList.find(p => p.code === selectedProgramCode || p.name === selectedProgram)
+  const availableLevels = currentProgramObj?.levels?.length ? currentProgramObj.levels : ['L1', 'L2', 'L3']
 
   const handleNext = (e: FormEvent) => {
     e.preventDefault()
@@ -435,26 +403,35 @@ export default function RegisterPage() {
                 <select
                   id="reg-prog"
                   value={selectedProgram}
-                  onChange={(e) => setSelectedProgram(e.target.value)}
+                  onChange={(e) => {
+                    const p = programsList.find((x) => x.name === e.target.value || x.code === e.target.value)
+                    setSelectedProgram(e.target.value)
+                    if (p?.code) {
+                      setSelectedProgramCode(p.code)
+                      if (p.levels?.length) {
+                        setSelectedLevel(p.levels[0])
+                      }
+                    }
+                  }}
                   className={authInputClass}
                 >
                   {programsList.map((p) => (
-                    <option key={p.code || p.name} value={p.name}>{p.name}</option>
+                    <option key={p.code || p.name} value={p.name}>{p.name} ({p.code})</option>
                   ))}
                 </select>
               </div>
 
-              {/* 4. Choix du Niveau */}
+              {/* 4. Choix du Niveau (issu de la BD pour cette filière) */}
               <div>
-                <label htmlFor="reg-level" className={authLabelClass}>4. Niveau actuel</label>
+                <label htmlFor="reg-level" className={authLabelClass}>4. Niveau d’études (ouvert pour cette filière)</label>
                 <select
                   id="reg-level"
                   value={selectedLevel}
                   onChange={(e) => setSelectedLevel(e.target.value)}
                   className={authInputClass}
                 >
-                  {ACADEMIC_LEVELS.map((lvl) => (
-                    <option key={lvl.code} value={lvl.code}>{lvl.label}</option>
+                  {availableLevels.map((lvl) => (
+                    <option key={lvl} value={lvl}>{lvl}</option>
                   ))}
                 </select>
               </div>
