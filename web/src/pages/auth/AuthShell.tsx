@@ -119,7 +119,7 @@ export function AuthShell({
       </aside>
 
       {/* Panneau droit : Formulaire (7 colonnes sur 12) */}
-      <main className="flex items-center justify-center p-6 sm:p-10 lg:col-span-7 bg-[#F8FAFC]">
+      <main className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-8 lg:p-10 lg:col-span-7 bg-[#F8FAFC] overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0, transition: { duration: 0.4, ease: EASE } }}
@@ -138,16 +138,16 @@ export function AuthShell({
             </div>
           </Link>
 
-          <div className="rounded-3xl bg-white p-7 sm:p-9 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100">
+          <div className="rounded-3xl bg-white p-6 sm:p-8 shadow-xl shadow-slate-200/60 ring-1 ring-slate-100">
             <header className="mb-6">
               {Icon && (
-                <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] text-white shadow-md shadow-blue-900/20">
-                  <Icon className="h-6 w-6" aria-hidden="true" />
+                <span className="mb-3.5 inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#2563EB] text-white shadow-md shadow-blue-900/20">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
               )}
               {eyebrow && <p className="text-xs font-bold uppercase tracking-wider text-[#0D9488] mb-1">{eyebrow}</p>}
               <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{title}</h1>
-              <p className="mt-2 text-sm leading-6 text-slate-500">{subtitle}</p>
+              <p className="mt-1.5 text-sm leading-6 text-slate-500">{subtitle}</p>
             </header>
 
             {children}
@@ -164,7 +164,7 @@ export function AuthShell({
             </div>
           </div>
 
-          <p className="mt-6 text-center text-xs text-slate-400">
+          <p className="mt-5 text-center text-xs text-slate-400">
             © 2026 UniFlow · KERNEL FORGE · Conforme LMD & Architecture Zéro Perte
           </p>
         </motion.div>
@@ -174,5 +174,5 @@ export function AuthShell({
 }
 
 export const authLabelClass = 'mb-1.5 block text-xs font-bold text-slate-700'
-export const authInputClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#1E3A8A] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/20'
-export const authButtonClass = 'flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#1E3A8A] to-[#0D9488] py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-900/15 transition-all hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E3A8A] disabled:cursor-not-allowed disabled:opacity-60'
+export const authInputClass = 'w-full rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm font-medium text-slate-900 outline-none transition-all placeholder:text-slate-400 focus:border-[#1E3A8A] focus:bg-white focus-visible:ring-2 focus-visible:ring-[#1E3A8A]/20'
+export const authButtonClass = 'flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#1E3A8A] to-[#0D9488] py-3 text-sm font-bold text-white shadow-md shadow-blue-900/15 transition-all hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1E3A8A] disabled:cursor-not-allowed disabled:opacity-60'

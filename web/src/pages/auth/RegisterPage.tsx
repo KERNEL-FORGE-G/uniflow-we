@@ -159,12 +159,12 @@ export default function RegisterPage() {
       title="Créer un compte UniFlow"
       subtitle={
         step === 1
-          ? 'Choisissez votre type de compte et renseignez vos informations d’identité.'
+          ? 'Choisissez votre espace et renseignez vos informations d’identité.'
           : category === 'UNIVERSITY'
-          ? 'Précisez votre cursus académique (université, filière, niveau) et choisissez votre mot de passe.'
-          : 'Finalisez votre profil d’apprentissage indépendant avec un mot de passe sécurisé.'
+          ? 'Précisez votre cursus académique et sécurisez votre accès.'
+          : 'Finalisez votre profil d’apprentissage avec un mot de passe sécurisé.'
       }
-      maxWidth="max-w-xl"
+      maxWidth="max-w-2xl"
       illustrationSrc="/illustrations/hero.jpg"
       footer={
         <>
@@ -178,16 +178,28 @@ export default function RegisterPage() {
         </>
       }
     >
-      {/* Barre de progression des étapes */}
-      <div className="mb-6 flex gap-2" aria-hidden="true">
-        <span className="h-1.5 flex-1 rounded-full bg-[#1E3A8A]" />
-        <span className={`h-1.5 flex-1 rounded-full transition-colors ${step === 2 ? 'bg-[#0D9488]' : 'bg-slate-200'}`} />
+      {/* Barre de progression des étapes avec libellés */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between text-xs font-bold mb-2">
+          <span className="inline-flex items-center gap-1.5 text-[#1E3A8A]">
+            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1E3A8A] text-[10px] text-white">1</span>
+            <span>Identité & Espace</span>
+          </span>
+          <span className={`inline-flex items-center gap-1.5 ${step === 2 ? 'text-[#0D9488]' : 'text-slate-400'}`}>
+            <span className={`flex h-5 w-5 items-center justify-center rounded-full text-[10px] ${step === 2 ? 'bg-[#0D9488] text-white' : 'bg-slate-200 text-slate-500'}`}>2</span>
+            <span>Cursus & Sécurité</span>
+          </span>
+        </div>
+        <div className="flex gap-2" aria-hidden="true">
+          <span className="h-1.5 flex-1 rounded-full bg-[#1E3A8A]" />
+          <span className={`h-1.5 flex-1 rounded-full transition-colors ${step === 2 ? 'bg-[#0D9488]' : 'bg-slate-200'}`} />
+        </div>
       </div>
 
       <ActionResultSlot result={error ? { status: 'error', title: 'Inscription impossible', description: error } : null} />
 
       {step === 1 ? (
-        <form onSubmit={handleNext} className="space-y-5">
+        <form onSubmit={handleNext} className="space-y-4">
           {/* ── Sélecteur de type de compte : Académique vs Indépendant ── */}
           <fieldset>
             <legend className={authLabelClass}>Type d’espace souhaité</legend>
@@ -195,74 +207,91 @@ export default function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setCategory('UNIVERSITY')}
-                className={`relative flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all ${
+                className={`group relative flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all ${
                   category === 'UNIVERSITY'
-                    ? 'border-[#1E3A8A] bg-blue-50/70 shadow-sm ring-1 ring-[#1E3A8A]'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-[#1E3A8A] bg-blue-50/70 shadow-sm ring-1 ring-[#1E3A8A]/30'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
                 }`}
               >
-                <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[#1E3A8A] text-white">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                  category === 'UNIVERSITY' ? 'bg-[#1E3A8A] text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                }`}>
                   <Building2 className="h-5 w-5" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black text-slate-900">Compte Académique</span>
-                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">Université</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-sm font-bold text-slate-900">Espace Académique</span>
+                    {category === 'UNIVERSITY' && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#1E3A8A] text-white">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500 leading-snug">
+                    UY1 & Facultés · Inscription Étudiant
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-slate-600 leading-snug">
-                  Rattaché à une université (UY1, Douala, Dschang...). Inscription réservée aux <strong>Étudiants</strong>.
-                </p>
               </button>
 
               <button
                 type="button"
                 onClick={() => setCategory('PERSONAL')}
-                className={`relative flex flex-col items-start rounded-2xl border-2 p-4 text-left transition-all ${
+                className={`group relative flex items-start gap-3 rounded-2xl border-2 p-3.5 text-left transition-all ${
                   category === 'PERSONAL'
-                    ? 'border-[#0D9488] bg-teal-50/70 shadow-sm ring-1 ring-[#0D9488]'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'border-[#0D9488] bg-teal-50/70 shadow-sm ring-1 ring-[#0D9488]/30'
+                    : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50/50'
                 }`}
               >
-                <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[#0D9488] text-white">
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors ${
+                  category === 'PERSONAL' ? 'bg-[#0D9488] text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-slate-200'
+                }`}>
                   <Globe className="h-5 w-5" />
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black text-slate-900">Compte Indépendant</span>
-                  <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-bold text-blue-800">Autonome</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center justify-between gap-1">
+                    <span className="text-sm font-bold text-slate-900">Espace Indépendant</span>
+                    {category === 'PERSONAL' && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-[#0D9488] text-white">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-xs text-slate-500 leading-snug">
+                    Autonome · Tout cursus & auditeur libre
+                  </p>
                 </div>
-                <p className="mt-1 text-xs text-slate-600 leading-snug">
-                  Non relié à une université. Ouvert aux <strong>Étudiants</strong>, <strong>Délégués</strong> et <strong>Enseignants</strong>.
-                </p>
               </button>
             </div>
           </fieldset>
 
           {/* Note explicative pour le compte académique */}
           {category === 'UNIVERSITY' ? (
-            <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-3.5 text-xs text-blue-900 leading-relaxed flex items-start gap-2.5">
-              <Sparkles className="h-4 w-4 shrink-0 text-[#1E3A8A] mt-0.5" />
-              <div>
-                <strong>Information enseignants & administration :</strong> Les comptes pour enseignants et administration universitaire sont créés directement depuis le <strong>panel d'administration</strong> de votre faculté.
-              </div>
+            <div className="rounded-xl border border-blue-200/80 bg-blue-50/60 p-3 text-xs text-blue-900 leading-relaxed flex items-center gap-2.5">
+              <Sparkles className="h-4 w-4 shrink-0 text-[#1E3A8A]" />
+              <span>
+                <strong>Information enseignants & administration :</strong> Les accès enseignants et administration universitaire sont créés directement depuis le panel de gestion de votre faculté.
+              </span>
             </div>
           ) : (
             /* Choix du profil pour les comptes indépendants */
             <fieldset>
               <legend className={authLabelClass}>Votre profil indépendant</legend>
-              <div className="grid gap-2 sm:grid-cols-3">
-                {INDEPENDENT_PROFILES.map(({ value, label, hint, icon: Icon }) => {
+              <div className="grid grid-cols-3 gap-2.5">
+                {INDEPENDENT_PROFILES.map(({ value, label, icon: Icon }) => {
                   const active = indepRole === value
                   return (
                     <button
                       key={value}
                       type="button"
                       onClick={() => setIndepRole(value)}
-                      className={`rounded-2xl border-2 p-3 text-left transition-all ${
-                        active ? 'border-[#0D9488] bg-teal-50/60 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300'
+                      className={`flex flex-col items-center justify-center rounded-xl border-2 p-2.5 text-center transition-all ${
+                        active
+                          ? 'border-[#0D9488] bg-teal-50/70 text-slate-900 shadow-sm'
+                          : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
                       }`}
                     >
-                      <Icon className={`mb-1.5 h-5 w-5 ${active ? 'text-[#0D9488]' : 'text-slate-400'}`} />
-                      <span className="block text-xs font-bold text-slate-900">{label}</span>
-                      <span className="mt-0.5 block text-[10px] text-slate-500 leading-tight">{hint}</span>
+                      <Icon className={`h-5 w-5 ${active ? 'text-[#0D9488]' : 'text-slate-400'}`} />
+                      <span className="mt-1 text-xs font-bold">{label.replace(' indépendant', '')}</span>
                     </button>
                   )
                 })}
@@ -271,7 +300,7 @@ export default function RegisterPage() {
           )}
 
           {/* Informations personnelles */}
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3.5 sm:grid-cols-2">
             <div>
               <label htmlFor="reg-first" className={authLabelClass}>Prénom</label>
               <input
@@ -300,41 +329,43 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div>
-            <label htmlFor="reg-email" className={authLabelClass}>
-              Adresse email {category === 'UNIVERSITY' ? '(universitaire ou personnelle)' : ''}
-            </label>
-            <input
-              id="reg-email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="votre.nom@facsciences-uy1.cm ou gmail.com"
-              className={authInputClass}
-            />
-          </div>
-
-          {category === 'UNIVERSITY' && (
+          <div className={category === 'UNIVERSITY' ? 'grid gap-3.5 sm:grid-cols-2' : ''}>
             <div>
-              <label htmlFor="reg-matricule" className={authLabelClass}>
-                Matricule étudiant officiel
+              <label htmlFor="reg-email" className={authLabelClass}>
+                Adresse email {category === 'UNIVERSITY' ? '(universitaire ou perso)' : ''}
               </label>
               <input
-                id="reg-matricule"
-                type="text"
-                value={matricule}
-                onChange={(e) => setMatricule(e.target.value.toUpperCase())}
+                id="reg-email"
+                type="email"
+                autoComplete="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Ex : 22U1234 ou 21S4567"
+                placeholder="nom@exemple.cm"
                 className={authInputClass}
               />
             </div>
-          )}
+
+            {category === 'UNIVERSITY' && (
+              <div>
+                <label htmlFor="reg-matricule" className={authLabelClass}>
+                  Matricule étudiant officiel
+                </label>
+                <input
+                  id="reg-matricule"
+                  type="text"
+                  value={matricule}
+                  onChange={(e) => setMatricule(e.target.value.toUpperCase())}
+                  required
+                  placeholder="Ex : 22U1234"
+                  className={authInputClass}
+                />
+              </div>
+            )}
+          </div>
 
           <button type="submit" className={authButtonClass}>
-            <span>Continuer vers l’étape 2</span>
+            <span>Continuer vers le cursus & mot de passe</span>
             <ArrowRight className="h-4 w-4" />
           </button>
         </form>
@@ -347,98 +378,100 @@ export default function RegisterPage() {
             className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E3A8A] hover:underline"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Modifier le type ou l’identité</span>
+            <span>Modifier l’identité ou le type d’espace</span>
           </button>
 
           {category === 'UNIVERSITY' ? (
             <div className="space-y-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
               <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-[#1E3A8A]" />
+                <GraduationCap className="h-4 w-4 text-[#1E3A8A]" />
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                  Affiliation Académique
+                  Affiliation Académique (Données Officielles UY1)
                 </h3>
               </div>
 
-              {/* 1. Choix de l'Université */}
-              <div>
-                <label htmlFor="reg-univ" className={authLabelClass}>1. Université</label>
-                <select
-                  id="reg-univ"
-                  value={selectedUniv}
-                  onChange={(e) => {
-                    const u = universitiesList.find((x) => x.name === e.target.value)
-                    setSelectedUniv(e.target.value)
-                    if (u?.code) setSelectedUnivCode(u.code)
-                  }}
-                  className={authInputClass}
-                >
-                  {universitiesList.map((u) => (
-                    <option key={u.code || u.name} value={u.name}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                {/* 1. Choix de l'Université */}
+                <div>
+                  <label htmlFor="reg-univ" className={authLabelClass}>1. Université</label>
+                  <select
+                    id="reg-univ"
+                    value={selectedUniv}
+                    onChange={(e) => {
+                      const u = universitiesList.find((x) => x.name === e.target.value)
+                      setSelectedUniv(e.target.value)
+                      if (u?.code) setSelectedUnivCode(u.code)
+                    }}
+                    className={authInputClass}
+                  >
+                    {universitiesList.map((u) => (
+                      <option key={u.code || u.name} value={u.name}>{u.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* 2. Choix de la Faculté */}
-              <div>
-                <label htmlFor="reg-fac" className={authLabelClass}>2. Faculté ou Établissement</label>
-                <select
-                  id="reg-fac"
-                  value={selectedFaculty}
-                  onChange={(e) => {
-                    const f = facultiesList.find((x) => x.name === e.target.value)
-                    setSelectedFaculty(e.target.value)
-                    if (f?.code) setSelectedFacultyCode(f.code)
-                  }}
-                  className={authInputClass}
-                >
-                  {facultiesList.map((f) => (
-                    <option key={f.code || f.name} value={f.name}>{f.name}</option>
-                  ))}
-                </select>
-              </div>
+                {/* 2. Choix de la Faculté */}
+                <div>
+                  <label htmlFor="reg-fac" className={authLabelClass}>2. Faculté / Établissement</label>
+                  <select
+                    id="reg-fac"
+                    value={selectedFaculty}
+                    onChange={(e) => {
+                      const f = facultiesList.find((x) => x.name === e.target.value)
+                      setSelectedFaculty(e.target.value)
+                      if (f?.code) setSelectedFacultyCode(f.code)
+                    }}
+                    className={authInputClass}
+                  >
+                    {facultiesList.map((f) => (
+                      <option key={f.code || f.name} value={f.name}>{f.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* 3. Choix de la Filière */}
-              <div>
-                <label htmlFor="reg-prog" className={authLabelClass}>3. Filière / Programme d’études</label>
-                <select
-                  id="reg-prog"
-                  value={selectedProgram}
-                  onChange={(e) => {
-                    const p = programsList.find((x) => x.name === e.target.value || x.code === e.target.value)
-                    setSelectedProgram(e.target.value)
-                    if (p?.code) {
-                      setSelectedProgramCode(p.code)
-                      if (p.levels?.length) {
-                        setSelectedLevel(p.levels[0])
+                {/* 3. Choix de la Filière */}
+                <div>
+                  <label htmlFor="reg-prog" className={authLabelClass}>3. Filière / Programme</label>
+                  <select
+                    id="reg-prog"
+                    value={selectedProgram}
+                    onChange={(e) => {
+                      const p = programsList.find((x) => x.name === e.target.value || x.code === e.target.value)
+                      setSelectedProgram(e.target.value)
+                      if (p?.code) {
+                        setSelectedProgramCode(p.code)
+                        if (p.levels?.length) {
+                          setSelectedLevel(p.levels[0])
+                        }
                       }
-                    }
-                  }}
-                  className={authInputClass}
-                >
-                  {programsList.map((p) => (
-                    <option key={p.code || p.name} value={p.name}>{p.name} ({p.code})</option>
-                  ))}
-                </select>
-              </div>
+                    }}
+                    className={authInputClass}
+                  >
+                    {programsList.map((p) => (
+                      <option key={p.code || p.name} value={p.name}>{p.name} ({p.code})</option>
+                    ))}
+                  </select>
+                </div>
 
-              {/* 4. Choix du Niveau (issu de la BD pour cette filière) */}
-              <div>
-                <label htmlFor="reg-level" className={authLabelClass}>4. Niveau d’études (ouvert pour cette filière)</label>
-                <select
-                  id="reg-level"
-                  value={selectedLevel}
-                  onChange={(e) => setSelectedLevel(e.target.value)}
-                  className={authInputClass}
-                >
-                  {availableLevels.map((lvl) => (
-                    <option key={lvl} value={lvl}>{lvl}</option>
-                  ))}
-                </select>
+                {/* 4. Choix du Niveau */}
+                <div>
+                  <label htmlFor="reg-level" className={authLabelClass}>4. Niveau d’études (ouvert)</label>
+                  <select
+                    id="reg-level"
+                    value={selectedLevel}
+                    onChange={(e) => setSelectedLevel(e.target.value)}
+                    className={authInputClass}
+                  >
+                    {availableLevels.map((lvl) => (
+                      <option key={lvl} value={lvl}>{lvl}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
           ) : (
             /* Informations complémentaires pour compte indépendant */
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3.5 sm:grid-cols-2">
               <div>
                 <label htmlFor="reg-country" className={authLabelClass}>Pays de résidence</label>
                 <select
@@ -454,7 +487,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <label htmlFor="reg-free-level" className={authLabelClass}>
-                  Niveau d’études ou domaine <span className="font-medium text-slate-400">(facultatif)</span>
+                  Niveau / Domaine <span className="font-normal text-slate-400">(facultatif)</span>
                 </label>
                 <input
                   id="reg-free-level"
@@ -468,42 +501,45 @@ export default function RegisterPage() {
             </div>
           )}
 
-          {/* Mot de passe et confirmation */}
-          <div>
-            <label htmlFor="reg-pwd" className={authLabelClass}>Mot de passe (8 caractères minimum)</label>
-            <div className="relative">
+          {/* Mot de passe et confirmation côte à côte */}
+          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+            <div>
+              <label htmlFor="reg-pwd" className={authLabelClass}>Mot de passe (≥ 8 caractères)</label>
+              <div className="relative">
+                <input
+                  id="reg-pwd"
+                  type={showPwd ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="••••••••••••"
+                  className={`${authInputClass} pr-10`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPwd((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="reg-confirm" className={authLabelClass}>Confirmez le mot de passe</label>
               <input
-                id="reg-pwd"
+                id="reg-confirm"
                 type={showPwd ? 'text' : 'password'}
                 autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 required
                 placeholder="••••••••••••"
-                className={`${authInputClass} pr-12`}
+                className={authInputClass}
               />
-              <button
-                type="button"
-                onClick={() => setShowPwd((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 rounded-md text-slate-400 hover:text-slate-600"
-              >
-                {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
             </div>
-          </div>
-
-          <div>
-            <label htmlFor="reg-confirm" className={authLabelClass}>Confirmez le mot de passe</label>
-            <input
-              id="reg-confirm"
-              type={showPwd ? 'text' : 'password'}
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-              placeholder="••••••••••••"
-              className={authInputClass}
-            />
           </div>
 
           <button type="submit" disabled={loading} className={authButtonClass}>
