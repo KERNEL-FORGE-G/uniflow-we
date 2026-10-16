@@ -103,8 +103,12 @@ class _AssistantScreenState extends State<AssistantScreen> {
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.auto_awesome_rounded, color: Color(0xFF67E8F9), size: 24),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.asset(
+                        'assets/mascot/uni_copilot_3d.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -148,36 +152,60 @@ class _AssistantScreenState extends State<AssistantScreen> {
 
                   return Align(
                     alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      constraints: BoxConstraints(
-                        maxWidth: MediaQuery.of(context).size.width * 0.65,
-                      ),
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: isUser ? const Color(0xFF1E3A8A) : Colors.white,
-                        borderRadius: BorderRadius.only(
-                          topLeft: const Radius.circular(18),
-                          topRight: const Radius.circular(18),
-                          bottomLeft: Radius.circular(isUser ? 18 : 4),
-                          bottomRight: Radius.circular(isUser ? 4 : 18),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        if (!isUser) ...[
+                          const CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Colors.transparent,
+                            backgroundImage: AssetImage('assets/mascot/uni_copilot_3d.png'),
+                          ),
+                          const SizedBox(width: 8),
+                        ],
+                        Flexible(
+                          child: Container(
+                            constraints: BoxConstraints(
+                              maxWidth: MediaQuery.of(context).size.width * 0.65,
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: isUser ? const Color(0xFF1E3A8A) : Colors.white,
+                              borderRadius: BorderRadius.only(
+                                topLeft: const Radius.circular(18),
+                                topRight: const Radius.circular(18),
+                                bottomLeft: Radius.circular(isUser ? 18 : 4),
+                                bottomRight: Radius.circular(isUser ? 4 : 18),
+                              ),
+                              border: isUser ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.02),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Text(
+                              msg['content'] ?? '',
+                              style: TextStyle(
+                                color: isUser ? Colors.white : const Color(0xFF0F172A),
+                                fontSize: 13,
+                                height: 1.5,
+                              ),
+                            ),
+                          ),
                         ),
-                        border: isUser ? null : Border.all(color: const Color(0xFFE2E8F0)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.02),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
+                        if (isUser) ...[
+                          const SizedBox(width: 8),
+                          const CircleAvatar(
+                            radius: 16,
+                            backgroundColor: Color(0xFF1E3A8A),
+                            backgroundImage: AssetImage('assets/team/avatar_aliya_anime.jpg'),
                           ),
                         ],
-                      ),
-                      child: Text(
-                        msg['content'] ?? '',
-                        style: TextStyle(
-                          color: isUser ? Colors.white : const Color(0xFF0F172A),
-                          fontSize: 13,
-                          height: 1.5,
-                        ),
-                      ),
+                      ],
                     ),
                   );
                 },

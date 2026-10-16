@@ -191,9 +191,9 @@ class _DesktopShellState extends State<DesktopShell> {
                   child: Row(
                     children: [
                       CircleAvatar(
-                        radius: 18,
+                        radius: 20,
                         backgroundColor: Color(0xFF1E3A8A),
-                        child: Text('UY', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                        backgroundImage: AssetImage('assets/mascot/uni_copilot_3d.png'),
                       ),
                       SizedBox(width: 10),
                       Expanded(

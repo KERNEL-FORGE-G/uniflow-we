@@ -220,9 +220,29 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                       style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                     ),
                                     const SizedBox(height: 6),
-                                    Text(
-                                      course.teacher,
-                                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                    Row(
+                                      children: [
+                                        CircleAvatar(
+                                          radius: 9,
+                                          backgroundImage: AssetImage(
+                                            index % 4 == 0
+                                                ? 'assets/team/avatar_marcel_anime.jpg'
+                                                : index % 4 == 1
+                                                    ? 'assets/team/avatar_judith_anime.jpg'
+                                                    : index % 4 == 2
+                                                        ? 'assets/team/avatar_juvenal_anime.jpg'
+                                                        : 'assets/team/avatar_ravel_founder.jpg',
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Expanded(
+                                          child: Text(
+                                            course.teacher,
+                                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                     const SizedBox(height: 12),
 

@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { IconTile, UniIcon, type UniIconName } from '../components/ui/UniIcon'
-import { Avatar } from '../components/ui/Avatar'
+import { Avatar, OFFICIAL_PRESET_AVATARS } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
 import PushNotificationControl from '../components/PushNotificationControl'
@@ -337,6 +337,63 @@ export default function SettingsPage() {
                       <UniIcon name="success" weight="fill" size={14} /> Photo de profil enregistrée.
                     </p>
                   )}
+                </div>
+              </div>
+
+              {/* Galerie d'Avatars Officiels UniFlow & Mascottes 3D */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">✨</span>
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                        Choisir une Mascotte Uni 3D ou un Avatar Stylisé
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Cliquez sur un avatar officiel pour l'appliquer instantanément à l'ensemble de votre compte
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-5 sm:grid-cols-8 gap-2.5 pt-1">
+                  {OFFICIAL_PRESET_AVATARS.map((preset) => {
+                    const isSelected = user.avatarFileId === preset.url || (avatarPreview === preset.url)
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          if (authUser) {
+                            setAuthUser({ ...authUser, avatarFileId: preset.url })
+                          }
+                          setAvatarPreview(preset.url)
+                          setAvatarSaved(true)
+                          setTimeout(() => setAvatarSaved(false), 3000)
+                        }}
+                        className={`group relative flex flex-col items-center p-1.5 rounded-xl transition-all duration-200 cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-100/80 ring-2 ring-[#1E3A8A] shadow-xs scale-105'
+                            : 'bg-white hover:bg-slate-100 hover:scale-105 border border-slate-200/80'
+                        }`}
+                        title={preset.label}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.label}
+                          className="h-11 w-11 rounded-full object-cover shadow-2xs group-hover:shadow-xs"
+                        />
+                        <span className="mt-1 text-[9px] font-bold text-slate-700 truncate w-full text-center">
+                          {preset.label.split('·')[0].trim()}
+                        </span>
+                        {isSelected && (
+                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#1E3A8A] text-white text-[9px]">
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
 

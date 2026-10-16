@@ -84,23 +84,34 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.2)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.verified_rounded, size: 14, color: Color(0xFF0D9488)),
-                      SizedBox(width: 6),
-                      Text(
-                        '100% Z-Library API',
-                        style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D9488)),
+                Row(
+                  children: [
+                    Image.asset(
+                      'assets/illustrations/course_study_hero_3d.png',
+                      height: 44,
+                      width: 44,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.2)),
                       ),
-                    ],
-                  ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.verified_rounded, size: 14, color: Color(0xFF0D9488)),
+                          SizedBox(width: 6),
+                          Text(
+                            '100% Z-Library API',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D9488)),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -192,16 +203,27 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Couverture
-          Container(
-            width: 70,
-            height: 95,
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: const Color(0xFFE2E8F0)),
-            ),
-            child: const Center(
-              child: Icon(Icons.book_rounded, color: Color(0xFF1E3A8A), size: 32),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              width: 70,
+              height: 95,
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: book.coverUrl.isNotEmpty
+                  ? Image.network(
+                      book.coverUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Center(
+                        child: Icon(Icons.menu_book_rounded, color: Color(0xFF1E3A8A), size: 30),
+                      ),
+                    )
+                  : const Center(
+                      child: Icon(Icons.book_rounded, color: Color(0xFF1E3A8A), size: 30),
+                    ),
             ),
           ),
           const SizedBox(width: 14),

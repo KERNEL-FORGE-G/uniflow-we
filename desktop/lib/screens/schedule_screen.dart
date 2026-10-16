@@ -42,17 +42,28 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     ),
                   ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.2)),
-                  ),
-                  child: Text(
-                    '${sampleScheduleSlots.length} séances au programme',
-                    style: const TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold, fontSize: 12),
-                  ),
+                Row(
+                  children: [
+                    Image.asset(
+                      'assets/illustrations/schedule_calendar_hero_3d.png',
+                      height: 44,
+                      width: 44,
+                      fit: BoxFit.contain,
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.2)),
+                      ),
+                      child: Text(
+                        '${sampleScheduleSlots.length} séances au programme',
+                        style: const TextStyle(color: Color(0xFF1E3A8A), fontWeight: FontWeight.bold, fontSize: 12),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

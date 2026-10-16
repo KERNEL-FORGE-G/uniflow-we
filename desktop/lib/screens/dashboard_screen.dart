@@ -108,13 +108,24 @@ class DashboardScreen extends StatelessWidget {
                   Container(
                     width: 140,
                     height: 140,
+                    padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.1),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                    child: const Center(
-                      child: Icon(Icons.laptop_chromebook_rounded, color: Colors.white, size: 64),
+                    child: Center(
+                      child: Image.asset(
+                        'assets/mascot/uni_copilot_3d.png',
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 ],
