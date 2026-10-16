@@ -12,12 +12,9 @@ import 'uni_mascot.dart';
 
 /// Uni, l'assistant conversationnel d'UniFlow, côté mobile.
 ///
-/// Le modèle (Gemini 3.1 Flash-Lite, repli Mistral) n'est jamais appelé
-/// depuis l'application : tout passe par le service `/assistant` de la
-/// Function `uniflow-api`, qui porte les clés et connaît le profil du compte
-/// (filière, niveau, UE, emploi du temps). Le client n'envoie que
-/// l'historique des tours (`messages`), la plateforme (`mobile`) et
-/// l'intention vocale.
+/// Le modèle (API GROQ Llama 3.3 / GPT-OSS 120B) est interrogé en priorité
+/// avec haute vélocité et sécurité. Le client envoie l'historique des tours
+/// (`messages`), la plateforme (`mobile`) et l'intention vocale.
 
 class UniTurn {
   final String role; // 'user' | 'assistant'
@@ -435,7 +432,7 @@ class _UniAssistantSheetState extends ConsumerState<UniAssistantSheet> {
                 ? 'Réfléchit…'
                 : state.error != null
                     ? 'Quelque chose a coincé'
-                    : 'En ligne · ${state.provider == 'mistral' ? 'Mistral' : 'Gemini 3.1 Flash-Lite'}',
+                    : 'En ligne · Propulsé par GROQ',
             onClear: state.turns.length > 1
                 ? () {
                     ref.read(uniAssistantProvider.notifier).clear();

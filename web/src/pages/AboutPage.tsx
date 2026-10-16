@@ -112,7 +112,7 @@ const stack = [
  {
  icon: Bot,
  title: 'Assistant Uni',
- items: ['Gemini 3.1 Flash-Lite', 'Repli Mistral', 'Clés côté serveur uniquement', 'Contexte : profil, UE, emploi du temps'],
+ items: ['Inférence GROQ ultra-rapide', 'Llama 3.3 70B & GPT-OSS 120B', 'Clés côté serveur sécurisées', 'Contexte : profil, UE, emploi du temps'],
  color: 'bg-amber-50 text-amber-700',
  },
 ]

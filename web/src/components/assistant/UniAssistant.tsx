@@ -299,7 +299,7 @@ export function UniAssistant() {
                 <p className="truncate text-sm font-bold leading-tight">{ASSISTANT_NAME} · Assistant UniFlow</p>
                 <p className="flex items-center gap-1 text-[11px] text-cyan-100">
                   <span className={`inline-block h-1.5 w-1.5 rounded-full ${pending ? 'bg-amber-300' : speaking ? 'bg-cyan-200' : 'bg-emerald-300'}`} aria-hidden="true" />
-                  {pending ? 'Réfléchit…' : speaking ? 'Parle…' : guest ? 'Guide visiteur · connectez-vous pour plus' : 'En ligne · Gemini 3.1 Flash-Lite'}
+                  {pending ? 'Réfléchit…' : speaking ? 'Parle…' : guest ? 'Guide visiteur · connectez-vous pour plus' : 'En ligne · Propulsé par GROQ'}
                 </p>
               </div>
               {canSpeak && (

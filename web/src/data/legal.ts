@@ -10,7 +10,7 @@ import { CONTACT_EMAIL_PRIMARY, CONTACT_EMAIL_SECONDARY, CONTACT_PHONE_DISPLAY, 
  * `legal_texts.dart`) pour qu'un utilisateur lise la même chose partout.
  *
  * Les faits énoncés viennent de l'architecture réelle : Appwrite Cloud
- * (Francfort), Vercel pour le site, Gemini / Mistral pour l'assistant Flo,
+ * (Francfort), Vercel pour le site, API GROQ pour l'assistant Uni,
  * facturation par WhatsApp, suppression de compte depuis les réglages.
  */
 
@@ -73,10 +73,10 @@ export const TERMS: LegalDocument = {
     },
     {
       id: 'assistant',
-      title: '5. Assistant Flo',
+      title: '5. Assistant Uni',
       paragraphs: [
-        "Flo est un assistant conversationnel fondé sur un modèle de langage (Gemini 3.1 Flash-Lite, avec Mistral en secours). Ses réponses sont produites automatiquement à partir de votre profil et de votre emploi du temps : elles sont indicatives et ne remplacent ni une décision de l'administration ni un document officiel.",
-        "Ne confiez à Flo aucune donnée sensible (mot de passe, données de santé, coordonnées bancaires). Les échanges sont transmis au fournisseur du modèle pour produire la réponse (voir la politique de confidentialité).",
+        "Uni est un assistant conversationnel fondé sur les modèles d'intelligence artificielle haute performance via l'API GROQ (Llama 3.3, GPT-OSS 120B). Ses réponses sont produites automatiquement à partir de votre profil et de votre emploi du temps : elles sont indicatives et ne remplacent ni une décision de l'administration ni un document officiel.",
+        "Ne confiez à Uni aucune donnée sensible (mot de passe, données de santé, coordonnées bancaires). Les échanges sont transmis de manière chiffrée au service d'inférence GROQ pour produire la réponse (voir la politique de confidentialité).",
       ],
     },
     {
@@ -154,7 +154,7 @@ export const PRIVACY: LegalDocument = {
       bullets: [
         'Appwrite Cloud (région Francfort, Allemagne) : base de données, authentification, fichiers, fonctions serveur.',
         'Vercel : hébergement du site web.',
-        "Google (API Gemini) et Mistral AI : génération des réponses de l'assistant Flo. Seuls le message, l'historique de la conversation en cours et un résumé de votre profil académique (rôle, filière, niveau, séances du jour) leur sont transmis ; jamais votre mot de passe ni vos notes.",
+        "GROQ Inc. (API GROQ) : génération instantanée des réponses de l'assistant Uni (modèles open weights haute performance). Seuls le message, l'historique de la conversation en cours et un résumé de votre profil académique (rôle, filière, niveau, séances du jour) leur sont transmis ; jamais votre mot de passe ni vos notes.",
         'Meta (WhatsApp) : lorsque vous choisissez de nous écrire par WhatsApp, la conversation est régie par les conditions de WhatsApp.',
       ],
     },
