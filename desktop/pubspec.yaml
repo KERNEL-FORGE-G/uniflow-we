@@ -34,6 +34,11 @@ flutter:
     - assets/assistant/
     - assets/logos/
     - assets/onboarding/
+    - assets/badges/
+    - assets/illustrations/
+    - assets/emplois_du_temps/
+    - assets/team/
+    - assets/icons/nav/
 
 msix_config:
   display_name: "UniFlow - Campus Connecté"
