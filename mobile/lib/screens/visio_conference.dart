@@ -512,8 +512,8 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(
-                            selectedTab == 0 ? Icons.wifi : Icons.language,
+                          PhosphorIcon(
+                            selectedTab == 0 ? PhosphorIconsBold.broadcast : PhosphorIconsBold.globe,
                             size: 16,
                             color: selectedTab == 0 ? const Color(0xFF10B981) : AppColors.primaryBlue,
                           ),
@@ -527,7 +527,7 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.copy, size: 16, color: AppColors.primaryBlue),
+                            icon: const PhosphorIcon(PhosphorIconsBold.clipboardText, size: 16, color: AppColors.primaryBlue),
                             tooltip: 'Copier le lien',
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: activeUrl));
@@ -852,7 +852,7 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
 
   Widget _buildTopSessionBar(bool isDesktop) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: isDesktop ? 16 : 10, vertical: isDesktop ? 12 : 8),
       decoration: const BoxDecoration(
         color: AppColors.cardWhite,
         border: Border(bottom: BorderSide(color: AppColors.inputBorder, width: 1)),
@@ -860,7 +860,7 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: const Color(0xFFEF4444).withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
@@ -870,18 +870,18 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
-                  width: 8,
-                  height: 8,
+                  width: 7,
+                  height: 7,
                   decoration: const BoxDecoration(
                     color: Color(0xFFEF4444),
                     shape: BoxShape.circle,
                   ),
                 ),
-                const SizedBox(width: 6),
-                const Text(
-                  'EN DIRECT',
-                  style: TextStyle(
-                    fontSize: 11,
+                const SizedBox(width: 5),
+                Text(
+                  isDesktop ? 'EN DIRECT' : 'DIRECT',
+                  style: const TextStyle(
+                    fontSize: 10,
                     fontWeight: FontWeight.w800,
                     color: Color(0xFFDC2626),
                     letterSpacing: 0.5,
@@ -890,57 +890,26 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(
-                        _courseTitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textPrimary,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (_isCompanionMode) ...[
-                      const SizedBox(width: 6),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.teal.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(6),
-                          border: Border.all(color: AppColors.teal),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const PhosphorIcon(PhosphorIconsFill.deviceMobile, size: 11, color: AppColors.teal),
-                            const SizedBox(width: 3),
-                            Text(
-                              _syncedDesktopName != null
-                                  ? 'Point Réception Android · $_syncedDesktopName'
-                                  : 'Point Réception Android',
-                              style: const TextStyle(fontSize: 9.5, fontWeight: FontWeight.w800, color: AppColors.teal),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ],
+                Text(
+                  _courseTitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 2),
                 Text(
                   _roomSubtitle,
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 10,
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w500,
                   ),
@@ -950,93 +919,95 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
               ],
             ),
           ),
-          const SizedBox(width: 8),
-          // Bouton Générer/Afficher QR Meet (pour Desktop ou animateur)
+          const SizedBox(width: 6),
+          // Bouton Générer/Afficher QR Meet
           IconButton(
             tooltip: 'Afficher le QR code du salon Meet',
             onPressed: _showMeetQrDialog,
-            icon: const PhosphorIcon(PhosphorIconsBold.qrCode, size: 20, color: AppColors.primaryBlue),
+            icon: const PhosphorIcon(PhosphorIconsBold.qrCode, size: 18, color: AppColors.primaryBlue),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             style: IconButton.styleFrom(
               backgroundColor: AppColors.primary50,
-              padding: const EdgeInsets.all(8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 4),
           // Bouton Scanner QR Meet (Point de réception pour Android)
           IconButton(
             tooltip: 'Scanner le QR Meet d\'un Desktop',
             onPressed: _openMeetQrScanner,
-            icon: const PhosphorIcon(PhosphorIconsBold.scan, size: 20, color: Color(0xFF0D9488)),
+            icon: const PhosphorIcon(PhosphorIconsBold.scan, size: 18, color: Color(0xFF0D9488)),
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             style: IconButton.styleFrom(
               backgroundColor: const Color(0xFF0D9488).withValues(alpha: 0.10),
-              padding: const EdgeInsets.all(8),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
             ),
           ),
-          const SizedBox(width: 6),
-          // Badge Relais Local LAN / Serveur embarqué
-          Consumer(
-            builder: (context, ref, _) {
-              final srv = ref.watch(localVisioServerProvider);
-              return InkWell(
-                onTap: _showMeetQrDialog,
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: srv.isRunning
-                        ? const Color(0xFF10B981).withValues(alpha: 0.12)
-                        : Colors.grey.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
+          if (isDesktop) ...[
+            const SizedBox(width: 6),
+            // Badge Relais Local LAN / Serveur embarqué
+            Consumer(
+              builder: (context, ref, _) {
+                final srv = ref.watch(localVisioServerProvider);
+                return InkWell(
+                  onTap: _showMeetQrDialog,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                    decoration: BoxDecoration(
                       color: srv.isRunning
-                          ? const Color(0xFF10B981).withValues(alpha: 0.4)
-                          : Colors.grey.withValues(alpha: 0.3),
+                          ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                          : Colors.grey.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: srv.isRunning
+                            ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                            : Colors.grey.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        PhosphorIcon(
+                          srv.isRunning ? PhosphorIconsFill.broadcast : PhosphorIconsDuotone.broadcast,
+                          size: 14,
+                          color: srv.isRunning ? const Color(0xFF10B981) : Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          srv.isRunning ? 'Relais LAN 0ms :${srv.port}' : 'LAN OFF',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: srv.isRunning ? const Color(0xFF059669) : Colors.grey,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      PhosphorIcon(
-                        srv.isRunning ? PhosphorIconsFill.broadcast : PhosphorIconsDuotone.broadcast,
-                        size: 14,
-                        color: srv.isRunning ? const Color(0xFF10B981) : Colors.grey,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        srv.isRunning
-                            ? (isDesktop ? 'Relais LAN 0ms :${srv.port}' : 'LAN :${srv.port}')
-                            : 'LAN OFF',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: srv.isRunning ? const Color(0xFF059669) : Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(width: 6),
+                );
+              },
+            ),
+          ],
+          const SizedBox(width: 4),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
             decoration: BoxDecoration(
               color: AppColors.primary50,
-              borderRadius: BorderRadius.circular(10),
+              borderRadius: BorderRadius.circular(8),
               border: Border.all(color: AppColors.primaryBlue.withValues(alpha: 0.2)),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const PhosphorIcon(PhosphorIconsFill.usersThree, size: 14, color: AppColors.primaryBlue),
-                const SizedBox(width: 4),
+                const PhosphorIcon(PhosphorIconsFill.usersThree, size: 12, color: AppColors.primaryBlue),
+                const SizedBox(width: 3),
                 Text(
                   isDesktop ? '${_participants.length} en ligne' : '${_participants.length}',
                   style: const TextStyle(
-                    fontSize: 11.5,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w700,
                     color: AppColors.primaryBlue,
                   ),
