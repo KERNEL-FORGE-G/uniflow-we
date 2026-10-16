@@ -2,6 +2,7 @@
 
 > **Collectif KERNEL FORGE** (`https://kernelforge.codes`)  
 > **Portail Web Production** : [`https://uniflow.kernelforge.codes`](https://uniflow.kernelforge.codes)  
+> **Présentation Officielle du Projet (PDF 16:9)** : [`UniFlow_Presentation_Officielle_KERNEL_FORGE.pdf`](./UniFlow_Presentation_Officielle_KERNEL_FORGE.pdf)  
 > **Serveur Appwrite Auto-Hébergé (v2.3.0)** : `https://vps.kernelforge.codes/v1` (Projet : `uniflow`)  
 > **Microsoft Store (Desktop Windows)** : [`Uniflow work` — `9NGZKFGK98K6`](https://apps.microsoft.com/detail/9NGZKFGK98K6) (`ms-windows-store://pdp/?productid=9NGZKFGK98K6`)
 

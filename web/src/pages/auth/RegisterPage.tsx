@@ -159,12 +159,12 @@ export default function RegisterPage() {
       title="Créer un compte UniFlow"
       subtitle={
         step === 1
-          ? 'Choisissez votre espace et renseignez vos informations d’identité.'
+          ? 'Choisissez votre univers de travail et renseignez votre identité.'
           : category === 'UNIVERSITY'
-          ? 'Précisez votre cursus académique et sécurisez votre accès.'
+          ? 'Précisez votre affiliation académique UY1 et sécurisez votre accès.'
           : 'Finalisez votre profil d’apprentissage avec un mot de passe sécurisé.'
       }
-      maxWidth="max-w-2xl"
+      maxWidth="max-w-xl"
       illustrationSrc="/illustrations/hero.jpg"
       footer={
         <>
@@ -300,7 +300,7 @@ export default function RegisterPage() {
           )}
 
           {/* Informations personnelles */}
-          <div className="grid gap-3.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="reg-first" className={authLabelClass}>Prénom</label>
               <input
@@ -329,42 +329,43 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <div className={category === 'UNIVERSITY' ? 'grid gap-3.5 sm:grid-cols-2' : ''}>
-            <div>
-              <label htmlFor="reg-email" className={authLabelClass}>
-                Adresse email {category === 'UNIVERSITY' ? '(universitaire ou perso)' : ''}
-              </label>
-              <input
-                id="reg-email"
-                type="email"
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="nom@exemple.cm"
-                className={authInputClass}
-              />
-            </div>
-
-            {category === 'UNIVERSITY' && (
-              <div>
-                <label htmlFor="reg-matricule" className={authLabelClass}>
-                  Matricule étudiant officiel
-                </label>
-                <input
-                  id="reg-matricule"
-                  type="text"
-                  value={matricule}
-                  onChange={(e) => setMatricule(e.target.value.toUpperCase())}
-                  required
-                  placeholder="Ex : 22U1234"
-                  className={authInputClass}
-                />
-              </div>
-            )}
+          <div>
+            <label htmlFor="reg-email" className={authLabelClass}>
+              Adresse email {category === 'UNIVERSITY' ? '(institutionnelle ou personnelle)' : ''}
+            </label>
+            <input
+              id="reg-email"
+              type="email"
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="votre.email@exemple.cm"
+              className={authInputClass}
+            />
           </div>
 
-          <button type="submit" className={authButtonClass}>
+          {category === 'UNIVERSITY' && (
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label htmlFor="reg-matricule" className={authLabelClass.replace('mb-1.5', '')}>
+                  Matricule étudiant officiel
+                </label>
+                <span className="text-[11px] font-semibold text-[#1E3A8A]">Requis pour les présences</span>
+              </div>
+              <input
+                id="reg-matricule"
+                type="text"
+                value={matricule}
+                onChange={(e) => setMatricule(e.target.value.toUpperCase())}
+                required
+                placeholder="Ex : 22U1234"
+                className={`${authInputClass} font-mono uppercase tracking-wider`}
+              />
+            </div>
+          )}
+
+          <button type="submit" className={`${authButtonClass} mt-2`}>
             <span>Continuer vers le cursus & mot de passe</span>
             <ArrowRight className="h-4 w-4" />
           </button>
@@ -375,7 +376,7 @@ export default function RegisterPage() {
           <button
             type="button"
             onClick={() => setStep(1)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E3A8A] hover:underline"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#1E3A8A] hover:underline mb-1"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span>Modifier l’identité ou le type d’espace</span>
@@ -383,14 +384,19 @@ export default function RegisterPage() {
 
           {category === 'UNIVERSITY' ? (
             <div className="space-y-3.5 rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="h-4 w-4 text-[#1E3A8A]" />
-                <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
-                  Affiliation Académique (Données Officielles UY1)
-                </h3>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <GraduationCap className="h-4 w-4 text-[#1E3A8A]" />
+                  <h3 className="text-xs font-extrabold uppercase tracking-wider text-slate-800">
+                    Affiliation Académique (Données Officielles UY1)
+                  </h3>
+                </div>
+                <span className="text-[10px] font-bold text-teal-700 bg-teal-50 border border-teal-200/80 px-2 py-0.5 rounded-md">
+                  Vérifié UY1
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {/* 1. Choix de l'Université */}
                 <div>
                   <label htmlFor="reg-univ" className={authLabelClass}>1. Université</label>
@@ -428,50 +434,59 @@ export default function RegisterPage() {
                     ))}
                   </select>
                 </div>
+              </div>
 
-                {/* 3. Choix de la Filière */}
-                <div>
-                  <label htmlFor="reg-prog" className={authLabelClass}>3. Filière / Programme</label>
-                  <select
-                    id="reg-prog"
-                    value={selectedProgram}
-                    onChange={(e) => {
-                      const p = programsList.find((x) => x.name === e.target.value || x.code === e.target.value)
-                      setSelectedProgram(e.target.value)
-                      if (p?.code) {
-                        setSelectedProgramCode(p.code)
-                        if (p.levels?.length) {
-                          setSelectedLevel(p.levels[0])
-                        }
+              {/* 3. Choix de la Filière */}
+              <div>
+                <label htmlFor="reg-prog" className={authLabelClass}>3. Filière / Programme académique</label>
+                <select
+                  id="reg-prog"
+                  value={selectedProgram}
+                  onChange={(e) => {
+                    const p = programsList.find((x) => x.name === e.target.value || x.code === e.target.value)
+                    setSelectedProgram(e.target.value)
+                    if (p?.code) {
+                      setSelectedProgramCode(p.code)
+                      if (p.levels?.length) {
+                        setSelectedLevel(p.levels[0])
                       }
-                    }}
-                    className={authInputClass}
-                  >
-                    {programsList.map((p) => (
-                      <option key={p.code || p.name} value={p.name}>{p.name} ({p.code})</option>
-                    ))}
-                  </select>
-                </div>
+                    }
+                  }}
+                  className={authInputClass}
+                >
+                  {programsList.map((p) => (
+                    <option key={p.code || p.name} value={p.name}>{p.name} ({p.code})</option>
+                  ))}
+                </select>
+              </div>
 
-                {/* 4. Choix du Niveau */}
-                <div>
-                  <label htmlFor="reg-level" className={authLabelClass}>4. Niveau d’études (ouvert)</label>
-                  <select
-                    id="reg-level"
-                    value={selectedLevel}
-                    onChange={(e) => setSelectedLevel(e.target.value)}
-                    className={authInputClass}
-                  >
-                    {availableLevels.map((lvl) => (
-                      <option key={lvl} value={lvl}>{lvl}</option>
-                    ))}
-                  </select>
+              {/* 4. Choix du Niveau avec pilules interactives */}
+              <div>
+                <label className={authLabelClass}>4. Niveau d’études</label>
+                <div className="flex flex-wrap gap-2">
+                  {availableLevels.map((lvl) => {
+                    const isSelected = selectedLevel === lvl
+                    return (
+                      <button
+                        key={lvl}
+                        type="button"
+                        onClick={() => setSelectedLevel(lvl)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                          isSelected
+                            ? 'bg-[#1E3A8A] text-white border-[#1E3A8A] shadow-xs'
+                            : 'bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                        }`}
+                      >
+                        {lvl}
+                      </button>
+                    )
+                  })}
                 </div>
               </div>
             </div>
           ) : (
             /* Informations complémentaires pour compte indépendant */
-            <div className="grid gap-3.5 sm:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div>
                 <label htmlFor="reg-country" className={authLabelClass}>Pays de résidence</label>
                 <select
@@ -502,7 +517,7 @@ export default function RegisterPage() {
           )}
 
           {/* Mot de passe et confirmation côte à côte */}
-          <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label htmlFor="reg-pwd" className={authLabelClass}>Mot de passe (≥ 8 caractères)</label>
               <div className="relative">
@@ -521,6 +536,7 @@ export default function RegisterPage() {
                   onClick={() => setShowPwd((v) => !v)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
                   tabIndex={-1}
+                  aria-label={showPwd ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                 >
                   {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
@@ -542,7 +558,7 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          <button type="submit" disabled={loading} className={authButtonClass}>
+          <button type="submit" disabled={loading} className={`${authButtonClass} mt-2`}>
             {loading ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
