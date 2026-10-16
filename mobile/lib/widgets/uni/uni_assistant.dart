@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/appwrite_provider.dart';
 import '../../providers/providers.dart';
+import '../../services/groq_service.dart';
 import '../phosphor.dart';
 import 'uni_mascot.dart';
 
@@ -136,6 +137,32 @@ class UniAssistantController extends StateNotifier<UniAssistantState> {
           .reversed
           .map((t) => {'role': t.role, 'content': t.content})
           .toList();
+
+      // Tentative prioritaire ultra-rapide via l'API Groq officielle UniFlow (Llama 3.3 70B)
+      String? groqReply;
+      try {
+        groqReply = await GroqService.ask(history);
+      } catch (_) {
+        groqReply = null;
+      }
+
+      if (groqReply != null && groqReply.trim().isNotEmpty) {
+        state = state.copyWith(
+          turns: [
+            ...state.turns,
+            UniTurn(role: 'assistant', content: groqReply.trim()),
+          ],
+          pending: false,
+          provider: 'groq (llama-3.3-70b)',
+          suggestions: const [
+            'Quel est mon emploi du temps ?',
+            'Explique-moi les crédits LMD',
+            'Qui a créé UniFlow ?',
+          ],
+        );
+        return;
+      }
+
       final data = await _call({'action': 'chat', 'messages': history, 'voice': voice});
       if (data['ok'] != true) {
         throw StateError((data['message'] as String?) ?? 'Uni n’a pas pu répondre.');
