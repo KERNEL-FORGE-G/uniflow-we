@@ -8,8 +8,12 @@ import { AuthShell, authButtonClass, authInputClass } from './AuthShell'
 
 export default function ResetPasswordPage() {
   const [params] = useSearchParams()
-  const userId = params.get('userId') ?? ''
-  const secret = params.get('secret') ?? ''
+  const windowParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const hashSearch = typeof window !== 'undefined' && window.location.hash.includes('?')
+    ? new URLSearchParams(window.location.hash.substring(window.location.hash.indexOf('?')))
+    : null
+  const userId = params.get('userId') || windowParams?.get('userId') || hashSearch?.get('userId') || ''
+  const secret = params.get('secret') || windowParams?.get('secret') || hashSearch?.get('secret') || ''
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [show, setShow] = useState(false)
