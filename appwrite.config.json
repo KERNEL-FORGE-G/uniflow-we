@@ -1,11 +1,16 @@
 {
   "projectId": "uniflow",
   "projectName": "UniFlow — Plateforme Académique & Apprentissage Autonome",
-  "endpoint": "https://fra.cloud.appwrite.io/v1",
+  "endpoint": "https://vps.kernelforge.codes/v1",
   "databases": [
     {
       "$id": "uniflow",
       "name": "UniFlow Core Database",
+      "enabled": true
+    },
+    {
+      "$id": "independant",
+      "name": "UniFlow Indépendant Database",
       "enabled": true
     }
   ],
