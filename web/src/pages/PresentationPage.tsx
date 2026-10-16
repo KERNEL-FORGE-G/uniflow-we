@@ -4,7 +4,7 @@ import {
   Play, CheckCircle, ArrowRight, GraduationCap, UserCheck, 
   Megaphone, Settings, Microscope, Wifi, Smartphone, Lock, Lightbulb, 
   BookOpen, ListChecks, Target, ChevronLeft, ChevronRight, Share2, 
-  Sparkles, Monitor, Youtube, Film
+  Sparkles, Monitor, Youtube, Film, FileDown, FileText
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { MascotDialogue } from '../components/mascot/ArchlordMascot'
@@ -128,6 +128,29 @@ export default function PresentationPage() {
           <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed">
             Parcourez les présentations vidéo, le tutoriel complet de la plateforme et la démonstration des innovations IoT.
           </p>
+
+          {/* Action Dossier Présentation Officielle PDF */}
+          <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="/docs/UniFlow_Presentation_Officielle.pdf"
+              download="UniFlow_Presentation_Officielle_KERNEL_FORGE.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#0d9488] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 hover:opacity-95 hover:shadow-xl transition-all active:scale-95"
+            >
+              <FileDown className="h-4 w-4" />
+              Télécharger la Présentation Officielle (PDF)
+            </a>
+            <a
+              href="/docs/UniFlow_Presentation_Officielle.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-xs"
+            >
+              <FileText className="h-4 w-4 text-[#1e3a8a] dark:text-blue-400" />
+              Consulter en ligne (7 Slides 16:9)
+            </a>
+          </div>
 
           <div className="mx-auto mt-8 max-w-xl">
             <MascotDialogue
@@ -398,6 +421,16 @@ export default function PresentationPage() {
             >
               Accéder à l'application <ArrowRight className="h-4 w-4" />
             </Link>
+            <a
+              href="/docs/UniFlow_Presentation_Officielle.pdf"
+              download="UniFlow_Presentation_Officielle_KERNEL_FORGE.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/40 bg-white/10 px-7 py-3.5 text-sm font-bold text-white hover:bg-white/20 transition-all active:scale-95 shadow-md"
+            >
+              <FileDown className="h-4 w-4" />
+              Télécharger le Dossier PDF
+            </a>
             <Link 
               to="/sentinelle" 
               className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-7 py-3.5 text-sm font-bold text-white hover:bg-white/20 transition-all active:scale-95"
