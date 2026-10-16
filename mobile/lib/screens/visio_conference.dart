@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import '../providers/providers.dart';
+import '../services/local_visio_server.dart';
 import '../theme/app_theme.dart';
 import '../widgets/phosphor.dart';
 
@@ -161,6 +162,12 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
   @override
   void initState() {
     super.initState();
+    Future.microtask(() {
+      ref.read(localVisioServerProvider.notifier).startServer(
+            roomId: _roomId,
+            roomTitle: _courseTitle,
+          );
+    });
     _participants = [
       const VisioParticipant(
         id: 'p1',
@@ -310,106 +317,243 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
   }
 
   void _showMeetQrDialog() {
-    final payload = jsonEncode({
-      'protocol': 'uniflow-meet',
-      'version': '1.0',
-      'roomId': _roomId,
-      'title': _courseTitle,
-      'location': _roomSubtitle,
-      'host': 'Pr. Jean-Paul Ndiaye',
-      'hostMatricule': 'ENS-UY1-014',
-      'lanRelay': '192.168.1.100:8443',
-      'timestamp': DateTime.now().millisecondsSinceEpoch,
-    });
+    final serverState = ref.read(localVisioServerProvider);
+    final lanUrl = serverState.lanUrl;
+    final webUrl = serverState.webFallbackUrl;
+
+    int selectedTab = 0;
 
     showDialog<void>(
       context: context,
       builder: (ctx) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.primary50,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: PhosphorIcon(PhosphorIconsBold.qrCode, color: AppColors.primaryBlue, size: 22),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text(
-                  'QR d\'accès Meet & Synchronisation',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
-                ),
-              ),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Scannez ce QR Code avec l\'application Android UniFlow pour rejoindre le cours ou coupler votre téléphone en caméra/micro HD déporté sans fil.',
-                style: TextStyle(fontSize: 12.5, color: AppColors.textSecondary, height: 1.4),
-              ),
-              const SizedBox(height: 16),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
+        return StatefulBuilder(
+          builder: (dialogCtx, setDialogState) {
+            final activeUrl = selectedTab == 0 ? lanUrl : (selectedTab == 1 ? webUrl : lanUrl);
+            final activeTitle = selectedTab == 0
+                ? 'Accès Invité LAN (Sans Internet 0 ms)'
+                : (selectedTab == 1 ? 'Accès Web Public (Internet)' : 'Couplage App Android');
+
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              titlePadding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+              title: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary50,
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                  ],
-                ),
-                child: SizedBox(
-                  width: 220,
-                  height: 220,
-                  child: QrImageView(
-                    data: payload,
-                    version: QrVersions.auto,
-                    size: 220,
-                    eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.primaryBlue),
-                    dataModuleStyle: const QrDataModuleStyle(
-                      dataModuleShape: QrDataModuleShape.square,
-                      color: AppColors.textPrimary,
+                    child: const PhosphorIcon(PhosphorIconsBold.broadcast, color: AppColors.primaryBlue, size: 24),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Partager la Visioconférence',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                        ),
+                        Text(
+                          'Optimisé pour les invités sans application',
+                          style: TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.inputBorder),
-                ),
-                child: Row(
+              content: SizedBox(
+                width: 380,
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    PhosphorIcon(PhosphorIconsFill.shieldCheck, size: 16, color: const Color(0xFF10B981)),
-                    const SizedBox(width: 6),
+                    // Sélecteur d'onglets
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.inputBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => setDialogState(() => selectedTab = 0),
+                              borderRadius: BorderRadius.circular(9),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: selectedTab == 0 ? AppColors.cardWhite : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(9),
+                                  boxShadow: selectedTab == 0
+                                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                      : null,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '⚡ LAN Wi-Fi',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: selectedTab == 0 ? FontWeight.w800 : FontWeight.w600,
+                                      color: selectedTab == 0 ? AppColors.primaryBlue : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => setDialogState(() => selectedTab = 1),
+                              borderRadius: BorderRadius.circular(9),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: selectedTab == 1 ? AppColors.cardWhite : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(9),
+                                  boxShadow: selectedTab == 1
+                                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                      : null,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '🌐 Web Internet',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: selectedTab == 1 ? FontWeight.w800 : FontWeight.w600,
+                                      color: selectedTab == 1 ? AppColors.primaryBlue : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () => setDialogState(() => selectedTab = 2),
+                              borderRadius: BorderRadius.circular(9),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(vertical: 7),
+                                decoration: BoxDecoration(
+                                  color: selectedTab == 2 ? AppColors.cardWhite : Colors.transparent,
+                                  borderRadius: BorderRadius.circular(9),
+                                  boxShadow: selectedTab == 2
+                                      ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4)]
+                                      : null,
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '📱 App Android',
+                                    style: TextStyle(
+                                      fontSize: 11.5,
+                                      fontWeight: selectedTab == 2 ? FontWeight.w800 : FontWeight.w600,
+                                      color: selectedTab == 2 ? AppColors.primaryBlue : AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 14),
                     Text(
-                      'Session : $_roomId',
-                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'monospace'),
+                      selectedTab == 0
+                          ? 'Les participants connectés au même Wi-Fi/LAN ouvrent ce lien dans leur navigateur (Chrome, Safari, Firefox). Aucune application à installer !'
+                          : (selectedTab == 1
+                              ? 'Pour les participants distants disposant d\'un accès Internet général sur le portail Web UniFlow.'
+                              : 'Scannez ce QR avec l\'application mobile UniFlow pour coupler la caméra HD sans fil.'),
+                      style: const TextStyle(fontSize: 12, color: AppColors.textSecondary, height: 1.35),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 14),
+                    // QR Code
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.08),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: SizedBox(
+                        width: 190,
+                        height: 190,
+                        child: QrImageView(
+                          data: activeUrl,
+                          version: QrVersions.auto,
+                          size: 190,
+                          eyeStyle: const QrEyeStyle(eyeShape: QrEyeShape.square, color: AppColors.primaryBlue),
+                          dataModuleStyle: const QrDataModuleStyle(
+                            dataModuleShape: QrDataModuleShape.square,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    // Lien cliquable / copiable
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.inputBorder),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            selectedTab == 0 ? Icons.wifi : Icons.language,
+                            size: 16,
+                            color: selectedTab == 0 ? const Color(0xFF10B981) : AppColors.primaryBlue,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              activeUrl,
+                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, fontFamily: 'monospace'),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.copy, size: 16, color: AppColors.primaryBlue),
+                            tooltip: 'Copier le lien',
+                            onPressed: () {
+                              Clipboard.setData(ClipboardData(text: activeUrl));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Lien $activeTitle copié dans le presse-papier !'),
+                                  backgroundColor: const Color(0xFF10B981),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Fermer', style: TextStyle(fontWeight: FontWeight.w700)),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(),
+                  child: const Text('Fermer', style: TextStyle(fontWeight: FontWeight.w700)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -829,6 +973,52 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
               padding: const EdgeInsets.all(8),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
             ),
+          ),
+          const SizedBox(width: 6),
+          // Badge Relais Local LAN / Serveur embarqué
+          Consumer(
+            builder: (context, ref, _) {
+              final srv = ref.watch(localVisioServerProvider);
+              return InkWell(
+                onTap: _showMeetQrDialog,
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: srv.isRunning
+                        ? const Color(0xFF10B981).withValues(alpha: 0.12)
+                        : Colors.grey.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: srv.isRunning
+                          ? const Color(0xFF10B981).withValues(alpha: 0.4)
+                          : Colors.grey.withValues(alpha: 0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PhosphorIcon(
+                        srv.isRunning ? PhosphorIconsFill.broadcast : PhosphorIconsDuotone.broadcast,
+                        size: 14,
+                        color: srv.isRunning ? const Color(0xFF10B981) : Colors.grey,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        srv.isRunning
+                            ? (isDesktop ? 'Relais LAN 0ms :${srv.port}' : 'LAN :${srv.port}')
+                            : 'LAN OFF',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: srv.isRunning ? const Color(0xFF059669) : Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
           const SizedBox(width: 6),
           Container(

@@ -74,6 +74,7 @@ const PromotionPage = lazy(() => import('./pages/PromotionPage'))
 const PersonalAccountPage = lazy(() => import('./pages/PersonalAccountPages'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
+const GuestVisioPage = lazy(() => import('./pages/GuestVisioPage'))
 
 // Admin pages lazy loaded
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
@@ -308,6 +309,9 @@ export default function App() {
               <Route path="/sentinelle" element={<PublicPage><SentinellePage /></PublicPage>} />
               <Route path="/forum" element={<PublicPage><ForumPage /></PublicPage>} />
               <Route path="/teams" element={<PublicPage><TeamsPage /></PublicPage>} />
+              <Route path="/visio" element={<PublicPage><GuestVisioPage /></PublicPage>} />
+              <Route path="/visio/:roomId" element={<PublicPage><GuestVisioPage /></PublicPage>} />
+              <Route path="/join-visio/:roomId" element={<PublicPage><GuestVisioPage /></PublicPage>} />
               {LEGAL_DOCUMENTS.map((doc) => (
                 <Route key={doc.slug} path={doc.path} element={<PublicPage><LegalDocumentPage document={doc} /></PublicPage>} />
               ))}
