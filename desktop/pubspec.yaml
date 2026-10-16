@@ -23,6 +23,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
+  msix: ^3.16.8
 
 flutter:
   uses-material-design: true
@@ -33,3 +34,25 @@ flutter:
     - assets/assistant/
     - assets/logos/
     - assets/onboarding/
+
+msix_config:
+  display_name: "UniFlow - Campus Connecté"
+  publisher_display_name: "KERNEL FORGE"
+  identity_name: "KernelForge.UniFlow"
+  publisher: "CN=9E6A6D14-5B8F-4D2A-937C-0C315E4C8821"
+  msix_version: "1.0.0.0"
+  logo_path: assets/brand/icon_512.png
+  start_menu_icon_path: assets/brand/icon_256.png
+  tile_icon_path: assets/brand/icon_256.png
+  architecture: x64
+  capabilities:
+    - internetClient
+    - location
+    - webcam
+    - microphone
+  languages:
+    - fr-FR
+    - en-US
+  protocol_activation: "uniflow"
+  file_extension: ".uniflow"
+
