@@ -399,6 +399,7 @@ export const subscriptionSchemas = [
       boolean('isAutoRenew', false, false),
     ],
     indexes: [{ key: 'subscription_status_user', type: 'unique', attributes: ['userId'] }],
+    permissions: ['read("users")'],
   },
 ]
 
