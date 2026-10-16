@@ -1,0 +1,9 @@
+# Dépendances et artefacts de compilation
+node_modules/
+dist/
+build/
+target/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.DS_Store

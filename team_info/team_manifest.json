@@ -1,0 +1,188 @@
+{
+  "database": {
+    "databaseId": "uniflow_database",
+    "collectionId": "team_members",
+    "name": "Membres de l'Équipe KERNEL FORGE",
+    "documents": [
+      {
+        "$id": "ravel",
+        "name": "NGHOMSI FEUKOUO RAVEL",
+        "role": "Founder & Lead Architect",
+        "title": "Fondateur de KERNEL FORGE • Concepteur d'UniFlow",
+        "organization": "KERNEL FORGE",
+        "email": "ravelnghomsi@gmail.com",
+        "portfolioUrl": "https://ravelnghomsi.me",
+        "organizationUrl": "https://kernelforge.codes",
+        "linkedInUrl": "https://www.linkedin.com/in/kernelforge",
+        "githubUrl": "https://github.com/KERNEL-FORGE-G",
+        "isFounder": true,
+        "bucketFolder": "uniflow-team/NGHOMSI FEUKOUO RAVEL",
+        "avatarMascotUrl": "/assets/team/avatar_ravel_founder.jpg",
+        "photoUrl": "/assets/team/photo_ravel.jpg",
+        "cvUrl": "/assets/team/cv_ravel.pdf",
+        "badges": ["Architecte Suprême", "Visionnaire", "Kernel Master"],
+        "skills": {
+          "Architecture Systèmes & Cloud": 98,
+          "Flutter & Multiplateforme": 96,
+          "Bases Réparties & Appwrite": 92,
+          "IoT Sentinelle": 88
+        }
+      },
+      {
+        "$id": "hassane",
+        "name": "Hassane Youssouf Oumar",
+        "role": "Core Systems & Backend Engineer",
+        "title": "Ingénieur Systèmes KERNEL FORGE • Développeur UniFlow",
+        "organization": "KERNEL FORGE",
+        "email": "h.hawadja1@gmail.com",
+        "portfolioUrl": "https://hawadja.github.io/portfolio/",
+        "githubUrl": "https://github.com/hawadja",
+        "isFounder": false,
+        "bucketFolder": "uniflow-team/hassane",
+        "avatarMascotUrl": "/assets/team/avatar_hassane_mascot.jpg",
+        "photoUrl": "/assets/team/photo_hassane.jpg",
+        "cvUrl": "/assets/team/cv_hassane.pdf",
+        "badges": ["Core Engine", "Pipeline Pro", "Reliability Guardian"],
+        "skills": {
+          "Backend & Microservices": 94,
+          "Réseaux & Sécurité": 90,
+          "Bases de Données": 89,
+          "DevOps & Conteneurs": 87
+        }
+      },
+      {
+        "$id": "sandra",
+        "name": "FEBNCHAK SANDRA BORELLE",
+        "role": "Full-Stack & Mobile UI/UX Engineer",
+        "title": "Ingénieure Frontend & Mobile • Expérience Utilisateur",
+        "organization": "KERNEL FORGE",
+        "email": "sandraborelle0@gmail.com",
+        "portfolioUrl": "mailto:sandraborelle0@gmail.com",
+        "linkedInUrl": "https://www.linkedin.com/in/sandra-borelle",
+        "githubUrl": "https://github.com/sandra-borelle",
+        "isFounder": false,
+        "bucketFolder": "uniflow-team/Sandra",
+        "avatarMascotUrl": "/assets/team/avatar_sandra_mascot.jpg",
+        "photoUrl": "/assets/team/photo_sandra.jpg",
+        "cvUrl": "/assets/team/cv_sandra.pdf",
+        "badges": ["Mobile UI/UX", "Flutter Craftsman", "Frontend Flow"],
+        "skills": {
+          "Flutter & Mobile": 93,
+          "Design UI/UX": 90,
+          "React & Web": 88,
+          "APIs REST & BaaS": 86
+        }
+      },
+      {
+        "$id": "william",
+        "name": "MELI WILLIAM",
+        "role": "Infrastructure & Cybersecurity Engineer",
+        "title": "Technicien Réseaux & Systèmes • Résilience & Sécurité",
+        "organization": "KERNEL FORGE",
+        "email": "meliwilliam74@gmail.com",
+        "portfolioUrl": "mailto:meliwilliam74@gmail.com",
+        "linkedInUrl": "https://www.linkedin.com/in/william-meli",
+        "githubUrl": "https://github.com/WilliamMeli27",
+        "isFounder": false,
+        "bucketFolder": "uniflow-team/william",
+        "avatarMascotUrl": "/assets/team/avatar_william_mascot.jpg",
+        "photoUrl": "/assets/team/photo_william.jpg",
+        "cvUrl": "/assets/team/cv_william.pdf",
+        "badges": ["Network Architect", "Security Guardian", "Infrastructure Master"],
+        "skills": {
+          "Réseaux & Protocoles": 94,
+          "Sécurité & Firewalls": 89,
+          "Linux & Systèmes": 88,
+          "Hardware & Câblage": 86
+        }
+      }
+    ]
+  },
+  "storage": {
+    "bucketId": "uniflow-team",
+    "name": "UniFlow Team Storage & Documents",
+    "permissions": ["read(\"any\")", "write(\"users\")"],
+    "folders": [
+      {
+        "folderName": "NGHOMSI FEUKOUO RAVEL",
+        "files": [
+          {
+            "fileName": "avatar_mascot.jpg",
+            "type": "image/jpeg",
+            "description": "Avatar officiel Mascotte 2D style ArchLord"
+          },
+          {
+            "fileName": "photo.jpg",
+            "type": "image/jpeg",
+            "description": "Photographie originale du Fondateur"
+          },
+          {
+            "fileName": "cv.pdf",
+            "type": "application/pdf",
+            "description": "Curriculum Vitae Officiel NGHOMSI FEUKOUO RAVEL"
+          }
+        ]
+      },
+      {
+        "folderName": "hassane",
+        "files": [
+          {
+            "fileName": "avatar_mascot.jpg",
+            "type": "image/jpeg",
+            "description": "Avatar officiel Mascotte 2D style ArchLord Hassane"
+          },
+          {
+            "fileName": "photo.jpg",
+            "type": "image/jpeg",
+            "description": "Photographie originale de Hassane"
+          },
+          {
+            "fileName": "cv.pdf",
+            "type": "application/pdf",
+            "description": "Curriculum Vitae Officiel Hassane Youssouf Oumar"
+          }
+        ]
+      },
+      {
+        "folderName": "Sandra",
+        "files": [
+          {
+            "fileName": "avatar_mascot.jpg",
+            "type": "image/jpeg",
+            "description": "Avatar officiel Mascotte 2D Sandra"
+          },
+          {
+            "fileName": "photo.jpg",
+            "type": "image/jpeg",
+            "description": "Photographie originale de Sandra"
+          },
+          {
+            "fileName": "cv.pdf",
+            "type": "application/pdf",
+            "description": "Curriculum Vitae Officiel Sandra"
+          }
+        ]
+      },
+      {
+        "folderName": "william",
+        "files": [
+          {
+            "fileName": "avatar_mascot.jpg",
+            "type": "image/jpeg",
+            "description": "Avatar officiel Mascotte 2D William"
+          },
+          {
+            "fileName": "photo.jpg",
+            "type": "image/jpeg",
+            "description": "Photographie originale de William"
+          },
+          {
+            "fileName": "cv.pdf",
+            "type": "application/pdf",
+            "description": "Curriculum Vitae Officiel William"
+          }
+        ]
+      }
+    ]
+  }
+}

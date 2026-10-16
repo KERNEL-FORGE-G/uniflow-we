@@ -1,0 +1,171 @@
+{
+  "projectId": "uniflow",
+  "projectName": "UniFlow — Plateforme Académique & Apprentissage Autonome",
+  "endpoint": "https://fra.cloud.appwrite.io/v1",
+  "databases": [
+    {
+      "$id": "uniflow",
+      "name": "UniFlow Core Database",
+      "enabled": true
+    }
+  ],
+  "buckets": [
+    {
+      "$id": "uniflow_assets",
+      "name": "UniFlow Unified Assets & Z-Library Cache",
+      "permissions": [
+        "read(\"any\")",
+        "create(\"users\")",
+        "update(\"users\")",
+        "delete(\"users\")"
+      ],
+      "fileSecurity": true,
+      "enabled": true,
+      "maximumFileSize": 52428800,
+      "allowedFileExtensions": ["pdf", "epub", "png", "jpg", "jpeg", "webp", "docx", "xlsx", "zip"],
+      "compression": "gzip",
+      "encryption": true,
+      "antivirus": true
+    }
+  ],
+  "functions": [
+    {
+      "$id": "uniflow-api",
+      "name": "UniFlow Unified Service Router",
+      "runtime": "node-22",
+      "execute": ["any"],
+      "events": [],
+      "schedule": "",
+      "timeout": 30,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/uniflow-api"
+    },
+    {
+      "$id": "notification-alerts",
+      "name": "UniFlow Notification & Realtime Alerts",
+      "runtime": "node-22",
+      "execute": ["users"],
+      "events": [
+        "databases.*.collections.*.documents.*.create",
+        "users.*.create"
+      ],
+      "schedule": "",
+      "timeout": 15,
+      "enabled": true,
+      "logging": true,
+      "entrypoint": "src/main.js",
+      "commands": "npm install",
+      "path": "functions/notification-alerts"
+    }
+  ],
+  "collections": [
+    {
+      "$id": "users_profiles",
+      "databaseId": "uniflow",
+      "name": "Profils Utilisateurs",
+      "documentSecurity": true,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "courses",
+      "databaseId": "uniflow",
+      "name": "Cours & Unités d'Enseignement",
+      "documentSecurity": true,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "schedule_sessions",
+      "databaseId": "uniflow",
+      "name": "Séances d'Emploi du Temps",
+      "documentSecurity": true,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "attendance_records",
+      "databaseId": "uniflow",
+      "name": "Feuilles de Présence & Émargements QR",
+      "documentSecurity": true,
+      "permissions": ["read(\"users\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "assignments",
+      "databaseId": "uniflow",
+      "name": "Devoirs & Livrables",
+      "documentSecurity": true,
+      "permissions": ["read(\"users\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "grades",
+      "databaseId": "uniflow",
+      "name": "Notes & Évaluations",
+      "documentSecurity": true,
+      "permissions": ["read(\"users\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "library_books",
+      "databaseId": "uniflow",
+      "name": "Catalogue Bibliothèque & Z-Library Cache",
+      "documentSecurity": false,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "forum_topics",
+      "databaseId": "uniflow",
+      "name": "Sujets du Forum d'Entraide",
+      "documentSecurity": false,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "chat_messages",
+      "databaseId": "uniflow",
+      "name": "Messages & Conversations",
+      "documentSecurity": true,
+      "permissions": ["read(\"users\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "gamification_quests",
+      "databaseId": "uniflow",
+      "name": "Quêtes & Défis Gamification",
+      "documentSecurity": false,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "user_badges",
+      "databaseId": "uniflow",
+      "name": "Badges d'Honneur Utilisateurs",
+      "documentSecurity": true,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "team_members",
+      "databaseId": "uniflow",
+      "name": "Membres de l'Équipe KERNEL FORGE",
+      "documentSecurity": false,
+      "permissions": ["read(\"any\")"]
+    },
+    {
+      "$id": "study_rooms",
+      "databaseId": "uniflow",
+      "name": "Salles de Cours & Espaces d'Étude",
+      "documentSecurity": false,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "conferences",
+      "databaseId": "uniflow",
+      "name": "Sessions de Visioconférence (En ligne & LAN)",
+      "documentSecurity": false,
+      "permissions": ["read(\"any\")", "create(\"users\")", "update(\"users\")"]
+    },
+    {
+      "$id": "subscriptions",
+      "databaseId": "uniflow",
+      "name": "Abonnements & Facturation",
+      "documentSecurity": true,
+      "permissions": ["read(\"users\")", "create(\"users\")", "update(\"users\")"]
+    }
+  ]
+}
