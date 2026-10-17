@@ -1276,8 +1276,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         ''
       const qTitle = (req.query.q as string) || (req.query.title as string) || ''
 
+      const isRawRequested = req.query.raw === '1' || req.query.raw === 'true'
+
       // Si l'identifiant provient d'Archive.org (ia-...)
-      if (bookId && bookId.startsWith('ia-')) {
+      if (!isRawRequested && bookId && bookId.startsWith('ia-')) {
         const iaId = bookId.slice(3)
         try {
           const controller = new AbortController()
@@ -1294,12 +1296,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             )
             if (pdf && pdf.name) {
               const directUrl = `https://archive.org/download/${iaId}/${encodeURIComponent(pdf.name)}`
-              res.writeHead(302, {
-                Location: directUrl,
-                'Access-Control-Allow-Origin': '*',
-                'Content-Type': 'application/pdf',
-              })
-              return res.end()
+              if (typeof res.redirect === 'function') {
+                return res.redirect(302, directUrl)
+              }
+              if (typeof (res as any).writeHead === 'function') {
+                ;(res as any).writeHead(302, {
+                  Location: directUrl,
+                  'Access-Control-Allow-Origin': '*',
+                  'Content-Type': 'application/pdf',
+                })
+                if (typeof (res as any).end === 'function') {
+                  return (res as any).end()
+                }
+              }
+              res.setHeader('Location', directUrl)
+              return res.status(302).send(Buffer.from([]))
             }
           }
         } catch (e) {
@@ -1317,14 +1328,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
 
       // 1. Redirection 302 vers le fichier PDF intégral réel
-      const directUrl = await resolveBookDownloadUrl(book)
-      if (directUrl) {
-        res.writeHead(302, {
-          Location: directUrl,
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/pdf',
-        })
-        return res.end()
+      if (!isRawRequested) {
+        const directUrl = await resolveBookDownloadUrl(book)
+        if (directUrl) {
+          if (typeof res.redirect === 'function') {
+            return res.redirect(302, directUrl)
+          }
+          if (typeof (res as any).writeHead === 'function') {
+            ;(res as any).writeHead(302, {
+              Location: directUrl,
+              'Access-Control-Allow-Origin': '*',
+              'Content-Type': 'application/pdf',
+            })
+            if (typeof (res as any).end === 'function') {
+              return (res as any).end()
+            }
+          }
+          res.setHeader('Location', directUrl)
+          return res.status(302).send(Buffer.from([]))
+        }
       }
 
       // 2. Repli de secours garanti : Générateur académique certifié UniFlow & Z-Library
