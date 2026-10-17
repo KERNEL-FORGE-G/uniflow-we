@@ -168,14 +168,11 @@ function AdminRoute({ children }: { children: ReactNode }) {
   return allowed ? <>{children}</> : <AccessDeniedPage reason="L’administration est réservée aux comptes ADMIN de l’université et à l’administrateur de la plateforme." />
 }
 
-/** Écran universitaire : refuse les comptes indépendants et, si précisé, les rôles non listés. */
+/** Écran universitaire : accessible à tous les utilisateurs connectés selon leur rôle. */
 function UniversityRoute({ roles, children }: { roles?: Role[]; children: ReactNode }) {
-  const { authUser, currentUser, currentRole, isSessionReady } = useUserRole()
+  const { authUser, currentRole, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
   if (!authUser) return <Navigate to="/login" replace />
-  if (currentUser.accountType === 'PERSONAL' && currentRole !== 'admin') {
-    return <AccessDeniedPage reason="Cet écran fait partie de l’espace universitaire. Votre compte indépendant dispose de sa propre gestion personnelle." />
-  }
   if (roles && currentRole !== 'admin' && !roles.includes(currentRole)) {
     return <AccessDeniedPage reason={`Cet écran est réservé aux rôles : ${roles.map(roleLabel).join(', ')}.`} />
   }
@@ -186,11 +183,11 @@ function roleLabel(role: Role) {
   return { student: 'étudiant', delegate: 'délégué', teacher: 'enseignant', admin: 'administration' }[role]
 }
 
-/** Écran commun aux deux types de compte, avec une version personnelle dédiée. */
-function AccountAwareRoute({ kind, children }: { kind: 'profile' | 'settings' | 'help'; children: ReactNode }) {
-  const { currentUser, isSessionReady } = useUserRole()
+/** Écran commun à tous les types de compte (Profil, Paramètres, Aide avec design Bento 3D & UniMail). */
+function AccountAwareRoute({ children }: { kind: 'profile' | 'settings' | 'help'; children: ReactNode }) {
+  const { isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
-  return currentUser.accountType === 'PERSONAL' ? <PersonalAccountPage kind={kind} /> : <>{children}</>
+  return <>{children}</>
 }
 
 function AccountHomePage() {

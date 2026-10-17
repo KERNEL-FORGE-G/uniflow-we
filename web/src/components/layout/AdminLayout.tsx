@@ -11,6 +11,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useUserRole } from '../../utils/userRole'
 import { appwriteClient } from '../../lib/appwrite'
 import { useOnlineStatus } from '../../lib/offline/networkStatus'
+import { forceClearCacheAndReload } from '../../lib/versionManager'
 
 /**
  * Libellés du compte : « Super Admin » n'est vrai que pour l'administrateur
@@ -261,6 +262,17 @@ export function AdminLayout() {
               className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/80 py-2 pl-9 pr-4 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 focus:bg-white transition-all"
             />
           </div>
+
+          {/* Refresh / Clear cache */}
+          <button
+            type="button"
+            onClick={() => void forceClearCacheAndReload()}
+            title="Vider le cache et charger la dernière mise à jour"
+            aria-label="Vider le cache et charger la dernière mise à jour"
+            className="rounded-2xl p-2 text-[#6b7280] hover:bg-[#eff3ff] hover:text-[#1e3a8a] transition-all"
+          >
+            <UniIcon name="refresh" weight="bold" size={19} />
+          </button>
 
           {/* Notifications */}
           <button

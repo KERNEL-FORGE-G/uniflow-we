@@ -9,6 +9,7 @@ import { initGlobalSoundListeners } from './utils/sound'
 import { createOfflineQueryClient, restorePersistedQueries, subscribePersistedQueries } from './lib/offline/queryPersistence'
 import { startOfflineWriteQueue } from './lib/offline/writeQueue'
 import { registerOfflineReplayHandlers } from './lib/offline/replayHandlers'
+import { startVersionWatcher, forceClearCacheAndReload } from './lib/versionManager'
 
 const DEPLOYMENT_RECOVERY_KEY = 'uniflow:deployment-recovery-at'
 
@@ -25,7 +26,7 @@ function recoverFromStaleDeployment(event?: Event) {
   } catch {
     // Le rechargement reste utile si sessionStorage est indisponible.
   }
-  window.location.reload()
+  void forceClearCacheAndReload()
 }
 
 if (typeof window !== 'undefined') {
@@ -39,6 +40,7 @@ if (typeof window !== 'undefined') {
 }
 
 initGlobalSoundListeners()
+startVersionWatcher()
 
 // Le réseau vers Appwrite Cloud est lent : on garde les lectures en cache, on
 // ne retente qu'une fois, et le cache est persisté dans IndexedDB pour servir
