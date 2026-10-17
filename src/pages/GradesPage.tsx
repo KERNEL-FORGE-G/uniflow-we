@@ -68,33 +68,69 @@ export default function GradesPage() {
       <div className="pointer-events-none absolute -top-24 right-0 h-72 w-72 rounded-full bg-blue-400/10 blur-3xl" />
       <div className="pointer-events-none absolute left-0 top-40 h-56 w-56 rounded-full bg-teal-300/10 blur-3xl" />
 
-      <motion.header initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#162e75] via-[#1e3a8a] to-[#0d9488] p-6 text-white shadow-xl shadow-blue-900/15 sm:p-8">
-        <div className="absolute -right-12 -top-16 h-48 w-48 rounded-full border border-white/15" />
-        <div className="absolute -bottom-24 right-16 h-48 w-48 rounded-full border border-white/10" />
-        <div className="relative flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold text-white">
-              <UniIcon name="assistant" weight="fill" size={14} className="text-cyan-200" /> Relevé Académique Officiel
+      <motion.header initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }} className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 text-white shadow-xl border border-white/10 sm:p-8">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-xs font-semibold text-cyan-200 backdrop-blur-md">
+              <UniIcon name="assistant" weight="fill" size={14} className="text-cyan-300" /> Relevé Académique Officiel · Norme LMD
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Mes notes &amp; Résultats</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">Consultez votre relevé semestriel, vos moyennes d'évaluations et l'état de validation de vos crédits académiques.</p>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Mes notes &amp; Résultats</h1>
+              <p className="mt-2 max-w-2xl text-sm sm:text-base leading-relaxed text-slate-200/90">
+                Consultez votre relevé semestriel, vos moyennes pondérées par coefficient et l'état de validation de vos crédits académiques.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                <span className="text-[11px] font-medium text-slate-300 block">Moyenne Actuelle</span>
+                <span className="text-2xl font-black text-emerald-300">{average ? `${average}/20` : '—'}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Moyenne pondérée</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                <span className="text-[11px] font-medium text-slate-300 block">Évaluations</span>
+                <span className="text-2xl font-black text-white">{grades.length}</span>
+                <span className="text-[10px] text-slate-300 block mt-0.5 font-medium">Notes publiées</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                <span className="text-[11px] font-medium text-slate-300 block">Meilleure Note</span>
+                <span className="text-2xl font-black text-amber-300">{bestGrade ? `${scoreValue(bestGrade)}/${maxValue(bestGrade)}` : '—'}</span>
+                <span className="text-[10px] text-amber-200 block mt-0.5 font-medium">Performance max</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                <span className="text-[11px] font-medium text-slate-300 block">Validation</span>
+                <span className="text-2xl font-black text-white">{average ? `${Math.round(averagePercent)}%` : '—'}</span>
+                <span className="text-[10px] text-emerald-300 block mt-0.5 font-medium">Crédits LMD</span>
+              </div>
+            </div>
           </div>
-          <div className="text-left sm:text-right">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">Moyenne actuelle</p>
-            <p className="mt-1 text-4xl font-black tracking-tight">{average ? `${average}/20` : '—'}</p>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/grades.png"
+                alt="Relevé de notes 3D"
+                className="relative z-10 w-40 sm:w-48 lg:w-56 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/grades.jpg' }}
+              />
+            </div>
           </div>
         </div>
       </motion.header>
 
-      <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-        <div className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-200">
-          <UniIcon name="grades" size={16} className="text-teal-600" /> Évaluations enregistrées
+      <div className="relative flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-200">
+          <UniIcon name="grades" size={18} className="text-teal-600" /> Évaluations enregistrées
         </div>
         <div className="flex items-center gap-2">
-          <select value={semester} disabled className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-500 outline-none dark:border-slate-700 dark:bg-slate-800">
+          <select value={semester} disabled className="rounded-2xl border border-slate-200 bg-slate-50 px-3.5 py-2 text-xs font-semibold text-slate-600 outline-none dark:border-slate-700 dark:bg-slate-800">
             <option>Tous les semestres</option>
           </select>
-          <button type="button" onClick={refetch} disabled={loading || refreshing} className="rounded-xl border border-slate-200 p-2.5 text-slate-600 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="Actualiser">
+          <button type="button" onClick={refetch} disabled={loading || refreshing} className="rounded-2xl border border-slate-200 p-2.5 text-slate-600 transition hover:border-teal-300 hover:bg-teal-50 disabled:opacity-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800" aria-label="Actualiser">
             <UniIcon name="refresh" weight="bold" size={16} className={loading || refreshing ? 'animate-spin' : ''} />
           </button>
           <ExportButtons getDocument={transcriptExport} disabled={loading || !grades.length} disabledReason="Aucune note à exporter pour le moment." />

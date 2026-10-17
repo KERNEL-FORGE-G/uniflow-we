@@ -234,44 +234,62 @@ export default function AdminCoursesPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in pb-12">
+    <div className="space-y-6 animate-fade-in pb-12">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#111827] tracking-tight">Gestion Pédagogique & Attribution des UEs</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Université de Yaoundé I · Faculté des Sciences · Année Académique 2026-2027</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant={activeTab === 'courses' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('courses')}
-            className="font-bold"
-          >
-            <UniIcon name="courses" size={16} className="mr-1.5" />
-            Catalogue des Cours ({courses.length})
-          </Button>
-          <Button
-            variant={activeTab === 'assignments' ? 'primary' : 'outline'}
-            size="sm"
-            onClick={() => setActiveTab('assignments')}
-            className="font-bold"
-          >
-            <UniIcon name="teacher" size={16} className="mr-1.5" />
-            Attribution Enseignants ({teachers.length})
-          </Button>
+      <div className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/courses.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-cyan-200">
+                Gestion Académique
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight">Gestion Pédagogique & Attribution des UEs</h1>
+              <p className="text-sm text-slate-200 mt-1">Université de Yaoundé I · Faculté des Sciences · Année Académique 2026-2027</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={() => setActiveTab('courses')}
+              className={`inline-flex items-center rounded-2xl px-4 py-2.5 text-xs font-bold transition-all ${
+                activeTab === 'courses'
+                  ? 'bg-white text-[#0B132B] shadow-lg'
+                  : 'border border-white/20 bg-white/15 backdrop-blur-md text-white hover:bg-white/25'
+              }`}
+            >
+              <UniIcon name="courses" size={16} className="mr-1.5" />
+              Catalogue des Cours ({courses.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('assignments')}
+              className={`inline-flex items-center rounded-2xl px-4 py-2.5 text-xs font-bold transition-all ${
+                activeTab === 'assignments'
+                  ? 'bg-white text-[#0B132B] shadow-lg'
+                  : 'border border-white/20 bg-white/15 backdrop-blur-md text-white hover:bg-white/25'
+              }`}
+            >
+              <UniIcon name="teacher" size={16} className="mr-1.5" />
+              Attribution Enseignants ({teachers.length})
+            </button>
+          </div>
         </div>
       </div>
 
       {successMessage && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-semibold flex items-center justify-between shadow-xs">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-3xl text-sm font-semibold flex items-center justify-between shadow-sm">
           <span>✓ {successMessage}</span>
           <button onClick={() => setSuccessMessage(null)} className="text-emerald-700 hover:text-emerald-900 font-bold">×</button>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-3xl text-sm font-medium shadow-sm">
           Erreur: {error}
         </div>
       )}
@@ -279,7 +297,7 @@ export default function AdminCoursesPage() {
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((s, index) => (
-          <div key={s.label} className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-xs hover:shadow-sm transition-shadow">
+          <div key={s.label} className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className="mb-3"><IconTile name="courses" color={s.color} variant="filled" size={44} index={index} /></div>
             <p className="text-2xl font-black text-[#111827]">{s.value}</p>
             <p className="text-xs text-[#6b7280] mt-0.5 font-medium">{s.label}</p>
@@ -291,7 +309,7 @@ export default function AdminCoursesPage() {
       {activeTab === 'courses' && (
         <>
           {/* Filters & Search */}
-          <div className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-xs">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="relative flex-1 max-w-md">
                 <UniIcon name="search" weight="bold" size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
@@ -300,21 +318,21 @@ export default function AdminCoursesPage() {
                   placeholder="Rechercher par code (ex: INF 111, ICT 201), intitulé, enseignant..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-xl border border-[#d1d5db] bg-white py-2.5 pl-10 pr-4 text-xs font-medium focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20"
+                  className="w-full rounded-2xl border border-slate-200/80 bg-white py-2.5 pl-10 pr-4 text-xs font-medium focus:border-[#1e3a8a] focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]/20"
                 />
               </div>
               <div className="flex gap-2">
                 <select
                   value={filterType}
                   onChange={e => setFilterType(e.target.value)}
-                  className="rounded-xl border border-[#d1d5db] px-3 py-2 text-xs font-semibold focus:border-[#1e3a8a] focus:outline-none"
+                  className="rounded-2xl border border-slate-200/80 px-3 py-2 text-xs font-semibold focus:border-[#1e3a8a] focus:outline-none"
                 >
                   <option value="all">Tous types</option>
                   <option value="CM">Cours Magistral (CM)</option>
                   <option value="TD">Travaux Dirigés (TD)</option>
                   <option value="TP">Travaux Pratiques (TP)</option>
                 </select>
-                <Button size="sm" onClick={handleOpenAdd} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl">
+                <Button size="sm" onClick={handleOpenAdd} className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl">
                   <UniIcon name="plus" size={16} className="mr-1.5" />
                   + Nouveau Cours
                 </Button>
@@ -325,7 +343,7 @@ export default function AdminCoursesPage() {
           {/* Cards Grid */}
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filtered.map(course => (
-              <div key={course.id} className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
+              <div key={course.id} className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                 <div>
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-2">
@@ -336,7 +354,7 @@ export default function AdminCoursesPage() {
                     </div>
                     <button
                       onClick={() => handleOpenEdit(course)}
-                      className="px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors cursor-pointer"
+                      className="px-2.5 py-1 text-xs font-bold text-blue-700 hover:bg-blue-50 rounded-xl border border-blue-200 transition-colors cursor-pointer"
                     >
                       Modifier / Attribuer
                     </button>
@@ -378,7 +396,7 @@ export default function AdminCoursesPage() {
           </div>
 
           {filtered.length === 0 && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-12 text-center shadow-xs">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-12 text-center shadow-sm">
               <p className="text-sm font-semibold text-[#9ca3af]">Aucun cours ne correspond à la recherche.</p>
             </div>
           )}
@@ -388,9 +406,9 @@ export default function AdminCoursesPage() {
       {/* TAB 2: Attribution Enseignants ↔ UEs */}
       {activeTab === 'assignments' && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white shadow-md">
+          <div className="p-5 rounded-3xl bg-gradient-to-r from-[#0B132B] via-[#1E3A8A] to-[#0D9488] text-white shadow-md">
             <h2 className="text-base font-black">Module d'Attribution Officielle des UEs</h2>
-            <p className="text-xs text-blue-200 mt-1 max-w-3xl leading-relaxed">
+            <p className="text-xs text-slate-200 mt-1 max-w-3xl leading-relaxed">
               Consultez pour chaque enseignant de l'Université de Yaoundé I l'ensemble des Unités d'Enseignement qui lui sont confiées. Vous pouvez lui affecter instantanément une ou plusieurs UEs issues du programme officiel ou en dissocier en un clic.
             </p>
           </div>
@@ -405,7 +423,7 @@ export default function AdminCoursesPage() {
               )
 
               return (
-                <div key={t.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-xs hover:shadow-sm transition-all flex flex-col justify-between">
+                <div key={t.id} className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-all flex flex-col justify-between">
                   <div>
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div>
@@ -426,7 +444,7 @@ export default function AdminCoursesPage() {
                           setAssignTeacher(t)
                           setSelectedUeId(courses[0]?.id || '')
                         }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-xs"
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-2xl shadow-xs"
                       >
                         + Attribuer UE
                       </Button>
@@ -437,7 +455,7 @@ export default function AdminCoursesPage() {
                         UEs Actuellement Attribuées ({assignedCourses.length}) :
                       </p>
                       {assignedCourses.length === 0 ? (
-                        <p className="text-xs italic text-amber-700 bg-amber-50 p-2.5 rounded-xl border border-amber-200">
+                        <p className="text-xs italic text-amber-700 bg-amber-50 p-2.5 rounded-2xl border border-amber-200">
                           Aucune unité d'enseignement attribuée pour le moment. Cliquez sur « + Attribuer UE » pour lui affecter un cours.
                         </p>
                       ) : (
@@ -445,7 +463,7 @@ export default function AdminCoursesPage() {
                           {assignedCourses.map(c => (
                             <span
                               key={c.id}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold text-slate-800"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-100 border border-slate-200/80 text-xs font-semibold text-slate-800"
                             >
                               <span className="font-mono font-bold text-blue-700">{c.code}</span>
                               <span className="max-w-[140px] truncate">{c.name}</span>

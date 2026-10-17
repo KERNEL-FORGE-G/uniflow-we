@@ -74,29 +74,38 @@ export default function AdminActivityPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Activity className="h-5 w-5 text-[#1e3a8a]" />
-            <h1 className="text-xl font-bold text-[#111827]">Journal d'activité</h1>
+      <div className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/analytics.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-cyan-200">
+                <Activity className="h-3.5 w-3.5 text-cyan-300" /> Traçabilité & Audit
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight">Journal d'activité</h1>
+              <p className="text-sm text-slate-200 mt-1">Audit complet des actions sur la plateforme</p>
+            </div>
           </div>
-          <p className="text-sm text-[#6b7280]">Audit complet des actions sur la plateforme</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => refetch()}
-            className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-all"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} /> Actualiser
-          </button>
-          <button className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
-            <Download className="h-4 w-4" /> Exporter logs
-          </button>
+          <div className="flex flex-wrap gap-2.5">
+            <button
+              onClick={() => refetch()}
+              className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white hover:bg-white/25 transition-all"
+            >
+              <RefreshCw className={`h-4 w-4 text-cyan-200 ${loading ? 'animate-spin' : ''}`} /> Actualiser
+            </button>
+            <button className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-bold text-[#0B132B] hover:bg-cyan-50 transition-all shadow-lg">
+              <Download className="h-4 w-4 text-[#1E3A8A]" /> Exporter logs
+            </button>
+          </div>
         </div>
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm" role="alert">
           Impossible de charger le journal : {error}
         </div>
       )}
@@ -104,9 +113,9 @@ export default function AdminActivityPage() {
       {/* Stats */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {stats.map(({ label, value, color, icon: Icon }) => (
-          <div key={label} className="rounded-2xl border border-[#e5e7eb] bg-white p-4 shadow-sm card-hover">
-            <div className={`inline-flex items-center justify-center h-9 w-9 rounded-xl mb-3 ${color}`}>
-              <Icon className="h-4.5 w-4.5" />
+          <div key={label} className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm card-hover">
+            <div className={`inline-flex items-center justify-center h-10 w-10 rounded-2xl mb-3 ${color}`}>
+              <Icon className="h-5 w-5" />
             </div>
             <p className="text-2xl font-extrabold text-[#111827] stat-number">{value}</p>
             <p className="text-xs text-[#6b7280] mt-0.5">{label}</p>
@@ -117,18 +126,18 @@ export default function AdminActivityPage() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[240px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9ca3af]" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9ca3af]" />
           <input
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Rechercher utilisateur, action, cible..."
-            className="w-full rounded-xl border border-[#e5e7eb] bg-white py-2.5 pl-9 pr-4 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
+            className="w-full rounded-3xl border border-slate-200/80 bg-white py-2.5 pl-10 pr-4 text-sm shadow-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
           />
         </div>
         <select
           value={filterCategory}
           onChange={e => setFilterCategory(e.target.value)}
-          className="rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
+          className="rounded-3xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm shadow-sm outline-none focus:border-[#1e3a8a]"
         >
           <option value="all">Toutes catégories</option>
           <option value="auth">Authentification</option>
@@ -140,7 +149,7 @@ export default function AdminActivityPage() {
         <select
           value={filterStatus}
           onChange={e => setFilterStatus(e.target.value)}
-          className="rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a]"
+          className="rounded-3xl border border-slate-200/80 bg-white px-4 py-2.5 text-sm shadow-sm outline-none focus:border-[#1e3a8a]"
         >
           <option value="all">Tous statuts</option>
           <option value="success">Succès</option>
@@ -150,7 +159,7 @@ export default function AdminActivityPage() {
       </div>
 
       {/* Log table */}
-      <div className="rounded-2xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
+      <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
         <div className="px-5 py-3.5 border-b border-[#e5e7eb] flex items-center justify-between">
           <span className="text-sm font-semibold text-[#111827]">{filtered.length} événements</span>
           <span className="text-xs text-[#6b7280]">Données du backend</span>

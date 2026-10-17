@@ -74,31 +74,40 @@ export default function AdminSecurityPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Shield className="h-5 w-5 text-[#1e3a8a]" />
-            <h1 className="text-xl font-bold text-[#111827]">Sécurité & Accès</h1>
+      <div className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/sentinelle.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-cyan-200">
+                <Shield className="h-3.5 w-3.5 text-cyan-300" /> Protection & Contrôle
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight">Sécurité & Accès</h1>
+              <p className="text-sm text-slate-200 mt-1">Gestion de la sécurité, sessions actives et accès</p>
+            </div>
           </div>
-          <p className="text-sm text-[#6b7280]">Gestion de la sécurité, sessions actives et accès</p>
+          <button onClick={handleSave} className="flex items-center gap-2 rounded-2xl bg-white px-5 py-2.5 text-xs font-bold text-[#0B132B] hover:bg-cyan-50 transition-all shadow-lg">
+            {saved ? <><Check className="h-4 w-4 text-emerald-600" /> Enregistré !</> : <><Save className="h-4 w-4 text-[#1E3A8A]" /> Enregistrer</>}
+          </button>
         </div>
-        <button onClick={handleSave} className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md">
-          {saved ? <><Check className="h-4 w-4" /> Enregistré !</> : <><Save className="h-4 w-4" /> Enregistrer</>}
-        </button>
       </div>
 
-      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-sm font-bold text-[#111827]">Intégrité des données Appwrite</h2>
             <p className="mt-1 text-xs text-[#6b7280]">Contrôle serveur des doublons, références orphelines et relevés incohérents.</p>
           </div>
-          <button onClick={runIntegrityAudit} disabled={auditLoading} className="flex items-center gap-2 rounded-xl border border-[#dbe4f0] bg-[#f8fbff] px-4 py-2 text-xs font-bold text-[#1e3a8a] disabled:opacity-60">
+          <button onClick={runIntegrityAudit} disabled={auditLoading} className="flex items-center gap-2 rounded-2xl border border-[#dbe4f0] bg-[#f8fbff] px-4 py-2 text-xs font-bold text-[#1e3a8a] disabled:opacity-60">
             <RefreshCw className={`h-4 w-4 ${auditLoading ? 'animate-spin' : ''}`} /> {auditLoading ? 'Contrôle…' : 'Lancer le contrôle'}
           </button>
         </div>
         {auditError && <p className="mt-3 text-xs text-red-700" role="alert">{auditError}</p>}
-        {audit && <div className={`mt-4 rounded-xl border px-4 py-3 text-sm ${audit.healthy ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
+        {audit && <div className={`mt-4 rounded-2xl border px-4 py-3 text-sm ${audit.healthy ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-amber-200 bg-amber-50 text-amber-800'}`}>
           <div className="flex items-center gap-2 font-bold">{audit.healthy ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />} {audit.healthy ? 'Aucune incohérence détectée' : 'Incohérences à examiner'}</div>
           <p className="mt-1 text-xs">Dernier contrôle : {audit.checkedAt ? new Date(audit.checkedAt).toLocaleString('fr-FR') : 'horodatage indisponible'} · {Object.values(audit.collections ?? {}).reduce((sum, value) => sum + value, 0)} enregistrements parcourus.</p>
         </div>}
@@ -106,7 +115,7 @@ export default function AdminSecurityPage() {
 
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Security score */}
-        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
+        <div className="rounded-3xl border border-emerald-200/80 bg-gradient-to-br from-emerald-50 to-white p-6 shadow-sm">
           <div className="flex items-center gap-2 mb-4">
             <Shield className="h-5 w-5 text-emerald-600" />
             <h2 className="text-sm font-bold text-emerald-800">Score de sécurité</h2>
@@ -132,7 +141,7 @@ export default function AdminSecurityPage() {
         </div>
 
         {/* Quick rules */}
-        <div className="lg:col-span-2 rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+        <div className="lg:col-span-2 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
           <h2 className="text-sm font-bold text-[#111827] mb-4">Règles de sécurité</h2>
           <div className="grid grid-cols-2 gap-4 mb-4">
             {[
@@ -146,7 +155,7 @@ export default function AdminSecurityPage() {
                   type="number"
                   value={rules[key as keyof typeof rules] as string}
                   onChange={e => setRules(r => ({ ...r, [key]: e.target.value }))}
-                  className="w-full rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
+                  className="w-full rounded-2xl border border-slate-200/80 px-4 py-2.5 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
                 />
               </div>
             ))}
@@ -178,7 +187,7 @@ export default function AdminSecurityPage() {
       </div>
 
       {/* Security Alerts */}
-      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-bold text-[#111827]">Alertes de sécurité</h2>
           <span className="rounded-full bg-red-50 border border-red-200 px-2.5 py-1 text-xs font-bold text-red-700">
@@ -187,8 +196,8 @@ export default function AdminSecurityPage() {
         </div>
         <div className="space-y-3">
           {alerts.map(alert => (
-            <div key={alert.id} className={`flex items-center gap-4 rounded-xl p-4 border ${
-              alert.resolved ? 'bg-[#f9fafb] border-[#e5e7eb] opacity-60' :
+            <div key={alert.id} className={`flex items-center gap-4 rounded-2xl p-4 border ${
+              alert.resolved ? 'bg-[#f9fafb] border-slate-200/80 opacity-60' :
               alert.type === 'warning' ? 'bg-amber-50 border-amber-200' :
               alert.type === 'info' ? 'bg-blue-50 border-blue-200' :
               'bg-emerald-50 border-emerald-200'
@@ -203,7 +212,7 @@ export default function AdminSecurityPage() {
               {!alert.resolved && (
                 <button
                   onClick={() => resolveAlert(alert.id)}
-                  className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb] transition-colors flex-shrink-0"
+                  className="rounded-2xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb] transition-colors flex-shrink-0"
                 >
                   Résoudre
                 </button>
@@ -214,14 +223,14 @@ export default function AdminSecurityPage() {
       </div>
 
       {/* Active Sessions */}
-      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-bold text-[#111827]">Sessions actives</h2>
           <span className="text-xs text-[#6b7280]">{sessions.length} session{sessions.length > 1 ? 's' : ''} en cours</span>
         </div>
         <div className="space-y-3">
           {sessions.map(s => (
-            <div key={s.id} className="flex items-center gap-4 rounded-xl border border-[#e5e7eb] p-4 bg-[#f9fafb] hover:bg-white transition-colors group">
+            <div key={s.id} className="flex items-center gap-4 rounded-2xl border border-slate-200/80 p-4 bg-[#f9fafb] hover:bg-white transition-colors group">
               <div className={`flex items-center justify-center h-10 w-10 rounded-xl text-xs font-bold flex-shrink-0 ${roleColor[s.role] || 'bg-[#f3f4f6] text-[#6b7280]'}`}>
                 {s.user.charAt(0)}
               </div>
@@ -242,7 +251,7 @@ export default function AdminSecurityPage() {
               {s.id !== '1' && (
                 <button
                   onClick={() => revokeSession(s.id)}
-                  className="opacity-0 group-hover:opacity-100 rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition-all ml-2 flex-shrink-0"
+                  className="opacity-0 group-hover:opacity-100 rounded-2xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition-all ml-2 flex-shrink-0"
                 >
                   Révoquer
                 </button>
@@ -250,22 +259,22 @@ export default function AdminSecurityPage() {
             </div>
           ))}
         </div>
-        <button className="mt-3 w-full rounded-xl border border-red-200 bg-red-50 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+        <button className="mt-3 w-full rounded-2xl border border-red-200 bg-red-50 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
           <Trash2 className="h-4 w-4" /> Terminer toutes les autres sessions
         </button>
       </div>
 
       {/* API Keys */}
-      <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-bold text-[#111827]">Clés API</h2>
-          <button className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all">
+          <button className="flex items-center gap-2 rounded-2xl bg-[#1e3a8a] px-4 py-2 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all">
             <Key className="h-4 w-4" /> Générer une clé
           </button>
         </div>
         <div className="space-y-3">
           {([] as Array<{ name: string; key: string; created: string; last: string; active: boolean }>).map(k => (
-            <div key={k.name} className="flex items-center gap-4 rounded-xl border border-[#e5e7eb] p-4 bg-[#f9fafb]">
+            <div key={k.name} className="flex items-center gap-4 rounded-2xl border border-slate-200/80 p-4 bg-[#f9fafb]">
               <Key className="h-5 w-5 text-[#6b7280] flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -277,10 +286,10 @@ export default function AdminSecurityPage() {
                 <p className="text-xs text-[#6b7280] font-mono">{k.key} · Créée {k.created} · Dernière utilisation {k.last}</p>
               </div>
               <div className="flex gap-2 flex-shrink-0">
-                <button className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb] transition-colors">
+                <button className="rounded-xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-semibold text-[#374151] hover:bg-[#f9fafb] transition-colors">
                   Copier
                 </button>
-                <button className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors">
+                <button className="rounded-xl border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 transition-colors">
                   Révoquer
                 </button>
               </div>

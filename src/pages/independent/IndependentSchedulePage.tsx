@@ -217,54 +217,101 @@ export default function IndependentSchedulePage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-14 animate-fade-in">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
-            <UniIcon name="schedule" weight="bold" size={16} />
-            <span>Agenda &amp; Planning</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">
-            Mon Emploi du Temps
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Visualisez et planifiez vos séances de cours, TD, travaux pratiques et plages de révision autonome.
-          </p>
-        </div>
+      {/* =========================================================================
+          HERO BENTO - Mon Emploi du Temps (Agenda & Planning)
+         ========================================================================= */}
+      <section className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* View toggle */}
-          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 text-xs font-bold dark:border-slate-800 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => setViewMode('grid')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                viewMode === 'grid' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Grille semaine
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                viewMode === 'list' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Vue par jour
-            </button>
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-semibold text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <UniIcon name="schedule" weight="bold" size={14} />
+              <span>Agenda &amp; Planning</span>
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                Mon Emploi du Temps
+              </h1>
+              <p className="mt-1.5 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                Visualisez et planifiez vos séances de cours, TD, travaux pratiques et plages de révision autonome.
+              </p>
+            </div>
+
+            {/* Micro-cartes Bento de statistiques */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Créneaux configurés</span>
+                <span className="text-2xl font-black text-white">{schedules.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Planning hebdomadaire</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Matières suivies</span>
+                <span className="text-2xl font-black text-white">{courses.length}</span>
+                <span className="text-[10px] text-emerald-300 block mt-0.5 font-medium">Cursus personnel</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Jours actifs</span>
+                <span className="text-2xl font-black text-emerald-300">{new Set(schedules.map(s => s.dayOfWeek)).size}</span>
+                <span className="text-[10px] text-slate-200 block mt-0.5 font-medium">Sur 7 jours</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Plage horaire</span>
+                <span className="text-2xl font-black text-white">07h–21h</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Grille dynamique</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {/* View toggle */}
+              <div className="inline-flex rounded-xl border border-white/20 bg-white/10 backdrop-blur-md p-1 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('grid')}
+                  className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
+                    viewMode === 'grid' ? 'bg-white text-[#1E3A8A] shadow-sm' : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  Grille semaine
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
+                    viewMode === 'list' ? 'bg-white text-[#1E3A8A] shadow-sm' : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  Vue par jour
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-[#1E3A8A] shadow-md transition hover:bg-cyan-50 cursor-pointer"
+              >
+                <UniIcon name="plus" weight="bold" size={16} />
+                <span>Ajouter un créneau</span>
+              </button>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] px-5 py-3 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
-          >
-            <UniIcon name="plus" weight="bold" size={16} />
-            <span>Ajouter un créneau</span>
-          </button>
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/illustrations/schedule_calendar_hero_3d.png"
+                alt="Calendrier et planning 3D"
+                className="relative z-10 w-44 sm:w-56 lg:w-64 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/uni_copilot_3d.png' }}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* ── Alerts ── */}
       {error && (
@@ -291,13 +338,13 @@ export default function IndependentSchedulePage() {
       )}
 
       {/* ── Filters bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900">
         <div className="flex items-center gap-3">
           <span className="text-xs font-bold text-slate-500">Filtrer par matière :</span>
           <select
             value={selectedCourseFilter}
             onChange={(e) => setSelectedCourseFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             <option value="">Toutes les matières ({courses.length})</option>
             {courses.map((c) => (
@@ -315,7 +362,7 @@ export default function IndependentSchedulePage() {
 
       {/* ── VIEW 1: Weekly Grid ── */}
       {viewMode === 'grid' && (
-        <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900">
           <div className="overflow-x-auto">
             <div className="min-w-[960px]">
               {/* Day headers */}
@@ -461,7 +508,7 @@ export default function IndependentSchedulePage() {
                   className={`inline-flex items-center gap-2 rounded-2xl px-4 py-2.5 text-xs font-black transition ${
                     selectedDay === day
                       ? 'bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] text-white shadow-md'
-                      : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+                      : 'border border-slate-200/80 bg-white text-slate-600 hover:bg-slate-50 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
                   }`}
                 >
                   <span>{DAY_LABELS[day]}</span>
@@ -476,7 +523,7 @@ export default function IndependentSchedulePage() {
           </div>
 
           {/* Slots list for selected day */}
-          <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900">
             <h3 className="text-base font-black text-slate-900 dark:text-white">
               Planning du {DAY_LABELS[selectedDay]}
             </h3>

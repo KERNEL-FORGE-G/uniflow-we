@@ -104,25 +104,34 @@ export default function AdminSettingsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <UniIcon name="settings" size={20} className="text-[#1e3a8a]" />
-            <h1 className="text-xl font-bold text-[#111827]">Plateforme UniFlow</h1>
+      <div className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/settings.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-cyan-200">
+                <UniIcon name="settings" size={14} className="text-cyan-300" /> Configuration Système
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight">Plateforme UniFlow</h1>
+              <p className="text-sm text-slate-200 mt-1 max-w-2xl">État réel de la plateforme : compteurs Appwrite, infrastructure, règles en vigueur et maintenance locale.</p>
+            </div>
           </div>
-          <p className="text-sm text-[#6b7280]">État réel de la plateforme : compteurs Appwrite, infrastructure, règles en vigueur et maintenance locale.</p>
+          <button onClick={() => { void refetch(); void measurePing() }}
+            className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white hover:bg-white/25 transition-colors shadow-sm">
+            <UniIcon name="refresh" weight="bold" size={16} className={`text-cyan-200 ${statsLoading || ping.state === 'checking' ? 'animate-spin' : ''}`} /> Actualiser
+          </button>
         </div>
-        <button onClick={() => { void refetch(); void measurePing() }}
-          className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-semibold text-[#374151] hover:bg-[#f9fafb] transition-colors">
-          <UniIcon name="refresh" weight="bold" size={16} className={statsLoading || ping.state === 'checking' ? 'animate-spin' : ''} /> Actualiser
-        </button>
       </div>
 
       <div className="grid gap-5 lg:grid-cols-4">
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3 shadow-sm h-fit">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-sm h-fit">
           {sections.map(({ id, label, icon }) => (
             <button key={id} onClick={() => setSection(id)}
-              className={`w-full flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-sm font-semibold text-left transition-all mb-0.5 ${section === id ? 'bg-[#1e3a8a] text-white shadow-md' : 'text-[#374151] hover:bg-[#f9fafb]'}`}>
+              className={`w-full flex items-center gap-2.5 rounded-2xl px-3.5 py-2.5 text-sm font-semibold text-left transition-all mb-1 ${section === id ? 'bg-gradient-to-r from-[#0B132B] to-[#1E3A8A] text-white shadow-md' : 'text-[#374151] hover:bg-slate-100/80'}`}>
               <UniIcon name={icon} weight={section === id ? 'fill' : 'duotone'} size={16} className={`flex-shrink-0 ${section === id ? 'text-white' : 'text-[#6b7280]'}`} />
               {label}
             </button>
@@ -142,8 +151,8 @@ export default function AdminSettingsPage() {
                     </>
                   )
                   return to
-                    ? <Link key={label} to={to} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm card-hover block">{body}</Link>
-                    : <div key={label} className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">{body}</div>
+                    ? <Link key={label} to={to} className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm card-hover block">{body}</Link>
+                    : <div key={label} className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">{body}</div>
                 })}
               </div>
               <p className="text-xs text-[#9ca3af]">
@@ -153,9 +162,9 @@ export default function AdminSettingsPage() {
           )}
 
           {section === 'infra' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm space-y-5">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-5">
               <h2 className="text-base font-bold text-[#111827] flex items-center gap-2"><UniIcon name="server" size={16} className="text-[#1e3a8a]" /> Appwrite Cloud</h2>
-              <div className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm ${ping.state === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : ping.state === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-[#e5e7eb] bg-[#f9fafb] text-[#6b7280]'}`}>
+              <div className={`flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm ${ping.state === 'ok' ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : ping.state === 'error' ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200/80 bg-[#f9fafb] text-[#6b7280]'}`}>
                 {ping.state === 'checking' && <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" />}
                 {ping.state === 'ok' && <UniIcon name="success" weight="fill" size={16} />}
                 {ping.state === 'error' && <UniIcon name="warning" weight="fill" size={16} />}
@@ -165,7 +174,7 @@ export default function AdminSettingsPage() {
                   {ping.state === 'error' && `Appwrite injoignable : ${ping.message}`}
                   {ping.state === 'idle' && 'Temps de réponse non mesuré.'}
                 </span>
-                <button onClick={() => void measurePing()} className="ml-auto rounded-lg bg-white/70 px-2.5 py-1 text-xs font-semibold hover:bg-white">Re-mesurer</button>
+                <button onClick={() => void measurePing()} className="ml-auto rounded-xl bg-white/70 px-2.5 py-1 text-xs font-semibold hover:bg-white">Re-mesurer</button>
               </div>
               <dl className="grid gap-3 sm:grid-cols-2 text-sm">
                 {[
@@ -178,14 +187,14 @@ export default function AdminSettingsPage() {
                   ['Hébergement web', 'Vercel — uniflow.kernelforge.codes'],
                   ['Version de l’application', `${APP_VERSION} · ${import.meta.env.MODE}`],
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-3">
+                  <div key={label} className="rounded-2xl border border-slate-200/80 bg-[#f9fafb] p-3.5">
                     <dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">{label}</dt>
                     <dd className="mt-1 break-all font-medium text-[#111827]">{value}</dd>
                   </div>
                 ))}
               </dl>
               {currentUser.isSuperAdmin && (
-                <a href={consoleUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-colors">
+                <a href={consoleUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-2xl bg-[#1e3a8a] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-colors">
                   <UniIcon name="externalLink" weight="bold" size={16} /> Ouvrir la console Appwrite
                 </a>
               )}
@@ -229,32 +238,32 @@ export default function AdminSettingsPage() {
                   ],
                 },
               ].map(({ icon, title, lines, action }) => (
-                <div key={title} className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
+                <div key={title} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
                   <h2 className="text-base font-bold text-[#111827] flex items-center gap-2 mb-3"><UniIcon name={icon} size={16} className="text-[#1e3a8a]" /> {title}</h2>
                   <ul className="space-y-2 text-sm text-[#374151]">
                     {lines.map((line) => <li key={line} className="flex gap-2"><UniIcon name="success" weight="fill" size={16} className="mt-0.5 shrink-0 text-[#0d9488]" /> <span>{line}</span></li>)}
                   </ul>
-                  {action && <a href={action.href} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] px-3.5 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff]"><UniIcon name="externalLink" weight="bold" size={14} /> {action.label}</a>}
+                  {action && <a href={action.href} target="_blank" rel="noreferrer" className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-slate-200/80 px-3.5 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff]"><UniIcon name="externalLink" weight="bold" size={14} /> {action.label}</a>}
                 </div>
               ))}
             </div>
           )}
 
           {section === 'maintenance' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm space-y-5">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-5">
               <h2 className="text-base font-bold text-[#111827] flex items-center gap-2"><UniIcon name="database" size={16} className="text-[#1e3a8a]" /> Cache de ce navigateur</h2>
               <p className="text-sm text-[#6b7280]">UniFlow garde une copie locale des dernières données (IndexedDB) et des fichiers de l’application (service worker) pour fonctionner hors ligne. Si une page affiche des données visiblement périmées après une correction en base, videz ce cache.</p>
               <dl className="grid gap-3 sm:grid-cols-2 text-sm">
-                <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-3"><dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">Caches applicatifs</dt><dd className="mt-1 font-medium text-[#111827]">{cacheInfo ? `${cacheInfo.caches} cache${cacheInfo.caches > 1 ? 's' : ''} UniFlow` : '…'}</dd></div>
-                <div className="rounded-xl border border-[#f3f4f6] bg-[#f9fafb] p-3"><dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">Service worker</dt><dd className="mt-1 font-medium text-[#111827]">{cacheInfo ? (cacheInfo.swActive ? 'Actif (mode hors ligne disponible)' : 'Inactif') : '…'}</dd></div>
+                <div className="rounded-2xl border border-slate-200/80 bg-[#f9fafb] p-3.5"><dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">Caches applicatifs</dt><dd className="mt-1 font-medium text-[#111827]">{cacheInfo ? `${cacheInfo.caches} cache${cacheInfo.caches > 1 ? 's' : ''} UniFlow` : '…'}</dd></div>
+                <div className="rounded-2xl border border-slate-200/80 bg-[#f9fafb] p-3.5"><dt className="text-[11px] font-bold uppercase tracking-wider text-[#9ca3af]">Service worker</dt><dd className="mt-1 font-medium text-[#111827]">{cacheInfo ? (cacheInfo.swActive ? 'Actif (mode hors ligne disponible)' : 'Inactif') : '…'}</dd></div>
               </dl>
-              {maintenance.message && <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{maintenance.message}</p>}
+              {maintenance.message && <p role="status" className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">{maintenance.message}</p>}
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => void clearLocalCaches()} disabled={maintenance.busy}
-                  className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-60 transition-colors">
+                  className="flex items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-bold text-red-700 hover:bg-red-100 disabled:opacity-60 transition-colors">
                   {maintenance.busy ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="trash" size={16} />} Vider le cache local
                 </button>
-                <button onClick={() => window.location.reload()} className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] px-4 py-2.5 text-sm font-bold text-[#374151] hover:bg-[#f9fafb] transition-colors">
+                <button onClick={() => window.location.reload()} className="flex items-center gap-2 rounded-2xl border border-slate-200/80 px-4 py-2.5 text-sm font-bold text-[#374151] hover:bg-[#f9fafb] transition-colors">
                   <UniIcon name="refresh" weight="bold" size={16} /> Recharger l’application
                 </button>
               </div>

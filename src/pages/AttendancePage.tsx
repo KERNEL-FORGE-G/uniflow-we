@@ -156,22 +156,90 @@ export default function AttendancePage() {
   )
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Mes présences</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Suivi personnel par matière · le scan QR demande votre position uniquement pour vérifier la proximité</p>
-        </div>
-        <button onClick={() => { setQrStatus(null); setQrError(null); setQrValue(''); setShowQR(true) }}
-          className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">
-          <UniIcon name="attendance" weight="bold" size={16} /> Scanner QR
-        </button>
-      </div>
+    <div className="space-y-6 animate-fade-in pb-12 text-slate-800">
+      {/* =========================================================================
+          HERO BENTO - Design EdTech 2026 (Pointage Électronique & QR Certifié)
+         ========================================================================= */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
 
-      {/* KPI */}
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-white/20 text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Pointage Biométrique & QR Code de Proximité · UY1
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                Mes présences
+              </h1>
+              <p className="mt-2 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                Suivi personnel d'assiduité par matière · le scan QR vérifie votre proximité en amphithéâtre et certifie votre présence dans Appwrite.
+              </p>
+            </div>
+
+            {/* Micro-Bento Métriques */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Taux Global</span>
+                <span className="text-2xl font-black text-emerald-300">{globalRate}%</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Assiduité semestrielle</span>
+              </div>
+
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Présences</span>
+                <span className="text-2xl font-black text-white">{totalPresent}</span>
+                <span className="text-[10px] text-emerald-300 block mt-0.5 font-medium">Séances validées</span>
+              </div>
+
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Absences</span>
+                <span className="text-2xl font-black text-rose-300">{totalAbsent}</span>
+                <span className="text-[10px] text-slate-300 block mt-0.5 font-medium">Séances manquées</span>
+              </div>
+
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Retards</span>
+                <span className="text-2xl font-black text-amber-300">{totalLate}</span>
+                <span className="text-[10px] text-amber-200 block mt-0.5 font-medium">Pointages tardifs</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button
+                onClick={() => { setQrStatus(null); setQrError(null); setQrValue(''); setShowQR(true) }}
+                className="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 hover:bg-emerald-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-lg transition-all cursor-pointer"
+              >
+                <UniIcon name="attendance" weight="bold" size={18} /> Scanner QR
+              </button>
+              <button
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 rounded-2xl bg-white/15 hover:bg-white/25 px-4 py-2.5 text-xs font-bold text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer"
+              >
+                <UniIcon name="refresh" weight="bold" size={16} /> Actualiser
+              </button>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-emerald-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/attendance.png"
+                alt="Pointage QR 3D"
+                className="relative z-10 w-40 sm:w-48 lg:w-56 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/presence.jpg' }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* KPI Bento Row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm flex items-center gap-4">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm flex items-center gap-4">
           <div className="relative h-14 w-14 shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -184,26 +252,26 @@ export default function AttendancePage() {
             <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-emerald-600">{globalRate}%</span>
           </div>
           <div>
-            <p className="text-2xl font-extrabold text-[#111827]">{globalRate}%</p>
-            <p className="text-xs text-[#6b7280]">Taux global</p>
+            <p className="text-2xl font-black text-slate-900">{globalRate}%</p>
+            <p className="text-xs font-semibold text-slate-500">Taux global</p>
           </div>
         </div>
-        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-          <p className="text-2xl font-extrabold text-emerald-600">{totalPresent}</p>
-          <p className="text-xs text-[#6b7280] mt-0.5">Présences totales</p>
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <p className="text-2xl font-black text-emerald-600">{totalPresent}</p>
+          <p className="text-xs font-semibold text-slate-500 mt-0.5">Présences totales</p>
         </div>
-        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-          <p className="text-2xl font-extrabold text-red-600">{totalAbsent}</p>
-          <p className="text-xs text-[#6b7280] mt-0.5">Absences totales</p>
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <p className="text-2xl font-black text-red-600">{totalAbsent}</p>
+          <p className="text-xs font-semibold text-slate-500 mt-0.5">Absences totales</p>
         </div>
-        <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
-          <p className="text-2xl font-extrabold text-amber-600">{totalLate}</p>
-          <p className="text-xs text-[#6b7280] mt-0.5">Retards</p>
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
+          <p className="text-2xl font-black text-amber-600">{totalLate}</p>
+          <p className="text-xs font-semibold text-slate-500 mt-0.5">Retards</p>
         </div>
       </div>
 
       {/* Présences par cours */}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-5 sm:grid-cols-2">
         {(courses ?? []).map((course: Course) => {
           const courseSessions = (allSessions ?? []).filter((s: AttendanceSession) => s.courseId === course.id)
           const records = courseSessions.flatMap((s: AttendanceSession) => s.records ?? [])
@@ -212,50 +280,49 @@ export default function AttendancePage() {
           const late    = records.filter(r => r.status === 'RETARD').length
           const tot = records.length || 1
           const rate = Math.round((present / tot) * 100)
-          // Même teinte que la carte du cours : la matière se reconnaît d'une page à l'autre.
           const color = subjectColor(course.code)
           const teacherName = course.teacher
             ? `${course.teacher.firstName} ${course.teacher.lastName}`
             : ''
 
           return (
-            <div key={course.id} className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-              <div className="p-4 text-white" style={{ backgroundImage: `linear-gradient(135deg, ${color} 0%, ${darkenHex(color, 0.3)} 100%)` }}>
+            <div key={course.id} className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden hover:shadow-lg transition-all">
+              <div className="p-5 text-white" style={{ backgroundImage: `linear-gradient(135deg, ${color} 0%, ${darkenHex(color, 0.3)} 100%)` }}>
                 <div className="flex items-start justify-between">
                   <div>
-                    <span className="mb-1 inline-flex items-center gap-1.5 rounded-md bg-white/20 px-2 py-0.5 text-xs font-bold"><SubjectIcon subject={course.name} code={course.code} weight="fill" size={14} />{course.code}</span>
-                    <h3 className="text-base font-bold">{course.name}</h3>
-                    <p className="text-xs opacity-80">{teacherName}</p>
+                    <span className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-white/20 backdrop-blur-md px-2.5 py-0.5 text-xs font-bold"><SubjectIcon subject={course.name} code={course.code} weight="fill" size={14} />{course.code}</span>
+                    <h3 className="text-base font-extrabold">{course.name}</h3>
+                    <p className="text-xs opacity-85 mt-0.5">{teacherName}</p>
                   </div>
                   <div className="text-right">
-                    <div className="text-2xl font-extrabold">{rate}%</div>
-                    <p className="text-xs opacity-70">Assiduité</p>
+                    <div className="text-2xl font-black">{rate}%</div>
+                    <p className="text-xs opacity-75">Assiduité</p>
                   </div>
                 </div>
               </div>
-              <div className="p-4 space-y-3">
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="rounded-lg bg-emerald-50 border border-emerald-200 p-2">
+              <div className="p-5 space-y-3">
+                <div className="grid grid-cols-3 gap-2.5 text-center">
+                  <div className="rounded-2xl bg-emerald-50 border border-emerald-200/80 p-2.5">
                     <UniIcon name="success" weight="fill" size={16} className="text-emerald-600 mx-auto mb-0.5" />
-                    <p className="text-lg font-bold text-emerald-900">{present}</p>
-                    <p className="text-[10px] text-emerald-600">Présent</p>
+                    <p className="text-lg font-black text-emerald-900">{present}</p>
+                    <p className="text-[10px] font-bold text-emerald-600">Présent</p>
                   </div>
-                  <div className="rounded-lg bg-red-50 border border-red-200 p-2">
+                  <div className="rounded-2xl bg-red-50 border border-red-200/80 p-2.5">
                     <UniIcon name="error" weight="fill" size={16} className="text-red-600 mx-auto mb-0.5" />
-                    <p className="text-lg font-bold text-red-900">{absent}</p>
-                    <p className="text-[10px] text-red-600">Absent</p>
+                    <p className="text-lg font-black text-red-900">{absent}</p>
+                    <p className="text-[10px] font-bold text-red-600">Absent</p>
                   </div>
-                  <div className="rounded-lg bg-amber-50 border border-amber-200 p-2">
+                  <div className="rounded-2xl bg-amber-50 border border-amber-200/80 p-2.5">
                     <UniIcon name="time" weight="fill" size={16} className="text-amber-600 mx-auto mb-0.5" />
-                    <p className="text-lg font-bold text-amber-900">{late}</p>
-                    <p className="text-[10px] text-amber-600">Retard</p>
+                    <p className="text-lg font-black text-amber-900">{late}</p>
+                    <p className="text-[10px] font-bold text-amber-600">Retard</p>
                   </div>
                 </div>
 
                 {/* Dernières sessions */}
                 {courseSessions.slice(-3).map((s: AttendanceSession) => (
-                  <div key={s.id} className="flex items-center justify-between p-2 rounded-lg bg-[#f9fafb] text-xs">
-                    <span className="flex items-center gap-1.5 text-[#6b7280]">
+                  <div key={s.id} className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 border border-slate-100 text-xs">
+                    <span className="flex items-center gap-1.5 font-medium text-slate-600">
                       <UniIcon name="agenda" size={14} />
                       {new Date(s.date).toLocaleDateString('fr-FR', { day:'numeric', month:'short' })}
                     </span>
@@ -264,24 +331,24 @@ export default function AttendancePage() {
                         const myRecord = (s.records ?? []).find(r => r.status)
                         return myRecord ? (
                           <>{statusIcon(myRecord.status)} {statusBadge(myRecord.status)}</>
-                        ) : <span className="text-[#9ca3af]">—</span>
+                        ) : <span className="text-slate-400">—</span>
                       })()}
                     </div>
                   </div>
                 ))}
 
                 <button onClick={() => setSelectedCourse(selectedCourse === course.id ? null : course.id)}
-                  className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2 text-xs font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">
+                  className="w-full rounded-2xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors cursor-pointer">
                   {selectedCourse === course.id ? 'Masquer' : 'Voir tout l\'historique'}
                 </button>
 
                 {selectedCourse === course.id && (
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                  <div className="space-y-1.5 max-h-48 overflow-y-auto">
                     {lSessions ? (
-                      <div className="h-8 rounded bg-[#f3f4f6] animate-pulse" />
+                      <div className="h-8 rounded-xl bg-slate-100 animate-pulse" />
                     ) : (sessions ?? []).map((s: AttendanceSession) => (
-                      <div key={s.id} className="flex items-center justify-between p-2 rounded bg-[#f9fafb] text-xs">
-                        <span className="text-[#6b7280]">
+                      <div key={s.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 text-xs">
+                        <span className="text-slate-600 font-medium">
                           {new Date(s.date).toLocaleDateString('fr-FR')}
                         </span>
                         {(() => {

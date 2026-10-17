@@ -241,30 +241,42 @@ export default function AdminTeamPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-[#111827]">Équipe KERNEL FORGE</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">
-            {members.length} membre{members.length > 1 ? 's' : ''} — la page publique /teams et les applications mobile et bureau affichent cette liste
-          </p>
+      <div className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/students.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-cyan-200">
+                Administration Centrale · KERNEL FORGE
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight">Équipe KERNEL FORGE</h1>
+              <p className="text-sm text-slate-200 mt-1">
+                {members.length} membre{members.length > 1 ? 's' : ''} — la page publique /teams et les applications mobile et bureau affichent cette liste
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={openCreate}
+            className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-bold text-[#0B132B] hover:bg-cyan-50 transition-all shadow-lg"
+          >
+            <Plus className="h-4 w-4 text-[#1E3A8A]" /> Nouveau membre
+          </button>
         </div>
-        <button
-          onClick={openCreate}
-          className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-all shadow"
-        >
-          <Plus className="h-4 w-4" /> Nouveau membre
-        </button>
       </div>
 
       {notice && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-xl text-sm font-medium flex items-start justify-between gap-3">
+        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-3xl text-sm font-medium flex items-start justify-between gap-3 shadow-sm">
           <span>{notice}</span>
           <button onClick={() => setNotice(null)} className="text-emerald-700 shrink-0"><X className="h-4 w-4" /></button>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm font-medium">
+        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-3xl text-sm font-medium shadow-sm">
           Erreur : {error}
         </div>
       )}
@@ -274,7 +286,7 @@ export default function AdminTeamPage() {
           <Loader2 className="h-8 w-8 animate-spin text-[#1e3a8a]" />
         </div>
       ) : (
-        <div className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
+        <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -359,7 +371,7 @@ export default function AdminTeamPage() {
       {/* Formulaire de création / modification */}
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
+          <div className="w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl border border-slate-200/80 bg-white p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4 border-b pb-2">
               <h3 className="text-lg font-bold text-[#111827]">
                 {form.memberId ? 'Modifier le membre' : 'Ajouter un membre'}

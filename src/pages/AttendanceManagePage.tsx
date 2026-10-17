@@ -232,30 +232,81 @@ export default function AttendanceManagePage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div>}
-      {queuedNotice && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">{queuedNotice}</div>}
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-[#f0fdfa] border border-[#ccfbf1] px-2.5 py-1 text-xs font-semibold text-[#0d9488] mb-2">
-            <UniIcon name="megaphone" weight="fill" size={14} /> ESPACE DÉLÉGUÉ / ENSEIGNANT
-          </span>
-          <h1 className="text-xl font-bold text-[#111827]">Gestion des présences</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">{currentUser.name} · {currentUser.status} · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
-        </div>
-        <div className="flex gap-2">
-          {course && (
-            <button onClick={handleGenerateQr} disabled={qrLoading || isOfflineMode}
-              className="flex items-center gap-1.5 rounded-lg bg-[#0d9488] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0a7167] transition-colors disabled:opacity-50">
-              {qrLoading ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="attendance" weight="bold" size={16} />}
-              {qrLoading ? 'Création Appwrite…' : 'Générer QR'}
-            </button>
-          )}
-        </div>
-      </div>
+    <div className="space-y-6 animate-fade-in pb-12">
+      {error && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{error}</div>}
+      {queuedNotice && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="status">{queuedNotice}</div>}
 
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-xl border border-[#e5e7eb] bg-white px-5 py-3 shadow-sm">
+      {/* =========================================================================
+          HERO BENTO - Gestion des présences
+         ========================================================================= */}
+      <section className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-semibold text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <UniIcon name="megaphone" weight="fill" size={14} /> ESPACE DÉLÉGUÉ / ENSEIGNANT
+            </span>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Gestion des présences</h1>
+              <p className="text-sm sm:text-base text-slate-200/90 mt-1.5 leading-relaxed">
+                {currentUser.name} · {currentUser.status} · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+
+            {/* Micro-cartes Bento de statistiques */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Cours gérés</span>
+                <span className="text-2xl font-black text-white">{courses.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">{course?.code || 'Aucun sélectionné'}</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Effectif inscrit</span>
+                <span className="text-2xl font-black text-white">{students.length}</span>
+                <span className="text-[10px] text-emerald-300 block mt-0.5 font-medium">{present} présents · {absent} absents</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Taux du jour</span>
+                <span className="text-2xl font-black text-emerald-300">{rate}%</span>
+                <span className="text-[10px] text-slate-200 block mt-0.5 font-medium">Seuil requis ≥75%</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Séances archivées</span>
+                <span className="text-2xl font-black text-white">{recordedSessions.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Synchronisation Appwrite</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {course && (
+                <button onClick={handleGenerateQr} disabled={qrLoading || isOfflineMode}
+                  className="inline-flex items-center gap-2 rounded-xl bg-white text-[#1E3A8A] px-4 py-2.5 text-xs font-bold shadow-md hover:bg-cyan-50 transition-all disabled:opacity-50 cursor-pointer">
+                  {qrLoading ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="attendance" weight="bold" size={16} />}
+                  {qrLoading ? 'Création Appwrite…' : 'Générer QR'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/attendance.png"
+                alt="Illustration 3D Présences"
+                className="relative z-10 w-40 sm:w-52 lg:w-60 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/uni_copilot_3d.png' }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-3xl border border-slate-200/80 bg-white px-6 py-4 shadow-sm hover:shadow-md transition-all">
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-xs font-bold uppercase tracking-wide text-[#6b7280]">Feuille du jour</span>
           <ExportButtons getDocument={todayRollExport} disabled={attendanceLoading || students.length === 0} disabledReason="Aucun étudiant inscrit à ce cours." />
@@ -268,7 +319,7 @@ export default function AttendanceManagePage() {
 
       {/* Offline / Online banner */}
       {isOfflineMode ? (
-        <div className="flex items-start gap-3 rounded-xl bg-amber-50 border border-amber-200 p-4 text-amber-800">
+        <div className="flex items-start gap-3 rounded-3xl bg-amber-50 border border-amber-200 p-4 text-amber-800 shadow-sm">
           <UniIcon name="warning" weight="fill" size={20} className="text-amber-500 shrink-0 mt-0.5 animate-bounce" />
           <div className="flex-1">
             <p className="font-semibold text-sm">Mode hors ligne</p>
@@ -276,13 +327,13 @@ export default function AttendanceManagePage() {
           </div>
           {pending > 0 && (
             <button onClick={() => setPending(0)}
-              className="flex items-center gap-1.5 rounded-lg bg-amber-200 hover:bg-amber-300 px-3 py-1.5 text-xs font-bold text-amber-900 shrink-0">
+              className="flex items-center gap-1.5 rounded-xl bg-amber-200 hover:bg-amber-300 px-3 py-1.5 text-xs font-bold text-amber-900 shrink-0">
               <UniIcon name="refresh" weight="bold" size={14} /> Sync ({pending})
             </button>
           )}
         </div>
       ) : (
-        <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800">
+        <div className="flex items-center gap-3 rounded-3xl bg-emerald-50 border border-emerald-200 p-4 text-emerald-800 shadow-sm">
           <UniIcon name="wifi" weight="fill" size={20} className="text-emerald-500 shrink-0" />
           <p className="text-sm font-medium">Mode connecté — les présences sont lues et enregistrées directement dans Appwrite.</p>
         </div>
@@ -290,17 +341,17 @@ export default function AttendanceManagePage() {
 
       {/* Saved toast */}
       {saved && (
-        <div className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
+        <div className="rounded-2xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
           <UniIcon name="success" weight="fill" size={16} className="text-emerald-400" />
           {queuedNotice ? 'Feuille du jour mise en attente d’envoi.' : 'Présences enregistrées dans Appwrite.'}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[#e5e7eb]">
+      <div className="flex gap-1 border-b border-slate-200/80">
         {[{id:'appel',label:'Appel de présence'},{id:'annonces',label:'Annonces cohorte'}].map(t => (
           <button key={t.id} onClick={() => setActiveTab(t.id as any)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === t.id ? 'border-[#1e3a8a] text-[#1e3a8a]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}>
+            className={`px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition-colors ${activeTab === t.id ? 'border-[#1e3a8a] text-[#1e3a8a]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}>
             {t.label}
           </button>
         ))}
@@ -309,15 +360,15 @@ export default function AttendanceManagePage() {
       {activeTab === 'appel' && (
         <div className="grid gap-5 lg:grid-cols-3">
           {/* Course selector */}
-          <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-all">
             <h2 className="text-sm font-bold text-[#111827] mb-3">1. Sélection du cours</h2>
             {courses.length === 0 ? (
               <p className="text-xs text-gray-400">Aucun cours disponible.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {courses.map(c => (
                   <button key={c.code} onClick={() => setSelectedCode(c.code)}
-                    className={cn('w-full text-left rounded-xl border p-3.5 text-sm transition-all', selectedCode === c.code ? 'border-[#1e3a8a] bg-[#f0f4ff]' : 'border-[#e5e7eb] hover:bg-[#f9fafb]')}>
+                    className={cn('w-full text-left rounded-2xl border p-3.5 text-sm transition-all', selectedCode === c.code ? 'border-[#1e3a8a] bg-[#f0f4ff] shadow-xs' : 'border-slate-200/80 hover:bg-[#f9fafb]')}>
                     <div className="flex justify-between items-center">
                       <span className="flex items-center gap-2 font-bold text-[#111827]"><IconTile subject={c.name} subjectCode={c.code} color={subjectColor(c.code)} variant={selectedCode === c.code ? 'filled' : 'soft'} size={36} />{c.code}</span>
                       <Badge variant="neutral">{c.classroom?.name || 'Salle N/A'}</Badge>
@@ -343,14 +394,14 @@ export default function AttendanceManagePage() {
                 { label: 'Retards',   val: late,    color: 'text-[#d97706]', bg: 'bg-[#fef3c7]' },
                 { label: 'Excusés',   val: excused, color: 'text-[#7c3aed]', bg: 'bg-[#ede9fe]' },
               ].map(k => (
-                <div key={k.label} className={`rounded-xl p-3 ${k.bg} border border-transparent`}>
+                <div key={k.label} className={`rounded-3xl p-4 ${k.bg} border border-slate-200/40 shadow-sm hover:shadow-md transition-all`}>
                   <p className={`text-2xl font-extrabold ${k.color}`}>{k.val}</p>
                   <p className="text-xs font-medium text-[#374151] mt-0.5">{k.label}</p>
                 </div>
               ))}
             </div>
             {/* Rate bar */}
-            <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-all">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-semibold text-[#111827]">Taux de présence</span>
                 <span className="text-2xl font-extrabold text-[#0d9488]">{rate}%</span>
@@ -363,8 +414,8 @@ export default function AttendanceManagePage() {
 
             {/* Roll call table */}
             {course ? (
-              <div className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-[#f3f4f6] bg-[#f9fafb] flex flex-wrap items-center justify-between gap-2">
+              <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-[#f3f4f6] bg-[#f9fafb] flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-3">
                     <h3 className="text-sm font-bold text-[#111827]">2. Liste d'appel — {course.code}</h3>
                     <span className="text-xs text-[#9ca3af]">{students.length} étudiants</span>
@@ -372,7 +423,7 @@ export default function AttendanceManagePage() {
                   <button
                     type="button"
                     onClick={() => setShowAddStudent((prev) => !prev)}
-                    className="inline-flex items-center gap-1 rounded-lg bg-[#e0f2fe] px-3 py-1.5 text-xs font-bold text-[#0369a1] hover:bg-[#bae6fd] transition-colors"
+                    className="inline-flex items-center gap-1 rounded-xl bg-[#e0f2fe] px-3 py-1.5 text-xs font-bold text-[#0369a1] hover:bg-[#bae6fd] transition-colors"
                   >
                     <UniIcon name="user" size={14} />
                     {showAddStudent ? 'Fermer la saisie' : '+ Ajouter un participant libre'}
@@ -380,20 +431,20 @@ export default function AttendanceManagePage() {
                 </div>
 
                 {showAddStudent && (
-                  <div className="p-4 bg-[#f8fafc] border-b border-[#e5e7eb] flex flex-wrap items-center gap-3">
+                  <div className="p-4 bg-[#f8fafc] border-b border-slate-200/80 flex flex-wrap items-center gap-3">
                     <input
                       type="text"
                       placeholder="Nom complet de l'apprenant"
                       value={newStudentName}
                       onChange={(e) => setNewStudentName(e.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                      className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
                     />
                     <input
                       type="email"
                       placeholder="Email ou identifiant"
                       value={newStudentEmail}
                       onChange={(e) => setNewStudentEmail(e.target.value)}
-                      className="rounded-lg border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
+                      className="rounded-xl border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#1e3a8a]"
                     />
                     <button
                       type="button"
@@ -412,7 +463,7 @@ export default function AttendanceManagePage() {
                         setShowAddStudent(false)
                         setPending((p) => p + 1)
                       }}
-                      className="rounded-lg bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#2d4fa8]"
+                      className="rounded-xl bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#2d4fa8]"
                     >
                       Ajouter à l'appel
                     </button>
@@ -466,14 +517,14 @@ export default function AttendanceManagePage() {
                     <UniIcon name="help" size={16} /> Les absences sont persistées dans Appwrite ; les notifications distantes exigent un fournisseur FCM configuré.
                   </p>
                   <button onClick={handleSave} disabled={saving || attendanceLoading || !course}
-                    className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-5 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-50">
+                    className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-50">
                     {saving || attendanceLoading ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="attendance" weight="bold" size={16} />}
                     {attendanceLoading ? 'Chargement du relevé…' : saving ? 'Sauvegarde Appwrite…' : 'Valider et sauvegarder'}
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm text-center text-gray-500">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all text-center text-gray-500">
                 Sélectionnez un cours à gauche pour faire l'appel.
               </div>
             )}
@@ -485,12 +536,12 @@ export default function AttendanceManagePage() {
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-sm font-bold text-[#111827]">Annonces de la cohorte</h2>
-            <button className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">
+            <button className="flex items-center gap-1.5 rounded-xl bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8]">
               <UniIcon name="megaphone" weight="bold" size={16} /> Nouvelle annonce
             </button>
           </div>
           {announcements.map(a => (
-            <div key={a.id} className={`rounded-xl border p-4 ${a.type === 'warning' ? 'border-amber-200 bg-amber-50' : 'border-[#e5e7eb] bg-white'} shadow-sm`}>
+            <div key={a.id} className={`rounded-3xl border p-5 ${a.type === 'warning' ? 'border-amber-200 bg-amber-50' : 'border-slate-200/80 bg-white'} shadow-sm hover:shadow-md transition-all`}>
               <div className="flex items-center justify-between gap-2 mb-1">
                 <h3 className="font-semibold text-[#111827]">{a.title}</h3>
                 <span className="text-xs text-[#9ca3af]">{a.time}</span>
@@ -504,21 +555,21 @@ export default function AttendanceManagePage() {
       {/* QR Modal */}
       {showQR && course && qrSession && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-fade-in">
-          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl text-center">
+          <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl text-center">
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm font-bold text-[#111827]">Jeton QR de présence</span>
               <button onClick={() => { setShowQR(false); setQrSession(null) }} aria-label="Fermer" className="rounded-lg p-1.5 hover:bg-[#f3f4f6] text-[#9ca3af]"><UniIcon name="close" weight="bold" size={20} /></button>
             </div>
             <p className="text-xs text-[#6b7280] mb-4">{course.code} · {course.classroom?.name || 'Salle N/A'} · {course.teacher ? `${course.teacher.firstName} ${course.teacher.lastName}` : 'N/A'}</p>
-            <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-xl border border-[#e5e7eb] bg-white p-3">
+            <div className="mx-auto flex h-52 w-52 items-center justify-center rounded-2xl border border-slate-200/80 bg-white p-3">
               <QRCodeSVG value={qrSession.payload} size={184} level="M" includeMargin aria-label="QR d’émargement UniFlow" />
             </div>
-            <p className="mt-4 rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2 text-left text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
+            <p className="mt-4 rounded-xl bg-emerald-50 border border-emerald-200 px-3 py-2 text-left text-xs font-semibold text-emerald-800 flex items-center gap-1.5">
               <UniIcon name="time" weight="fill" size={14} className="shrink-0" /> Jeton Appwrite actif jusqu’à {new Date(qrSession.expiresAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}. Un apprenant inscrit ne peut émarger qu’une fois.
             </p>
             <div className="mt-4 grid grid-cols-2 gap-2">
-              <button onClick={() => { setShowQR(false); setQrSession(null) }} className="rounded-lg border border-[#e5e7eb] py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">Fermer</button>
-              <button onClick={() => navigator.clipboard?.writeText(qrSession.payload)} className="rounded-lg bg-[#1e3a8a] py-2 text-sm font-semibold text-white flex items-center justify-center gap-1.5 hover:bg-[#2d4fa8]">
+              <button onClick={() => { setShowQR(false); setQrSession(null) }} className="rounded-xl border border-slate-200/80 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb]">Fermer</button>
+              <button onClick={() => navigator.clipboard?.writeText(qrSession.payload)} className="rounded-xl bg-[#1e3a8a] py-2 text-sm font-semibold text-white flex items-center justify-center gap-1.5 hover:bg-[#2d4fa8]">
                 <UniIcon name="download" weight="bold" size={16} /> Copier le jeton
               </button>
             </div>

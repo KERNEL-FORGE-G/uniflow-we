@@ -206,23 +206,30 @@ export default function EnrollmentsPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              onClick={() => showToast('Certificat de scolarité officiel 2026-2027 téléchargé (PDF signé QR) !')}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-xs font-black text-[#1E3A8A] shadow-md hover:bg-blue-50 transition-all"
-            >
-              <Download className="h-4 w-4" />
-              <span>Certificat de Scolarité (PDF)</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => showToast('Fiche d’inscription pédagogique S5/S6 téléchargée !')}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#F59E0B] px-4 py-3 text-xs font-black text-slate-950 shadow-md hover:bg-amber-400 transition-all"
-            >
-              <Award className="h-4 w-4" />
-              <span>Télécharger le Quitus d’Inscription</span>
-            </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <img
+              src="/icons/nav/inscriptions.png"
+              alt="Inscriptions 3D"
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-xl"
+            />
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={() => showToast('Certificat de scolarité officiel 2026-2027 téléchargé (PDF signé QR) !')}
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-xs font-black text-[#1E3A8A] shadow-md hover:bg-blue-50 transition-all"
+              >
+                <Download className="h-4 w-4" />
+                <span>Certificat de Scolarité (PDF)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => showToast('Fiche d’inscription pédagogique S5/S6 téléchargée !')}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#F59E0B] px-4 py-3 text-xs font-black text-slate-950 shadow-md hover:bg-amber-400 transition-all"
+              >
+                <Award className="h-4 w-4" />
+                <span>Télécharger le Quitus d’Inscription</span>
+              </button>
+            </div>
           </div>
         </div>
 

@@ -389,29 +389,43 @@ export default function MessagingPage() {
   }
 
   return (
-    <div className="relative flex h-[calc(100vh-5rem)] rounded-xl border border-[#e5e7eb] dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden animate-fade-in">
-      {/* ── Barre latérale ── */}
-      <div className="flex w-80 shrink-0 flex-col border-r border-[#e5e7eb] dark:border-slate-800 bg-white dark:bg-slate-900">
-        <div className="flex items-center justify-between border-b border-[#e5e7eb] dark:border-slate-800 px-4 py-3.5">
-          <div className="flex items-center gap-2">
-            <h2 className="font-bold text-[#111827] dark:text-white">Messages</h2>
-            {totalUnread > 0 && (
-              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1e3a8a] text-[10px] font-bold text-white">
-                {totalUnread}
-              </span>
-            )}
+    <div className="space-y-5 animate-fade-in pb-8">
+      {/* =========================================================================
+          HERO BENTO - Messagerie Instantanée & Groupes de Promotion
+         ========================================================================= */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-5 sm:p-6 text-white shadow-xl border border-white/10">
+        <div className="absolute -right-20 -top-20 w-72 h-72 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <img
+              src="/icons/nav/messages.png"
+              alt="Messagerie 3D"
+              className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 object-contain drop-shadow-xl"
+            />
+            <div>
+              <div className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-0.5 text-[11px] font-bold text-cyan-200 backdrop-blur-md border border-white/20">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+                Messagerie Campus & Groupes Illimités
+              </div>
+              <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-white mt-1">
+                Messages & Canaux Collaboratifs
+              </h1>
+              <p className="text-xs text-slate-200/90 mt-0.5">
+                Échangez en direct par @pseudo avec vos camarades, délégués et enseignants ou créez des groupes de travail.
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
+
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={() => {
                 setShowAddModal(true)
                 setAddError(null)
               }}
-              title="Nouvelle discussion directe par @pseudo"
-              className="flex items-center gap-1 rounded-lg bg-[#1e3a8a] dark:bg-teal-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] dark:hover:bg-teal-500 transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white transition-all cursor-pointer"
             >
-              <Plus className="h-3.5 w-3.5" /> Direct
+              <Plus className="h-4 w-4 text-cyan-300" /> Discussion @pseudo
             </button>
             <button
               type="button"
@@ -419,25 +433,63 @@ export default function MessagingPage() {
                 setShowCreateGroupModal(true)
                 setGroupCreateError(null)
               }}
-              title="Créer un groupe style WhatsApp (sans limite de membres)"
-              className="flex items-center gap-1 rounded-lg bg-emerald-600 dark:bg-emerald-500 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-400 hover:bg-emerald-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-md transition-all cursor-pointer"
             >
-              <Users className="h-3.5 w-3.5" /> Groupe
+              <Users className="h-4 w-4" /> Créer un groupe
             </button>
           </div>
         </div>
+      </section>
 
-        <div className="border-b border-[#e5e7eb] dark:border-slate-800 p-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Rechercher contact, @pseudo ou groupe..."
-              className="w-full rounded-lg border border-[#e5e7eb] dark:border-slate-700 bg-[#f9fafb] dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-[#1e3a8a] focus:bg-white dark:focus:bg-slate-900 transition-colors"
-            />
+      <div className="relative flex h-[calc(100vh-14rem)] min-h-[540px] rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm overflow-hidden">
+        {/* ── Barre latérale ── */}
+        <div className="flex w-80 shrink-0 flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900">
+          <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800 px-4 py-3.5">
+            <div className="flex items-center gap-2">
+              <h2 className="font-extrabold text-slate-900 dark:text-white">Discussions</h2>
+              {totalUnread > 0 && (
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#1e3a8a] text-[10px] font-bold text-white">
+                  {totalUnread}
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddModal(true)
+                  setAddError(null)
+                }}
+                title="Nouvelle discussion directe par @pseudo"
+                className="flex items-center gap-1 rounded-xl bg-[#1e3a8a] dark:bg-teal-600 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-[#2d4fa8] dark:hover:bg-teal-500 transition-colors shadow-xs"
+              >
+                <Plus className="h-3.5 w-3.5" /> Direct
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCreateGroupModal(true)
+                  setGroupCreateError(null)
+                }}
+                title="Créer un groupe style WhatsApp (sans limite de membres)"
+                className="flex items-center gap-1 rounded-xl bg-emerald-600 dark:bg-emerald-500 px-2.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 dark:hover:bg-emerald-600 transition-colors shadow-xs"
+              >
+                <Users className="h-3.5 w-3.5" /> Groupe
+              </button>
+            </div>
           </div>
-        </div>
+
+          <div className="border-b border-slate-200/80 dark:border-slate-800 p-3">
+            <div className="relative">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Rechercher contact, @pseudo ou groupe..."
+                className="w-full rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-800 py-2 pl-9 pr-3 text-sm text-slate-800 dark:text-slate-100 outline-none focus:border-[#1e3a8a] focus:bg-white dark:focus:bg-slate-900 transition-colors"
+              />
+            </div>
+          </div>
 
         <div className="flex-1 overflow-y-auto">
           {filteredConvos.length === 0 ? (
@@ -1287,6 +1339,7 @@ export default function MessagingPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   )
 }

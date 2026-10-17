@@ -279,61 +279,74 @@ export default function LibraryPage() {
         </div>
       )}
 
-      {/* 1. HERO HEADER UNIFLOW — DESKTOP WIDE VIEWPORT */}
-      <div className="bg-white rounded-3xl sm:rounded-[36px] p-6 sm:p-8 lg:p-10 border border-slate-200/80 shadow-xs relative overflow-hidden">
-        {/* Cercles décoratifs de fond aux couleurs de marque */}
-        <div className="absolute -right-16 -top-16 w-64 h-64 rounded-full bg-blue-50/70 pointer-events-none -z-0" />
-        <div className="absolute right-32 -bottom-20 w-48 h-48 rounded-full bg-teal-50/60 pointer-events-none -z-0" />
+      {/* 1. HERO BENTO UNIFLOW — Z-LIBRARY & SUPPORTS ACADÉMIQUES */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
 
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 pb-6 border-b border-slate-100">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-            {/* Illustration : donne un repère visuel immédiat à la page */}
-            <img
-              src="/illustrations/library.jpg"
-              alt="Étagères d'une bibliothèque lumineuse"
-              className="h-28 w-full sm:w-44 shrink-0 rounded-3xl object-cover shadow-sm"
-              loading="lazy"
-            />
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3.5 py-1 text-xs font-bold text-cyan-200 backdrop-blur-md border border-white/20">
+                <HiSparkles className="h-3.5 w-3.5 text-amber-300" />
+                Ma bibliothèque · Z-Library Académique
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-200 border border-emerald-400/30">
+                <HiCheckCircle className="h-3.5 w-3.5 text-emerald-400" />
+                Synchronisée & Hors-ligne
+              </span>
+            </div>
+
             <div>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-black uppercase tracking-wider text-[#1E3A8A] bg-blue-50 px-3.5 py-1 rounded-full border border-blue-200/60 flex items-center gap-1.5">
-                  <HiSparkles className="h-3.5 w-3.5 text-[#0D9488]" />
-                  Ma bibliothèque
-                </span>
-                <span className="text-[11px] font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200/60 hidden sm:inline-flex items-center gap-1">
-                  <HiCheckCircle className="h-3.5 w-3.5 text-[#0D9488]" />
-                  Synchronisée
-                </span>
-              </div>
-
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight mt-2.5">
-                Bibliothèque <span className="font-medium text-slate-400">· Libre accès</span>
+              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white">
+                Bibliothèque <span className="font-medium text-cyan-200/90">· Libre accès</span>
               </h1>
-              <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl leading-relaxed">
-                Trouvez des livres libres de droits, gardez vos favoris et retrouvez les supports de cours partagés dans vos groupes.
+              <p className="mt-2 text-xs sm:text-sm text-slate-200/90 max-w-2xl leading-relaxed">
+                Trouvez des livres universitaires libres de droits, téléchargez les éditions PDF certifiées UniFlow, gardez vos favoris et retrouvez les supports de cours partagés dans vos promotions.
               </p>
+            </div>
+
+            {/* Micro-Bento Métriques */}
+            <div className="grid grid-cols-3 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                <span className="text-[11px] font-medium text-slate-300 block">Manuels Libres</span>
+                <span className="text-2xl font-black text-white">{totalBooksCount}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Catalogue Z-Lib</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                <span className="text-[11px] font-medium text-slate-300 block">Dans le Bucket</span>
+                <span className="text-2xl font-black text-emerald-300">{cachedBooksCount}</span>
+                <span className="text-[10px] text-emerald-200 block mt-0.5 font-medium">Cache Appwrite</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                <span className="text-[11px] font-medium text-slate-300 block">Supports Cours</span>
+                <span className="text-2xl font-black text-amber-300">{totalCoursesCount}</span>
+                <span className="text-[10px] text-amber-200 block mt-0.5 font-medium">Fiches & TDs</span>
+              </div>
             </div>
           </div>
 
-          {/* Statistiques clés en badges */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 shrink-0">
-            <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3.5 text-center min-w-[100px]">
-              <div className="text-xl sm:text-2xl font-black text-[#1E3A8A]">{totalBooksCount}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Manuels Libres</div>
-            </div>
-            <div className="bg-teal-50/70 border border-teal-100 rounded-2xl p-3.5 text-center min-w-[100px]">
-              <div className="text-xl sm:text-2xl font-black text-[#0D9488]">{cachedBooksCount}</div>
-              <div className="text-[10px] font-bold text-teal-800 uppercase mt-0.5">Dans le Bucket</div>
-            </div>
-            <div className="bg-slate-50/80 border border-slate-100 rounded-2xl p-3.5 text-center min-w-[100px] col-span-2 sm:col-span-1">
-              <div className="text-xl sm:text-2xl font-black text-slate-800">{totalCoursesCount}</div>
-              <div className="text-[10px] font-bold text-slate-500 uppercase mt-0.5">Supports Cours</div>
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group flex items-center gap-4">
+              <img
+                src="/illustrations/library.jpg"
+                alt="Étagères d'une bibliothèque lumineuse"
+                className="hidden sm:block h-36 w-36 rounded-3xl object-cover shadow-2xl border-2 border-white/20"
+                loading="lazy"
+              />
+              <img
+                src="/icons/nav/library.png"
+                alt="Bibliothèque 3D"
+                className="relative z-10 w-36 sm:w-40 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+              />
             </div>
           </div>
         </div>
+      </section>
 
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-sm relative overflow-hidden">
         {/* ONGLETS MAJEURS : MANUELS OUVERTS vs SUPPORTS DE COURS */}
-        <div className="pt-6 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-2 bg-slate-100/80 p-1.5 rounded-2xl border border-slate-200/80">
             <button
               onClick={() => setMainMode('open-books')}

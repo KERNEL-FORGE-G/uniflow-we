@@ -88,26 +88,37 @@ export default function AdminAudiencePage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex items-center gap-4">
-          <UniMascot pose="search" size={84} effects={false} />
-          <div>
-            <p className="text-xs font-black uppercase tracking-wider text-[#0d9488]">Audience du site</p>
-            <h1 className="text-2xl font-black tracking-tight text-[#111827] sm:text-3xl">Qui visite UniFlow, et depuis où</h1>
-            <p className="mt-1 text-sm text-[#6b7280]">
-              Mesure maison, sans service tiers : un identifiant anonyme par navigateur, aucune donnée personnelle.
-              {updatedAt && <> Actualisé à {updatedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}.</>}
-            </p>
+      <header className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/analytics.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div className="hidden lg:block shrink-0">
+              <UniMascot pose="search" size={72} effects={false} />
+            </div>
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-cyan-200">
+                Audience du site
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-white">Qui visite UniFlow, et depuis où</h1>
+              <p className="mt-1.5 text-sm text-slate-200 max-w-2xl">
+                Mesure maison, sans service tiers : un identifiant anonyme par navigateur, aucune donnée personnelle.
+                {updatedAt && <> Actualisé à {updatedAt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}.</>}
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => void load()}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 self-start sm:self-center rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:bg-white/25 disabled:opacity-60"
+          >
+            <RefreshCw className={cn('h-4 w-4 text-cyan-200', refreshing && 'animate-spin')} /> Actualiser
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => void load()}
-          disabled={refreshing}
-          className="inline-flex items-center gap-2 self-start rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-sm font-bold text-[#111827] shadow-sm transition hover:border-[#1e3a8a] disabled:opacity-60"
-        >
-          <RefreshCw className={cn('h-4 w-4', refreshing && 'animate-spin')} /> Actualiser
-        </button>
       </header>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -116,7 +127,7 @@ export default function AdminAudiencePage() {
             key={label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0, transition: { delay: index * 0.06 } }}
-            className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm"
+            className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm"
           >
             <div className="flex items-center justify-between">
               <span className={cn('flex h-11 w-11 items-center justify-center rounded-2xl', accent)}><Icon className="h-5 w-5" /></span>
@@ -135,7 +146,7 @@ export default function AdminAudiencePage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm xl:col-span-2">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm xl:col-span-2">
           <h2 className="text-base font-black text-[#111827]">Visites et visiteurs — 30 derniers jours</h2>
           <p className="text-xs text-[#6b7280]">Une visite = une session de navigation ; un visiteur = un navigateur distinct dans la journée.</p>
           <div className="mt-4 h-72">
@@ -156,7 +167,7 @@ export default function AdminAudiencePage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
           <h2 className="text-base font-black text-[#111827]">Par plateforme</h2>
           <p className="text-xs text-[#6b7280]">Site web, application mobile, application de bureau.</p>
           <div className="mt-2 h-44">
@@ -187,7 +198,7 @@ export default function AdminAudiencePage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm">
           <h2 className="text-base font-black text-[#111827]">Par appareil</h2>
           <p className="text-xs text-[#6b7280]">Téléphone, tablette, ordinateur (d’après le navigateur).</p>
           <div className="mt-4 h-48">
@@ -205,7 +216,7 @@ export default function AdminAudiencePage() {
           </div>
         </section>
 
-        <section className="rounded-3xl border border-[#e5e7eb] bg-white p-5 shadow-sm xl:col-span-2">
+        <section className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm xl:col-span-2">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-black text-[#111827]">Dernières visites</h2>
