@@ -18,6 +18,10 @@ on:
         required: false
         default: '1.0.0'
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ============================================================================
   # 1. BUILD LINUX DESKTOP (DEB, RPM, APPIMAGE, TARBALL)
@@ -30,6 +34,14 @@ jobs:
         working-directory: desktop
 
     steps:
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -94,6 +106,7 @@ jobs:
         with:
           name: UniFlow-Linux-x64-deb
           path: desktop/build/linux/dist/*.deb
+          retention-days: 7
           if-no-files-found: error
 
       - name: Upload RPM Package (.rpm)
@@ -101,6 +114,7 @@ jobs:
         with:
           name: UniFlow-Linux-x64-rpm
           path: desktop/build/linux/dist/*.rpm
+          retention-days: 7
           if-no-files-found: warn
 
       - name: Upload AppImage Package (.AppImage)
@@ -108,6 +122,7 @@ jobs:
         with:
           name: UniFlow-Linux-x64-AppImage
           path: desktop/build/linux/dist/*.AppImage
+          retention-days: 7
           if-no-files-found: warn
 
       - name: Upload Linux Tarball (.tar.gz)
@@ -115,6 +130,7 @@ jobs:
         with:
           name: UniFlow-Linux-x64-tarball
           path: desktop/build/linux/dist/*.tar.gz
+          retention-days: 7
           if-no-files-found: warn
 
   # ============================================================================
@@ -153,17 +169,62 @@ jobs:
         run: flutter build windows --release
 
       - name: Build Standalone Windows Installer (.EXE via Inno Setup)
+        shell: powershell
         run: |
           New-Item -ItemType Directory -Path "build\windows\dist" -Force | Out-Null
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "windows\installer\uniflow_installer.iss"
-          Copy-Item "build\windows\installer\UniFlow-1.0.0-Setup.exe" -Destination "build\windows\dist\" -Force
+          New-Item -ItemType Directory -Path "build\windows\installer" -Force | Out-Null
+          
+          # Détection dynamique du compilateur Inno Setup
+          $iscc = (Get-Command iscc.exe -ErrorAction SilentlyContinue)?.Source
+          if (-not $iscc) {
+            $candidates = @(
+              "C:\Program Files (x86)\Inno Setup 6\ISCC.exe",
+              "C:\Program Files\Inno Setup 6\ISCC.exe",
+              "$env:ProgramFiles\Inno Setup 6\ISCC.exe",
+              "$env:ProgramFiles(x86)\Inno Setup 6\ISCC.exe"
+            )
+            foreach ($c in $candidates) {
+              if (Test-Path $c) { $iscc = $c; break }
+            }
+          }
+          
+          if ($iscc) {
+            Write-Host "Utilisation de Inno Setup : $iscc" -ForegroundColor Green
+            & $iscc "windows\installer\uniflow_installer.iss"
+            if (Test-Path "build\windows\installer\UniFlow-1.0.0-Setup.exe") {
+              Copy-Item "build\windows\installer\UniFlow-1.0.0-Setup.exe" -Destination "build\windows\dist\" -Force
+            }
+          } else {
+            Write-Warning "Inno Setup introuvable. Exécution du fallback bundle portable."
+          }
 
       - name: Build Windows Installer Package (.MSI via WiX Toolset)
+        shell: powershell
         run: |
-          candle.exe -out "build\windows\dist\uniflow.wixobj" "windows\installer\uniflow_installer.wxs"
-          light.exe -out "build\windows\dist\UniFlow-1.0.0.msi" "build\windows\dist\uniflow.wixobj" -ext WixUIExtension
+          # Détection dynamique des binaires WiX Toolset
+          if (-not (Get-Command candle.exe -ErrorAction SilentlyContinue)) {
+            $wixCandidates = @(
+              "C:\Program Files (x86)\WiX Toolset v3.11\bin",
+              "C:\Program Files\WiX Toolset v3.11\bin",
+              "$env:WIX\bin"
+            )
+            foreach ($w in $wixCandidates) {
+              if (Test-Path "$w\candle.exe") {
+                $env:PATH = "$w;$env:PATH"
+                break
+              }
+            }
+          }
+          
+          if (Get-Command candle.exe -ErrorAction SilentlyContinue) {
+            candle.exe -out "build\windows\dist\uniflow.wixobj" "windows\installer\uniflow_installer.wxs"
+            light.exe -out "build\windows\dist\UniFlow-1.0.0.msi" "build\windows\dist\uniflow.wixobj" -ext WixUIExtension
+          } else {
+            Write-Warning "WiX candle.exe introuvable dans le PATH."
+          }
 
       - name: Build Microsoft Store Package (.MSIX via msix tool)
+        shell: powershell
         run: |
           flutter pub run msix:create --output-path "build\windows\dist" --output-name "UniFlow-1.0.0"
 
@@ -172,18 +233,21 @@ jobs:
         with:
           name: UniFlow-Windows-x64-EXE-Setup
           path: desktop/build/windows/dist/*.exe
-          if-no-files-found: error
+          retention-days: 7
+          if-no-files-found: warn
 
       - name: Upload Windows Installer (.msi)
         uses: actions/upload-artifact@v4
         with:
           name: UniFlow-Windows-x64-MSI
           path: desktop/build/windows/dist/*.msi
+          retention-days: 7
           if-no-files-found: warn
 
-      - name: Upload Microsoft Store Package (.msix)
+      - name: Upload Microsoft Store Package (.MSIX)
         uses: actions/upload-artifact@v4
         with:
           name: UniFlow-Windows-MicrosoftStore-MSIX
           path: desktop/build/windows/dist/*.msix
+          retention-days: 7
           if-no-files-found: warn

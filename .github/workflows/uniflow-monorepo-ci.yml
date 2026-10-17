@@ -7,6 +7,10 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   web-build:
     name: Web (React + TypeScript + Vite)
@@ -36,6 +40,9 @@ jobs:
       - name: Typecheck
         run: pnpm run typecheck
 
+      - name: Run unit & guard tests
+        run: pnpm test
+
       - name: Build production bundle
         env:
           VITE_APPWRITE_ENDPOINT: https://vps.kernelforge.codes/v1
@@ -48,6 +55,7 @@ jobs:
         with:
           name: uniflow-web-dist
           path: web/dist
+          retention-days: 7
           if-no-files-found: warn
 
   mobile-build:
@@ -57,6 +65,16 @@ jobs:
       run:
         working-directory: mobile
     steps:
+      - name: Free runner disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /usr/local/lib/android/sdk/ndk*
+          sudo rm -rf /opt/ghc
+          sudo rm -rf /usr/local/share/boost
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo docker image prune --all --force 2>/dev/null || true
+          df -h
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -89,6 +107,7 @@ jobs:
         with:
           name: uniflow-mobile-apk
           path: mobile/build/app/outputs/flutter-apk/*.apk
+          retention-days: 7
           if-no-files-found: warn
 
   desktop-linux:
@@ -146,6 +165,7 @@ jobs:
           path: |
             desktop/build/linux/dist/*.deb
             desktop/build/linux/x64/release/bundle/
+          retention-days: 7
           if-no-files-found: warn
 
   desktop-windows:
@@ -178,4 +198,5 @@ jobs:
         with:
           name: uniflow-desktop-windows-bundle
           path: desktop/build/windows/x64/runner/Release/
+          retention-days: 7
           if-no-files-found: warn
