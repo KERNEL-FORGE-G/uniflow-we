@@ -23,6 +23,8 @@ import {
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { newsApi, type NewsItem } from '../lib/api'
+import { YouTubePlayer } from '../components/media/YouTubePlayer'
+import { youtubeIdFrom } from '../lib/videoEmbed'
 
 const CHANNELS = [
   'Toutes les actualités',
@@ -302,22 +304,28 @@ export default function ActualitesPage() {
                             <Video className="h-4 w-4 text-rose-600" />
                             <span>Vidéo Associée</span>
                           </div>
-                          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-900 shadow-md">
-                            {item.videoUrl.includes('youtube.com') || item.videoUrl.includes('youtu.be') ? (
-                              <iframe
-                                src={item.videoUrl.replace('watch?v=', 'embed/')}
-                                title={item.title}
-                                className="w-full h-full border-0"
-                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                allowFullScreen
-                              />
-                            ) : (
-                              <video
-                                src={item.videoUrl}
-                                controls
-                                className="w-full h-full object-cover"
-                              />
-                            )}
+                          <div className="w-full">
+                            {(() => {
+                              const ytId = youtubeIdFrom(item.videoUrl)
+                              if (ytId) {
+                                return (
+                                  <YouTubePlayer
+                                    videoId={ytId}
+                                    title={item.title}
+                                    className="shadow-md"
+                                  />
+                                )
+                              }
+                              return (
+                                <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-900 shadow-md">
+                                  <video
+                                    src={item.videoUrl}
+                                    controls
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )
+                            })()}
                           </div>
                         </div>
                       )}
