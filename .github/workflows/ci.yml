@@ -31,7 +31,7 @@ jobs:
           cache: 'pnpm'
 
       - name: Installer les dépendances
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Vérification des types
         run: pnpm run typecheck
@@ -41,3 +41,11 @@ jobs:
 
       - name: Build de production
         run: pnpm run build
+
+      - name: Sauvegarder l'artefact de build Web
+        uses: actions/upload-artifact@v4
+        with:
+          name: uniflow-web-dist
+          path: dist
+          retention-days: 7
+          if-no-files-found: warn
