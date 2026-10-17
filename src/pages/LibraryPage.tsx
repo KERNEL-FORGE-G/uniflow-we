@@ -1011,8 +1011,8 @@ export default function LibraryPage() {
             </div>
 
             {/* Pied de la modale */}
-            <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-              <span className="text-xs text-slate-400 font-medium">Disponibilité : Accès libre et gratuit</span>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-slate-100">
+              <span className="text-xs text-slate-400 font-medium">Disponibilité : Accès libre et gratuit Z-Library</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveBookModal(null)}
@@ -1020,27 +1020,24 @@ export default function LibraryPage() {
                 >
                   Fermer
                 </button>
+                {activeBookModal.directReadUrl && (
+                  <a
+                    href={activeBookModal.directReadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 rounded-xl bg-[#0D9488] hover:bg-teal-700 text-white px-4 py-2 text-xs font-bold shadow-md transition-all"
+                  >
+                    <HiBookOpen className="h-4 w-4" />
+                    <span>Lire en ligne</span>
+                  </a>
+                )}
                 <button
                   onClick={e => handleCacheAndDownloadBook(activeBookModal, e)}
                   disabled={cachingBookId === activeBookModal.id}
                   className="flex items-center gap-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white px-5 py-2 text-xs font-bold shadow-md transition-all"
                 >
-                  {cachingBookId === activeBookModal.id ? (
-                    <>
-                      <HiArrowPath className="h-4 w-4 animate-spin" />
-                      <span>Mise en bucket en cours...</span>
-                    </>
-                  ) : activeBookModal.cachedInBucket ? (
-                    <>
-                      <HiArrowDownTray className="h-4 w-4" />
-                      <span>Télécharger depuis le Bucket</span>
-                    </>
-                  ) : (
-                    <>
-                      <HiCloudArrowDown className="h-4 w-4" />
-                      <span>Sauvegarder dans le Bucket & Télécharger</span>
-                    </>
-                  )}
+                  <HiArrowDownTray className="h-4 w-4" />
+                  <span>Télécharger le livre (PDF)</span>
                 </button>
               </div>
             </div>

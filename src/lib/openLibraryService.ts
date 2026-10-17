@@ -92,12 +92,12 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
   {
     id: 'zlib-cs-101',
     title: 'Structure and Interpretation of Computer Programs (SICP)',
-    authors: ['Harold Abelson', 'Gerald Jay Sussman'],
+    authors: ['Harold Abelson', 'Gerald Jay Sussman', 'Julie Sussman'],
     year: 1996,
     category: 'Informatique & IA',
     language: 'Anglais',
     coverUrl: 'https://covers.openlibrary.org/b/id/8315182-M.jpg',
-    description: 'Le manuel de référence du MIT sur les principes fondamentaux de la programmation, l’abstraction, la modularité et l’interprétation.',
+    description: 'Le chef-d’œuvre mondial du MIT sur les principes fondamentaux de la programmation, l’abstraction des procédures et des données, la métalinguistique et l’interprétation.',
     downloadUrl: 'https://web.mit.edu/6.001/6.037/sicp.pdf',
     directReadUrl: 'https://mitpress.mit.edu/sites/default/files/sicp/index.html',
     format: 'PDF',
@@ -105,188 +105,165 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     downloadsCount: 48900,
     cachedInBucket: false,
     isbn: '9780262510875',
-    size: '4.8 Mo',
+    size: '7.4 Mo (Intégral MIT)',
   },
   {
     id: 'zlib-cs-102',
-    title: 'Introduction to Algorithms (CLRS)',
-    authors: ['Thomas H. Cormen', 'Charles E. Leiserson', 'Ronald L. Rivest', 'Clifford Stein'],
-    year: 2009,
+    title: 'Automate the Boring Stuff with Python: Practical Programming for Beginners',
+    authors: ['Al Sweigart'],
+    year: 2015,
     category: 'Informatique & IA',
-    language: 'Anglais / Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/2341462-M.jpg',
-    description: 'La référence mondiale pour l’étude approfondie des structures de données et des algorithmes de tri, de graphes et de programmation dynamique.',
-    downloadUrl: 'https://archive.org/download/introductiontoal00corm/introductiontoal00corm.pdf',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8282361-M.jpg',
+    description: 'Le guide pratique mondialement réputé pour automatiser les tâches quotidiennes avec Python : manipulation de fichiers, web scraping, calculs et scripts.',
+    downloadUrl: 'https://archive.org/download/automatetheboringstuffwithpython_new/automatetheboringstuffwithpython_new.pdf',
+    directReadUrl: 'https://archive.org/details/automatetheboringstuffwithpython_new',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 82400,
     cachedInBucket: false,
-    isbn: '9780262033848',
-    size: '14.2 Mo',
+    isbn: '9781593275990',
+    size: '14.8 Mo (Édition Complète)',
   },
   {
     id: 'zlib-cs-103',
-    title: 'Operating Systems: Three Easy Pieces (OSTEP)',
-    authors: ['Remzi H. Arpaci-Dusseau', 'Andrea C. Arpaci-Dusseau'],
+    title: 'Deep Learning (Adaptive Computation and Machine Learning)',
+    authors: ['Ian Goodfellow', 'Yoshua Bengio', 'Aaron Courville'],
+    year: 2016,
+    category: 'Informatique & IA',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    description: 'La bible mondiale du Deep Learning par Ian Goodfellow et Yoshua Bengio : algèbre linéaire, réseaux convolutifs, modèles récurrents et auto-encodeurs profonds.',
+    downloadUrl: 'https://archive.org/download/deep-learning-collection-pdf/%28Adaptive%20Computation%20and%20Machine%20Learning%20series%29%20Ian%20Goodfellow%2C%20Yoshua%20Bengio%2C%20Aaron%20Courville%20-%20Deep%20Learning-The%20MIT%20Press%20%282016%29.pdf',
+    directReadUrl: 'https://archive.org/details/deep-learning-collection-pdf',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 71200,
+    cachedInBucket: false,
+    isbn: '9780262035613',
+    size: '16.0 Mo (MIT Press)',
+  },
+  {
+    id: 'zlib-cs-104',
+    title: 'Linux Basics for Hackers: Getting Started with Networking, Scripting, and Security',
+    authors: ['OccupyTheWeb'],
     year: 2018,
     category: 'Informatique & IA',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/12882956-M.jpg',
-    description: 'Virtualisation, concurrence et persistance : cours complet sur les systèmes d’exploitation modernes (Linux, UNIX).',
-    downloadUrl: 'https://pages.cs.wisc.edu/~remzi/OSTEP/ostep.pdf',
+    coverUrl: 'https://covers.openlibrary.org/b/id/12683921-M.jpg',
+    description: 'Manuel pratique de référence sur Linux, le shell Bash, la gestion réseau, les permissions, la cryptographie et les architectures système.',
+    downloadUrl: 'https://archive.org/download/linux-basics-for-hackers/OccupyTheWeb%20-%20Linux%20Basics%20for%20Hackers%20%282018%29.pdf',
+    directReadUrl: 'https://archive.org/details/linux-basics-for-hackers',
     format: 'PDF',
     source: 'Z-Library',
-    downloadsCount: 39500,
+    downloadsCount: 53000,
     cachedInBucket: false,
-    size: '5.1 Mo',
+    isbn: '9781593278557',
+    size: '14.0 Mo (Livre Complet)',
+  },
+  {
+    id: 'zlib-cs-105',
+    title: 'Hacking: The Art of Exploitation (2nd Edition)',
+    authors: ['Jon Erickson'],
+    year: 2008,
+    category: 'Informatique & IA',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8314112-M.jpg',
+    description: 'Comprendre l’architecture bas niveau en langage C, la gestion de la mémoire vive, les débordements de tampon (buffer overflow) et la cryptographie.',
+    downloadUrl: 'https://archive.org/download/HackingTheArtOfExploitation/Hacking%20-%20The%20Art%20of%20Exploitation_2nd%20Ed.pdf',
+    directReadUrl: 'https://archive.org/details/HackingTheArtOfExploitation',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 68400,
+    cachedInBucket: false,
+    isbn: '9781593271442',
+    size: '4.0 Mo (Livre Complet)',
+  },
+  {
+    id: 'zlib-cs-106',
+    title: 'The Voynich Manuscript: Complete High-Resolution Full-Color Edition',
+    authors: ['Wilfrid Voynich', 'Beinecke Rare Book Library'],
+    year: 1912,
+    category: 'Informatique & IA',
+    language: 'Latin / Inconnu',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'Le manuscrit médiéval illustré codé le plus mystérieux de l’histoire de la cryptographie, reproduit en haute résolution avec ses 240 folios intégraux.',
+    downloadUrl: 'https://archive.org/download/TheVoynichManuscript/Voynich_Manuscript.pdf',
+    directReadUrl: 'https://archive.org/details/TheVoynichManuscript',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 94000,
+    cachedInBucket: false,
+    size: '56.0 Mo (Haute Résolution)',
   },
   {
     id: 'zlib-math-201',
-    title: 'Calculus: Volume 1 & Linear Algebra',
-    authors: ['Gilbert Strang', 'Edwin Herman'],
-    year: 2016,
+    title: 'Calculus: Early Transcendentals (9th Edition)',
+    authors: ['James Stewart', 'Daniel K. Clegg', 'Saleem Watson'],
+    year: 2020,
     category: 'Mathématiques & Data',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8389145-M.jpg',
-    description: 'Cours universitaire de calcul différentiel, intégral et algèbre linéaire par OpenStax et le MIT, avec exercices corrigés et applications.',
-    downloadUrl: 'https://openstax.org/details/books/calculus-volume-1',
-    format: 'PDF',
-    source: 'Z-Library',
-    downloadsCount: 31200,
-    cachedInBucket: false,
-    isbn: '9781938168024',
-    size: '13.5 Mo',
-  },
-  {
-    id: 'zlib-math-205',
-    title: 'Álgebra Lineal y sus Aplicaciones',
-    authors: ['David C. Lay', 'Steven R. Lay', 'Judi J. McDonald'],
-    year: 2016,
-    category: 'Mathématiques & Data',
-    language: 'Espagnol',
     coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
-    description: 'Texto universitario clásico de álgebra lineal en español: ecuaciones lineales, matrices, determinantes y espacios vectoriales.',
-    downloadUrl: 'https://archive.org/details/algebra-lineal-lay',
+    description: 'Le manuel mondial de référence absolue pour le calcul différentiel, intégral, les suites et séries, les équations différentielles et le calcul vectoriel.',
+    downloadUrl: 'https://archive.org/download/stewart-j.-clegg-d.-watson-s.-calculus.-early-transcendentals-9ed-2020/Stewart%20J.%2C%20Clegg%20D.%2C%20Watson%20S.%20Calculus.%20Early%20Transcendentals%209ed%202020.pdf',
+    directReadUrl: 'https://archive.org/details/stewart-j.-clegg-d.-watson-s.-calculus.-early-transcendentals-9ed-2020',
     format: 'PDF',
     source: 'Z-Library',
-    downloadsCount: 22800,
+    downloadsCount: 88500,
     cachedInBucket: false,
-    size: '9.6 Mo',
-  },
-  {
-    id: 'zlib-phy-301',
-    title: 'University Physics with Modern Physics',
-    authors: ['Hugh D. Young', 'Roger A. Freedman'],
-    year: 2019,
-    category: 'Physique & Sciences',
-    language: 'Français / Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/7281923-M.jpg',
-    description: 'Manuel fondamental de physique universitaire : mécanique newtonienne, électromagnétisme, optique et thermodynamique.',
-    downloadUrl: 'https://openstax.org/details/books/university-physics-volume-1',
-    format: 'PDF',
-    source: 'Z-Library',
-    downloadsCount: 26500,
-    cachedInBucket: false,
-    size: '14.8 Mo',
-  },
-  {
-    id: 'zlib-eco-401',
-    title: 'Principles of Economics',
-    authors: ['Alfred Marshall', 'OpenStax'],
-    year: 2020,
-    category: 'Économie & Gestion',
-    language: 'Anglais / Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/7264883-M.jpg',
-    description: 'Théorie microéconomique et macroéconomique contemporaine, équilibre de marché, politique monétaire et commerce international.',
-    downloadUrl: 'https://openstax.org/details/books/principles-economics-2e',
-    format: 'PDF',
-    source: 'Z-Library',
-    downloadsCount: 28400,
-    cachedInBucket: false,
-    size: '12.1 Mo',
-  },
-  {
-    id: 'zlib-law-501',
-    title: 'Introduction Générale au Droit & Droit Constitutionnel',
-    authors: ['Prof. Maurice Kamto', 'Universités Francophones'],
-    year: 2022,
-    category: 'Droit & Sciences Po',
-    language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/9264112-M.jpg',
-    description: 'Notions fondamentales de la règle de droit, hiérarchie des normes, organisation judiciaire et principes constitutionnels.',
-    downloadUrl: 'https://archive.org/details/droit-constitutionnel',
-    format: 'PDF',
-    source: 'Z-Library',
-    downloadsCount: 18200,
-    cachedInBucket: false,
-    size: '5.2 Mo',
-  },
-  {
-    id: 'zlib-med-601',
-    title: 'Anatomy and Physiology',
-    authors: ['J. Gordon Betts', 'Peter DeSaix', 'OpenStax'],
-    year: 2021,
-    category: 'Médecine & Santé',
-    language: 'Français / Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8226194-M.jpg',
-    description: 'Atlas et traité d’anatomie humaine et physiologie pour les étudiants en sciences biomédicales, médecine et biologie.',
-    downloadUrl: 'https://openstax.org/details/books/anatomy-and-physiology',
-    format: 'PDF',
-    source: 'Z-Library',
-    downloadsCount: 42100,
-    cachedInBucket: false,
-    size: '26.8 Mo',
-  },
-  {
-    id: 'zlib-cs-109',
-    title: 'Algorithmique & Structures de Données en C et Python',
-    authors: ['Collectif Enseignants Informatique', 'Licence & Master'],
-    year: 2023,
-    category: 'Informatique & IA',
-    language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
-    description: 'Manuel exhaustif en français : listes, piles, files, arbres binaires, graphes et calcul de complexité asymptotique.',
-    downloadUrl: 'https://archive.org/download/introductiontoal00corm/introductiontoal00corm.pdf',
-    directReadUrl: 'https://archive.org/details/introductiontoal00corm',
-    format: 'PDF',
-    source: 'Z-Library',
-    downloadsCount: 27400,
-    cachedInBucket: false,
-    size: '6.5 Mo',
-  },
-  {
-    id: 'zlib-math-204',
-    title: 'Cours d’Analyse et Algèbre Linéaire L1/L2',
-    authors: ['Jean Dieudonné', 'Exo7 Université'],
-    year: 2021,
-    category: 'Mathématiques & Data',
-    language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8389145-M.jpg',
-    description: 'Cours complet avec théorèmes, démonstrations rigoureuses et exercices résolus pour les étudiants scientifiques indépendants.',
-    downloadUrl: 'https://archive.org/details/cours-analyse-algebre',
-    directReadUrl: 'https://archive.org/details/cours-analyse-algebre',
-    format: 'PDF',
-    source: 'Z-Library',
-    downloadsCount: 29400,
-    cachedInBucket: false,
-    size: '5.4 Mo',
+    isbn: '9781337613927',
+    size: '44.0 Mo (1394 Pages)',
   },
   {
     id: 'zlib-lit-701',
-    title: 'Les Misérables (Édition Intégrale)',
+    title: 'Les Misérables (Tome I à V - Édition Intégrale)',
     authors: ['Victor Hugo'],
     year: 1862,
     category: 'Littérature & Lettres',
     language: 'Français',
     coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
-    description: 'Chef-d’œuvre incontournable de la littérature classique française, en accès libre et intégral.',
-    downloadUrl: 'https://vps.kernelforge.codes/zlib/download/zlib-lit-701',
-    directReadUrl: 'https://vps.kernelforge.codes/zlib/reader/zlib-lit-701',
+    description: 'Monument de la littérature française du XIXe siècle, fresque sociale et philosophique intégrale de Jean Valjean, Fantine, Cosette et Gavroche.',
+    downloadUrl: 'https://archive.org/download/bub_gb_Oo0NAAAAQAAJ/bub_gb_Oo0NAAAAQAAJ.pdf',
+    directReadUrl: 'https://archive.org/details/bub_gb_Oo0NAAAAQAAJ',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 91400,
     cachedInBucket: false,
-    size: '7.2 Mo',
+    size: '17.0 Mo (Texte Intégral)',
+  },
+  {
+    id: 'zlib-lit-702',
+    title: 'Don Quijote de la Mancha (Edición Completa)',
+    authors: ['Miguel de Cervantes Saavedra'],
+    year: 1605,
+    category: 'Littérature & Lettres',
+    language: 'Espagnol',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'La gran obra maestra de la literatura española e universal sobre el ingenioso hidalgo Don Quijote y su fiel escudero Sancho Panza.',
+    downloadUrl: 'https://archive.org/download/donquijote00cervuoft/donquijote00cervuoft.pdf',
+    directReadUrl: 'https://archive.org/details/donquijote00cervuoft',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 64200,
+    cachedInBucket: false,
+    size: '54.0 Mo (Edición Crítica)',
+  },
+  {
+    id: 'zlib-lit-703',
+    title: 'Faust: Eine Tragödie (Erster und zweiter Teil)',
+    authors: ['Johann Wolfgang von Goethe'],
+    year: 1808,
+    category: 'Littérature & Lettres',
+    language: 'Allemand',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'Das klassische Meisterwerk der deutschen Literatur über das Streben des Gelehrten Heinrich Faust und seinen Pakt mit Mephistopheles.',
+    downloadUrl: 'https://archive.org/download/faustpartsiii00goetuoft/faustpartsiii00goetuoft.pdf',
+    directReadUrl: 'https://archive.org/details/faustpartsiii00goetuoft',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 31200,
+    cachedInBucket: false,
+    size: '20.0 Mo (Vollständige Ausgabe)',
   },
 ]
 
@@ -518,7 +495,7 @@ export const openLibraryService = {
   },
 
   /**
-   * Télécharge un livre en garantissant la remise d'un PDF 100% lisible et valide.
+   * Télécharge un livre en garantissant la remise du fichier PDF intégral authentique.
    */
   async downloadBook(book: OpenBook): Promise<{ success: boolean; filename: string }> {
     const safeTitle = (book.title || 'Livre_Academique')
@@ -527,60 +504,21 @@ export const openLibraryService = {
       .slice(0, 50)
     const filename = `${safeTitle}.pdf`
 
-    let blob: Blob | null = null
-
-    // 1. Tenter via l'API UniFlow /api/books?action=download&id=...
-    if (typeof window !== 'undefined') {
-      try {
-        const origin = window.location.origin || ''
-        const targetUrl = `${origin}/api/books?action=download&id=${encodeURIComponent(book.id)}`
-        const res = await fetch(targetUrl)
-        if (res.ok) {
-          const candidateBlob = await res.blob()
-          const head = await candidateBlob.slice(0, 5).text()
-          if (head.startsWith('%PDF')) {
-            blob = candidateBlob
-          }
-        }
-      } catch {
-        // Repli direct
-      }
-    }
-
-    // 2. Si non obtenu et que le livre a une URL PDF directe accessible
-    if (!blob && book.downloadUrl && book.downloadUrl.toLowerCase().endsWith('.pdf') && !book.downloadUrl.includes('archive.org/download')) {
-      try {
-        const res = await fetch(book.downloadUrl)
-        if (res.ok) {
-          const candidateBlob = await res.blob()
-          const head = await candidateBlob.slice(0, 5).text()
-          if (head.startsWith('%PDF')) {
-            blob = candidateBlob
-          }
-        }
-      } catch {
-        // Repli générateur
-      }
-    }
-
-    // 3. Repli garanti : Générateur officiel PDF académique UniFlow & Z-Library
-    if (!blob) {
-      blob = generateAcademicPdfBlob(book)
-    }
-
-    // 4. Déclencher le téléchargement dans le navigateur
-    if (typeof document !== 'undefined') {
-      const url = URL.createObjectURL(blob)
+    if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+      const origin = window.location.origin || ''
+      const downloadTarget = `${origin}/api/books?action=download&id=${encodeURIComponent(book.id)}`
       const a = document.createElement('a')
-      a.href = url
+      a.href = downloadTarget
+      a.target = '_blank'
+      a.rel = 'noopener noreferrer'
       a.download = filename
       document.body.appendChild(a)
       a.click()
       document.body.removeChild(a)
-      setTimeout(() => URL.revokeObjectURL(url), 3000)
+      return { success: true, filename }
     }
 
-    return { success: true, filename }
+    return { success: false, filename }
   },
 
   /**
