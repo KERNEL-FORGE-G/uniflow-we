@@ -197,18 +197,24 @@ export default function DashboardPage() {
 
  type QuickAction = { label: string; icon: UniIconName; to: string; color: string; imageSrc?: string }
  const studentQuickActions: QuickAction[] = [
+ { label: 'UniMail (@uniflow)', icon: 'messages', to: '/app/mail', color: TILE.blue, imageSrc: '/icons/nav/messages.png' },
+ { label: 'Actualités Campus', icon: 'megaphone', to: '/app/actualites', color: TILE.teal, imageSrc: '/icons/nav/notifications.png' },
  { label: 'Mes cours', icon: 'courses', to: '/app/cours', color: TILE.blue, imageSrc: '/icons/nav/courses.png' },
  { label: 'Devoirs', icon: 'assignments', to: '/app/devoirs', color: TILE.amber, imageSrc: '/icons/nav/assignments.png' },
  { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.teal, imageSrc: '/icons/nav/visio.png' },
- { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.purple, imageSrc: '/icons/nav/messages.png' },
+ { label: 'Bibliothèque', icon: 'library', to: '/app/bibliotheque', color: TILE.purple, imageSrc: '/icons/nav/library.png' },
  ]
  const teacherQuickActions: QuickAction[] = [
+ { label: 'UniMail (@uniflow)', icon: 'messages', to: '/app/mail', color: TILE.blue, imageSrc: '/icons/nav/messages.png' },
+ { label: 'Actualités Campus', icon: 'megaphone', to: '/app/actualites', color: TILE.teal, imageSrc: '/icons/nav/notifications.png' },
  { label: 'Espace pédago', icon: 'teacher', to: '/app/mes-cours-enseignant', color: TILE.blue, imageSrc: '/icons/nav/teacher.png' },
  { label: 'Visio', icon: 'video', to: '/app/visio', color: TILE.teal, imageSrc: '/icons/nav/visio.png' },
  { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.purple, imageSrc: '/icons/nav/messages.png' },
  { label: 'Planning', icon: 'schedule', to: '/app/emploi-du-temps', color: TILE.amber, imageSrc: '/icons/nav/schedule.png' },
  ]
  const delegateQuickActions: QuickAction[] = [
+ { label: 'UniMail (@uniflow)', icon: 'messages', to: '/app/mail', color: TILE.blue, imageSrc: '/icons/nav/messages.png' },
+ { label: 'Actualités Campus', icon: 'megaphone', to: '/app/actualites', color: TILE.teal, imageSrc: '/icons/nav/notifications.png' },
  { label: 'Gérer présences', icon: 'attendance', to: '/app/gestion-presences', color: TILE.teal, imageSrc: '/icons/nav/attendance.png' },
  { label: 'Messages', icon: 'messages', to: '/app/messages', color: TILE.blue, imageSrc: '/icons/nav/messages.png' },
  { label: 'Planning', icon: 'schedule', to: '/app/emploi-du-temps', color: TILE.purple, imageSrc: '/icons/nav/schedule.png' },
@@ -258,25 +264,39 @@ export default function DashboardPage() {
     </h1>
 
     <p className="mt-2 text-xs sm:text-sm text-blue-100/90 leading-relaxed font-medium">
-     Votre espace d'apprentissage UniFlow est actif · Données officielles UY1 synchronisées hors-ligne & en direct.
+     Votre espace d'apprentissage UniFlow est actif · Données officielles UY1 synchronisées hors-ligne &amp; en direct.
     </p>
 
     {/* Boutons d'accès direct sur le Hero */}
     <div className="mt-5 flex flex-wrap items-center gap-2.5">
+     <Link
+      to="/app/mail"
+      className="inline-flex items-center gap-2 rounded-xl bg-white text-[#0B132B] hover:bg-cyan-50 px-3.5 py-2 text-xs font-extrabold transition-all shadow-sm active:scale-95"
+     >
+      <img src="/icons/nav/messages.png" alt="" className="h-4 w-4 object-contain" />
+      <span>UniMail (@uniflow)</span>
+     </Link>
+     <Link
+      to="/app/actualites"
+      className="inline-flex items-center gap-2 rounded-xl bg-amber-400/25 hover:bg-amber-400/35 backdrop-blur-md px-3.5 py-2 text-xs font-bold text-amber-100 border border-amber-300/30 transition-all shadow-xs active:scale-95"
+     >
+      <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+      <span>Actualités Campus</span>
+     </Link>
      <Link
       to="/app/visio"
       className="inline-flex items-center gap-2 rounded-xl bg-white/20 hover:bg-white/30 backdrop-blur-md px-3.5 py-2 text-xs font-bold text-white border border-white/25 transition-all shadow-xs active:scale-95"
      >
       <span className="h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
       <UniIcon name="video" weight="fill" size={15} />
-      <span>Visioconférence Campus</span>
+      <span>Visioconférence</span>
      </Link>
      <Link
       to="/app/presences"
       className="inline-flex items-center gap-2 rounded-xl bg-teal-500/30 hover:bg-teal-500/40 backdrop-blur-md px-3.5 py-2 text-xs font-bold text-teal-100 border border-teal-300/30 transition-all shadow-xs active:scale-95"
      >
       <UniIcon name="attendance" weight="bold" size={15} />
-      <span>Émarger ma présence</span>
+      <span>Émarger</span>
      </Link>
     </div>
    </div>
@@ -327,7 +347,66 @@ export default function DashboardPage() {
  </div>
 
  {overviewError && <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-sm">{overviewError}</div>}
- 
+
+ {/* ── Bento Spotlight : UniMail (@uniflow) & Actualités Campus ── */}
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+  <Link
+   to="/app/mail"
+   className="group relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-[#eff3ff] via-white to-blue-50/40 p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
+  >
+   <div className="flex items-center gap-4 min-w-0">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B132B] to-[#1E3A8A] p-2 shadow-md">
+     <img src="/icons/nav/messages.png" alt="UniMail" className="h-full w-full object-contain" />
+    </div>
+    <div className="min-w-0">
+     <div className="flex flex-wrap items-center gap-2">
+      <span className="rounded-full bg-[#1E3A8A] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+       Nouveau · UniMail
+      </span>
+      <span className="text-[11px] font-bold text-emerald-700">Certifié TLS 1.3 · Signé UniFlow</span>
+     </div>
+     <h3 className="mt-1 text-base font-black text-slate-900 group-hover:text-[#1E3A8A] truncate">
+      Messagerie Officielle @uniflow.kernelforge.codes
+     </h3>
+     <p className="text-xs text-slate-600 line-clamp-1">
+      Votre boîte e-mail académique complète rattachée à votre compte UniFlow.
+     </p>
+    </div>
+   </div>
+   <span className="shrink-0 rounded-xl bg-[#1E3A8A] px-3.5 py-2 text-xs font-extrabold text-white group-hover:bg-blue-800 transition-colors">
+    Ouvrir →
+   </span>
+  </Link>
+
+  <Link
+   to="/app/actualites"
+   className="group relative overflow-hidden rounded-3xl border border-teal-200/80 bg-gradient-to-br from-teal-50/80 via-white to-emerald-50/40 p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
+  >
+   <div className="flex items-center gap-4 min-w-0">
+    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#0D9488] p-2 shadow-md">
+     <img src="/icons/nav/notifications.png" alt="Actualités" className="h-full w-full object-contain" />
+    </div>
+    <div className="min-w-0">
+     <div className="flex flex-wrap items-center gap-2">
+      <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+       À La Une · Phase Bêta
+      </span>
+      <span className="text-[11px] font-bold text-[#0D9488]">Journal Officiel</span>
+     </div>
+     <h3 className="mt-1 text-base font-black text-slate-900 group-hover:text-[#0D9488] truncate">
+      Actualités Campus &amp; Mises à jour UniFlow
+     </h3>
+     <p className="text-xs text-slate-600 line-clamp-1">
+      Communiqués officiels, images, vidéos, documents PDF et annonces de la plateforme.
+     </p>
+    </div>
+   </div>
+   <span className="shrink-0 rounded-xl bg-[#0D9488] px-3.5 py-2 text-xs font-extrabold text-white group-hover:bg-teal-700 transition-colors">
+    Lire →
+   </span>
+  </Link>
+ </div>
+
  {/* ── Card Statut d'Abonnement / Plan Académique ── */}
  <div className="animate-fade-in">
   <SubscriptionStatus />

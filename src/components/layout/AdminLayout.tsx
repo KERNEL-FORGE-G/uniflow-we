@@ -58,10 +58,18 @@ function AdminSidebar() {
               </div>
             </div>
           </div>
-          <div className="mt-2.5 flex items-center gap-1.5 rounded-xl bg-white/15 border border-white/20 px-2.5 py-1 text-[9px] font-extrabold uppercase tracking-wider text-cyan-200">
-            <UniIcon name="security" size={11} className="text-cyan-300 shrink-0" />
-            <span className="truncate">Administration Centrale · KERNEL FORGE</span>
-          </div>
+          <NavLink
+            to="/admin/mail"
+            className="mt-2.5 flex items-center justify-between gap-1.5 rounded-xl bg-white/15 hover:bg-white/25 border border-white/20 px-2.5 py-1.5 text-[10px] font-extrabold text-cyan-200 transition-colors"
+            title="Ouvrir ma messagerie officielle UniMail"
+          >
+            <span className="truncate">
+              {(identity.name || 'admin').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '') || 'admin'}@uniflow.cm
+            </span>
+            <span className="shrink-0 rounded bg-cyan-400/30 px-1.5 py-0.5 text-[8px] font-black uppercase text-white">
+              UniMail
+            </span>
+          </NavLink>
         </div>
       </div>
 
@@ -157,7 +165,10 @@ function AdminBreadcrumb() {
   const parts = location.pathname.split('/').filter(Boolean)
   const labels: Record<string, string> = {
     admin: 'Admin',
+    'actualites-notifications': 'Actualités & Notifications',
+    mail: 'UniMail (@uniflow)',
     utilisateurs: 'Utilisateurs',
+    equipe: 'Équipe',
     etudiants: 'Étudiants',
     enseignants: 'Enseignants',
     structure: 'Structure Académique',
@@ -166,6 +177,10 @@ function AdminBreadcrumb() {
     salles: 'Salles',
     parametres: 'Paramètres',
     rapports: 'Rapports',
+    paiements: 'Paiements',
+    audience: 'Audience',
+    activite: 'Activité',
+    securite: 'Sécurité',
     finances: 'Finances',
   }
 
@@ -196,15 +211,41 @@ export function AdminLayout() {
       <AdminSidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Admin Header */}
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-4 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl px-6 shadow-sm">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200/80 bg-white/95 backdrop-blur-xl px-6 shadow-sm">
           <AdminBreadcrumb />
 
           <div className="flex-1 hidden lg:block" />
 
           <button
+            onClick={() => navigate('/admin/mail')}
+            title="Messagerie officielle UniMail (@uniflow.kernelforge.codes)"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-blue-200/80 bg-[#eff3ff] px-3.5 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-blue-100/80 transition-all"
+          >
+            <img src="/icons/nav/messages.png" alt="" className="h-4 w-4 object-contain" />
+            <span>UniMail</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/admin/actualites-notifications')}
+            title="Publier et gérer les actualités & notifications"
+            className="inline-flex items-center gap-1.5 rounded-2xl border border-teal-200/80 bg-teal-50 px-3.5 py-2 text-xs font-bold text-[#0d9488] hover:bg-teal-100/80 transition-all"
+          >
+            <span className="h-2 w-2 rounded-full bg-[#0d9488] animate-pulse" />
+            <span className="hidden sm:inline">Actualités</span>
+          </button>
+
+          <button
+            onClick={() => navigate('/app')}
+            title="Ouvrir l’espace Étudiant / App avec tous les modules"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3.5 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff] transition-all"
+          >
+            <UniIcon name="dashboard" size={16} /> Espace App
+          </button>
+
+          <button
             onClick={() => navigate('/')}
             title="Retour à l’accueil — session conservée"
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3.5 py-2 text-xs font-bold text-[#1e3a8a] hover:bg-[#eff3ff] transition-all"
+            className="hidden xl:inline-flex items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3.5 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 transition-all"
           >
             <UniIcon name="home" size={16} /> Accueil
           </button>
@@ -222,7 +263,11 @@ export function AdminLayout() {
           </div>
 
           {/* Notifications */}
-          <button className="relative rounded-2xl p-2 text-[#6b7280] hover:bg-slate-100 hover:text-[#111827] transition-all" aria-label="Notifications">
+          <button
+            onClick={() => navigate('/admin/actualites-notifications')}
+            className="relative rounded-2xl p-2 text-[#6b7280] hover:bg-slate-100 hover:text-[#111827] transition-all"
+            aria-label="Notifications"
+          >
             <UniIcon name="notifications" size={20} />
             {notifCount > 0 && (
               <span className="absolute right-1.5 top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white">

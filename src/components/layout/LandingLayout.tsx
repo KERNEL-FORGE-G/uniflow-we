@@ -20,6 +20,7 @@ const restoreOriginalLogo = (event: React.SyntheticEvent<HTMLImageElement>) => {
 // collection `app_releases` et sont réglés depuis la page Administration.
 const navLinks = [
   { to: '/actualites',   label: 'Actualités' },
+  { to: '/app/mail',     label: 'UniMail (@uniflow)' },
   { to: '/about',        label: 'À propos' },
   { to: '/teams',        label: 'Équipe' },
   { to: '/sentinelle',   label: 'Sentinelle' },
@@ -36,6 +37,10 @@ export function LandingNavbar() {
   const { currentUser, authUser, isSessionReady } = useUserRole()
   const isConnected = isSessionReady && currentUser.email !== '—'
   const workspacePath = authUser?.role === 'ADMIN' ? '/admin' : '/app'
+
+  if (pathname.startsWith('/app') || pathname.startsWith('/admin')) {
+    return null
+  }
 
   // Huit entrées plus le logo et les deux boutons ne tiennent pas entre 768 et
   // 1024 px : la barre complète attend `lg`, le menu replié sert jusque-là.
@@ -55,7 +60,7 @@ export function LandingNavbar() {
         </Link>
 
         {/* Desktop nav */}
-        <div className="hidden items-center gap-6 lg:flex xl:gap-8">
+        <div className="hidden items-center gap-5 lg:flex xl:gap-7">
           {navLinks.map(l => (
             <Link
               key={l.to}
@@ -135,10 +140,14 @@ export function LandingNavbar() {
 }
 
 export function LandingFooter() {
+  const { pathname } = useLocation()
   // Lien APK Android dynamique (collection `app_releases`) ; sans version
   // publiée, il mène à la page des releases GitHub.
   const { data: releases } = useAppReleases()
   const android = findRelease(releases, 'android')
+  if (pathname.startsWith('/app') || pathname.startsWith('/admin')) {
+    return null
+  }
   return (
     <footer className="bg-[#0f172a] text-slate-300">
       <div className="mx-auto w-full max-w-[1920px] px-6 py-16">

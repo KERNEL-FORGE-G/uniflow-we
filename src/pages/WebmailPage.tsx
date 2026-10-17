@@ -58,7 +58,7 @@ const CATEGORIES: Array<{ id: EmailCategory; label: string; icon: typeof Inbox; 
 
 export default function WebmailPage() {
   const { currentUser, authUser, isSessionReady } = useUserRole()
-  const userId = authUser?.id || (currentUser.email !== '—' ? currentUser.email : 'guest')
+  const userId = authUser?.id || (currentUser.email && currentUser.email !== '—' ? currentUser.email : 'etudiant-uniflow')
 
   // État de la boîte
   const [currentFolder, setCurrentFolder] = useState<EmailFolder>('inbox')
@@ -86,7 +86,7 @@ export default function WebmailPage() {
 
   // Chargement des e-mails
   const loadEmails = async () => {
-    if (!userId || userId === 'guest') return
+    if (!userId) return
     setIsLoading(true)
     try {
       const data = await webmailService.listEmails(userId, currentFolder, currentCategory, searchQuery)
@@ -94,6 +94,8 @@ export default function WebmailPage() {
       if (selectedEmail) {
         const refreshed = data.find((m) => m.id === selectedEmail.id)
         if (refreshed) setSelectedEmail(refreshed)
+      } else if (data.length > 0 && window.innerWidth >= 1024) {
+        setSelectedEmail(data[0])
       }
     } catch (err) {
       console.warn('Erreur de chargement des e-mails:', err)
@@ -264,38 +266,47 @@ export default function WebmailPage() {
   }
 
   return (
-    <div className="h-[calc(100vh-5rem)] flex flex-col font-sans bg-[#F8FAFC] text-slate-800 overflow-hidden">
+    <div className="h-[calc(100vh-5rem)] flex flex-col gap-4 font-sans bg-[#F8FAFC] text-slate-800 overflow-hidden">
       {/* =========================================================================
-          TOP BANNER DU WEBMAIL — Identité Officielle UniFlow
+          HERO BENTO BANNER DU WEBMAIL — Identité Officielle Signée UniFlow
          ========================================================================= */}
-      <header className="bg-white border-b border-slate-200/80 px-6 py-3 shrink-0 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#0D9488] text-white flex items-center justify-center shadow-sm">
-            <Mail className="h-5 w-5" />
+      <header className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] px-6 py-4 text-white shadow-xl border border-white/10 shrink-0 flex flex-wrap items-center justify-between gap-4">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-blue-600/25 blur-3xl" />
+
+        <div className="relative z-10 flex items-center gap-3.5">
+          <div className="h-12 w-12 rounded-2xl bg-white/15 backdrop-blur-md border border-white/25 p-1.5 flex items-center justify-center shadow-lg shrink-0">
+            <img src="/icons/nav/messages.png" alt="UniMail 3D" className="h-full w-full object-contain drop-shadow-md" />
           </div>
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-base font-black text-slate-900 tracking-tight">UniFlow Mail</h1>
-              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200/60">
-                <ShieldCheck className="h-3 w-3" /> Certifié TLS 1.3
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-lg sm:text-xl font-black text-white tracking-tight">UniMail · Messagerie Signée UniFlow</h1>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-extrabold text-emerald-200 border border-emerald-300/30">
+                <ShieldCheck className="h-3.5 w-3.5 text-emerald-300" /> Certifié TLS 1.3 · DKIM/SPF
+              </span>
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-white/15 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-cyan-200 border border-white/20">
+                Lié au cycle de vie du compte
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-xs text-slate-500">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-200">
               <span>Votre adresse officielle :</span>
-              <strong className="text-slate-800 font-mono text-[11px]">{accountInfo.primaryEmail}</strong>
+              <strong className="rounded-lg bg-white/15 border border-white/20 px-2.5 py-0.5 font-mono text-[11px] text-white">
+                {accountInfo.primaryEmail}
+              </strong>
               <button
                 onClick={handleCopyEmail}
-                className="p-1 rounded-md text-slate-400 hover:text-[#1E3A8A] hover:bg-blue-50 transition-colors"
+                className="inline-flex items-center gap-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/15 px-2 py-0.5 text-[11px] font-bold text-cyan-200 transition-colors cursor-pointer"
                 title="Copier mon adresse e-mail"
               >
-                {copiedEmail ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> : <Copy className="h-3.5 w-3.5" />}
+                {copiedEmail ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" /> : <Copy className="h-3.5 w-3.5" />}
+                <span>{copiedEmail ? 'Copiée !' : 'Copier'}</span>
               </button>
             </div>
           </div>
         </div>
 
         {/* Barre de recherche d'e-mails */}
-        <div className="flex-1 max-w-md mx-auto hidden md:block">
+        <div className="relative z-10 flex-1 max-w-md mx-auto hidden md:block">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <input
@@ -303,23 +314,23 @@ export default function WebmailPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Rechercher dans la messagerie (expéditeur, objet, mots-clés)..."
-              className="w-full rounded-2xl bg-slate-100/80 border border-slate-200/70 pl-10 pr-4 py-2 text-xs font-medium text-slate-800 placeholder:text-slate-400 outline-none focus:bg-white focus:border-[#1E3A8A] focus:ring-2 focus:ring-[#1E3A8A]/10 transition-all"
+              className="w-full rounded-2xl bg-white/95 backdrop-blur-md pl-10 pr-4 py-2 text-xs font-semibold text-slate-900 placeholder:text-slate-400 outline-none shadow-md focus:ring-2 focus:ring-cyan-300 transition-all"
             />
           </div>
         </div>
 
         {/* Actions utilisateur & stockage */}
-        <div className="flex items-center gap-3">
-          <div className="hidden lg:flex flex-col text-right">
-            <span className="text-[11px] font-bold text-slate-700">Stockage Campus</span>
-            <span className="text-[10px] text-slate-400">1.84 Go sur 15 Go (12%)</span>
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="hidden lg:flex flex-col text-right rounded-2xl bg-white/10 border border-white/15 px-3 py-1">
+            <span className="text-[11px] font-extrabold text-white">Stockage Campus</span>
+            <span className="text-[10px] text-cyan-200">1.84 Go sur 15 Go (12%)</span>
           </div>
           <button
             onClick={() => setIsComposerOpen(true)}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#1E3A8A] to-[#2563EB] hover:from-[#1E3A8A] hover:to-[#1D4ED8] text-white px-5 py-2.5 text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-98 cursor-pointer"
+            className="inline-flex items-center gap-2 rounded-2xl bg-white text-[#0B132B] hover:bg-cyan-50 px-5 py-2.5 text-xs font-black uppercase tracking-wider shadow-lg transition-all active:scale-98 cursor-pointer"
           >
-            <Plus className="h-4 w-4" />
-            <span>Rédiger</span>
+            <Plus className="h-4 w-4 stroke-[2.5]" />
+            <span>Nouveau message</span>
           </button>
         </div>
       </header>
@@ -327,7 +338,7 @@ export default function WebmailPage() {
       {/* =========================================================================
           CORPS PRINCIPAL DU CLIENT MAIL (3 COLONNES)
          ========================================================================= */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
         {/* COLONNE 1 : DOSSIERS & STOCKAGE (Barre latérale gauche) */}
         <aside className="w-60 border-r border-slate-200/80 bg-white p-4 flex flex-col justify-between shrink-0 hidden sm:flex">
           <div className="space-y-1">

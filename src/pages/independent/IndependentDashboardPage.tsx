@@ -126,47 +126,61 @@ export default function IndependentDashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-14 animate-fade-in">
-      {/* ── Top Hero Banner (SkillSet / Clean Modern style) ── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#1e3a8a] via-[#1e40af] to-[#0d9488] p-6 text-white shadow-lg sm:p-8">
-        <div className="pointer-events-none absolute -right-14 -top-14 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
+      {/* ── Top Hero Banner (Pinterest Bento 3D style) ── */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 text-white shadow-xl border border-white/10 sm:p-8">
+        <div className="pointer-events-none absolute -right-14 -top-14 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
         <div className="pointer-events-none absolute right-40 -bottom-10 h-40 w-40 rounded-full bg-[#0d9488]/30 blur-2xl" />
 
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="relative z-10 flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-bold tracking-wide text-teal-200 backdrop-blur-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 border border-white/20 px-3 py-1 text-xs font-bold tracking-wide text-cyan-200 backdrop-blur-md">
               <UniIcon name="assistant" weight="fill" size={14} />
-              <span>Espace Personnel & Apprentissage Autonome</span>
+              <span>Espace Personnel &amp; Apprentissage Autonome</span>
             </div>
             <h1 className="mt-3 text-2xl font-black tracking-tight sm:text-3xl lg:text-4xl">
               Bonjour, {firstName} ! 👋
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-blue-100 sm:text-base">
-              Votre cursus est à portée de main. Consultez votre emploi du temps, gérez vos tâches prioritaires et découvrez des ressources libres.
+              Votre cursus est à portée de main. Consultez votre messagerie signée UniMail, les actualités de la plateforme, votre emploi du temps et la bibliothèque numérique.
             </p>
+            <div className="mt-5 flex flex-wrap items-center gap-2.5">
+              <Link
+                to="/app/mail"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-extrabold text-[#0B132B] shadow-md transition hover:-translate-y-0.5 hover:bg-cyan-50"
+              >
+                <img src="/icons/nav/messages.png" alt="" className="h-4 w-4 object-contain" />
+                <span>UniMail (@uniflow)</span>
+              </Link>
+              <Link
+                to="/app/actualites"
+                className="inline-flex items-center gap-2 rounded-xl border border-amber-300/40 bg-amber-400/20 px-4 py-2.5 text-xs font-extrabold text-amber-100 backdrop-blur-sm transition hover:bg-amber-400/30"
+              >
+                <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                <span>Actualités Campus</span>
+              </Link>
+              <Link
+                to="/app/emploi-du-temps"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/15 px-4 py-2.5 text-xs font-extrabold text-white backdrop-blur-sm transition hover:bg-white/25"
+              >
+                <UniIcon name="schedule" weight="bold" size={16} />
+                <span>Mon planning</span>
+              </Link>
+              <Link
+                to="/app/bibliotheque"
+                className="inline-flex items-center gap-2 rounded-xl border border-teal-300/40 bg-teal-500/25 px-4 py-2.5 text-xs font-extrabold text-teal-100 backdrop-blur-sm transition hover:bg-teal-500/40"
+              >
+                <UniIcon name="library" weight="bold" size={16} />
+                <span>Bibliothèque</span>
+              </Link>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <Link
-              to="/app/emploi-du-temps"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-xs font-extrabold text-[#1e3a8a] shadow-md transition hover:-translate-y-0.5 hover:bg-slate-50"
-            >
-              <UniIcon name="schedule" weight="bold" size={16} />
-              <span>Mon planning</span>
-            </Link>
-            <Link
-              to="/app/devoirs"
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/15 px-4 py-2.5 text-xs font-extrabold text-white backdrop-blur-sm transition hover:bg-white/25"
-            >
-              <UniIcon name="plus" weight="bold" size={16} />
-              <span>Nouveau devoir</span>
-            </Link>
-            <Link
-              to="/app/bibliotheque"
-              className="inline-flex items-center gap-2 rounded-xl border border-teal-300/40 bg-teal-500/25 px-4 py-2.5 text-xs font-extrabold text-teal-100 backdrop-blur-sm transition hover:bg-teal-500/40"
-            >
-              <UniIcon name="library" weight="bold" size={16} />
-              <span>Bibliothèque</span>
-            </Link>
+          <div className="hidden lg:flex h-28 w-28 shrink-0 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-md p-2 border border-white/20 shadow-lg">
+            <img
+              src="/illustrations/uni_copilot_3d.png"
+              alt="Uni Copilote 3D"
+              className="h-full w-full object-contain drop-shadow-md"
+            />
           </div>
         </div>
       </section>
@@ -182,6 +196,65 @@ export default function IndependentDashboardPage() {
           </button>
         </div>
       )}
+
+      {/* ── Bento Spotlight : UniMail (@uniflow) & Actualités Campus ── */}
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Link
+          to="/app/mail"
+          className="group relative overflow-hidden rounded-3xl border border-blue-200/80 bg-gradient-to-br from-[#eff3ff] via-white to-blue-50/40 p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B132B] to-[#1E3A8A] p-2 shadow-md">
+              <img src="/icons/nav/messages.png" alt="UniMail" className="h-full w-full object-contain" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-[#1E3A8A] px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                  Nouveau · UniMail
+                </span>
+                <span className="text-[11px] font-bold text-emerald-700">Certifié TLS 1.3 · Signé UniFlow</span>
+              </div>
+              <h3 className="mt-1 text-base font-black text-slate-900 group-hover:text-[#1E3A8A] truncate">
+                Messagerie Officielle @uniflow.kernelforge.codes
+              </h3>
+              <p className="text-xs text-slate-600 line-clamp-1">
+                Votre boîte e-mail personnelle signée UniFlow, liée au cycle de vie de votre compte.
+              </p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-xl bg-[#1E3A8A] px-3.5 py-2 text-xs font-extrabold text-white group-hover:bg-blue-800 transition-colors">
+            Ouvrir →
+          </span>
+        </Link>
+
+        <Link
+          to="/app/actualites"
+          className="group relative overflow-hidden rounded-3xl border border-teal-200/80 bg-gradient-to-br from-teal-50/80 via-white to-emerald-50/40 p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#0D9488] p-2 shadow-md">
+              <img src="/icons/nav/notifications.png" alt="Actualités" className="h-full w-full object-contain" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-white">
+                  À La Une · Phase Bêta
+                </span>
+                <span className="text-[11px] font-bold text-[#0D9488]">Journal Officiel</span>
+              </div>
+              <h3 className="mt-1 text-base font-black text-slate-900 group-hover:text-[#0D9488] truncate">
+                Actualités Campus &amp; Mises à jour UniFlow
+              </h3>
+              <p className="text-xs text-slate-600 line-clamp-1">
+                Communiqués officiels, images, vidéos, documents PDF et nouveautés de la plateforme.
+              </p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-xl bg-[#0D9488] px-3.5 py-2 text-xs font-extrabold text-white group-hover:bg-teal-700 transition-colors">
+            Lire →
+          </span>
+        </Link>
+      </section>
 
       {/* ── 4 KPI Stats ── */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
