@@ -102,12 +102,12 @@ export async function askGroq(
   }
 
   const candidateModels = [
-    (import.meta.env.VITE_GROQ_MODEL as string | undefined),
-    (import.meta.env.GROQ_MODEL as string | undefined),
     'openai/gpt-oss-120b',
     'qwen/qwen3.8-27b',
-    'llama-3.3-70b-versatile',
-  ].filter(Boolean) as string[]
+    'openai/gpt-oss-20b',
+    (import.meta.env.VITE_GROQ_MODEL as string | undefined),
+    (import.meta.env.GROQ_MODEL as string | undefined),
+  ].filter((m): m is string => Boolean(m && m.trim()))
 
   let lastError = ''
   for (const model of candidateModels) {

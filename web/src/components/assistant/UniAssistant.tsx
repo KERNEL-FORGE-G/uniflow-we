@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { RotateCcw, SendHorizontal, Sparkles, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { executeAssistantAction } from '@/lib/appwrite'
-import { askGroq } from '@/lib/groqAssistantService'
+import { askGroq, UNI_SYSTEM_PROMPT } from '@/lib/groqAssistantService'
 import { GUEST_GREETING, GUEST_SUGGESTIONS, guestReply, type GuestLink } from '@/lib/assistantGuest'
 import { UniMascot } from '@/components/mascot/UniMascot'
 import { CornerSlot, useCornerStack } from '@/components/layout/CornerStack'
@@ -197,19 +197,27 @@ export function UniAssistant() {
     setPending(true)
     try {
       let reply: string = ''
+      const userContext = !guest && currentUser?.name
+        ? `\n\n# CONTEXTE UTILISATEUR CONNECTÉ :\n- Nom : ${currentUser.name}\n- Rôle : ${currentUser.roleLabel || 'Étudiant'}\n- Filière / Niveau : ${currentUser.filiere || 'Non renseigné'}\n- Établissement : ${currentUser.university || 'Université de Yaoundé I'}`
+        : ''
       try {
-        reply = await askGroq(historyForServer(next))
+        reply = await askGroq(historyForServer(next), `${UNI_SYSTEM_PROMPT}${userContext}`)
       } catch (groqErr) {
-        console.warn('Groq non joignable, tentative via le repli adapté:', groqErr)
-        if (guest) {
+        console.warn('Groq direct non joignable, bascule vers Appwrite /assistant:', groqErr)
+        if (!guest) {
+          try {
+            const response = await executeAssistantAction({ action: 'chat', messages: historyForServer(next), platform: 'web', voice: voiceOn && canSpeak })
+            reply = response.reply || ''
+            if (response.suggestions?.length) setSuggestions(response.suggestions)
+          } catch (appwriteErr) {
+            console.warn('Appwrite /assistant non joignable, repli local:', appwriteErr)
+          }
+        }
+        if (!reply) {
           const fallback = guestReply(content)
           reply = fallback.text
           setLinks(fallback.links)
           setSuggestions(GUEST_SUGGESTIONS.filter((item) => item !== content))
-        } else {
-          const response = await executeAssistantAction({ action: 'chat', messages: historyForServer(next), platform: 'web', voice: voiceOn && canSpeak })
-          reply = response.reply || '…'
-          if (response.suggestions?.length) setSuggestions(response.suggestions)
         }
       }
 
@@ -224,7 +232,7 @@ export function UniAssistant() {
       setPending(false)
       inputRef.current?.focus()
     }
-  }, [canSpeak, guest, isOpen, messages, pending, say, voiceOn])
+  }, [canSpeak, currentUser, guest, isOpen, messages, pending, say, voiceOn])
 
   const retryLast = useCallback(() => {
     const failed = [...messages].reverse().find((m) => m.failed && m.role === 'user')

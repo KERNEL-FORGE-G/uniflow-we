@@ -46,6 +46,10 @@ import {
 // tuée au plafond, sans message.
 const N8N_TIMEOUT_MS = 25_000
 const MISTRAL_TIMEOUT_MS = 15_000
+const GROQ_TIMEOUT_MS = 15_000
+const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions'
+const DEFAULT_GROQ_KEY = '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'
+const GROQ_MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
 
 function json(res, body, status = 200) {
   return res.json(body, status, { 'content-type': 'application/json' })
@@ -66,6 +70,36 @@ async function fetchJson(url, init, timeoutMs) {
     throw new Error(`HTTP ${response.status} ${detail}`)
   }
   return payload
+}
+
+async function askGroq(apiKey, systemInstruction, history) {
+  const messages = [
+    { role: 'system', content: systemInstruction },
+    ...history.map((m) => ({ role: m.role, content: m.content })),
+  ]
+  let lastError = 'GROQ_EMPTY'
+  for (const model of GROQ_MODELS) {
+    try {
+      const payload = await fetchJson(GROQ_ENDPOINT, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.65,
+          max_tokens: 1024,
+        }),
+      }, GROQ_TIMEOUT_MS)
+      const msg = payload?.choices?.[0]?.message
+      const text = (typeof msg?.content === 'string' && msg.content.trim())
+        || (typeof msg?.reasoning === 'string' && msg.reasoning.trim())
+        || ''
+      if (text) return { reply: text, model }
+    } catch (err) {
+      lastError = `${model}: ${String(err?.message || err)}`
+    }
+  }
+  throw new Error(lastError)
 }
 
 async function askN8n({ webhookUrl, token, systemInstruction, history, options }) {
@@ -158,9 +192,6 @@ function greetingFor(caller) {
 
 export default async ({ req, res, log, error }) => {
   const actorId = actorIdOf(req)
-  if (!actorId) {
-    return json(res, { ok: false, code: 'AUTH_REQUIRED', message: `Connectez-vous avec un compte UniFlow pour parler à ${ASSISTANT_NAME}.` }, 401)
-  }
 
   const client = new Client()
     .setEndpoint(process.env.APPWRITE_FUNCTION_API_ENDPOINT)
@@ -172,14 +203,16 @@ export default async ({ req, res, log, error }) => {
   const action = body.action === 'hello' ? 'hello' : 'chat'
 
   let caller = null
-  try {
-    caller = await resolveCaller(req, users, databases)
-  } catch (exception) {
-    log(`assistant caller unresolved: ${String(exception?.message || exception)}`)
+  if (actorId) {
+    try {
+      caller = await resolveCaller(req, users, databases)
+    } catch (exception) {
+      log(`assistant caller unresolved: ${String(exception?.message || exception)}`)
+    }
   }
 
   if (action === 'hello') {
-    return json(res, { ok: true, action, assistant: ASSISTANT_NAME, model: GEMINI_MODEL, greeting: greetingFor(caller), suggestions: suggestionsFor(caller) })
+    return json(res, { ok: true, action, assistant: ASSISTANT_NAME, model: 'GROQ · Llama / GPT-OSS', greeting: greetingFor(caller), suggestions: suggestionsFor(caller) })
   }
 
   let history
@@ -189,14 +222,15 @@ export default async ({ req, res, log, error }) => {
     return json(res, { ok: false, code: 'HISTORY_INVALID', message: 'Envoyez au moins un message utilisateur (4000 caractères au plus).' }, 400)
   }
 
+  const groqKey = (process.env.GROQ || process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || DEFAULT_GROQ_KEY).trim()
   const mistralKey = (process.env.MISTRAL_API_KEY || '').trim()
   // Deux façons de viser le workflow : l'URL complète (`N8N_WEBHOOK_URL`), ou
   // seulement l'hôte (`N8N_HOST`, sans schéma) et on applique le chemin connu.
   const n8nUrl = (process.env.N8N_WEBHOOK_URL || '').trim()
     || ((process.env.N8N_HOST || '').trim() ? `https://${(process.env.N8N_HOST || '').trim()}${N8N_DEFAULT_PATH}` : '')
   const n8nToken = (process.env.N8N_WEBHOOK_TOKEN || '').trim()
-  if (!n8nUrl && !mistralKey) {
-    error('assistant: ni N8N_WEBHOOK_URL / N8N_HOST ni MISTRAL_API_KEY sur la Function')
+  if (!groqKey && !n8nUrl && !mistralKey) {
+    error('assistant: ni GROQ ni N8N_WEBHOOK_URL / N8N_HOST ni MISTRAL_API_KEY sur la Function')
     return json(res, { ok: false, code: 'ASSISTANT_UNCONFIGURED', message: `${ASSISTANT_NAME} n'est pas encore configuré sur le serveur.` }, 503)
   }
 
@@ -210,6 +244,14 @@ export default async ({ req, res, log, error }) => {
   const systemInstruction = buildSystemInstruction(caller, grounding, options)
 
   const failures = []
+  if (groqKey) {
+    try {
+      const { reply, model } = await askGroq(groqKey, systemInstruction, history)
+      return json(res, { ok: true, action, assistant: ASSISTANT_NAME, provider: 'groq', model, reply, suggestions: suggestionsFor(caller) })
+    } catch (exception) {
+      failures.push(`groq: ${String(exception?.message || exception)}`)
+    }
+  }
   if (n8nUrl) {
     // Sans jeton, la passerelle répondrait 403 après un aller-retour réseau :
     // autant le dire dans le journal et passer directement au secours.
@@ -219,9 +261,6 @@ export default async ({ req, res, log, error }) => {
     } else {
       try {
         const reply = await askN8n({ webhookUrl: n8nUrl, token: n8nToken, systemInstruction, history, options })
-        // `provider: 'gemini'` reste vrai : le nœud Gemini de n8n appelle ce
-        // modèle, et les trois clients affichent déjà cette étiquette sans
-        // brancher la valeur.
         return json(res, { ok: true, action, assistant: ASSISTANT_NAME, provider: 'gemini', model: GEMINI_MODEL, reply, suggestions: suggestionsFor(caller) })
       } catch (exception) {
         failures.push(`n8n: ${String(exception?.message || exception)}`)
