@@ -48,7 +48,7 @@ const N8N_TIMEOUT_MS = 25_000
 const MISTRAL_TIMEOUT_MS = 15_000
 const GROQ_TIMEOUT_MS = 15_000
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions'
-const DEFAULT_GROQ_KEY = ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')
+const DEFAULT_GROQ_KEY = ''
 const GROQ_MODELS = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
 
 function json(res, body, status = 200) {
