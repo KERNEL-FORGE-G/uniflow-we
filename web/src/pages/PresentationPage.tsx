@@ -109,14 +109,14 @@ export default function PresentationPage() {
 
           <div className="mx-auto mb-5 flex justify-center">
             <img 
-              src="/logos/uniflow-wordmark.svg" 
+              src="/brand/uniflow_logo_final.png" 
               alt="UniFlow" 
               loading="eager"
               decoding="async"
               className="h-16 w-auto object-contain drop-shadow-md" 
               onError={(e) => {
                 const target = e.target as HTMLImageElement
-                target.src = '/logos/icon-512.png'
+                target.src = '/brand/uniflow_logo_final.png'
               }}
             />
           </div>

@@ -708,11 +708,11 @@ export default function MessagingPage() {
               {active.messages.length === 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
                   <img
-                    src="/logos/uniflow-emblem.svg"
-                    alt=""
-                    className="h-28 w-28 object-contain opacity-10 animate-pulse"
+                    src="/brand/uniflow_logo_final.png"
+                    alt="UniFlow"
+                    className="h-28 w-28 object-contain opacity-15 animate-pulse"
                     onError={(e) => {
-                      e.currentTarget.src = '/logo_1.png'
+                      e.currentTarget.src = '/brand/uniflow_logo_final.png'
                     }}
                   />
                   <p className="text-xs text-[#9ca3af] mt-2 opacity-50">

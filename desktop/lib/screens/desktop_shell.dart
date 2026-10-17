@@ -65,29 +65,13 @@ class _DesktopShellState extends State<DesktopShell> {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
                   child: Row(
                     children: [
-                      Container(
-                        width: 42,
-                        height: 42,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF2563EB), Color(0xFF0D9488)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: const Color(0xFF2563EB).withValues(alpha: 0.3),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'UF',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
-                          ),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/brand/uniflow_logo_final.png',
+                          width: 42,
+                          height: 42,
+                          fit: BoxFit.contain,
                         ),
                       ),
                       const SizedBox(width: 12),

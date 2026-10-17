@@ -211,7 +211,7 @@ export default function LandingPage() {
                 variants={fadeInUp}
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#eff3ff] to-[#dce5fd] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#1e3a8a] border border-[#1e3a8a]/20 shadow-xs"
               >
-                <img src="/logos/icon-192.png" alt="UniFlow Owl" className="h-4 w-4 rounded-full object-contain" />
+                <img src="/brand/uniflow_logo_final.png" alt="UniFlow" className="h-4 w-4 object-contain" />
                 <span>Plateforme d'Apprentissage Autonome & Offline-First</span>
               </motion.span>
 
@@ -821,7 +821,7 @@ export default function LandingPage() {
                     alt={slug}
                     className="inline-block h-10 w-10 rounded-full border-2 border-slate-900 object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/logos/icon-192.png'
+                      (e.target as HTMLImageElement).src = '/brand/uniflow_logo_final.png'
                     }}
                   />
                 ))}
