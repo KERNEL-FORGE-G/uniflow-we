@@ -84,10 +84,47 @@ test('API /api/books : recherche et structure de réponse', async () => {
   assert.ok(first.downloadUrl.includes('/api/books?action=download'), 'Le downloadUrl doit pointer vers l’API de téléchargement')
 })
 
-test('API /api/books : téléchargement direct retourne un PDF binaire certifié', async () => {
+test('API /api/books : redirection 302 vers le livre intégral authentique', async () => {
   const req = {
     method: 'GET',
     query: { action: 'download', id: 'zlib-cs-101' },
+    body: {},
+    headers: { host: 'localhost:3000' },
+  } as any
+
+  let redirectUrl = ''
+  let redirectCode = 0
+
+  const res = {
+    setHeader: () => res,
+    status: (code: number) => {
+      redirectCode = code
+      return res
+    },
+    json: () => res,
+    send: () => res,
+    redirect: (codeOrUrl: any, url?: string) => {
+      if (typeof codeOrUrl === 'number') {
+        redirectCode = codeOrUrl
+        redirectUrl = url || ''
+      } else {
+        redirectUrl = codeOrUrl
+        redirectCode = 302
+      }
+      return res
+    },
+  } as any
+
+  await booksHandler(req, res)
+
+  assert.equal(redirectCode, 302, 'Code de redirection 302 attendu pour le livre réel')
+  assert.ok(redirectUrl.includes('sicp.pdf'), 'L’URL de redirection doit pointer vers le PDF authentique')
+})
+
+test('API /api/books : téléchargement direct raw retourne un PDF binaire certifié', async () => {
+  const req = {
+    method: 'GET',
+    query: { action: 'download', id: 'zlib-cs-101', raw: '1' },
     body: {},
     headers: { host: 'localhost:3000' },
   } as any
