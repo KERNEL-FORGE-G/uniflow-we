@@ -67,6 +67,8 @@ const SubscriptionFlowPage = lazy(() => import('./pages/SubscriptionFlowPage'))
 const BillingPage = lazy(() => import('./pages/billing/BillingPage'))
 const ContactPage = lazy(() => import('./pages/ContactPage'))
 const SentinellePage = lazy(() => import('./pages/SentinellePage'))
+const ActualitesPage = lazy(() => import('./pages/ActualitesPage'))
+const WebmailPage = lazy(() => import('./pages/WebmailPage'))
 const ForumPage = lazy(() => import('./pages/ForumPage'))
 const TeamsPage = lazy(() => import('./pages/TeamsPage'))
 const LegalDocumentPage = lazy(() => import('./pages/legal/LegalDocumentPage'))
@@ -74,6 +76,7 @@ const PromotionPage = lazy(() => import('./pages/PromotionPage'))
 const PersonalAccountPage = lazy(() => import('./pages/PersonalAccountPages'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
+const GuestVisioPage = lazy(() => import('./pages/GuestVisioPage'))
 
 // Admin pages lazy loaded
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
@@ -225,17 +228,17 @@ function PersonalLearningRoute({
   return <>{children}</>
 }
 
-/** Espace connecté : layout + transition de page animée sur le contenu seulement. */
+/** Espace connecté : layout + transition de page fluide immédiate, sans rétention de l'ancien écran. */
 function Shell({ children }: { children: ReactNode }) {
   const location = useLocation()
   return (
     <AuthenticatedRoute>
       <AppLayout>
-        <AnimatePresence mode="wait" initial={false}>
-          <PageTransition key={location.pathname}>
-            <Suspense fallback={<PageLoader />}>{children}</Suspense>
-          </PageTransition>
-        </AnimatePresence>
+        <Suspense fallback={<PageLoader />}>
+          <div key={location.pathname} className="min-h-full animate-fade-in">
+            {children}
+          </div>
+        </Suspense>
       </AppLayout>
     </AuthenticatedRoute>
   )
@@ -244,9 +247,9 @@ function Shell({ children }: { children: ReactNode }) {
 function PublicPage({ children }: { children: ReactNode }) {
   const location = useLocation()
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      <PageTransition key={location.pathname}>{children}</PageTransition>
-    </AnimatePresence>
+    <div key={location.pathname} className="min-h-full animate-fade-in">
+      {children}
+    </div>
   )
 }
 
@@ -293,6 +296,8 @@ export default function App() {
           <Suspense fallback={<PageLoader />}>
             <Routes>
               <Route path="/" element={<LandingPage />} />
+              <Route path="/actualites" element={<PublicPage><ActualitesPage /></PublicPage>} />
+              <Route path="/actualite" element={<Navigate to="/actualites" replace />} />
               <Route path="/about" element={<PublicPage><AboutPage /></PublicPage>} />
               <Route path="/pricing" element={<PublicPage><PricingPage /></PublicPage>} />
               <Route path="/download" element={<PublicPage><DownloadPage /></PublicPage>} />
@@ -308,6 +313,9 @@ export default function App() {
               <Route path="/sentinelle" element={<PublicPage><SentinellePage /></PublicPage>} />
               <Route path="/forum" element={<PublicPage><ForumPage /></PublicPage>} />
               <Route path="/teams" element={<PublicPage><TeamsPage /></PublicPage>} />
+              <Route path="/visio" element={<PublicPage><GuestVisioPage /></PublicPage>} />
+              <Route path="/visio/:roomId" element={<PublicPage><GuestVisioPage /></PublicPage>} />
+              <Route path="/join-visio/:roomId" element={<PublicPage><GuestVisioPage /></PublicPage>} />
               {LEGAL_DOCUMENTS.map((doc) => (
                 <Route key={doc.slug} path={doc.path} element={<PublicPage><LegalDocumentPage document={doc} /></PublicPage>} />
               ))}
@@ -335,6 +343,8 @@ export default function App() {
               {/* Universitaire uniquement */}
               <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />
               <Route path="/app/gestion-presences" element={<Shell><UniversityRoute roles={['delegate', 'teacher']}><AttendanceManagePage /></UniversityRoute></Shell>} />
+              <Route path="/app/mail" element={<Shell><WebmailPage /></Shell>} />
+              <Route path="/app/webmail" element={<Navigate to="/app/mail" replace />} />
               <Route path="/app/notifications" element={<Shell><NotificationsPage /></Shell>} />
               <Route path="/app/messages" element={<Shell><MessagingPage /></Shell>} />
               <Route path="/app/messages/:conversationId" element={<Shell><MessagingPage /></Shell>} />
@@ -347,10 +357,10 @@ export default function App() {
               {/* Visioconférence (Cloud + LAN campus) */}
               <Route path="/app/visio/*" element={<Shell><VideoConferencePage /></Shell>} />
               <Route path="/app/visioconference/*" element={<Shell><VideoConferencePage /></Shell>} />
-               {/* New feature routes */}
-               <Route path="/app/inscriptions" element={<Shell><EnrollmentsPage /></Shell>} />
-               <Route path="/app/paiements" element={<Shell><TuitionPaymentsPage /></Shell>} />
-               <Route path="/app/bourses" element={<Shell><ScholarshipsPage /></Shell>} />
+              {/* Sections retirées (non maîtrisées) — redirection fluide vers /app */}
+              <Route path="/app/inscriptions" element={<Navigate to="/app" replace />} />
+              <Route path="/app/paiements" element={<Navigate to="/app" replace />} />
+              <Route path="/app/bourses" element={<Navigate to="/app" replace />} />
                <Route path="/app/gamification" element={<Shell><GamificationPage /></Shell>} />
                <Route path="/app/sentinelle" element={<Shell><SentinellePage /></Shell>} />
                <Route path="/app/evaluations" element={<Shell><TeacherGradingPage /></Shell>} />

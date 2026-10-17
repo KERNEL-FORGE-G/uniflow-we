@@ -74,10 +74,10 @@ export default function GradesPage() {
         <div className="relative flex flex-wrap items-end justify-between gap-5">
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-xs font-semibold text-white">
-              <UniIcon name="assistant" weight="fill" size={14} className="text-cyan-200" /> Relevé personnel
+              <UniIcon name="assistant" weight="fill" size={14} className="text-cyan-200" /> Relevé Académique Officiel
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Mes notes</h1>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">Vos évaluations réelles, chargées depuis votre compte Appwrite.</p>
+            <h1 className="text-3xl font-black tracking-tight sm:text-4xl">Mes notes &amp; Résultats</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-blue-100">Consultez votre relevé semestriel, vos moyennes d'évaluations et l'état de validation de vos crédits académiques.</p>
           </div>
           <div className="text-left sm:text-right">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-200">Moyenne actuelle</p>

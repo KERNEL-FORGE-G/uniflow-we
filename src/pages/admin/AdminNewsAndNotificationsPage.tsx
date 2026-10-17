@@ -11,6 +11,11 @@ import {
   HiMegaphone,
   HiBookmark,
   HiArrowPath,
+  HiPhoto,
+  HiVideoCamera,
+  HiDocumentText,
+  HiLink,
+  HiTag,
 } from 'react-icons/hi2'
 import { newsApi, notificationsApi, type NewsItem } from '../../lib/api'
 
@@ -28,6 +33,14 @@ export default function AdminNewsAndNotificationsPage() {
   const [isNewsImportant, setIsNewsImportant] = useState(false)
   const [isNewsPinned, setIsNewsPinned] = useState(false)
   const [isPublishingNews, setIsPublishingNews] = useState(false)
+  const [newsImageUrl, setNewsImageUrl] = useState('')
+  const [newsImageCaption, setNewsImageCaption] = useState('')
+  const [newsVideoUrl, setNewsVideoUrl] = useState('')
+  const [newsDocumentName, setNewsDocumentName] = useState('')
+  const [newsDocumentUrl, setNewsDocumentUrl] = useState('')
+  const [newsLinkLabel, setNewsLinkLabel] = useState('')
+  const [newsLinkUrl, setNewsLinkUrl] = useState('')
+  const [newsTags, setNewsTags] = useState('')
 
   // État Notifications Push Groupées
   const [targetGroup, setTargetGroup] = useState<TargetGroup>('ALL')
@@ -72,18 +85,39 @@ export default function AdminNewsAndNotificationsPage() {
 
     setIsPublishingNews(true)
     try {
+      const tagsArray = newsTags
+        .split(',')
+        .map(t => t.trim())
+        .filter(Boolean)
+
       await newsApi.create({
         title: newsTitle.trim(),
         content: newsContent.trim(),
         channel: newsChannel.trim(),
         important: isNewsImportant,
         pinned: isNewsPinned,
+        imageUrl: newsImageUrl.trim() || undefined,
+        imageCaption: newsImageCaption.trim() || undefined,
+        videoUrl: newsVideoUrl.trim() || undefined,
+        documentName: newsDocumentName.trim() || undefined,
+        documentUrl: newsDocumentUrl.trim() || undefined,
+        linkLabel: newsLinkLabel.trim() || undefined,
+        linkUrl: newsLinkUrl.trim() || undefined,
+        tags: tagsArray.length > 0 ? tagsArray : undefined,
       })
       showFeedback('success', 'Actualité officielle publiée avec succès.')
       setNewsTitle('')
       setNewsContent('')
       setIsNewsImportant(false)
       setIsNewsPinned(false)
+      setNewsImageUrl('')
+      setNewsImageCaption('')
+      setNewsVideoUrl('')
+      setNewsDocumentName('')
+      setNewsDocumentUrl('')
+      setNewsLinkLabel('')
+      setNewsLinkUrl('')
+      setNewsTags('')
       loadNews()
     } catch (err: any) {
       showFeedback('error', err?.message || 'Erreur lors de la publication de l’actualité.')
@@ -274,6 +308,112 @@ export default function AdminNewsAndNotificationsPage() {
                 </label>
               </div>
 
+              {/* SECTION ENRICHISSEMENT MULTIMÉDIA */}
+              <div className="pt-3 border-t border-slate-100 space-y-3.5">
+                <div className="flex items-center justify-between text-xs font-black uppercase tracking-wider text-slate-500">
+                  <span>Médias &amp; Pièces Jointes</span>
+                  <span className="text-[10px] lowercase font-normal text-slate-400">(optionnels)</span>
+                </div>
+
+                {/* Image & Légende */}
+                <div className="rounded-2xl bg-slate-50 p-3.5 border border-slate-200/80 space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <HiPhoto className="h-4 w-4 text-[#1E3A8A]" />
+                    <span>Image d'illustration</span>
+                  </div>
+                  <input
+                    type="url"
+                    value={newsImageUrl}
+                    onChange={e => setNewsImageUrl(e.target.value)}
+                    placeholder="URL de l'image (ex: /illustrations/uni_copilot_3d.png ou https://...)"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A]"
+                  />
+                  <input
+                    type="text"
+                    value={newsImageCaption}
+                    onChange={e => setNewsImageCaption(e.target.value)}
+                    placeholder="Légende descriptive de l'image"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A]"
+                  />
+                </div>
+
+                {/* Vidéo YouTube ou MP4 */}
+                <div className="rounded-2xl bg-slate-50 p-3.5 border border-slate-200/80 space-y-2">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <HiVideoCamera className="h-4 w-4 text-rose-600" />
+                    <span>Vidéo intégrée</span>
+                  </div>
+                  <input
+                    type="url"
+                    value={newsVideoUrl}
+                    onChange={e => setNewsVideoUrl(e.target.value)}
+                    placeholder="Lien YouTube ou URL MP4 directe (ex: https://youtube.com/watch?v=...)"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A]"
+                  />
+                </div>
+
+                {/* Document joint à télécharger */}
+                <div className="rounded-2xl bg-slate-50 p-3.5 border border-slate-200/80 space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <HiDocumentText className="h-4 w-4 text-emerald-600" />
+                    <span>Document joint (PDF, Doc)</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={newsDocumentName}
+                    onChange={e => setNewsDocumentName(e.target.value)}
+                    placeholder="Nom du document (ex: Guide_Etudiant_2026.pdf)"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A]"
+                  />
+                  <input
+                    type="text"
+                    value={newsDocumentUrl}
+                    onChange={e => setNewsDocumentUrl(e.target.value)}
+                    placeholder="Lien de téléchargement (ex: /docs/guide.pdf ou https://...)"
+                    className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A]"
+                  />
+                </div>
+
+                {/* Bouton d'action / Lien externe */}
+                <div className="rounded-2xl bg-slate-50 p-3.5 border border-slate-200/80 space-y-2.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700">
+                    <HiLink className="h-4 w-4 text-cyan-600" />
+                    <span>Bouton de redirection / Lien d'action</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      value={newsLinkLabel}
+                      onChange={e => setNewsLinkLabel(e.target.value)}
+                      placeholder="Texte (ex: Découvrir)"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A]"
+                    />
+                    <input
+                      type="text"
+                      value={newsLinkUrl}
+                      onChange={e => setNewsLinkUrl(e.target.value)}
+                      placeholder="Destination (ex: /contact)"
+                      className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A]"
+                    />
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div>
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-slate-700 mb-1.5">
+                    <HiTag className="h-3.5 w-3.5 text-slate-500" />
+                    <span>Mots-clés / Tags (séparés par des virgules)</span>
+                  </div>
+                  <input
+                    type="text"
+                    value={newsTags}
+                    onChange={e => setNewsTags(e.target.value)}
+                    placeholder="Ex: Phase de test, Déploiement, UY1, Important"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/60 px-4 py-2.5 text-xs font-medium text-slate-800 outline-none focus:border-[#1E3A8A] focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
               <div className="pt-2">
                 <button
                   type="submit"
@@ -341,9 +481,59 @@ export default function AdminNewsAndNotificationsPage() {
                       </div>
 
                       <h4 className="font-bold text-sm text-slate-900">{item.title}</h4>
+                      
+                      {item.imageUrl && (
+                        <div className="my-2 flex items-center gap-3 p-2 rounded-xl bg-slate-50 border border-slate-200/80">
+                          <img
+                            src={item.imageUrl}
+                            alt={item.title}
+                            className="w-16 h-12 rounded-lg object-cover bg-slate-200 shrink-0"
+                            onError={(e) => {
+                              e.currentTarget.src = '/illustrations/uni_copilot_3d.png'
+                            }}
+                          />
+                          <div className="text-[11px] text-slate-600 truncate">
+                            <span className="font-bold text-slate-800">Image jointe :</span> {item.imageCaption || item.imageUrl}
+                          </div>
+                        </div>
+                      )}
+
                       <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                         {item.content}
                       </p>
+
+                      {/* Badges multimédias attachés */}
+                      {(item.videoUrl || item.documentUrl || item.linkUrl) && (
+                        <div className="flex flex-wrap gap-2 pt-1 text-[11px]">
+                          {item.videoUrl && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 font-semibold border border-rose-200/60">
+                              <HiVideoCamera className="h-3.5 w-3.5" /> Vidéo : {item.videoUrl}
+                            </span>
+                          )}
+                          {item.documentUrl && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60">
+                              <HiDocumentText className="h-3.5 w-3.5" /> Doc : {item.documentName || 'Fichier joint'}
+                            </span>
+                          )}
+                          {item.linkUrl && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-cyan-50 text-cyan-700 font-semibold border border-cyan-200/60">
+                              <HiLink className="h-3.5 w-3.5" /> Lien : {item.linkLabel || item.linkUrl}
+                            </span>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Tags */}
+                      {item.tags && item.tags.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {item.tags.map((tg) => (
+                            <span key={tg} className="text-[10px] font-semibold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                              #{tg}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="text-[10px] text-slate-400 font-semibold pt-1">
                         Publié par : {item.author || 'Administration'}
                       </div>

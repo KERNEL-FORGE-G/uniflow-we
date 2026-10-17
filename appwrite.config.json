@@ -2,7 +2,7 @@
     "organizationId": "6a2e769200255cbc1e80",
     "projectId": "uniflow",
     "projectName": "UniFlow",
-    "endpoint": "https://fra.cloud.appwrite.io/v1",
+    "endpoint": "https://vps.kernelforge.codes/v1",
     "functions": [
         {
             "$id": "uniflow-api",

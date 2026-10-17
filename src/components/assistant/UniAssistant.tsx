@@ -3,7 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { RotateCcw, SendHorizontal, Sparkles, Trash2, Volume2, VolumeX, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { executeAssistantAction } from '@/lib/appwrite'
-import { askGroq } from '@/lib/groqAssistantService'
+import { askGroq, UNI_SYSTEM_PROMPT } from '@/lib/groqAssistantService'
 import { GUEST_GREETING, GUEST_SUGGESTIONS, guestReply, type GuestLink } from '@/lib/assistantGuest'
 import { UniMascot } from '@/components/mascot/UniMascot'
 import { CornerSlot, useCornerStack } from '@/components/layout/CornerStack'
@@ -194,29 +194,31 @@ export function UniAssistant() {
     const userTurn = makeMessage('user', content)
     const next = [...messages, userTurn]
     setMessages(next)
-    if (guest) {
-      // Guide local : petite pause pour que la réponse « arrive », comme une vraie.
-      setPending(true)
-      const reply = guestReply(content)
-      window.setTimeout(() => {
-        setMessages((current) => [...current, makeMessage('assistant', reply.text, { local: true })])
-        setLinks(reply.links)
-        setSuggestions(GUEST_SUGGESTIONS.filter((item) => item !== content))
-        setPending(false)
-        say(reply.text)
-      }, 450)
-      return
-    }
     setPending(true)
     try {
       let reply: string = ''
+      const userContext = !guest && currentUser?.name
+        ? `\n\n# CONTEXTE UTILISATEUR CONNECTÉ :\n- Nom : ${currentUser.name}\n- Rôle : ${currentUser.roleLabel || 'Étudiant'}\n- Filière / Niveau : ${currentUser.filiere || 'Non renseigné'}\n- Établissement : ${currentUser.university || 'Université de Yaoundé I'}`
+        : ''
       try {
-        reply = await askGroq(historyForServer(next))
+        reply = await askGroq(historyForServer(next), `${UNI_SYSTEM_PROMPT}${userContext}`)
       } catch (groqErr) {
-        console.warn('Groq non joignable, repli vers le routeur Appwrite:', groqErr)
-        const response = await executeAssistantAction({ action: 'chat', messages: historyForServer(next), platform: 'web', voice: voiceOn && canSpeak })
-        reply = response.reply || '…'
-        if (response.suggestions?.length) setSuggestions(response.suggestions)
+        console.warn('Groq direct non joignable, bascule vers Appwrite /assistant:', groqErr)
+        if (!guest) {
+          try {
+            const response = await executeAssistantAction({ action: 'chat', messages: historyForServer(next), platform: 'web', voice: voiceOn && canSpeak })
+            reply = response.reply || ''
+            if (response.suggestions?.length) setSuggestions(response.suggestions)
+          } catch (appwriteErr) {
+            console.warn('Appwrite /assistant non joignable, repli local:', appwriteErr)
+          }
+        }
+        if (!reply) {
+          const fallback = guestReply(content)
+          reply = fallback.text
+          setLinks(fallback.links)
+          setSuggestions(GUEST_SUGGESTIONS.filter((item) => item !== content))
+        }
       }
 
       setMessages((current) => [...current, makeMessage('assistant', reply)])
@@ -230,7 +232,7 @@ export function UniAssistant() {
       setPending(false)
       inputRef.current?.focus()
     }
-  }, [canSpeak, guest, isOpen, messages, pending, say, voiceOn])
+  }, [canSpeak, currentUser, guest, isOpen, messages, pending, say, voiceOn])
 
   const retryLast = useCallback(() => {
     const failed = [...messages].reverse().find((m) => m.failed && m.role === 'user')
@@ -305,7 +307,7 @@ export function UniAssistant() {
                 <p className="truncate text-sm font-bold leading-tight">{ASSISTANT_NAME} · Assistant UniFlow</p>
                 <p className="flex items-center gap-1 text-[11px] text-cyan-100">
                   <span className={`inline-block h-1.5 w-1.5 rounded-full ${pending ? 'bg-amber-300' : speaking ? 'bg-cyan-200' : 'bg-emerald-300'}`} aria-hidden="true" />
-                  {pending ? 'Réfléchit…' : speaking ? 'Parle…' : guest ? 'Guide visiteur · connectez-vous pour plus' : 'En ligne · Gemini 3.1 Flash-Lite'}
+                  {pending ? 'Réfléchit…' : speaking ? 'Parle…' : guest ? 'Guide visiteur · connectez-vous pour plus' : 'En ligne · Propulsé par GROQ'}
                 </p>
               </div>
               {canSpeak && (

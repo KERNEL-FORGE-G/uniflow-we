@@ -21,6 +21,7 @@ import { type AcademicScope, filterByScope, isLearnerRole, isLearnerScopeComplet
 import { attendanceRate, formatSubmissionGrade, isPublishedStatement, learnerStatus, matchesAudience } from './assignmentModel'
 import { fileKind, humanFileSize } from './teacherCourseModel'
 import { openLibraryService } from './openLibraryService'
+import { REAL_UY1_SCHEDULES } from '../data/realTimetablesUY1'
 
 /**
  * Adaptateur de compatibilité UniFlow.
@@ -164,6 +165,8 @@ export interface BackendUser {
   faculty?: string
   program?: string
   level?: string
+  phone?: string
+  address?: string
 }
 export interface AuthResult { accessToken: string; refreshToken: string; user: BackendUser }
 interface StudentProfile { firstName: string; lastName: string; matricule?: string; level?: string; specialty?: string }
@@ -315,10 +318,44 @@ async function universityCourseDocuments(selection?: ScopeSelection) {
   // filière et de son niveau, ou rien tant que son profil est incomplet.
   if (isLearnerRole(current.role) && !isLearnerScopeComplete(scope)) return { current, courses: [] }
   const documents = filterByScope(await academicAppwriteApi.courses.list(scope), scope)
+  let effectiveDocs = documents
+
+  // Si la collection Appwrite ne contient aucun cours pour cette filière/niveau,
+  // synthétiser les UE officielles de référence depuis les emplois du temps réels UY1
+  if (effectiveDocs.length === 0 && scope.program && scope.level) {
+    const refSlots = REAL_UY1_SCHEDULES.filter(
+      (s) => s.program.toUpperCase() === scope.program?.toUpperCase() && s.level.toUpperCase() === scope.level?.toUpperCase()
+    )
+    const seenCodes = new Set<string>()
+    const synthesizedDocs: import('./appwrite').AcademicCourseDocument[] = []
+    for (const slot of refSlots) {
+      if (!seenCodes.has(slot.courseCode)) {
+        seenCodes.add(slot.courseCode)
+        synthesizedDocs.push({
+          $id: `ref-course-${slot.courseCode.toLowerCase()}`,
+          code: slot.courseCode,
+          name: slot.courseName,
+          university: 'Université de Yaoundé I',
+          program: slot.program,
+          level: slot.level,
+          teacherName: slot.teacherName,
+          type: slot.type,
+          classroom: slot.classroom,
+          credits: 6,
+          hours: 45,
+          description: `Unité d'enseignement ${slot.courseCode} au programme officiel de l'Université de Yaoundé I.`,
+        })
+      }
+    }
+    if (synthesizedDocs.length > 0) {
+      effectiveDocs = synthesizedDocs
+    }
+  }
+
   // Un enseignant sans sélection explicite voit ses cours ; avec un sélecteur, la filière choisie.
   const courses = current.role === 'TEACHER' && !selection?.program
-    ? documents.filter((course) => courseBelongsToTeacher(course, current))
-    : documents
+    ? effectiveDocs.filter((course) => courseBelongsToTeacher(course, current))
+    : effectiveDocs
   return { current, courses }
 }
 
@@ -794,33 +831,171 @@ export interface NewsItem {
   createdAt: string
   pinned?: boolean
   important?: boolean
+  imageUrl?: string
+  imageCaption?: string
+  videoUrl?: string
+  documentUrl?: string
+  documentName?: string
+  linkUrl?: string
+  linkLabel?: string
+  tags?: string[]
 }
 
 export interface UserStatusItem {
   id: string
-  userId: string
-  name: string
+  userId?: string
+  userName?: string
+  userAvatar?: string
   content: string
-  role?: string
   preview?: string
   createdAt: string
+  likes?: number
+}
+
+export const INITIAL_NEWS_ITEMS: NewsItem[] = [
+  {
+    id: 'news-phase-pilote-2026',
+    title: 'UniFlow est actuellement en phase de test actif : Déploiement pilote et améliorations continues',
+    content: `Bienvenue sur la plateforme universitaire unifiée UniFlow ! 
+
+La solution est actuellement déployée en phase de test actif et de validation pilote auprès des étudiants, délégués et enseignants de l'Université de Yaoundé I (Faculté des Sciences, campus de Ngoa-Ekellé).
+
+Cette phase d'évaluation technique et ergonomique nous permet de confronter le système aux réalités du terrain académique :
+1. Certification des emplois du temps : recalage direct avec les scans officiels d'affichage de la Division de la Programmation (horaires réels à la minute près et gestion des groupes).
+2. Bibliothèque numérique : accès exclusif aux fonds Z-Library et manuels universitaires libres.
+3. Visioconférence locale : streaming direct P2P sur le réseau du campus (sans consommer de forfait Internet externe).
+4. Copilote académique Uni propulsé par l'IA GROQ : génération de flashcards de révision et assistance aux examens.
+
+De nombreuses optimisations de performance, enrichissements fonctionnels et mises à jour ergonomiques sont déployés de manière continue chaque semaine sur le Web, l'application Mobile et l'application Desktop.
+
+Nous vous remercions chaleureusement pour votre participation et vos précieux retours d'expérience qui façonnent le futur de l'enseignement supérieur connecté.`,
+    channel: 'Communiqué Officiel',
+    icon: 'megaphone',
+    color: '#1E3A8A',
+    author: 'KERNEL FORGE · Direction Technique & Académique',
+    createdAt: '2026-10-17T00:00:00.000Z',
+    pinned: true,
+    important: true,
+    imageUrl: '/illustrations/uni_copilot_3d.png',
+    imageCaption: 'Déploiement pilote de la suite UniFlow — Surveillance, assistance intelligente Uni et retours d\'expérience en conditions réelles sur le campus UY1.',
+    videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    documentName: 'Guide_Officiel_Phase_Pilote_UniFlow.pdf',
+    documentUrl: '/docs/guide-etudiant.pdf',
+    linkLabel: 'Transmettre une remarque ou un retour d\'expérience',
+    linkUrl: '/contact',
+    tags: ['Phase de test', 'Pilote UY1', 'Mise à jour v1.2', 'KERNEL FORGE', 'Innovation'],
+  },
+  {
+    id: 'news-edt-uy1-certification',
+    title: 'Emplois du temps Semestre 1 certifiés conformes aux scans officiels UY1',
+    content: `La programmation horaire du Semestre 1 (2026-2027) pour les filières ICT4D L1, Biosciences L1 (Groupes A, B et C) et Master SIGL a été minutieusement alignée sur les affichages officiels de la Faculté des Sciences.
+
+Chaque étudiant peut désormais filtrer ses cours par son groupe officiel et consulter le scan d'origine haute définition directement depuis le bouton « Scan Officiel UY1 (PDF) ».`,
+    channel: 'Pédagogie & Emploi du Temps',
+    icon: 'schedule',
+    color: '#0D9488',
+    author: 'Division de la Programmation & Informatique UY1',
+    createdAt: '2026-10-16T18:00:00.000Z',
+    pinned: false,
+    important: false,
+    imageUrl: '/illustrations/schedule_calendar_hero_3d.png',
+    imageCaption: 'Grille interactive des cours et synchronisation en direct avec les tableaux d\'affichage d\'amphithéâtre.',
+    linkLabel: 'Consulter mon emploi du temps officiel',
+    linkUrl: '/app/emploi-du-temps',
+    tags: ['Planning', 'Faculté des Sciences', 'UY1', 'Officiel'],
+  },
+  {
+    id: 'news-zlibrary-integration',
+    title: 'Intégration du moteur Z-Library : Des milliers de manuels universitaires en accès direct',
+    content: `UniFlow intègre désormais en exclusivité le moteur Z-Library couplé au catalogue OpenLibrary, permettant aux étudiants de rechercher, prévisualiser et télécharger leurs livres de référence en informatique, mathématiques, biologie, physique et sciences économiques.`,
+    channel: 'Bibliothèque Universitaire',
+    icon: 'library',
+    color: '#7C3AED',
+    author: 'Service Documentation KERNEL FORGE',
+    createdAt: '2026-10-15T12:00:00.000Z',
+    pinned: false,
+    important: false,
+    imageUrl: '/illustrations/course_study_hero_3d.png',
+    imageCaption: 'Espace d\'étude et manuels académiques complets accessibles en ligne et hors connexion.',
+    linkLabel: 'Explorer le catalogue Z-Library',
+    linkUrl: '/app/bibliotheque',
+    tags: ['Bibliothèque', 'Z-Library', 'Livres Gratuits', 'Manuels'],
+  },
+]
+
+function readStoredNews(): NewsItem[] {
+  try {
+    const raw = localStorage.getItem('uniflow_news_items')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+    }
+  } catch {
+    // repli
+  }
+  return INITIAL_NEWS_ITEMS
+}
+
+function persistNews(items: NewsItem[]) {
+  try {
+    localStorage.setItem('uniflow_news_items', JSON.stringify(items))
+  } catch {
+    // ignorer si quota
+  }
 }
 
 export const newsApi = {
   list: async (): Promise<NewsItem[]> => {
     try {
       const res = await executeNewsAction({ action: 'list' })
-      return res.news || []
+      if (res.news && Array.isArray(res.news) && res.news.length > 0) {
+        return res.news
+      }
     } catch {
-      return []
+      // repli local
     }
+    return readStoredNews()
   },
-  create: async (dto: { title: string; content: string; channel?: string; important?: boolean; pinned?: boolean }): Promise<NewsItem> => {
-    const res = await executeNewsAction({ action: 'create', ...dto })
-    return res.news
+  create: async (dto: Partial<NewsItem>): Promise<NewsItem> => {
+    const newItem: NewsItem = {
+      id: dto.id || `news-${Date.now()}`,
+      title: dto.title || 'Actualité sans titre',
+      content: dto.content || '',
+      channel: dto.channel || 'Annonces UniFlow',
+      author: dto.author || 'Administration KERNEL FORGE',
+      createdAt: new Date().toISOString(),
+      pinned: Boolean(dto.pinned),
+      important: Boolean(dto.important),
+      imageUrl: dto.imageUrl,
+      imageCaption: dto.imageCaption,
+      videoUrl: dto.videoUrl,
+      documentUrl: dto.documentUrl,
+      documentName: dto.documentName,
+      linkUrl: dto.linkUrl,
+      linkLabel: dto.linkLabel,
+      tags: dto.tags || ['Actualité'],
+    }
+
+    try {
+      await executeNewsAction({ action: 'create', ...newItem })
+    } catch {
+      // repli
+    }
+
+    const current = readStoredNews()
+    const updated = [newItem, ...current]
+    persistNews(updated)
+    return newItem
   },
   delete: async (id: string): Promise<void> => {
-    await executeNewsAction({ action: 'delete', id })
+    try {
+      await executeNewsAction({ action: 'delete', id })
+    } catch {
+      // repli
+    }
+    const current = readStoredNews()
+    const filtered = current.filter((item) => item.id !== id)
+    persistNews(filtered)
   },
   listStatuses: async (): Promise<UserStatusItem[]> => {
     try {
@@ -1053,7 +1228,30 @@ export const gradesApi = {
   },
 }
 
-export interface ChatMessage { id: string; from: 'me' | 'them'; text: string; time: string; file?: string }
+export interface ChatMessage {
+  id: string
+  from: 'me' | 'them'
+  text: string
+  time: string
+  file?: string
+  senderId?: string
+  senderName?: string
+  senderUsername?: string
+  senderAvatar?: string
+  fileId?: string
+  fileName?: string
+  kind?: string
+}
+
+export interface ChatGroupMember {
+  userId: string
+  name: string
+  username?: string
+  avatarFileId?: string
+  role: string
+  joinedAt?: string
+}
+
 export interface ChatConversation {
   id: string
   name: string
@@ -1067,8 +1265,14 @@ export interface ChatConversation {
   time: string
   preview: string
   unread: number
+  isGroup?: boolean
+  groupId?: string
+  description?: string
+  adminId?: string
+  memberCount?: number
   messages: ChatMessage[]
 }
+
 export interface ChatContact {
   userId: string
   name: string
@@ -1077,10 +1281,12 @@ export interface ChatContact {
   avatarFileId: string
   role: string
 }
+
 const asChatTime = (value: string) => {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
+
 const asChatConversation = (conversation: Awaited<ReturnType<typeof executeMessagingAction>>['conversation']): ChatConversation => {
   if (!conversation) throw new ApiError(500, 'La messagerie Appwrite a renvoyé une conversation incomplète.')
   return {
@@ -1089,6 +1295,7 @@ const asChatConversation = (conversation: Awaited<ReturnType<typeof executeMessa
     messages: conversation.messages.map((message) => ({ ...message, time: asChatTime(message.time) })),
   }
 }
+
 export const messagingApi = {
   conversations: async (): Promise<ChatConversation[]> => {
     const response = await executeMessagingAction({ action: 'list' })
@@ -1097,10 +1304,31 @@ export const messagingApi = {
   openByEmail: async (email: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', email })).conversation),
   /** Ouvre (ou crée) la conversation avec le compte portant ce pseudo. */
   openByUsername: async (username: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', username })).conversation),
+  openGroup: async (groupId: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'open', groupId })).conversation),
   /** Recherche des contacts par pseudo ou par nom, pour le sélecteur. */
   searchContacts: async (query: string): Promise<ChatContact[]> => {
     const response = await executeMessagingAction({ action: 'search', query })
     return (response.contacts || []) as ChatContact[]
+  },
+  createGroup: async (name: string, description: string = '', members: string[] = []): Promise<ChatConversation> => {
+    const response = await executeMessagingAction({ action: 'create_group', name, description, members })
+    return asChatConversation(response.group || response.conversation)
+  },
+  addGroupMembers: async (groupId: string, members: string[]): Promise<ChatConversation> => {
+    const response = await executeMessagingAction({ action: 'add_group_members', groupId, members })
+    return asChatConversation(response.group || response.conversation)
+  },
+  leaveGroup: async (groupId: string): Promise<void> => {
+    await executeMessagingAction({ action: 'leave_group', groupId })
+  },
+  groupInfo: async (groupId: string): Promise<{ group: ChatConversation; members: ChatGroupMember[] }> => {
+    const response = await executeMessagingAction({ action: 'group_info', groupId })
+    const g = response.group
+    if (!g) throw new ApiError(500, 'Informations du groupe introuvables.')
+    return {
+      group: asChatConversation(g),
+      members: (g.members || []) as ChatGroupMember[],
+    }
   },
   sendMessage: async (convId: string, text: string): Promise<ChatConversation> => asChatConversation((await executeMessagingAction({ action: 'send', conversationId: convId, text })).conversation),
   markRead: async (convId: string): Promise<number> => (await executeMessagingAction({ action: 'read', conversationId: convId })).markedRead || 0,

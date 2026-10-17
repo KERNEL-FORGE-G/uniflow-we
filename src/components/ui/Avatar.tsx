@@ -21,6 +21,32 @@ function getColor(name: string): string {
   return colorPalette[Math.abs(hash) % colorPalette.length]
 }
 
+export const OFFICIAL_PRESET_AVATARS = [
+  { id: 'uni-copilot-3d', label: 'Uni Copilote 3D', url: '/mascot/uni_copilot_3d.png', category: 'Mascottes Uni' },
+  { id: 'uni-graduate', label: 'Uni Diplômé', url: '/mascot/uni_graduate.webp', category: 'Mascottes Uni' },
+  { id: 'uni-headset', label: 'Uni En Ligne', url: '/mascot/uni_headset.webp', category: 'Mascottes Uni' },
+  { id: 'uni-celebrate', label: 'Uni Trophée', url: '/mascot/uni_celebrate.webp', category: 'Mascottes Uni' },
+  { id: 'uni-shield', label: 'Uni Sentinelle', url: '/mascot/uni_shield.webp', category: 'Mascottes Uni' },
+  { id: 'uni-wave', label: 'Uni Salut', url: '/mascot/uni_wave.webp', category: 'Mascottes Uni' },
+  { id: 'uni-search', label: 'Uni Recherche', url: '/mascot/uni_search.webp', category: 'Mascottes Uni' },
+  { id: 'aliya-anime', label: 'Aliya · IA & Data', url: '/team/avatar_aliya_anime.jpg', category: 'Avatars Membres & Anime' },
+  { id: 'marcel-anime', label: 'Marcel · Systèmes', url: '/team/avatar_marcel_anime.jpg', category: 'Avatars Membres & Anime' },
+  { id: 'judith-anime', label: 'Judith · Déléguée UI', url: '/team/avatar_judith_anime.jpg', category: 'Avatars Membres & Anime' },
+  { id: 'juvenal-anime', label: 'Juvénal · Cloud Dev', url: '/team/avatar_juvenal_anime.jpg', category: 'Avatars Membres & Anime' },
+  { id: 'miguel-anime', label: 'Miguel · Cybersécurité', url: '/team/avatar_miguel_anime.jpg', category: 'Avatars Membres & Anime' },
+  { id: 'ravel-founder', label: 'Ravel · Leader Tech', url: '/team/avatar_ravel_founder.jpg', category: 'Avatars Membres & Anime' },
+  { id: 'sandra-anime', label: 'Sandra · Mobile Dev', url: '/team/avatar_sandra_mascot.jpg', category: 'Avatars Membres & Anime' },
+  { id: 'william-anime', label: 'William · Architecte', url: '/team/avatar_william_mascot.jpg', category: 'Avatars Membres & Anime' },
+]
+
+export function getDefaultAvatarByName(name: string): string {
+  let hash = 0
+  for (let i = 0; i < (name || 'User').length; i++) {
+    hash = (name || 'User').charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return OFFICIAL_PRESET_AVATARS[Math.abs(hash) % OFFICIAL_PRESET_AVATARS.length].url
+}
+
 const sizes = {
   xs: 'h-6 w-6 text-[9px]',
   sm: 'h-8 w-8 text-xs',
@@ -39,9 +65,8 @@ export function Avatar({
 }: {
   src?: string
   /**
-   * Identifiant du fichier dans le bucket `uniflow_avatars`. Prioritaire sur
-   * `src` : c'est la photo réellement téléversée par l'utilisateur, alors que
-   * `src` peut désigner un repli externe.
+   * Identifiant du fichier dans le bucket `uniflow_avatars` ou chemin d'avatar prédéfini (ex: `/mascot/...`).
+   * Prioritaire sur `src`.
    */
   avatarFileId?: string | null
   name: string
@@ -59,9 +84,14 @@ export function Avatar({
     .slice(0, 2)
     .toUpperCase() || 'U'
 
-  const avatarSrc = errorCount > 0
-    ? getUiAvatarUrl(name)
-    : (avatarFileUrl(avatarFileId) || src || getUiAvatarUrl(name))
+  const resolvedDirectUrl = avatarFileUrl(avatarFileId) || src
+  const defaultFallback = getDefaultAvatarByName(name)
+
+  const avatarSrc = errorCount === 0
+    ? (resolvedDirectUrl || defaultFallback)
+    : errorCount === 1
+      ? defaultFallback
+      : getUiAvatarUrl(name)
 
   if (errorCount >= 2) {
     return (

@@ -352,13 +352,27 @@ async function main() {
 
   if (prune && !dryRun) {
     console.log('\n— Nettoyage des séances obsolètes')
-    const existing = await listAll('academic_schedules', [{ method: 'startsWith', attribute: 'courseId', values: [COURSE_PREFIX] }])
-    for (const document of existing) {
+    const existingSchedules = await listAll('academic_schedules', [])
+    let deletedSchedules = 0
+    for (const document of existingSchedules) {
       if (keptIds.has(document.$id)) continue
       await request('DELETE', `/databases/${databaseId}/collections/academic_schedules/documents/${document.$id}`)
-      counters.supprimé += 1
+      deletedSchedules += 1
     }
-    console.log(`  ${counters.supprimé} séance(s) supprimée(s).`)
+    counters.supprimé += deletedSchedules
+    console.log(`  ${deletedSchedules} séance(s) supprimée(s).`)
+
+    console.log('\n— Nettoyage des cours fictifs ou obsolètes')
+    const keptCourseIds = new Set(courseDocuments.keys())
+    const existingCourses = await listAll('academic_courses', [])
+    let deletedCourses = 0
+    for (const document of existingCourses) {
+      if (keptCourseIds.has(document.$id)) continue
+      await request('DELETE', `/databases/${databaseId}/collections/academic_courses/documents/${document.$id}`)
+      deletedCourses += 1
+    }
+    counters.supprimé += deletedCourses
+    console.log(`  ${deletedCourses} cours fictif(s) supprimé(s).`)
   }
 
   console.log(`\nBilan : ${counters.créé} créé(s), ${counters['mis à jour']} mis à jour, ${counters.échec} échec(s)${prune ? `, ${counters.supprimé} supprimé(s)` : ''}.`)

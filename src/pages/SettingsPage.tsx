@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { IconTile, UniIcon, type UniIconName } from '../components/ui/UniIcon'
-import { Avatar } from '../components/ui/Avatar'
+import { Avatar, OFFICIAL_PRESET_AVATARS } from '../components/ui/Avatar'
 import { useUserRole } from '../utils/userRole'
 import { cn } from '../utils/cn'
 import PushNotificationControl from '../components/PushNotificationControl'
@@ -11,12 +11,11 @@ import { authApi } from '../lib/api'
 import { removeAvatar, uploadAvatar, validateAvatarFile } from '../lib/appwrite'
 import { SubscriptionWidget } from '../components/subscription/SubscriptionWidget'
 
-const sections = ['Profil', 'Abonnement', 'Inscriptions UEs', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
+const sections = ['Profil', 'Abonnement', 'Notifications', 'Apparence', 'Confidentialité', 'Avancé']
 
 const sectionIcons: Record<string, UniIconName> = {
   Profil: 'profile',
   Abonnement: 'billing',
-  'Inscriptions UEs': 'courseUnit',
   Notifications: 'notifications',
   Apparence: 'globe',
   Confidentialité: 'security',
@@ -102,8 +101,20 @@ export default function SettingsPage() {
       lastName: nameParts.slice(1).join(' ') || '',
       email,
       phone,
-      address
+      address,
     }).catch(() => null)
+
+    if (authUser) {
+      setAuthUser({
+        ...authUser,
+        fullName,
+        email,
+        phone,
+        address,
+        program: filiere,
+        level,
+      })
+    }
 
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
@@ -329,6 +340,63 @@ export default function SettingsPage() {
                 </div>
               </div>
 
+              {/* Galerie d'Avatars Officiels UniFlow & Mascottes 3D */}
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">✨</span>
+                    <div>
+                      <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800">
+                        Choisir une Mascotte Uni 3D ou un Avatar Stylisé
+                      </h4>
+                      <p className="text-[11px] text-slate-500">
+                        Cliquez sur un avatar officiel pour l'appliquer instantanément à l'ensemble de votre compte
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-5 sm:grid-cols-8 gap-2.5 pt-1">
+                  {OFFICIAL_PRESET_AVATARS.map((preset) => {
+                    const isSelected = user.avatarFileId === preset.url || (avatarPreview === preset.url)
+                    return (
+                      <button
+                        key={preset.id}
+                        type="button"
+                        onClick={() => {
+                          if (authUser) {
+                            setAuthUser({ ...authUser, avatarFileId: preset.url })
+                          }
+                          setAvatarPreview(preset.url)
+                          setAvatarSaved(true)
+                          setTimeout(() => setAvatarSaved(false), 3000)
+                        }}
+                        className={`group relative flex flex-col items-center p-1.5 rounded-xl transition-all duration-200 cursor-pointer ${
+                          isSelected
+                            ? 'bg-blue-100/80 ring-2 ring-[#1E3A8A] shadow-xs scale-105'
+                            : 'bg-white hover:bg-slate-100 hover:scale-105 border border-slate-200/80'
+                        }`}
+                        title={preset.label}
+                      >
+                        <img
+                          src={preset.url}
+                          alt={preset.label}
+                          className="h-11 w-11 rounded-full object-cover shadow-2xs group-hover:shadow-xs"
+                        />
+                        <span className="mt-1 text-[9px] font-bold text-slate-700 truncate w-full text-center">
+                          {preset.label.split('·')[0].trim()}
+                        </span>
+                        {isSelected && (
+                          <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#1E3A8A] text-white text-[9px]">
+                            ✓
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Fields */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -416,25 +484,6 @@ export default function SettingsPage() {
                 </p>
               </div>
               <SubscriptionWidget />
-            </div>
-          )}
-
-          {/* ── Inscriptions UEs ── */}
-          {section === 'Inscriptions UEs' && (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-sm space-y-5">
-              <div className="pb-4 border-b border-slate-100 dark:border-slate-800">
-                <h2 className="text-lg font-bold text-slate-900 dark:text-white">Inscriptions aux unités d’enseignement</h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Référentiel universitaire actif : {[user.university, user.scopeLabel].filter(Boolean).join(' · ') || 'périmètre non renseigné'}.
-                </p>
-              </div>
-              <div className="rounded-xl border border-dashed border-[#0d9488]/40 bg-teal-50/60 dark:bg-teal-950/20 p-5">
-                <IconTile name="courseUnit" color="#0D9488" variant="soft" size={44} />
-                <h3 className="mt-3 text-sm font-bold text-slate-900 dark:text-white">Aucune unité d’enseignement attribuée</h3>
-                <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-300">
-                  Les unités, inscriptions et crédits seront affichés ici lorsqu’ils auront été enregistrés dans Appwrite par l’administration universitaire. Aucun catalogue local ou choix fictif n’est présenté.
-                </p>
-              </div>
             </div>
           )}
 
