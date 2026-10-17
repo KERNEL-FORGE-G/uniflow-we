@@ -22,6 +22,7 @@ import '../repositories/messaging_repository.dart';
 import '../screens/about.dart';
 import '../screens/access_denied.dart';
 import '../screens/accounts.dart';
+import '../screens/actualites.dart';
 import '../screens/assignments.dart';
 import '../screens/badges.dart';
 import '../screens/conversation.dart';
@@ -46,6 +47,7 @@ import '../screens/teachers_list.dart';
 import '../screens/teams.dart';
 import '../screens/ue_detail.dart';
 import '../screens/ues_list.dart';
+import '../screens/unimail.dart';
 import '../screens/visio_conference.dart';
 
 /// Ce qu'une page pose au bord inférieur de l'écran, là où vit Uni.
@@ -198,6 +200,8 @@ final List<ShellPage> shellPages = [
   ShellPage(path: '/bibliotheque', builder: (_) => const LibraryScreen()),
   ShellPage.every(path: '/forum', builder: (_) => const ForumScreen(), edge: BottomEdge.fab),
   ShellPage(path: '/notifications', builder: (_) => const NotificationsScreen()),
+  ShellPage(path: '/actualites', builder: (_) => const ActualitesScreen()),
+  ShellPage(path: '/mail', builder: (_) => const UniMailScreen()),
   ShellPage.every(path: '/messages', builder: (_) => const MessagesScreen(), edge: BottomEdge.fab),
   // La conversation est transmise par la liste via `extra`, ce qui permet de
   // peindre le fil sans attendre le réseau. Un accès direct à l'URL (sans

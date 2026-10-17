@@ -150,27 +150,52 @@ class _QuestsHeader extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+          colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
         ),
       ),
       padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 14, 20, 20),
       child: Row(
         children: [
+          Container(
+            width: 40,
+            height: 40,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
+            ),
+            child: Image.asset(
+              'assets/icons/nav/gamification.png',
+              fit: BoxFit.contain,
+              errorBuilder: (_, __, ___) => const Icon(
+                PhosphorIconsDuotone.trophy,
+                color: Colors.white,
+                size: 20,
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text('Quêtes',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style:
-                        TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
+                        TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w800, letterSpacing: -0.5)),
                 const SizedBox(height: 4),
                 Text(
                   '$completed terminées · $totalXp XP gagnés',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(color: Colors.white70, fontSize: 13),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           // XP total badge
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),

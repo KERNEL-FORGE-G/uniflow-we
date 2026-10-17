@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import 'package:uniflow_mobile/screens/about.dart';
+import 'package:uniflow_mobile/screens/actualites.dart';
 import 'package:uniflow_mobile/screens/assignments.dart';
 import 'package:uniflow_mobile/screens/dashboard.dart';
 import 'package:uniflow_mobile/screens/enrollments.dart';
@@ -35,6 +36,7 @@ import 'package:uniflow_mobile/screens/forgot_password.dart';
 import 'package:uniflow_mobile/screens/teachers_list.dart';
 import 'package:uniflow_mobile/screens/teams.dart';
 import 'package:uniflow_mobile/screens/ues_list.dart';
+import 'package:uniflow_mobile/screens/unimail.dart';
 
 import 'layout_test_support.dart';
 
@@ -78,6 +80,8 @@ void main() {
     'Devoirs': const AssignmentsScreen(),
     'Bibliothèque': const LibraryScreen(),
     'Messagerie': const MessagesScreen(),
+    'Actualités': const ActualitesScreen(),
+    'UniMail': const UniMailScreen(),
     'Notifications': const NotificationsScreen(),
     'Équipe': const TeamsScreen(),
     'Aide': const HelpScreen(),

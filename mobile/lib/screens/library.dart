@@ -571,18 +571,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
     return SliverToBoxAdapter(
       child: Container(
         margin: EdgeInsets.fromLTRB(16, MediaQuery.of(context).padding.top + 10, 16, 12),
-        height: 148,
+        height: 152,
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors:
-                isUniBook ? const [Color(0xFF0F172A), Color(0xFF0D9488)] : const [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+          gradient: const LinearGradient(
+            colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF1E3A8A).withValues(alpha: 0.22),
+              color: const Color(0xFF1E3A8A).withValues(alpha: 0.24),
               blurRadius: 18,
               offset: const Offset(0, 6),
             ),
@@ -598,8 +597,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
               width: 170,
               child: ClipRRect(
                 borderRadius: const BorderRadius.only(
-                  topRight: Radius.circular(20),
-                  bottomRight: Radius.circular(20),
+                  topRight: Radius.circular(24),
+                  bottomRight: Radius.circular(24),
                 ),
                 child: ShaderMask(
                   shaderCallback: (rect) => const LinearGradient(
@@ -616,9 +615,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
                 ),
               ),
             ),
-            // Contenu texte à gauche
+            // Contenu texte à gauche avec icône 3D
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
@@ -649,22 +648,49 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
                       ),
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      titleLabel,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitleLabel,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 12,
-                      ),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 38,
+                          height: 38,
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.24)),
+                          ),
+                          child: Image.asset(
+                            'assets/icons/nav/library.png',
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) =>
+                                const Icon(PhosphorIconsDuotone.books, color: Colors.white, size: 20),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              titleLabel,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 22,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: -0.5,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              subtitleLabel,
+                              style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.85),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ],
                 ),

@@ -134,6 +134,22 @@ class _VisioScreenState extends State<VisioScreen> {
                   ),
                   const SizedBox(width: 24),
                   Container(
+                    width: 84,
+                    height: 84,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                    ),
+                    child: Image.asset(
+                      'assets/icons/nav/visio.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(Icons.videocam_rounded, color: Colors.white, size: 42),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.1),

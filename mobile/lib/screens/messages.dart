@@ -152,7 +152,7 @@ class _WhatsAppHeaderState extends ConsumerState<_WhatsAppHeader> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+          colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
         ),
       ),
       child: SafeArea(
@@ -214,6 +214,26 @@ class _TitleBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        Container(
+          width: 36,
+          height: 36,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+          ),
+          child: Image.asset(
+            'assets/icons/nav/messages.png',
+            fit: BoxFit.contain,
+            errorBuilder: (_, __, ___) => const Icon(
+              PhosphorIconsDuotone.chatsCircle,
+              color: Colors.white,
+              size: 18,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
         const Expanded(
           child: Text(
             'UniFlow',
@@ -221,7 +241,7 @@ class _TitleBar extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: Colors.white,
-              fontSize: 24,
+              fontSize: 22,
               fontWeight: FontWeight.w900,
               letterSpacing: -0.5,
             ),

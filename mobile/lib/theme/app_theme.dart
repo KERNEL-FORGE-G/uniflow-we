@@ -155,9 +155,9 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
-  /// En-tête des pages principales — bleu UniFlow → teal.
+  /// En-tête des pages principales — Hero Bento `#0B132B -> #1E3A8A -> #0D9488`.
   static const LinearGradient headerGradient = LinearGradient(
-    colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+    colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -218,14 +218,14 @@ class AppColors {
 
   /// Carte hero dashboard (bandeau « Bienvenue »).
   static const LinearGradient dashHeroGradient = LinearGradient(
-    colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+    colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
-  /// Dégradé de la bannière hero du dashboard (style book lending).
+  /// Dégradé de la bannière hero du dashboard (style Hero Bento).
   static const LinearGradient dashHeroBannerGradient = LinearGradient(
-    colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+    colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

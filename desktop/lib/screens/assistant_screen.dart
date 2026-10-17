@@ -76,35 +76,37 @@ class _AssistantScreenState extends State<AssistantScreen> {
         padding: const EdgeInsets.all(24.0),
         child: Column(
           children: [
-            // Header
+            // Header Bento 3D
             Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E3A8A)],
+                  colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.15),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 56,
+                    height: 56,
+                    padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                     ),
                     child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
+                      borderRadius: BorderRadius.circular(12),
                       child: Image.asset(
                         'assets/mascot/uni_copilot_3d.png',
                         fit: BoxFit.contain,
@@ -118,16 +120,16 @@ class _AssistantScreenState extends State<AssistantScreen> {
                       children: [
                         Text(
                           'Uni Copilot · Assistant IA d\'Études',
-                          style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
                         ),
                         SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.bolt_rounded, color: Color(0xFF34D399), size: 14),
+                            Icon(Icons.bolt_rounded, color: Color(0xFF34D399), size: 15),
                             SizedBox(width: 4),
                             Text(
                               'En ligne · Propulsé par GROQ (openai/gpt-oss-120b & qwen3.8)',
-                              style: TextStyle(color: Color(0xFF34D399), fontSize: 12, fontWeight: FontWeight.w600),
+                              style: TextStyle(color: Color(0xFF67E8F9), fontSize: 12, fontWeight: FontWeight.w700),
                             ),
                           ],
                         ),

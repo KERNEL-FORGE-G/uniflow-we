@@ -336,6 +336,18 @@ const List<NavDestination> navDestinations = [
     roles: everyRole,
   ),
   NavDestination(
+    path: '/actualites',
+    label: 'Actualités Campus',
+    icon: UniIcons.megaphone,
+    roles: everyRole,
+  ),
+  NavDestination(
+    path: '/mail',
+    label: 'UniMail @uniflow.cm',
+    icon: UniIcons.messages,
+    roles: everyRole,
+  ),
+  NavDestination(
     path: '/quetes',
     label: 'Quêtes',
     icon: UniIcons.assignments,

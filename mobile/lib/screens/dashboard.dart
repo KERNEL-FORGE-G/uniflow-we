@@ -194,10 +194,10 @@ class _LearnerHome extends ConsumerWidget {
   ];
 
   static const List<_QuickAction> _moreActions = [
+    _QuickAction(PhosphorIconsDuotone.broadcast, 'Actualités', AppColors.primaryBlue, '/actualites'),
+    _QuickAction(PhosphorIconsDuotone.envelope, 'UniMail', AppColors.teal, '/mail'),
     _QuickAction(PhosphorIconsDuotone.identificationCard, 'Scolarité & MoMo', AppColors.success, '/inscriptions'),
-    _QuickAction(PhosphorIconsDuotone.chartLineUp, 'Notes & Bulletin', AppColors.primaryBlue, '/notes'),
     _QuickAction(PhosphorIconsDuotone.trophy, 'Quêtes & XP', AppColors.warning, '/quetes'),
-    _QuickAction(PhosphorIconsDuotone.usersFour, 'KERNEL FORGE', AppColors.teal, '/equipe'),
   ];
 
   @override
@@ -1214,7 +1214,11 @@ class _DashHeroBanner extends ConsumerWidget {
       margin: EdgeInsets.zero,
       height: 148,
       decoration: BoxDecoration(
-        gradient: AppColors.dashHeroBannerGradient,
+        gradient: const LinearGradient(
+          colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(AppTheme.radiusCard),
         boxShadow: [
           BoxShadow(
@@ -1278,7 +1282,7 @@ class _DashHeroBanner extends ConsumerWidget {
                   Text(
                     subtitle,
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.80),
+                      color: Colors.white.withValues(alpha: 0.85),
                       fontSize: 12.5,
                       height: 1.4,
                     ),
@@ -1325,15 +1329,25 @@ class _DashHeroBanner extends ConsumerWidget {
               ),
             ),
           ),
-          // Mascotte Uni à droite
+          // Illustration 3D Uni Copilot à droite (fallback mascotte uni_wave.webp)
           Positioned(
-            right: -4,
-            bottom: 0,
-            child: Image.asset(
-              'assets/mascot/uni_wave.webp',
-              height: 148,
-              fit: BoxFit.contain,
-              errorBuilder: (_, __, ___) => const SizedBox(width: 110),
+            right: 6,
+            top: 10,
+            bottom: 10,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: Image.asset(
+                'assets/illustrations/uni_copilot_3d.png',
+                width: 116,
+                height: 128,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => Image.asset(
+                  'assets/mascot/uni_wave.webp',
+                  height: 148,
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const SizedBox(width: 110),
+                ),
+              ),
             ),
           ),
         ],

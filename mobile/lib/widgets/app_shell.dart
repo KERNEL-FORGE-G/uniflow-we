@@ -347,6 +347,32 @@ class _MenuTab extends StatelessWidget {
 
 /// Feuille du menu : grille de toutes les rubriques qui ne tiennent pas dans
 /// la barre (emploi du temps, devoirs, forum, notifications, réglages…).
+String _nav3dAssetForPath(String path) {
+  if (path.startsWith('/accueil')) return 'assets/icons/nav/dashboard.png';
+  if (path.startsWith('/ues') || path.startsWith('/matieres')) return 'assets/icons/nav/courses.png';
+  if (path.startsWith('/emploi-du-temps') || path.startsWith('/agenda')) return 'assets/icons/nav/schedule.png';
+  if (path.startsWith('/visio')) return 'assets/icons/nav/visio.png';
+  if (path.startsWith('/etudiants')) return 'assets/icons/nav/students.png';
+  if (path.startsWith('/enseignants')) return 'assets/icons/nav/teachers.png';
+  if (path.startsWith('/comptes') || path.startsWith('/equipe')) return 'assets/icons/nav/coordination.png';
+  if (path.startsWith('/inscriptions')) return 'assets/icons/nav/inscriptions.png';
+  if (path.startsWith('/presence')) return 'assets/icons/nav/attendance.png';
+  if (path.startsWith('/notes')) return 'assets/icons/nav/grades.png';
+  if (path.startsWith('/devoirs') || path.startsWith('/taches')) return 'assets/icons/nav/assignments.png';
+  if (path.startsWith('/bibliotheque')) return 'assets/icons/nav/library.png';
+  if (path.startsWith('/forum') || path.startsWith('/messages') || path.startsWith('/mail')) {
+    return 'assets/icons/nav/messages.png';
+  }
+  if (path.startsWith('/notifications') || path.startsWith('/actualites')) {
+    return 'assets/icons/nav/notifications.png';
+  }
+  if (path.startsWith('/quetes') || path.startsWith('/badges')) return 'assets/icons/nav/gamification.png';
+  if (path.startsWith('/settings')) return 'assets/icons/nav/settings.png';
+  if (path.startsWith('/abonnement')) return 'assets/icons/nav/bourses.png';
+  if (path.startsWith('/a-propos')) return 'assets/icons/nav/aide.png';
+  return 'assets/icons/nav/dashboard.png';
+}
+
 class _MenuSheet extends StatelessWidget {
   final List<NavDestination> entries;
   final String location;
@@ -416,6 +442,7 @@ class _MenuSheet extends StatelessWidget {
                             Container(
                               width: 44,
                               height: 44,
+                              padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: AppColors.cardWhite,
                                 shape: BoxShape.circle,
@@ -428,24 +455,32 @@ class _MenuSheet extends StatelessWidget {
                                 ],
                               ),
                               child: Center(
-                                child: PhosphorIcon(
-                                  d.icon(active ? UniIconStyle.fill : UniIconStyle.duotone),
-                                  size: 22,
-                                  color: AppColors.primaryBlue,
+                                child: Image.asset(
+                                  _nav3dAssetForPath(d.path),
+                                  width: 28,
+                                  height: 28,
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => PhosphorIcon(
+                                    d.icon(active ? UniIconStyle.fill : UniIconStyle.duotone),
+                                    size: 22,
+                                    color: AppColors.primaryBlue,
+                                  ),
                                 ),
                               ),
                             ),
                             const SizedBox(height: 8),
-                            Text(
-                              d.label,
-                              maxLines: 2,
-                              textAlign: TextAlign.center,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                height: 1.2,
-                                fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                                color: AppColors.textPrimary,
+                            Flexible(
+                              child: Text(
+                                d.label,
+                                maxLines: 2,
+                                textAlign: TextAlign.center,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 11.5,
+                                  height: 1.2,
+                                  fontWeight: active ? FontWeight.w700 : FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
                               ),
                             ),
                           ],
@@ -571,12 +606,24 @@ class _DesktopSidebar extends ConsumerWidget {
                     ),
                     child: Row(
                       children: [
+                        Image.asset(
+                          _nav3dAssetForPath(d.path),
+                          width: 22,
+                          height: 22,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => PhosphorIcon(
+                            d.icon(active ? UniIconStyle.fill : UniIconStyle.duotone),
+                            size: 19,
+                            color: active ? AppColors.primaryBlue : AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         PhosphorIcon(
                           d.icon(active ? UniIconStyle.fill : UniIconStyle.duotone),
-                          size: 19,
+                          size: 16,
                           color: active ? AppColors.primaryBlue : AppColors.textSecondary,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             d.label,

@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../providers/providers.dart';
 import '../services/flutterwave_service.dart';
-import '../theme/app_theme.dart';
 import '../widgets/common.dart';
 import '../widgets/phosphor.dart';
 
@@ -70,7 +69,7 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
               title: 'Abonnements & Pro',
               subtitle: 'Activation et assistance officielle via WhatsApp (+237 6 57 63 56 44)',
               leading: IconButton(
-                icon: const PhosphorIcon(PhosphorIconsBold.arrowLeft, color: AppColors.textPrimary),
+                icon: const PhosphorIcon(PhosphorIconsBold.arrowLeft, color: Colors.white),
                 onPressed: () => context.pop(),
               ),
             ),

@@ -19,13 +19,13 @@ class DashboardScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // =================================================================
-            // HERO BENTO DESKTOP
+            // HERO BENTO DESKTOP 3D
             // =================================================================
             Container(
               padding: const EdgeInsets.all(24.0),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0F172A), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                  colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -44,24 +44,43 @@ class DashboardScreen extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.school_rounded, color: Color(0xFF67E8F9), size: 14),
-                              SizedBox(width: 6),
-                              Text(
-                                'Université de Yaoundé I · Faculté des Sciences',
-                                style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                               ),
-                            ],
-                          ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.school_rounded, color: Color(0xFF67E8F9), size: 14),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Université de Yaoundé I · Faculté des Sciences',
+                                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF34D399)),
+                              ),
+                              child: const Text(
+                                'BÊTA OUVERTE · etudiant.uy1@uniflow.cm',
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -70,33 +89,45 @@ class DashboardScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Bienvenue sur UniFlow Desktop natif. Consultez vos cours, suivez votre emploi du temps hebdomadaire, hébergez vos séances de visioconférence P2P en local et révisez avec le copilote IA.',
+                          'Bienvenue sur UniFlow Desktop natif (Phase de test Bêta). Consultez les actualités officielles du campus, gérez vos courriels signés @uniflow.cm, hébergez vos visioconférences P2P et révisez avec Uni Copilot.',
                           style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.5),
                         ),
                         const SizedBox(height: 16),
-                        Row(
+                        Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
                           children: [
                             ElevatedButton.icon(
-                              onPressed: () => onNavigate(2), // Visio
-                              icon: const Icon(Icons.video_call_rounded, size: 16),
-                              label: const Text('Lancer une Visioconférence'),
+                              onPressed: () => onNavigate(1), // Actualités Campus
+                              icon: const Icon(Icons.campaign_rounded, size: 16),
+                              label: const Text('Actualités & Bêta'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFF0B132B),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () => onNavigate(2), // UniMail
+                              icon: const Icon(Icons.alternate_email_rounded, size: 16),
+                              label: const Text('UniMail (@uniflow.cm)'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0D9488),
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               ),
                             ),
-                            const SizedBox(width: 12),
                             OutlinedButton.icon(
-                              onPressed: () => onNavigate(1), // Emploi du temps
-                              icon: const Icon(Icons.calendar_month_rounded, size: 16),
-                              label: const Text('Mon Emploi du Temps'),
+                              onPressed: () => onNavigate(4), // Visio
+                              icon: const Icon(Icons.video_call_rounded, size: 16),
+                              label: const Text('Visioconférence'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 side: const BorderSide(color: Colors.white38),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                               ),
                             ),
                           ],
@@ -132,10 +163,119 @@ class DashboardScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // =================================================================
-            // 4 CARTES BENTO KPI
+            // BANNIÈRE BENTO : PHASE DE TEST BÊTA & UNIMAIL @UNIFLOW.CM
+            // =================================================================
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => onNavigate(1),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.25)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Image.asset(
+                              'assets/icons/nav/analytics.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.campaign_rounded, color: Color(0xFF1E3A8A)),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Annonce Officielle : Plateforme en phase de test bêta',
+                                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Des améliorations majeures arrivent ! Consultez les vidéos, images et notes PDF du campus →',
+                                  style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => onNavigate(2),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(18),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 48,
+                            height: 48,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: Image.asset(
+                              'assets/icons/nav/messages.png',
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, __, ___) => const Icon(Icons.mail_rounded, color: Color(0xFF0D9488)),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Boîte Institutionnelle : etudiant.uy1@uniflow.cm',
+                                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                ),
+                                SizedBox(height: 3),
+                                Text(
+                                  'Courriels signés numériquement par UniFlow et liés au cycle de vie de votre compte →',
+                                  style: TextStyle(fontSize: 11.5, color: Color(0xFF0D9488), fontWeight: FontWeight.w600),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 20),
+
+            // =================================================================
+            // 4 CARTES BENTO KPI AVEC ICÔNES 3D
             // =================================================================
             Row(
               children: [
@@ -143,7 +283,8 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Cours Inscrits',
                   value: '${sampleCourses.length}',
                   subtitle: 'Filière ICT4D / L3 UY1',
-                  icon: Icons.menu_book_rounded,
+                  assetPath: 'assets/icons/nav/courses.png',
+                  fallbackIcon: Icons.menu_book_rounded,
                   color: const Color(0xFF1E3A8A),
                 ),
                 const SizedBox(width: 16),
@@ -151,7 +292,8 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Crédits ECTS',
                   value: '30 ECTS',
                   subtitle: 'Semestre 1 LMD',
-                  icon: Icons.military_tech_rounded,
+                  assetPath: 'assets/icons/nav/grades.png',
+                  fallbackIcon: Icons.military_tech_rounded,
                   color: const Color(0xFF0D9488),
                 ),
                 const SizedBox(width: 16),
@@ -159,7 +301,8 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Assiduité Certifiée',
                   value: '96.8%',
                   subtitle: 'Présence campus',
-                  icon: Icons.check_circle_rounded,
+                  assetPath: 'assets/icons/nav/attendance.png',
+                  fallbackIcon: Icons.check_circle_rounded,
                   color: const Color(0xFF059669),
                 ),
                 const SizedBox(width: 16),
@@ -167,7 +310,8 @@ class DashboardScreen extends StatelessWidget {
                   title: 'Serveur Visio',
                   value: server.isRunning ? 'En Ligne' : 'Prêt',
                   subtitle: 'Port ${server.port} · P2P LAN',
-                  icon: Icons.videocam_rounded,
+                  assetPath: 'assets/icons/nav/visio.png',
+                  fallbackIcon: Icons.videocam_rounded,
                   color: const Color(0xFF7C3AED),
                 ),
               ],
@@ -188,7 +332,7 @@ class DashboardScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: const Color(0xFFE2E8F0)),
                     ),
                     child: Column(
@@ -230,12 +374,15 @@ class DashboardScreen extends StatelessWidget {
                               Container(
                                 width: 50,
                                 height: 50,
+                                padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
                                   color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
-                                child: const Center(
-                                  child: Icon(Icons.school_rounded, color: Color(0xFF1E3A8A), size: 24),
+                                child: Image.asset(
+                                  'assets/icons/nav/schedule.png',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, color: Color(0xFF1E3A8A), size: 24),
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -256,7 +403,7 @@ class DashboardScreen extends StatelessWidget {
                                 ),
                               ),
                               ElevatedButton(
-                                onPressed: () => onNavigate(2),
+                                onPressed: () => onNavigate(4), // Visio
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF1E3A8A),
                                   foregroundColor: Colors.white,
@@ -285,7 +432,7 @@ class DashboardScreen extends StatelessWidget {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,7 +454,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
-                          onPressed: () => onNavigate(5), // Assistant
+                          onPressed: () => onNavigate(7), // Assistant
                           icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
                           label: const Text('Ouvrir l\'Assistant Uni'),
                           style: ElevatedButton.styleFrom(
@@ -333,7 +480,8 @@ class DashboardScreen extends StatelessWidget {
     required String title,
     required String value,
     required String subtitle,
-    required IconData icon,
+    required String assetPath,
+    required IconData fallbackIcon,
     required Color color,
   }) {
     return Expanded(
@@ -341,7 +489,7 @@ class DashboardScreen extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(color: const Color(0xFFE2E8F0)),
           boxShadow: [
             BoxShadow(
@@ -354,12 +502,18 @@ class DashboardScreen extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 46,
+              height: 46,
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon, color: color, size: 24),
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.contain,
+                errorBuilder: (_, __, ___) => Icon(fallbackIcon, color: color, size: 24),
+              ),
             ),
             const SizedBox(width: 14),
             Expanded(

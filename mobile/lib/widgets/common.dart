@@ -9,11 +9,9 @@ import 'uni_icons.dart';
 import '../utils/avatar.dart';
 import '../utils/error_text.dart';
 
-/// En-tête page « Book Lending » — fond blanc, tache décorative pastel,
-/// logo horizontal à gauche, titre/sous-titre au centre, trailing à droite.
-///
-/// Remplace l'ancien header à dégradé sombre : UniFlow passe à un style
-/// clair, aéré, cohérent avec les maquettes de référence fournies.
+/// En-tête Hero Bento 3D — dégradé profond `#0B132B -> #1E3A8A -> #0D9488`,
+/// halos lumineux subtils, icône 3D dans un écrin glassmorphique à gauche,
+/// titre blanc pur et sous-titre bleu glacier parfaitement lisibles.
 class GradientHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
@@ -32,21 +30,113 @@ class GradientHeader extends StatelessWidget {
     this.showOrb = false,
   });
 
+  static String _iconAssetForTitle(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('bonjour') || t.contains('bienvenue') || t.contains('accueil')) {
+      return 'assets/icons/nav/dashboard.png';
+    }
+    if (t.contains('cours') || t.contains('ue') || t.contains('matière') || t.contains('matiere') || t.contains('unité')) {
+      return 'assets/icons/nav/courses.png';
+    }
+    if (t.contains('emploi') || t.contains('agenda') || t.contains('séance') || t.contains('horaire')) {
+      return 'assets/icons/nav/schedule.png';
+    }
+    if (t.contains('devoir') || t.contains('tâche') || t.contains('tache')) {
+      return 'assets/icons/nav/assignments.png';
+    }
+    if (t.contains('note') || t.contains('saisie') || t.contains('résultat') || t.contains('bulletin')) {
+      return 'assets/icons/nav/grades.png';
+    }
+    if (t.contains('présence') || t.contains('presence') || t.contains('qr')) {
+      return 'assets/icons/nav/attendance.png';
+    }
+    if (t.contains('mail') || t.contains('message') || t.contains('forum') || t.contains('conversation')) {
+      return 'assets/icons/nav/messages.png';
+    }
+    if (t.contains('actualit') || t.contains('notif') || t.contains('annonce')) {
+      return 'assets/icons/nav/notifications.png';
+    }
+    if (t.contains('biblioth') || t.contains('livre') || t.contains('uni book')) {
+      return 'assets/icons/nav/library.png';
+    }
+    if (t.contains('réglage') || t.contains('reglage') || t.contains('param')) {
+      return 'assets/icons/nav/settings.png';
+    }
+    if (t.contains('visio')) {
+      return 'assets/icons/nav/visio.png';
+    }
+    if (t.contains('inscription') || t.contains('scolarit')) {
+      return 'assets/icons/nav/inscriptions.png';
+    }
+    if (t.contains('bourse') || t.contains('abonnement') || t.contains('paiement')) {
+      return 'assets/icons/nav/bourses.png';
+    }
+    if (t.contains('quête') || t.contains('quete') || t.contains('badge') || t.contains('xp')) {
+      return 'assets/icons/nav/gamification.png';
+    }
+    if (t.contains('aide') || t.contains('propos') || t.contains('support')) {
+      return 'assets/icons/nav/aide.png';
+    }
+    if (t.contains('étudiant') || t.contains('etudiant')) {
+      return 'assets/icons/nav/students.png';
+    }
+    if (t.contains('enseignant') || t.contains('prof')) {
+      return 'assets/icons/nav/teachers.png';
+    }
+    if (t.contains('équipe') || t.contains('equipe') || t.contains('kernel') || t.contains('compte') || t.contains('accès')) {
+      return 'assets/icons/nav/coordination.png';
+    }
+    return 'assets/icons/nav/dashboard.png';
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: AppSystemUi.surBleu,
-      child: Stack(
-        clipBehavior: Clip.hardEdge,
-        children: [
-          // En-tête Premium avec dégradé
-          Container(
-            decoration: const BoxDecoration(
-              gradient: AppColors.headerGradient,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-              boxShadow: AppColors.cardShadow,
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
+          boxShadow: AppColors.cardShadow,
+        ),
+        child: Stack(
+          clipBehavior: Clip.hardEdge,
+          children: [
+            // Halos décoratifs subtils en arrière-plan
+            Positioned(
+              right: -28,
+              top: -28,
+              child: IgnorePointer(
+                child: Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
             ),
-            child: SafeArea(
+            Positioned(
+              left: -18,
+              bottom: -24,
+              child: IgnorePointer(
+                child: Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.07),
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+            SafeArea(
               bottom: false,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -57,9 +147,34 @@ class GradientHeader extends StatelessWidget {
                     child: Row(
                       children: [
                         if (leading != null) ...[
-                          leading!,
-                          const SizedBox(width: 10),
+                          IconTheme(
+                            data: const IconThemeData(color: Colors.white),
+                            child: leading!,
+                          ),
+                          const SizedBox(width: 8),
                         ],
+                        Container(
+                          width: 36,
+                          height: 36,
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.22),
+                            ),
+                          ),
+                          child: Image.asset(
+                            _iconAssetForTitle(title),
+                            fit: BoxFit.contain,
+                            errorBuilder: (_, __, ___) => const Icon(
+                              PhosphorIconsDuotone.sparkle,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,7 +184,7 @@ class GradientHeader extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                                  color: Colors.white,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w800,
                                   letterSpacing: -0.3,
@@ -82,9 +197,9 @@ class GradientHeader extends StatelessWidget {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   style: TextStyle(
-                                    color: AppColors.textSecondary.withValues(alpha: 0.8),
+                                    color: const Color(0xFFBAE6FD).withValues(alpha: 0.92),
                                     fontSize: 11.5,
-                                    fontWeight: FontWeight.w400,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ],
@@ -93,7 +208,10 @@ class GradientHeader extends StatelessWidget {
                         ),
                         if (trailing != null) ...[
                           const SizedBox(width: 8),
-                          trailing!,
+                          IconTheme(
+                            data: const IconThemeData(color: Colors.white),
+                            child: trailing!,
+                          ),
                         ],
                       ],
                     ),
@@ -106,8 +224,8 @@ class GradientHeader extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

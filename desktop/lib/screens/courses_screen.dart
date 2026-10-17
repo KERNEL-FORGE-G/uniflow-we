@@ -33,6 +33,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
       return matchesFilter && matchesSearch;
     }).toList();
 
+    final avgProgress = sampleCourses.isEmpty
+        ? 0
+        : (sampleCourses.map((c) => c.progressPercent).reduce((a, b) => a + b) / sampleCourses.length).round();
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
       body: Padding(
@@ -40,36 +44,100 @@ class _CoursesScreenState extends State<CoursesScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Mes Cours & Unités d\'Enseignement',
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Syllabus officiel Faculté des Sciences · Université de Yaoundé I',
-                      style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
-                    ),
-                  ],
+            // =================================================================
+            // HERO BENTO SECTION - MES COURS & UE
+            // =================================================================
+            Container(
+              padding: const EdgeInsets.all(24.0),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(24.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.22),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
-                  child: const Text(
-                    '30 Crédits ECTS au Semestre',
-                    style: TextStyle(color: Color(0xFF0D9488), fontWeight: FontWeight.bold, fontSize: 12),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                'assets/icons/nav/courses.png',
+                                width: 16,
+                                height: 16,
+                                errorBuilder: (_, __, ___) => const Icon(Icons.menu_book_rounded, color: Color(0xFF67E8F9), size: 14),
+                              ),
+                              const SizedBox(width: 6),
+                              const Text(
+                                'SYLLABUS OFFICIEL FACULTÉ DES SCIENCES · UY1',
+                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'Mes Cours & Unités d\'Enseignement',
+                          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Suivez vos Cours Magistraux (CM), Travaux Dirigés (TD) et Travaux Pratiques (TP) du Semestre LMD avec progression en temps réel.',
+                          style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, height: 1.45),
+                        ),
+                        const SizedBox(height: 16),
+                        Wrap(
+                          spacing: 12,
+                          runSpacing: 8,
+                          children: [
+                            _buildHeroStatPill('UE Inscrites', '${sampleCourses.length} Cours'),
+                            _buildHeroStatPill('Crédits ECTS', '30 ECTS'),
+                            _buildHeroStatPill('Progression', '$avgProgress% Moyenne'),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 20),
+                  Container(
+                    width: 115,
+                    height: 115,
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(22),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.asset(
+                        'assets/illustrations/course_study_hero_3d.png',
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, color: Colors.white, size: 48),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
 
             const SizedBox(height: 20),
@@ -87,11 +155,11 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       fillColor: Colors.white,
                       contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                       ),
                       enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
                       ),
                     ),
@@ -102,7 +170,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                     border: Border.all(color: const Color(0xFFE2E8F0)),
                   ),
                   child: Row(
@@ -110,12 +178,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
                       final isSelected = filter == _selectedFilter;
                       return InkWell(
                         onTap: () => setState(() => _selectedFilter = filter),
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(12),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
                             color: isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             filter,
@@ -154,12 +222,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         return Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(24),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.02),
-                                blurRadius: 10,
+                                color: Colors.black.withValues(alpha: 0.025),
+                                blurRadius: 12,
                                 offset: const Offset(0, 4),
                               ),
                             ],
@@ -173,18 +241,18 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                 decoration: BoxDecoration(
                                   color: color.withValues(alpha: 0.08),
                                   borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(20),
-                                    topRight: Radius.circular(20),
+                                    topLeft: Radius.circular(24),
+                                    topRight: Radius.circular(24),
                                   ),
                                 ),
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: color,
-                                        borderRadius: BorderRadius.circular(8),
+                                        borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
                                         course.code,
@@ -251,7 +319,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
                                         const Text('Progression', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
-                                        Text('${course.progressPercent}%',
+                                        Text(
+                                          '${course.progressPercent}%',
                                           style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                         ),
                                       ],
@@ -268,10 +337,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text('${course.hours}h · ${course.credits} ECTS',
+                                        Text(
+                                          '${course.hours}h · ${course.credits} ECTS',
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
                                         ),
-                                        Text(course.classroom,
+                                        Text(
+                                          course.classroom,
                                           style: const TextStyle(fontSize: 11, color: Color(0xFF0D9488), fontWeight: FontWeight.w600),
                                         ),
                                       ],
@@ -287,6 +358,24 @@ class _CoursesScreenState extends State<CoursesScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildHeroStatPill(String label, String val) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('$label : ', style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+          Text(val, style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
+        ],
       ),
     );
   }

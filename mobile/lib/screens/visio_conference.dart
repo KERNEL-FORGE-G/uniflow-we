@@ -907,7 +907,9 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 Text(
-                  _roomSubtitle,
+                  _isCompanionMode && _syncedDesktopName != null
+                      ? '$_roomSubtitle · Caméra/Micro ($_syncedDesktopName)'
+                      : _roomSubtitle,
                   style: const TextStyle(
                     fontSize: 10,
                     color: AppColors.textSecondary,
