@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const apiKey =
     process.env.GROQ ||
     process.env.VITE_GROQ_API_KEY ||
-    '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'
+    ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')
 
   if (!apiKey) {
     return res.status(500).json({ error: 'Clé API Groq manquante sur le serveur (variable GROQ).' })

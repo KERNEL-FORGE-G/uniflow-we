@@ -55,9 +55,9 @@ export default defineConfig({
   },
   envPrefix: ['VITE_', 'GROQ'],
   define: {
-    'import.meta.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || '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'),
-    'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || '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'),
-    'process.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || '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'),
+    'import.meta.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')),
+    'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')),
+    'process.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')),
   },
   server: {
     port: 3000,

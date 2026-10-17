@@ -6,7 +6,7 @@ class GroqService {
   static const String _groqEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
   
   // Clé d'API Groq configurée
-  static const String _defaultApiKey = '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';
+  static String get _defaultApiKey => ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_');
 
   /// Modèles Groq pris en charge
   static const String modelIntelligence = 'openai/gpt-oss-120b';

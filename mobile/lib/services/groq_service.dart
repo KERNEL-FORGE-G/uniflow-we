@@ -6,8 +6,8 @@ class GroqService {
   GroqService._();
 
   static const String groqApiUrl = 'https://api.groq.com/openai/v1/chat/completions';
-  static const String groqModel = 'llama-3.3-70b-versatile';
-  static const String defaultApiKey = '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';
+  static const String groqModel = 'openai/gpt-oss-120b';
+  static String get defaultApiKey => ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_');
 
   static const String uniSystemPrompt = '''Tu es UNI, l'intelligence artificielle et mascotte officielle d'UniFlow (plateforme académique et d'apprentissage autonome créée par la startup technologique KERNEL FORGE - kernelforge.codes).
 

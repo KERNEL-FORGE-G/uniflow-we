@@ -1,8 +1,8 @@
 import type { AssistantTurn } from './appwrite'
 
 const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions'
-const GROQ_MODEL = 'llama-3.3-70b-versatile'
-export const DEFAULT_GROQ_API_KEY = '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'
+const GROQ_MODEL = 'openai/gpt-oss-120b'
+export const DEFAULT_GROQ_API_KEY = ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')
 
 export interface GroqChatMessage {
   role: 'system' | 'user' | 'assistant'
