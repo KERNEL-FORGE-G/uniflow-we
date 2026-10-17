@@ -186,30 +186,40 @@ export default function AdminNewsAndNotificationsPage() {
         </div>
       )}
 
-      {/* HEADER HERO */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 lg:p-10 border border-slate-200/80 shadow-xs relative overflow-hidden">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 pb-6 border-b border-slate-100">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-200/60 text-[#1E3A8A] text-[11px] font-black uppercase tracking-wider mb-2">
-              <HiMegaphone className="h-3.5 w-3.5 text-[#0D9488]" />
-              Centre de Diffusion & Communication
+      {/* HEADER HERO BENTO */}
+      <div className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-cyan-400/20 blur-3xl" />
+        <div className="pointer-events-none absolute -left-16 -bottom-16 h-56 w-56 rounded-full bg-blue-600/25 blur-3xl" />
+
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/notifications.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-cyan-200 text-[11px] font-black uppercase tracking-wider mb-2">
+                <HiMegaphone className="h-3.5 w-3.5 text-cyan-300" />
+                Centre de Diffusion &amp; Communication Officielle
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                Actualités &amp; Notifications Push
+              </h1>
+              <p className="text-xs sm:text-sm text-slate-200 mt-1 max-w-2xl">
+                Publiez des actualités officielles enrichies (images avec légendes, vidéos, documents PDF, liens) et diffusez des alertes push ciblées par groupe d'utilisateurs.
+              </p>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              Actualités & Notifications Push
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1 max-w-2xl">
-              Publiez des actualités officielles pour toute la communauté et diffusez des alertes push ciblées par groupe d'utilisateurs.
-            </p>
           </div>
 
           {/* Onglets de contrôle */}
-          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl border border-slate-200/80">
+          <div className="flex items-center gap-2 bg-white/15 backdrop-blur-md p-1.5 rounded-2xl border border-white/20 shrink-0">
             <button
               onClick={() => setActiveTab('news')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                 activeTab === 'news'
-                  ? 'bg-[#1E3A8A] text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-[#0B132B] shadow-md'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
               <HiNewspaper className="h-4 w-4" />
@@ -219,8 +229,8 @@ export default function AdminNewsAndNotificationsPage() {
               onClick={() => setActiveTab('push')}
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black transition-all ${
                 activeTab === 'push'
-                  ? 'bg-gradient-to-r from-[#1E3A8A] to-[#0D9488] text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white text-[#0B132B] shadow-md'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
               <HiBell className="h-4 w-4" />

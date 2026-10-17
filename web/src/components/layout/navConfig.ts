@@ -21,16 +21,19 @@ export interface AppNavItem {
   group: 'apprendre' | 'animer' | 'echanger' | 'compte'
 }
 
-const LEARNERS: Role[] = ['student', 'delegate']
-const ALL: Role[] = ['student', 'delegate', 'teacher']
+const LEARNERS: Role[] = ['student', 'delegate', 'admin']
+const ALL: Role[] = ['student', 'delegate', 'teacher', 'admin']
 
 /** Route → illustration 3D générée (public/icons/nav/<nom>.png). */
 export const NAV_IMAGES: Record<string, string> = {
-  '/app': 'dashboard', '/app/cours': 'courses', '/app/mes-cours-enseignant': 'teacher', '/app/emploi-du-temps': 'schedule',
+  '/app': 'dashboard', '/app/actualites': 'analytics', '/app/mail': 'messages',
+  '/app/cours': 'courses', '/app/mes-cours-enseignant': 'teacher', '/app/emploi-du-temps': 'schedule',
   '/app/devoirs': 'assignments', '/app/notes': 'grades', '/app/evaluations': 'grades', '/app/bibliotheque': 'library',
   '/app/presences': 'attendance', '/app/promotion': 'coordination', '/app/gestion-presences': 'attendance',
-  '/app/mail': 'messages', '/app/messages': 'messages', '/app/notifications': 'notifications', '/app/badges-quetes': 'gamification',
+  '/app/messages': 'messages', '/app/notifications': 'notifications', '/app/badges-quetes': 'gamification',
   '/app/visio': 'visio', '/app/sentinelle': 'sentinelle',
+  '/app/inscriptions': 'inscriptions', '/app/paiements': 'paiements', '/app/bourses': 'bourses',
+  '/app/forum': 'messages', '/app/equipe': 'coordination',
   '/app/profil': 'students', '/app/abonnement': 'abonnement', '/app/parametres': 'settings', '/app/aide': 'aide',
 }
 
@@ -39,33 +42,39 @@ const withImage = <T extends { to: string; image?: string }>(item: T): T =>
 
 export const APP_NAV_ITEMS: AppNavItem[] = ([
   { to: '/app', icon: 'dashboard', labelFr: 'Tableau de bord', labelEn: 'Dashboard', roles: ALL, group: 'apprendre' },
-  { to: '/app/cours', icon: 'courses', labelFr: 'Mes cours', labelEn: 'My courses', roles: LEARNERS, group: 'apprendre' },
-  { to: '/app/mes-cours-enseignant', icon: 'teacher', labelFr: 'Mes cours & ateliers', labelEn: 'My courses & workshops', roles: ['teacher'], group: 'apprendre' },
-  { to: '/app/emploi-du-temps', icon: 'schedule', labelFr: 'Planning', labelEn: 'Schedule', roles: ALL, group: 'apprendre' },
-  { to: '/app/devoirs', icon: 'assignments', labelFr: 'Devoirs', labelEn: 'Assignments', roles: ALL, group: 'apprendre' },
-  { to: '/app/notes', icon: 'grades', labelFr: 'Résultats', labelEn: 'Results', roles: ALL, group: 'apprendre' },
-  { to: '/app/bibliotheque', icon: 'library', labelFr: 'Bibliothèque', labelEn: 'Library', roles: ALL, group: 'apprendre' },
-  { to: '/app/evaluations', icon: 'grades', labelFr: 'Correction & évaluations', labelEn: 'Grading', roles: ['teacher'], group: 'apprendre' },
-  { to: '/app/sentinelle', icon: 'assistant', labelFr: 'Sentinelle IA', labelEn: 'Sentinelle AI', roles: ALL, group: 'apprendre' },
-  { to: '/app/presences', icon: 'attendance', labelFr: 'Mes présences', labelEn: 'My attendance', roles: LEARNERS, group: 'apprendre' },
+  { to: '/app/actualites', icon: 'notifications', labelFr: 'Actualités Campus', labelEn: 'Campus News', roles: ALL, group: 'apprendre' },
+  { to: '/app/mail', icon: 'email', labelFr: 'UniMail (@uniflow)', labelEn: 'UniFlow Mail', roles: ALL, group: 'apprendre' },
+  { to: '/app/cours', icon: 'courses', labelFr: 'Mes cours & UE', labelEn: 'My courses', roles: LEARNERS, group: 'apprendre' },
+  { to: '/app/mes-cours-enseignant', icon: 'teacher', labelFr: 'Mes cours & ateliers', labelEn: 'My courses & workshops', roles: ['teacher', 'admin'], group: 'apprendre' },
+  { to: '/app/emploi-du-temps', icon: 'schedule', labelFr: 'Planning & Horaires', labelEn: 'Schedule', roles: ALL, group: 'apprendre' },
+  { to: '/app/devoirs', icon: 'assignments', labelFr: 'Devoirs & Projets', labelEn: 'Assignments', roles: ALL, group: 'apprendre' },
+  { to: '/app/notes', icon: 'grades', labelFr: 'Résultats & Crédits', labelEn: 'Results', roles: ALL, group: 'apprendre' },
+  { to: '/app/bibliotheque', icon: 'library', labelFr: 'Bibliothèque Z-Library', labelEn: 'Z-Library', roles: ALL, group: 'apprendre' },
+  { to: '/app/evaluations', icon: 'grades', labelFr: 'Correction & évaluations', labelEn: 'Grading', roles: ['teacher', 'admin'], group: 'apprendre' },
+  { to: '/app/sentinelle', icon: 'assistant', labelFr: 'Sentinelle IoT & IA', labelEn: 'Sentinelle AI', roles: ALL, group: 'apprendre' },
+  { to: '/app/presences', icon: 'attendance', labelFr: 'Mes présences QR', labelEn: 'My attendance', roles: LEARNERS, group: 'apprendre' },
   { to: '/app/promotion', icon: 'coordination', labelFr: 'Ma promotion', labelEn: 'My Class', roles: LEARNERS, group: 'animer' },
-  { to: '/app/gestion-presences', icon: 'attendance', labelFr: 'Faire l’appel', labelEn: 'Take attendance', roles: ['delegate', 'teacher'], group: 'animer' },
-  { to: '/app/visio', icon: 'video', labelFr: 'Visioconférence', labelEn: 'Video conference', roles: ALL, group: 'animer' },
-  { to: '/app/mail', icon: 'email', labelFr: 'Messagerie Webmail', labelEn: 'UniFlow Mail', roles: ALL, group: 'echanger' },
-  { to: '/app/messages', icon: 'messages', labelFr: 'Discussions', labelEn: 'Chats', roles: ALL, group: 'echanger' },
+  { to: '/app/gestion-presences', icon: 'attendance', labelFr: 'Faire l’appel QR', labelEn: 'Take attendance', roles: ['delegate', 'teacher', 'admin'], group: 'animer' },
+  { to: '/app/visio', icon: 'video', labelFr: 'Visioconférence Amphi', labelEn: 'Video conference', roles: ALL, group: 'animer' },
+  { to: '/app/messages', icon: 'messages', labelFr: 'Discussions & Groupes', labelEn: 'Chats', roles: ALL, group: 'echanger' },
+  { to: '/app/forum', icon: 'messages', labelFr: 'Forum d’entraide', labelEn: 'Community Forum', roles: ALL, group: 'echanger' },
   { to: '/app/notifications', icon: 'notifications', labelFr: 'Notifications', labelEn: 'Notifications', roles: ALL, group: 'echanger' },
-  { to: '/app/badges-quetes', icon: 'badges', labelFr: 'Badges & quêtes', labelEn: 'Badges & quests', roles: ALL, group: 'echanger' },
-  { to: '/app/profil', icon: 'profile', labelFr: 'Mon profil', labelEn: 'Profile', roles: ALL, group: 'compte' },
+  { to: '/app/badges-quetes', icon: 'badges', labelFr: 'Badges & Quêtes XP', labelEn: 'Badges & quests', roles: ALL, group: 'echanger' },
+  { to: '/app/inscriptions', icon: 'courses', labelFr: 'Inscriptions LMD', labelEn: 'Enrollments', roles: LEARNERS, group: 'compte' },
+  { to: '/app/paiements', icon: 'billing', labelFr: 'Scolarité & MoMo', labelEn: 'Tuition & MoMo', roles: LEARNERS, group: 'compte' },
+  { to: '/app/bourses', icon: 'badges', labelFr: 'Bourses & Aides', labelEn: 'Scholarships', roles: LEARNERS, group: 'compte' },
+  { to: '/app/profil', icon: 'profile', labelFr: 'Mon profil & Carte', labelEn: 'Profile & ID', roles: ALL, group: 'compte' },
   { to: '/app/abonnement', icon: 'billing', labelFr: 'Abonnement', labelEn: 'Subscription', roles: ALL, group: 'compte' },
+  { to: '/app/equipe', icon: 'team', labelFr: 'Équipe KERNEL FORGE', labelEn: 'KERNEL FORGE Team', roles: ALL, group: 'compte' },
   { to: '/app/parametres', icon: 'settings', labelFr: 'Paramètres', labelEn: 'Settings', roles: ALL, group: 'compte' },
-  { to: '/app/aide', icon: 'help', labelFr: 'Aide', labelEn: 'Help', roles: ALL, group: 'compte' },
+  { to: '/app/aide', icon: 'help', labelFr: 'Aide & Support', labelEn: 'Help', roles: ALL, group: 'compte' },
 ] as AppNavItem[]).map(withImage)
 
 export const NAV_GROUP_LABELS: Record<AppNavItem['group'], { fr: string; en: string }> = {
-  apprendre: { fr: 'Apprendre', en: 'Learn' },
+  apprendre: { fr: 'Apprendre & Services', en: 'Learn & Services' },
   animer: { fr: 'Animer mon groupe', en: 'Run my group' },
-  echanger: { fr: 'Échanger', en: 'Connect' },
-  compte: { fr: 'Mon compte', en: 'My account' },
+  echanger: { fr: 'Échanger & Communauté', en: 'Connect & Community' },
+  compte: { fr: 'Scolarité & Mon compte', en: 'Tuition & Account' },
 }
 
 export function navItemsForRole(role: Role): AppNavItem[] {

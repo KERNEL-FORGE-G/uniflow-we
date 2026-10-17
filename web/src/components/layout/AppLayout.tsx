@@ -59,27 +59,46 @@ function SidebarContent({ onNavigate, compact }: { onNavigate?: () => void; comp
         </button>
       </div>
 
-      {/* Carte profil Bento : accès direct au profil, rôle et filière visibles en permanence. */}
-      <button
-        type="button"
-        onClick={() => { navigate('/app/profil'); onNavigate?.() }}
-        className="mx-3 relative overflow-hidden flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-3.5 text-left text-white shadow-md transition hover:shadow-lg hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a8a]/40"
-      >
-        <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-cyan-400/20 blur-xl" />
-        <span className="relative shrink-0 rounded-full ring-2 ring-white/30">
-          <Avatar name={currentUser.name} avatarFileId={currentUser.avatarFileId} size="md" />
-          <span className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0B132B]', isOfflineMode ? 'bg-amber-400' : 'bg-emerald-400')} />
-        </span>
-        <span className="min-w-0 flex-1 relative z-10">
-          <span className="block truncate text-sm font-extrabold text-white">{currentUser.name}</span>
-          <span className="block truncate text-[11px] text-cyan-200/90 font-medium">{currentUser.filiere || currentUser.roleLabel}</span>
-          <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-white">
-            <UniIcon name={role.icon} size={11} /> {role.badge}
+      {/* Carte profil Bento : accès direct au profil, rôle, filière et adresse @uniflow visibles en permanence. */}
+      <div className="mx-3 space-y-1.5">
+        <button
+          type="button"
+          onClick={() => { navigate('/app/profil'); onNavigate?.() }}
+          className="w-full relative overflow-hidden flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-3.5 text-left text-white shadow-md transition hover:shadow-lg hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a8a]/40"
+        >
+          <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-cyan-400/20 blur-xl" />
+          <span className="relative shrink-0 rounded-full ring-2 ring-white/30">
+            <Avatar name={currentUser.name} avatarFileId={currentUser.avatarFileId} size="md" />
+            <span className={cn('absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-[#0B132B]', isOfflineMode ? 'bg-amber-400' : 'bg-emerald-400')} />
           </span>
-        </span>
-      </button>
+          <span className="min-w-0 flex-1 relative z-10">
+            <span className="block truncate text-sm font-extrabold text-white">{currentUser.name}</span>
+            <span className="block truncate text-[11px] text-cyan-200/90 font-medium">{currentUser.filiere || currentUser.roleLabel}</span>
+            <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-2 py-0.5 text-[10px] font-bold text-white">
+              <UniIcon name={role.icon} size={11} /> {role.badge}
+            </span>
+          </span>
+        </button>
 
-      <nav className="mt-4 flex-1 overflow-y-auto px-3 pb-3" aria-label="Navigation de l’espace">
+        <button
+          type="button"
+          onClick={() => { navigate('/app/mail'); onNavigate?.() }}
+          className="w-full flex items-center justify-between gap-2 rounded-xl bg-[#eff3ff] hover:bg-blue-100/80 border border-blue-200/70 px-3 py-2 text-left transition-colors"
+          title="Ouvrir ma messagerie officielle UniMail"
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            <img src="/icons/nav/messages.png" alt="" className="h-4 w-4 shrink-0 object-contain" />
+            <span className="truncate text-[11px] font-extrabold text-[#1e3a8a]">
+              {(currentUser.name || 'etudiant').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '') || 'etudiant'}@uniflow.cm
+            </span>
+          </span>
+          <span className="shrink-0 rounded-md bg-[#1e3a8a] px-1.5 py-0.5 text-[9px] font-black uppercase text-white">
+            UniMail
+          </span>
+        </button>
+      </div>
+
+      <nav className="mt-3 flex-1 overflow-y-auto px-3 pb-3" aria-label="Navigation de l’espace">
         {groups.map((group) => (
           <div key={group.key} className="mb-4">
             <p className="px-3 pb-1.5 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">
@@ -169,10 +188,11 @@ export function Sidebar() {
 
 export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
   const navigate = useNavigate()
-  const { currentUser, currentRole } = useUserRole()
+  const { currentUser, currentRole, authUser } = useUserRole()
   const { logout } = useAuth()
   const role = ROLE_STYLE[currentRole] ?? ROLE_STYLE.student
   const unreadCount = 0
+  const isAdmin = currentRole === 'admin' || authUser?.role === 'ADMIN' || authUser?.isSuperAdmin
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200/80 bg-white/85 px-4 backdrop-blur-xl sm:px-8">
@@ -188,22 +208,34 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
       <GlobalSearch />
 
       <div className="ml-auto flex items-center gap-2">
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => navigate('/admin')}
+            className="inline-flex items-center gap-1.5 rounded-full bg-slate-900 hover:bg-slate-800 px-3 py-1.5 text-xs font-bold text-white shadow-xs transition-colors"
+            title="Basculer vers la Console Administration"
+          >
+            <UniIcon name="security" size={14} />
+            <span className="hidden sm:inline">Console Admin</span>
+          </button>
+        )}
         <button
           type="button"
-          onClick={() => navigate('/actualites')}
-          className="hidden xl:inline-flex items-center gap-1.5 rounded-full bg-slate-100 hover:bg-slate-200/80 px-3 py-1.5 text-xs font-bold text-slate-700 transition-colors"
+          onClick={() => navigate('/app/actualites')}
+          className="inline-flex items-center gap-1.5 rounded-full bg-teal-50 hover:bg-teal-100/80 px-3 py-1.5 text-xs font-bold text-[#0d9488] border border-teal-200/70 transition-colors"
+          title="Actualités & Communiqués Campus"
         >
-          <span className="h-2 w-2 rounded-full bg-[#0d9488]" />
-          Actualités Campus
+          <span className="h-2 w-2 rounded-full bg-[#0d9488] animate-pulse" />
+          <span className="hidden sm:inline">Actualités</span>
         </button>
         <button
           type="button"
           onClick={() => navigate('/app/mail')}
-          className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-[#eff3ff] hover:bg-blue-100/80 px-3 py-1.5 text-xs font-bold text-[#1e3a8a] border border-blue-200/60 transition-colors"
-          title="Messagerie Webmail @uniflow.kernelforge.codes"
+          className="inline-flex items-center gap-1.5 rounded-full bg-[#eff3ff] hover:bg-blue-100/80 px-3 py-1.5 text-xs font-bold text-[#1e3a8a] border border-blue-200/60 transition-colors"
+          title="Messagerie UniMail @uniflow.kernelforge.codes"
         >
           <UniIcon name="messages" size={14} />
-          <span>Webmail</span>
+          <span>UniMail</span>
         </button>
         <span className={cn('hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold md:inline-flex', role.chip)}>
           <UniIcon name={role.icon} size={14} /> {role.badge}

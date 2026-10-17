@@ -173,10 +173,10 @@ function UniversityRoute({ roles, children }: { roles?: Role[]; children: ReactN
   const { authUser, currentUser, currentRole, isSessionReady } = useUserRole()
   if (!isSessionReady) return <PageLoader />
   if (!authUser) return <Navigate to="/login" replace />
-  if (currentUser.accountType === 'PERSONAL') {
+  if (currentUser.accountType === 'PERSONAL' && currentRole !== 'admin') {
     return <AccessDeniedPage reason="Cet écran fait partie de l’espace universitaire. Votre compte indépendant dispose de sa propre gestion personnelle." />
   }
-  if (roles && !roles.includes(currentRole)) {
+  if (roles && currentRole !== 'admin' && !roles.includes(currentRole)) {
     return <AccessDeniedPage reason={`Cet écran est réservé aux rôles : ${roles.map(roleLabel).join(', ')}.`} />
   }
   return <>{children}</>
@@ -324,6 +324,7 @@ export default function App() {
               <Route path="/app" element={<Shell><AccountHomePage /></Shell>} />
               <Route path="/app/independent" element={<Navigate to="/app" replace />} />
               <Route path="/app/accueil-compact" element={<Shell><UniversityRoute><DashboardCompactPage /></UniversityRoute></Shell>} />
+              <Route path="/app/actualites" element={<Shell><ActualitesPage /></Shell>} />
 
               {/* Apprentissage — commun, avec version personnelle dédiée */}
               <Route path="/app/cours" element={<Shell><PersonalLearningRoute kind="courses"><CoursesPage /></PersonalLearningRoute></Shell>} />
@@ -340,7 +341,7 @@ export default function App() {
               <Route path="/app/billing" element={<Navigate to="/app/abonnement" replace />} />
               <Route path="/app/bibliotheque" element={<Shell><LibraryPage /></Shell>} />
 
-              {/* Universitaire uniquement */}
+              {/* Universitaire & Services Campus */}
               <Route path="/app/presences" element={<Shell><UniversityRoute roles={['student', 'delegate']}><AttendancePage /></UniversityRoute></Shell>} />
               <Route path="/app/gestion-presences" element={<Shell><UniversityRoute roles={['delegate', 'teacher']}><AttendanceManagePage /></UniversityRoute></Shell>} />
               <Route path="/app/mail" element={<Shell><WebmailPage /></Shell>} />
@@ -357,17 +358,21 @@ export default function App() {
               {/* Visioconférence (Cloud + LAN campus) */}
               <Route path="/app/visio/*" element={<Shell><VideoConferencePage /></Shell>} />
               <Route path="/app/visioconference/*" element={<Shell><VideoConferencePage /></Shell>} />
-              {/* Sections retirées (non maîtrisées) — redirection fluide vers /app */}
-              <Route path="/app/inscriptions" element={<Navigate to="/app" replace />} />
-              <Route path="/app/paiements" element={<Navigate to="/app" replace />} />
-              <Route path="/app/bourses" element={<Navigate to="/app" replace />} />
-               <Route path="/app/gamification" element={<Shell><GamificationPage /></Shell>} />
-               <Route path="/app/sentinelle" element={<Shell><SentinellePage /></Shell>} />
-               <Route path="/app/evaluations" element={<Shell><TeacherGradingPage /></Shell>} />
+              {/* Services Administratifs & Académiques */}
+              <Route path="/app/inscriptions" element={<Shell><EnrollmentsPage /></Shell>} />
+              <Route path="/app/paiements" element={<Shell><TuitionPaymentsPage /></Shell>} />
+              <Route path="/app/bourses" element={<Shell><ScholarshipsPage /></Shell>} />
+              <Route path="/app/forum" element={<Shell><ForumPage /></Shell>} />
+              <Route path="/app/equipe" element={<Shell><TeamsPage /></Shell>} />
+              <Route path="/app/gamification" element={<Shell><GamificationPage /></Shell>} />
+              <Route path="/app/sentinelle" element={<Shell><SentinellePage /></Shell>} />
+              <Route path="/app/evaluations" element={<Shell><TeacherGradingPage /></Shell>} />
               {/* Administration */}
               <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
                 <Route index element={<AdminDashboardPage />} />
                 <Route path="actualites-notifications" element={<AdminNewsAndNotificationsPage />} />
+                <Route path="actualites" element={<Navigate to="/admin/actualites-notifications" replace />} />
+                <Route path="mail" element={<WebmailPage />} />
                 <Route path="utilisateurs" element={<AdminUsersPage />} />
                 <Route path="equipe" element={<AdminTeamPage />} />
                 <Route path="cours" element={<AdminCoursesPage />} />

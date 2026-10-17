@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, type Variants } from 'framer-motion'
 import { IconTile, UniIcon } from '../../components/ui/UniIcon'
 import {
@@ -234,13 +235,27 @@ export default function AdminDashboardPage() {
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to="/admin/mail"
+              className="flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-extrabold text-[#0B132B] hover:bg-cyan-50 transition-all shadow-md"
+            >
+              <img src="/icons/nav/messages.png" alt="" className="h-4 w-4 object-contain" />
+              UniMail (@uniflow)
+            </Link>
+            <Link
+              to="/admin/actualites-notifications"
+              className="flex items-center gap-2 rounded-2xl border border-amber-300/40 bg-amber-400/20 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-amber-100 hover:bg-amber-400/30 transition-all shadow-sm"
+            >
+              <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+              Actualités &amp; Push
+            </Link>
             <button
               onClick={handleRefresh}
               disabled={refreshing}
               className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white hover:bg-white/25 transition-all shadow-sm"
             >
               <UniIcon name="refresh" weight="bold" size={16} className={`text-cyan-200 ${refreshing ? 'animate-spin' : ''}`} />
-              Rafraîchir les données
+              Rafraîchir
             </button>
             <span className="flex items-center gap-1.5 rounded-2xl bg-amber-400/20 backdrop-blur-md border border-amber-300/30 px-3.5 py-2.5 text-xs font-bold text-amber-200">
               <UniIcon name="security" size={16} className="text-amber-300" /> {authUser?.isSuperAdmin ? 'Admin plateforme' : 'Administration'}
@@ -248,6 +263,78 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </motion.div>
+
+      {/* Bento Spotlight : Accès direct Messagerie UniMail, Actualités & Espace Étudiant */}
+      <div className="grid gap-4 md:grid-cols-3">
+        <Link
+          to="/admin/mail"
+          className="group rounded-3xl border border-blue-200/80 bg-gradient-to-br from-[#eff3ff] via-white to-blue-50/40 p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0B132B] to-[#1E3A8A] p-2 shadow-md">
+              <img src="/icons/nav/messages.png" alt="UniMail" className="h-full w-full object-contain" />
+            </div>
+            <div className="min-w-0">
+              <span className="inline-block rounded-full bg-[#1E3A8A] px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                Messagerie Signée
+              </span>
+              <h3 className="mt-1 text-sm font-black text-slate-900 group-hover:text-[#1E3A8A] truncate">
+                UniMail (@uniflow.cm)
+              </h3>
+              <p className="text-[11px] text-slate-500 truncate">Boîte mail officielle certifiée TLS 1.3</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-xl bg-[#1E3A8A] px-3 py-1.5 text-xs font-bold text-white">
+            Ouvrir →
+          </span>
+        </Link>
+
+        <Link
+          to="/admin/actualites-notifications"
+          className="group rounded-3xl border border-teal-200/80 bg-gradient-to-br from-teal-50/80 via-white to-emerald-50/40 p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#0D9488] p-2 shadow-md">
+              <img src="/icons/nav/notifications.png" alt="Actualités" className="h-full w-full object-contain" />
+            </div>
+            <div className="min-w-0">
+              <span className="inline-block rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                Diffusion &amp; Médias
+              </span>
+              <h3 className="mt-1 text-sm font-black text-slate-900 group-hover:text-[#0D9488] truncate">
+                Actualités &amp; Alertes Push
+              </h3>
+              <p className="text-[11px] text-slate-500 truncate">Publier articles, images, vidéos, PDF</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-xl bg-[#0D9488] px-3 py-1.5 text-xs font-bold text-white">
+            Gérer →
+          </span>
+        </Link>
+
+        <Link
+          to="/app"
+          className="group rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-indigo-50/40 p-5 shadow-sm hover:shadow-md transition-all flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#1E3A8A] to-[#7C3AED] p-2 shadow-md">
+              <img src="/icons/nav/dashboard.png" alt="Espace App" className="h-full w-full object-contain" />
+            </div>
+            <div className="min-w-0">
+              <span className="inline-block rounded-full bg-purple-700 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-white">
+                Tous les Modules
+              </span>
+              <h3 className="mt-1 text-sm font-black text-slate-900 group-hover:text-purple-700 truncate">
+                Espace Étudiant &amp; Campus
+              </h3>
+              <p className="text-[11px] text-slate-500 truncate">Cours, Bibliothèque, Visio, Bourses, MoMo</p>
+            </div>
+          </div>
+          <span className="shrink-0 rounded-xl bg-slate-900 px-3 py-1.5 text-xs font-bold text-white">
+            Explorer →
+          </span>
+        </Link>
+      </div>
 
       {error && (
         <motion.div
