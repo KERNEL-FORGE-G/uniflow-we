@@ -221,30 +221,37 @@ export default function TuitionPaymentsPage() {
             </p>
           </div>
 
-          <div className="flex flex-wrap gap-3">
-            {!allPaid && (
+          <div className="flex flex-wrap items-center gap-4">
+            <img
+              src="/icons/nav/paiements.png"
+              alt="Paiements 3D"
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-xl"
+            />
+            <div className="flex flex-wrap gap-3">
+              {!allPaid && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const pending = tranches.find((t) => t.status === 'EN ATTENTE')
+                    if (pending) setSelectedTranche(pending)
+                  }}
+                  className="inline-flex items-center gap-2 rounded-2xl bg-[#F59E0B] px-5 py-3 text-xs font-black text-slate-950 shadow-md hover:bg-amber-400 transition-all"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Régler la Tranche 2 (25 000 FCFA)</span>
+                </button>
+              )}
               <button
                 type="button"
-                onClick={() => {
-                  const pending = tranches.find((t) => t.status === 'EN ATTENTE')
-                  if (pending) setSelectedTranche(pending)
-                }}
-                className="inline-flex items-center gap-2 rounded-2xl bg-[#F59E0B] px-5 py-3 text-xs font-black text-slate-950 shadow-md hover:bg-amber-400 transition-all"
+                onClick={() =>
+                  triggerToast(`Quitus financier récapitulatif de ${currentUser.name || 'l’étudiant'} téléchargé en PDF !`)
+                }
+                className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-xs font-black text-[#1E3A8A] shadow-md hover:bg-blue-50 transition-all"
               >
-                <Plus className="h-4 w-4" />
-                <span>Régler la Tranche 2 (25 000 FCFA)</span>
+                <Download className="h-4 w-4" />
+                <span>Télécharger l’État Financier (PDF)</span>
               </button>
-            )}
-            <button
-              type="button"
-              onClick={() =>
-                triggerToast(`Quitus financier récapitulatif de ${currentUser.name || 'l’étudiant'} téléchargé en PDF !`)
-              }
-              className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-xs font-black text-[#1E3A8A] shadow-md hover:bg-blue-50 transition-all"
-            >
-              <Download className="h-4 w-4" />
-              <span>Télécharger l’État Financier (PDF)</span>
-            </button>
+            </div>
           </div>
         </div>
 

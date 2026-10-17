@@ -166,14 +166,21 @@ export default function ScholarshipsPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => triggerToast('Attestation de boursier 2026-2027 téléchargée en PDF !')}
-            className="inline-flex items-center gap-2 self-start lg:self-center rounded-2xl bg-white px-5 py-3 text-xs font-black text-[#1E3A8A] shadow-md hover:bg-blue-50 transition-all"
-          >
-            <Download className="h-4 w-4" />
-            <span>Attestation de Bourse (PDF)</span>
-          </button>
+          <div className="flex flex-wrap items-center gap-4">
+            <img
+              src="/icons/nav/bourses.png"
+              alt="Bourses 3D"
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-xl"
+            />
+            <button
+              type="button"
+              onClick={() => triggerToast('Attestation de boursier 2026-2027 téléchargée en PDF !')}
+              className="inline-flex items-center gap-2 self-start lg:self-center rounded-2xl bg-white px-5 py-3 text-xs font-black text-[#1E3A8A] shadow-md hover:bg-blue-50 transition-all"
+            >
+              <Download className="h-4 w-4" />
+              <span>Attestation de Bourse (PDF)</span>
+            </button>
+          </div>
         </div>
 
         {/* Active Scholarship Summary Cards */}

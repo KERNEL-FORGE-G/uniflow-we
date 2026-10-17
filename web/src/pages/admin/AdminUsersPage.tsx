@@ -129,23 +129,34 @@ export default function AdminUsersPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.2em] text-[#0d9488]">Administration</p>
-          <h1 className="mt-1 text-2xl font-black tracking-tight text-[#111827]">Comptes et rôles</h1>
-          <p className="mt-1 text-sm text-[#6b7280]">
-            Étudiants, délégués et enseignants de la plateforme : créez, ajustez un rôle ou suspendez un accès.
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-xs font-bold text-[#374151] transition hover:bg-[#f9fafb]">
-            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} /> Actualiser
-          </button>
-          {canCreate && (
-            <motion.button type="button" whileTap={{ scale: 0.97 }} onClick={openCreate} className="inline-flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-4 py-2 text-xs font-bold text-white shadow transition hover:bg-[#2d4fa8]">
-              <UserPlus className="h-4 w-4" /> Nouveau compte
-            </motion.button>
-          )}
+      <header className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/students.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-[0.2em] text-cyan-200">
+                Administration
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black tracking-tight text-white">Comptes et rôles</h1>
+              <p className="mt-1.5 text-sm text-slate-200 max-w-2xl">
+                Étudiants, délégués et enseignants de la plateforme : créez, ajustez un rôle ou suspendez un accès.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2.5">
+            <button type="button" onClick={() => void load()} className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white transition hover:bg-white/25">
+              <RefreshCw className={cn('h-4 w-4 text-cyan-200', loading && 'animate-spin')} /> Actualiser
+            </button>
+            {canCreate && (
+              <motion.button type="button" whileTap={{ scale: 0.97 }} onClick={openCreate} className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-bold text-[#0B132B] shadow-lg transition hover:bg-cyan-50">
+                <UserPlus className="h-4 w-4 text-[#1E3A8A]" /> Nouveau compte
+              </motion.button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -154,7 +165,7 @@ export default function AdminUsersPage() {
       <StaggerList className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {(['STUDENT', 'DELEGATE', 'TEACHER', 'ADMIN'] as UniFlowRole[]).map((role) => (
           <StaggerItem key={role}>
-            <button type="button" onClick={() => setRoleFilter(roleFilter === role ? 'ALL' : role)} className={cn('flex w-full items-center justify-between rounded-2xl border bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md', roleFilter === role ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-[#e5e7eb]')}>
+            <button type="button" onClick={() => setRoleFilter(roleFilter === role ? 'ALL' : role)} className={cn('flex w-full items-center justify-between rounded-3xl border bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md', roleFilter === role ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/10' : 'border-slate-200/80')}>
               <div>
                 <p className="text-xs font-bold uppercase tracking-wider text-[#6b7280]">{ROLE_LABELS_FR[role]}s</p>
                 <p className="mt-1 text-2xl font-black text-[#111827]">{loading ? '…' : counts[role] ?? 0}</p>
@@ -168,12 +179,12 @@ export default function AdminUsersPage() {
       <div className="grid gap-3">
         <label className="relative block">
           <span className="sr-only">Rechercher</span>
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nom, email, identifiant…" className="w-full rounded-xl border border-[#e5e7eb] bg-white py-2.5 pl-10 pr-4 text-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10" />
+          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9ca3af]" />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Nom, email, identifiant…" className="w-full rounded-3xl border border-slate-200/80 bg-white py-3 pl-11 pr-4 text-sm shadow-sm outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10" />
         </label>
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-[#e5e7eb] bg-white shadow-sm">
+      <section className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm">
         {loading ? (
           <div className="space-y-3 p-5">{Array.from({ length: 6 }).map((_, index) => <Skeleton key={index} className="h-12" />)}</div>
         ) : filtered.length === 0 ? (

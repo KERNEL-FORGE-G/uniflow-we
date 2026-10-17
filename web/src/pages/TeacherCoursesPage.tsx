@@ -256,41 +256,90 @@ export default function TeacherCoursesPage() {
   if (loading) return <div className="flex h-screen items-center justify-center"><UniIcon name="spinner" weight="bold" size={32} className="animate-spin text-[#1e3a8a]" /></div>
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <span className="inline-flex items-center gap-1 rounded-full bg-indigo-50 border border-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-700 mb-2">
-            <UniIcon name="teacher" weight="fill" size={14} /> ESPACE ENSEIGNANT
-          </span>
-          <h1 className="text-xl font-bold text-[#111827]">Espace Pédagogique & Évaluations</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Gérez vos syllabus, ressources et notes · CC 30% + Examen 70%</p>
+    <div className="space-y-6 animate-fade-in pb-12">
+      {/* =========================================================================
+          HERO BENTO - Espace Enseignant
+         ========================================================================= */}
+      <section className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-semibold text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <UniIcon name="teacher" weight="fill" size={14} /> ESPACE ENSEIGNANT
+            </span>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Espace Pédagogique & Évaluations</h1>
+              <p className="text-sm sm:text-base text-slate-200/90 mt-1.5 leading-relaxed">
+                Gérez vos syllabus, ressources et notes · CC 30% + Examen 70%
+              </p>
+            </div>
+
+            {/* Micro-cartes Bento de statistiques */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">UE enseignées</span>
+                <span className="text-2xl font-black text-white">{courses.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">{course?.code || 'Sélection'}</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Apprenants</span>
+                <span className="text-2xl font-black text-white">{students.length}</span>
+                <span className="text-[10px] text-emerald-300 block mt-0.5 font-medium">{availableAverages.length} évalués</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Supports publiés</span>
+                <span className="text-2xl font-black text-white">{resources.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">{statements.length} devoir(s)</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Moyenne cours</span>
+                <span className="text-2xl font-black text-emerald-300">{avg === null ? '—' : `${avg}/20`}</span>
+                <span className="text-[10px] text-slate-200 block mt-0.5 font-medium">{passRate === null ? 'Pondération 30/70' : `${passRate}% réussite`}</span>
+              </div>
+            </div>
+
+            {/* Course selector pills */}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {courses.map(c => (
+                <button key={c.id} onClick={() => setSelCode(c.id)}
+                  className={`rounded-xl px-3.5 py-2 text-xs font-bold border transition-all flex items-center gap-2 cursor-pointer ${selCode === c.id ? 'bg-white text-[#1E3A8A] border-white shadow-md' : 'bg-white/10 text-white border-white/20 hover:bg-white/20 backdrop-blur-md'}`}>
+                  <SubjectIcon subject={c.name} code={c.code} weight={selCode === c.id ? 'fill' : 'duotone'} size={16} />
+                  {c.code}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/teacher.png"
+                alt="Espace enseignant 3D"
+                className="relative z-10 w-40 sm:w-52 lg:w-60 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/course_study_hero_3d.png' }}
+              />
+            </div>
+          </div>
         </div>
-        <div className="flex gap-2">
-          {courses.map(c => {
-            return (
-              <button key={c.id} onClick={() => setSelCode(c.id)}
-                className={`rounded-lg px-3 py-2 text-xs font-bold border transition-all flex items-center gap-2 ${selCode === c.id ? 'bg-indigo-600 text-white border-indigo-700' : 'bg-white text-[#374151] border-[#e5e7eb] hover:bg-[#f9fafb]'}`}>
-                <SubjectIcon subject={c.name} code={c.code} weight={selCode === c.id ? 'fill' : 'duotone'} size={16} />
-                {c.code}
-              </button>
-            )
-          })}
-        </div>
-      </div>
+      </section>
 
       {saved && (
-        <div role="status" className="rounded-xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
+        <div role="status" className="rounded-2xl bg-slate-900 text-white px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in">
           <UniIcon name="check" weight="bold" size={16} className="text-[#0d9488]" /> {saved}
         </div>
       )}
-      {gradeError && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{gradeError}</div>}
+      {gradeError && <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{gradeError}</div>}
 
       {course && (
         <div className="grid gap-5 lg:grid-cols-3">
           {/* Course card + visio */}
           <div className="space-y-4">
-            <div className="rounded-xl border border-[#e5e7eb] bg-white overflow-hidden shadow-sm">
+            <div className="rounded-3xl border border-slate-200/80 bg-white overflow-hidden shadow-sm hover:shadow-md transition-all">
               <div className="h-24 p-4 flex flex-col justify-between" style={{ backgroundImage: `linear-gradient(135deg, ${subjectColor(course.code)} 0%, ${darkenHex(subjectColor(course.code), 0.3)} 100%)` }}>
                 <div className="flex items-start justify-between">
                   <Badge className="self-start bg-white/20 text-white border-0 text-[10px]">{course.code}</Badge>
@@ -301,7 +350,7 @@ export default function TeacherCoursesPage() {
                   <p className="text-xs text-white/80">{course.hours}h</p>
                 </div>
               </div>
-              <div className="p-4 space-y-3">
+              <div className="p-5 space-y-3">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
                     <span className="text-[#6b7280]">Apprenants évalués</span>
@@ -319,7 +368,7 @@ export default function TeacherCoursesPage() {
             </div>
 
             {/* Quick stats */}
-            <div className="rounded-xl border border-[#e5e7eb] bg-white p-4 shadow-sm space-y-2">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-all space-y-2.5">
               <h2 className="text-xs font-bold text-[#9ca3af] uppercase tracking-wider">Stats notes</h2>
               <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Moyenne générale</span><span className="font-bold text-indigo-600">{avg === null ? '—' : `${avg}/20`}</span></div>
               <div className="flex justify-between text-sm"><span className="text-[#6b7280]">Taux de réussite</span><span className="font-bold text-[#059669]">{passRate === null ? '—' : `${passRate}%`}</span></div>
@@ -327,14 +376,14 @@ export default function TeacherCoursesPage() {
             </div>
 
             {/* Visio launcher */}
-            <div className="rounded-xl bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-4 shadow-md">
+            <div className="rounded-3xl bg-gradient-to-br from-indigo-900 to-slate-900 text-white p-5 shadow-md hover:shadow-lg transition-all">
               <div className="flex items-center gap-2 mb-2">
                 <UniIcon name="video" weight="fill" size={16} className="text-[#0d9488]" />
                 <h3 className="text-sm font-bold">Planifier / Démarrer Visioconf</h3>
               </div>
               <p className="text-xs text-indigo-200 mb-3">Hébergez un cours virtuel en LAN ou Internet. Mode bas-débit disponible.</p>
               <button onClick={() => navigate('/app/visioconference')}
-                className="w-full rounded-lg bg-[#0d9488] py-2 text-sm font-bold text-white hover:bg-[#0a7167] transition-colors flex items-center justify-center gap-2">
+                className="w-full rounded-xl bg-[#0d9488] py-2.5 text-sm font-bold text-white hover:bg-[#0a7167] transition-colors flex items-center justify-center gap-2">
                 <UniIcon name="video" weight="fill" size={16} /> Lancer la visioconférence
               </button>
             </div>
@@ -342,7 +391,7 @@ export default function TeacherCoursesPage() {
 
         {/* Main tabs panel */}
         <div className="lg:col-span-2 space-y-4">
-          <div className="flex gap-1 border-b border-[#e5e7eb]">
+          <div className="flex gap-1 border-b border-slate-200/80">
             {tabs.map(t => (
               <button key={t.id} onClick={() => setActiveTab(t.id)}
                 className={`px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${activeTab === t.id ? 'border-[#1e3a8a] text-[#1e3a8a]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'}`}>
@@ -354,13 +403,13 @@ export default function TeacherCoursesPage() {
           {activeTab === 'contenu' && (
             <div className="space-y-4">
               {/* Upload form */}
-              <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all">
                 <h2 className="text-sm font-bold text-[#111827] mb-3 flex items-center gap-2"><UniIcon name="cloud" size={16} className="text-indigo-600" /> Ajouter une ressource</h2>
                 <form onSubmit={(e) => void handleUpload(e)} className="space-y-3">
                   <input value={newName} onChange={e => setNewName(e.target.value)}
                     placeholder="Titre affiché (ex : TD2 — Arbres binaires) · par défaut le nom du fichier"
-                    className="w-full rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
-                  <label className={`flex cursor-pointer items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 text-sm transition-colors ${newFile ? 'border-indigo-300 bg-indigo-50/60' : 'border-[#e5e7eb] hover:border-indigo-300 hover:bg-[#f9fafb]'}`}>
+                    className="w-full rounded-xl border border-slate-200/80 px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
+                  <label className={`flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed px-4 py-3 text-sm transition-colors ${newFile ? 'border-indigo-300 bg-indigo-50/60' : 'border-slate-200/80 hover:border-indigo-300 hover:bg-[#f9fafb]'}`}>
                     <UniIcon name="paperclip" weight="bold" size={16} className="shrink-0 text-indigo-600" />
                     <span className="min-w-0 flex-1 truncate">
                       {newFile ? <><span className="font-semibold text-[#111827]">{newFile.name}</span> <span className="text-[#6b7280]">· {humanFileSize(newFile.size)}</span></> : <span className="text-[#6b7280]">Choisir un fichier (PDF, diaporama, archive…) · 50 Mo max.</span>}
@@ -374,24 +423,24 @@ export default function TeacherCoursesPage() {
                   </label>
                   <div className="flex gap-2">
                     <select value={newType} onChange={e => setNewType(e.target.value)} aria-label="Catégorie de la ressource"
-                      className="flex-1 rounded-lg border border-[#e5e7eb] px-3 py-2.5 text-sm outline-none focus:border-indigo-600">
+                      className="flex-1 rounded-xl border border-slate-200/80 px-3 py-2.5 text-sm outline-none focus:border-indigo-600">
                       {RESOURCE_CATEGORIES.map(t => <option key={t}>{t}</option>)}
                     </select>
                     <button type="submit" disabled={uploading || !newFile}
-                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
+                      className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60">
                       {uploading ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="plus" weight="bold" size={16} />} {uploading ? 'Publication…' : 'Publier'}
                     </button>
                   </div>
-                  {uploadError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{uploadError}</p>}
+                  {uploadError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{uploadError}</p>}
                 </form>
               </div>
               {/* Resources list */}
-              <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+              <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-sm font-bold text-[#111827] flex items-center gap-1.5"><UniIcon name="library" size={16} className="text-indigo-600" /> Supports & Ressources</h2>
                   <span className="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">{resources.length} fichier{resources.length > 1 ? 's' : ''}</span>
                 </div>
-                {resourcesError && <p role="alert" className="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{resourcesError}</p>}
+                {resourcesError && <p role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{resourcesError}</p>}
                 <div className="divide-y divide-[#f9fafb]">
                   {resources.length === 0 && !resourcesError && <p className="text-sm text-[#9ca3af] py-4 text-center">Aucune ressource pour {course.code}. Publiez votre premier support ci-dessus.</p>}
                   {resources.map(f => {
@@ -399,7 +448,7 @@ export default function TeacherCoursesPage() {
                     return (
                       <div key={f.id} className="flex items-center justify-between gap-3 py-3">
                         <div className="flex min-w-0 items-start gap-2.5">
-                          <div className="h-8 w-8 rounded bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-bold shrink-0">{f.type || 'DOC'}</div>
+                          <div className="h-8 w-8 rounded-lg bg-indigo-50 border border-indigo-100 text-indigo-700 flex items-center justify-center text-[9px] font-bold shrink-0">{f.type || 'DOC'}</div>
                           <div className="min-w-0">
                             <p className="truncate text-sm font-semibold text-[#111827]">{f.title}</p>
                             <div className="flex flex-wrap items-center gap-2 mt-0.5">
@@ -423,7 +472,7 @@ export default function TeacherCoursesPage() {
           )}
 
           {activeTab === 'participants' && (
-            <div className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden">
               <div className="px-5 py-3.5 border-b border-[#f3f4f6] bg-[#f9fafb] flex justify-between items-center">
                 <h3 className="text-sm font-bold text-[#111827]">Étudiants inscrits — {course.code}</h3>
                 <span className="text-xs text-[#9ca3af]">{students.length} étudiants</span>
@@ -450,65 +499,65 @@ export default function TeacherCoursesPage() {
           )}
 
           {activeTab === 'devoirs' && (
-            <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm space-y-3">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all space-y-3">
               <div className="flex items-center justify-between mb-2">
                 <div>
                   <h3 className="text-sm font-bold text-[#111827]">Devoirs publiés — {course.code}</h3>
                   <p className="text-xs text-[#9ca3af]">{statements.length ? `${statements.length} énoncé${statements.length > 1 ? 's' : ''} · ${students.length} inscrit${students.length > 1 ? 's' : ''}` : 'Les énoncés publiés ici apparaissent chez vos étudiants (web, mobile, desktop).'}</p>
                 </div>
                 <button onClick={() => { setPublishError(null); setStatementForm((form) => ({ ...form, open: !form.open })) }} aria-expanded={statementForm.open}
-                  className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8]">
+                  className="flex items-center gap-1.5 rounded-xl bg-[#1e3a8a] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#2d4fa8]">
                   {statementForm.open ? <UniIcon name="close" weight="bold" size={14} /> : <UniIcon name="plus" weight="bold" size={14} />} {statementForm.open ? 'Annuler' : 'Nouveau devoir'}
                 </button>
               </div>
 
               {statementForm.open && (
-                <form onSubmit={(e) => void handlePublishStatement(e)} className="space-y-3 rounded-lg border border-indigo-100 bg-indigo-50/40 p-4 animate-fade-in">
+                <form onSubmit={(e) => void handlePublishStatement(e)} className="space-y-3 rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 animate-fade-in">
                   <input value={statementForm.title} onChange={(e) => setStatementForm((form) => ({ ...form, title: e.target.value }))} required maxLength={255}
                     placeholder="Titre du devoir (ex : TP2 — Requêtes SQL complexes)"
-                    className="w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
+                    className="w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
                   <textarea value={statementForm.description} onChange={(e) => setStatementForm((form) => ({ ...form, description: e.target.value }))} rows={3} maxLength={3000}
                     placeholder="Consignes, format attendu, critères de notation…"
-                    className="w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
+                    className="w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2.5 text-sm outline-none focus:border-indigo-600 focus:ring-1 focus:ring-indigo-600" />
                   <div className="grid gap-3 sm:grid-cols-3">
                     <label className="text-xs font-semibold text-[#374151]">Date limite
                       <input type="datetime-local" value={statementForm.due} onChange={(e) => setStatementForm((form) => ({ ...form, due: e.target.value }))} required
-                        className="mt-1 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600" />
+                        className="mt-1 w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600" />
                     </label>
                     <label className="text-xs font-semibold text-[#374151]">Type
                       <select value={statementForm.type} onChange={(e) => setStatementForm((form) => ({ ...form, type: e.target.value }))}
-                        className="mt-1 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600">
+                        className="mt-1 w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600">
                         {STATEMENT_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
                       </select>
                     </label>
                     <label className="text-xs font-semibold text-[#374151]">Barème (/…)
                       <input type="number" min="1" max="100" step="1" value={statementForm.maxScore} onChange={(e) => setStatementForm((form) => ({ ...form, maxScore: e.target.value }))}
-                        className="mt-1 w-full rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600" />
+                        className="mt-1 w-full rounded-xl border border-slate-200/80 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-indigo-600" />
                     </label>
                   </div>
                   <label className="flex items-center gap-2 text-xs text-[#374151]">
                     <input type="checkbox" checked={statementForm.allowLate} onChange={(e) => setStatementForm((form) => ({ ...form, allowLate: e.target.checked }))} className="h-4 w-4 rounded border-[#d1d5db] text-indigo-600" />
                     Accepter les rendus en retard (signalés comme tels)
                   </label>
-                  {publishError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{publishError}</p>}
+                  {publishError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{publishError}</p>}
                   <div className="flex justify-end">
                     <button type="submit" disabled={publishing}
-                      className="flex items-center gap-1.5 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
+                      className="flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60">
                       {publishing ? <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> : <UniIcon name="upload" weight="bold" size={16} />} {publishing ? 'Publication…' : 'Publier le devoir'}
                     </button>
                   </div>
                 </form>
               )}
 
-              {statementsError && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{statementsError}</p>}
+              {statementsError && <p role="alert" className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">{statementsError}</p>}
               {statements.length === 0 && !statementsError && !statementForm.open && (
-                <p className="rounded-lg border border-dashed border-[#e5e7eb] px-4 py-6 text-center text-sm text-[#9ca3af]">Aucun devoir publié pour {course.code}. Cliquez sur « Nouveau devoir » pour en créer un.</p>
+                <p className="rounded-2xl border border-dashed border-slate-200/80 px-4 py-6 text-center text-sm text-[#9ca3af]">Aucun devoir publié pour {course.code}. Cliquez sur « Nouveau devoir » pour en créer un.</p>
               )}
               {statements.map((statement) => {
                 const summary = summarizeStatement(statement, statement.submissions, students.length, now)
                 const typeLabel = STATEMENT_TYPES.find((type) => type.value === statement.type)?.label ?? statement.type
                 return (
-                  <div key={statement.id} className="rounded-lg border border-[#e5e7eb] p-4 hover:bg-[#f9fafb] transition-colors">
+                  <div key={statement.id} className="rounded-2xl border border-slate-200/80 p-4 hover:bg-[#f9fafb] transition-colors">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <p className="font-semibold text-[#111827] text-sm">{statement.title}</p>
@@ -533,7 +582,7 @@ export default function TeacherCoursesPage() {
           )}
 
           {activeTab === 'notes' && (
-            <div className="rounded-xl border border-[#e5e7eb] bg-white shadow-sm overflow-hidden">
+            <div className="rounded-3xl border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all overflow-hidden">
               <div className="px-5 py-4 border-b border-[#f3f4f6] bg-[#f9fafb] flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm font-bold text-[#111827]">Saisie des notes — {course.code}</h3>
@@ -543,14 +592,14 @@ export default function TeacherCoursesPage() {
                   <Badge variant="primary">Pondération 30/70</Badge>
                   <ExportButtons getDocument={gradesExport} disabled={students.length === 0} disabledReason="Aucun étudiant inscrit à exporter." />
                   <button onClick={() => void handleSaveGrades()} disabled={savingGrades || students.length === 0}
-                    className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
+                    className="flex items-center gap-1.5 rounded-xl bg-[#1e3a8a] px-3.5 py-1.5 text-xs font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:cursor-not-allowed disabled:opacity-60">
                     <UniIcon name="save" weight="bold" size={14} /> {savingGrades ? 'Enregistrement…' : 'Enregistrer les notes'}
                   </button>
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#f9fafb] text-[#6b7280] uppercase tracking-wider font-semibold border-b border-[#e5e7eb]">
+                  <thead className="bg-[#f9fafb] text-[#6b7280] uppercase tracking-wider font-semibold border-b border-slate-200/80">
                     <tr>
                       <th className="px-5 py-3">Matricule</th>
                       <th className="px-5 py-3">Étudiant</th>
@@ -572,12 +621,12 @@ export default function TeacherCoursesPage() {
                           <td className="px-5 py-3 text-center">
                             <input type="number" min="0" max="20" step="1" value={s.cc ?? ''}
                               onChange={e => updateGrade(s.id, 'cc', e.target.value)}
-                              className="w-16 rounded border border-[#e5e7eb] px-2 py-1 text-center font-semibold text-[#111827] outline-none focus:border-[#1e3a8a]" />
+                              className="w-16 rounded-lg border border-slate-200/80 px-2 py-1 text-center font-semibold text-[#111827] outline-none focus:border-[#1e3a8a]" />
                           </td>
                           <td className="px-5 py-3 text-center">
                             <input type="number" min="0" max="20" step="1" value={s.exam ?? ''}
                               onChange={e => updateGrade(s.id, 'exam', e.target.value)}
-                              className="w-16 rounded border border-[#e5e7eb] px-2 py-1 text-center font-semibold text-[#111827] outline-none focus:border-[#1e3a8a]" />
+                              className="w-16 rounded-lg border border-slate-200/80 px-2 py-1 text-center font-semibold text-[#111827] outline-none focus:border-[#1e3a8a]" />
                           </td>
                           <td className="px-5 py-3 text-center font-bold text-sm text-[#111827]">{final === null ? '—' : `${final} / 20`}</td>
                           <td className="px-5 py-3 text-center">
@@ -597,7 +646,7 @@ export default function TeacherCoursesPage() {
               <div className="px-5 py-4 border-t border-[#f3f4f6] bg-[#f9fafb] flex items-center justify-between gap-4">
                 <p className="text-xs text-[#9ca3af] flex items-center gap-1.5"><UniIcon name="warning" weight="fill" size={14} className="text-amber-500 shrink-0" /> Les évaluations enregistrées sont immédiatement visibles dans le relevé Appwrite des apprenants.</p>
                 <button onClick={() => void handleSaveGrades()} disabled={savingGrades || students.length === 0}
-                  className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors disabled:cursor-not-allowed disabled:opacity-60">
+                  className="flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-2 text-sm font-semibold text-white hover:bg-indigo-700 transition-colors disabled:cursor-not-allowed disabled:opacity-60">
                   <UniIcon name="save" weight="bold" size={16} /> {savingGrades ? 'Enregistrement…' : 'Enregistrer la grille'}
                 </button>
               </div>

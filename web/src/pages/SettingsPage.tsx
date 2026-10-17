@@ -230,27 +230,60 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Paramètres</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Gérez votre compte et vos préférences</p>
+    <div className="space-y-6 animate-fade-in pb-12 text-slate-800">
+      {/* =========================================================================
+          HERO BENTO - Paramètres & Personnalisation Avatars
+         ========================================================================= */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-white/20 text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              Préférences Utilisateur · Avatars 3D & Sécurité
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Paramètres</h1>
+              <p className="mt-2 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                Gérez votre compte, personnalisez votre avatar officiel (mascottes Uni 3D ou portraits anime), ajustez vos alertes et configurez le mode hors-ligne.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <button onClick={handleSave} className="inline-flex items-center gap-2 rounded-2xl bg-emerald-400 hover:bg-emerald-300 px-5 py-2.5 text-sm font-black text-slate-950 shadow-lg transition-all cursor-pointer">
+                {saved ? <><UniIcon name="check" weight="bold" size={16} /> Enregistré !</> : <><UniIcon name="save" weight="bold" size={16} /> Enregistrer</>}
+              </button>
+              <Link to="/app/profil" className="inline-flex items-center gap-2 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white transition-all">
+                <UniIcon name="profile" size={16} /> Voir mon profil
+              </Link>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/settings.png"
+                alt="Paramètres 3D"
+                className="relative z-10 w-36 sm:w-44 lg:w-52 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+          </div>
         </div>
-        <button onClick={handleSave} className="flex items-center gap-2 rounded-xl bg-[#1e3a8a] px-5 py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5">
-          {saved ? <><UniIcon name="check" weight="bold" size={16} /> Enregistré !</> : <><UniIcon name="save" weight="bold" size={16} /> Enregistrer</>}
-        </button>
-      </div>
+      </section>
 
       {saved && (
-        <div className="flex items-center gap-3 rounded-xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 animate-slide-down">
+        <div className="flex items-center gap-3 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm font-semibold text-emerald-700 animate-slide-down">
           <UniIcon name="check" weight="bold" size={16} /> Paramètres enregistrés avec succès.
         </div>
       )}
 
-      <div className="grid gap-5 lg:grid-cols-4">
+      <div className="grid gap-6 lg:grid-cols-4">
         {/* Sidebar */}
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-3 shadow-sm h-fit">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-3.5 shadow-sm h-fit">
           {sections.map(s => {
             const icon = sectionIcons[s] ?? 'settings'
             return (
@@ -258,12 +291,12 @@ export default function SettingsPage() {
                 key={s}
                 onClick={() => setSection(s)}
                 className={cn(
-                  'w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-left transition-all mb-0.5',
-                  section === s ? 'bg-[#1e3a8a] text-white shadow-md' : 'text-[#374151] hover:bg-[#f9fafb]'
+                  'w-full flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-bold text-left transition-all mb-1 cursor-pointer',
+                  section === s ? 'bg-gradient-to-r from-[#1e3a8a] to-[#2563eb] text-white shadow-md' : 'text-slate-600 hover:bg-slate-100/80'
                 )}
               >
-                <div className={cn('flex h-7 w-7 items-center justify-center rounded-lg flex-shrink-0', section === s ? 'bg-white/20' : 'bg-[#f3f4f6]')}>
-                  <UniIcon name={icon} weight={section === s ? 'fill' : 'duotone'} size={16} className={section === s ? 'text-white' : 'text-[#6b7280]'} />
+                <div className={cn('flex h-7 w-7 items-center justify-center rounded-xl flex-shrink-0', section === s ? 'bg-white/20' : 'bg-slate-100')}>
+                  <UniIcon name={icon} weight={section === s ? 'fill' : 'duotone'} size={16} className={section === s ? 'text-white' : 'text-slate-500'} />
                 </div>
                 {s}
               </button>
@@ -276,8 +309,8 @@ export default function SettingsPage() {
 
           {/* ── Profil ── */}
           {section === 'Profil' && (
-            <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm space-y-5">
-              <h2 className="text-base font-bold text-[#111827]">Informations personnelles</h2>
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-5">
+              <h2 className="text-base font-extrabold text-slate-900">Informations personnelles</h2>
 
               {/* Avatar */}
               <div className="flex items-center gap-5 pb-5 border-b border-[#f3f4f6]">

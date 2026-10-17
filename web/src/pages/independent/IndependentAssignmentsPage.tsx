@@ -209,54 +209,101 @@ export default function IndependentAssignmentsPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-14 animate-fade-in">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
-            <UniIcon name="assignments" weight="bold" size={16} />
-            <span>Gestion des Tâches</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">
-            Devoirs &amp; Échéances
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Suivez vos livrables, devoirs maison et révisions avec alertes d'échéances et priorités.
-          </p>
-        </div>
+      {/* =========================================================================
+          HERO BENTO - Devoirs & Échéances (Gestion des Tâches)
+         ========================================================================= */}
+      <section className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
 
-        <div className="flex flex-wrap items-center gap-3">
-          {/* View toggle */}
-          <div className="inline-flex rounded-xl border border-slate-200 bg-white p-1 text-xs font-bold dark:border-slate-800 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => setViewMode('kanban')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                viewMode === 'kanban' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Vue Kanban
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('list')}
-              className={`rounded-lg px-3 py-1.5 transition ${
-                viewMode === 'list' ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-500 hover:text-slate-800'
-              }`}
-            >
-              Vue Liste
-            </button>
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-semibold text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <UniIcon name="assignments" weight="bold" size={14} />
+              <span>Gestion des Tâches</span>
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                Devoirs &amp; Échéances
+              </h1>
+              <p className="mt-1.5 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                Suivez vos livrables, devoirs maison et révisions avec alertes d'échéances et priorités.
+              </p>
+            </div>
+
+            {/* Micro-cartes Bento de statistiques */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Total devoirs</span>
+                <span className="text-2xl font-black text-white">{assignments.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">{todoCount} à faire</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">En cours</span>
+                <span className="text-2xl font-black text-white">{inProgressCount}</span>
+                <span className="text-[10px] text-amber-300 block mt-0.5 font-medium">En préparation</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Terminées</span>
+                <span className="text-2xl font-black text-emerald-300">{doneCount}</span>
+                <span className="text-[10px] text-slate-200 block mt-0.5 font-medium">Devoirs rendus</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">En retard</span>
+                <span className="text-2xl font-black text-rose-300">{overdueCount}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Échéances dépassées</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              {/* View toggle */}
+              <div className="inline-flex rounded-xl border border-white/20 bg-white/10 backdrop-blur-md p-1 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setViewMode('kanban')}
+                  className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
+                    viewMode === 'kanban' ? 'bg-white text-[#1E3A8A] shadow-sm' : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  Vue Kanban
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setViewMode('list')}
+                  className={`rounded-lg px-3 py-1.5 transition cursor-pointer ${
+                    viewMode === 'list' ? 'bg-white text-[#1E3A8A] shadow-sm' : 'text-white/80 hover:text-white'
+                  }`}
+                >
+                  Vue Liste
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-[#1E3A8A] shadow-md transition hover:bg-cyan-50 cursor-pointer"
+              >
+                <UniIcon name="plus" weight="bold" size={16} />
+                <span>Nouveau devoir</span>
+              </button>
+            </div>
           </div>
 
-          <button
-            type="button"
-            onClick={openCreateModal}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] px-5 py-3 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
-          >
-            <UniIcon name="plus" weight="bold" size={16} />
-            <span>Nouveau devoir</span>
-          </button>
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/assignments.png"
+                alt="Devoirs et échéances 3D"
+                className="relative z-10 w-40 sm:w-52 lg:w-60 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/course_study_hero_3d.png' }}
+              />
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* ── Alerts ── */}
       {error && (
@@ -287,7 +334,7 @@ export default function IndependentAssignmentsPage() {
         <button
           type="button"
           onClick={() => setStatusFilter('ALL')}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`rounded-3xl border p-4 text-left shadow-sm hover:shadow-md transition-all ${
             statusFilter === 'ALL'
               ? 'border-slate-900 bg-slate-900 text-white shadow-md dark:border-white dark:bg-white dark:text-slate-900'
               : 'border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-white'
@@ -301,7 +348,7 @@ export default function IndependentAssignmentsPage() {
         <button
           type="button"
           onClick={() => setStatusFilter('OVERDUE')}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`rounded-3xl border p-4 text-left shadow-sm hover:shadow-md transition-all ${
             statusFilter === 'OVERDUE'
               ? 'border-rose-600 bg-rose-600 text-white shadow-md'
               : 'border-rose-200 bg-rose-50/60 text-rose-900 hover:border-rose-300 dark:border-rose-950 dark:bg-rose-950/20 dark:text-rose-300'
@@ -315,7 +362,7 @@ export default function IndependentAssignmentsPage() {
         <button
           type="button"
           onClick={() => setStatusFilter('TODO')}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`rounded-3xl border p-4 text-left shadow-sm hover:shadow-md transition-all ${
             statusFilter === 'TODO'
               ? 'border-blue-600 bg-blue-600 text-white shadow-md'
               : 'border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-white'
@@ -329,7 +376,7 @@ export default function IndependentAssignmentsPage() {
         <button
           type="button"
           onClick={() => setStatusFilter('IN_PROGRESS')}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`rounded-3xl border p-4 text-left shadow-sm hover:shadow-md transition-all ${
             statusFilter === 'IN_PROGRESS'
               ? 'border-amber-600 bg-amber-600 text-white shadow-md'
               : 'border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-white'
@@ -343,7 +390,7 @@ export default function IndependentAssignmentsPage() {
         <button
           type="button"
           onClick={() => setStatusFilter('DONE')}
-          className={`rounded-2xl border p-4 text-left transition ${
+          className={`rounded-3xl border p-4 text-left shadow-sm hover:shadow-md transition-all ${
             statusFilter === 'DONE'
               ? 'border-emerald-600 bg-emerald-600 text-white shadow-md'
               : 'border-slate-200/80 bg-white text-slate-900 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900 dark:text-white'
@@ -356,7 +403,7 @@ export default function IndependentAssignmentsPage() {
       </section>
 
       {/* ── Filter Bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="relative w-64">
@@ -371,7 +418,7 @@ export default function IndependentAssignmentsPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filtrer devoirs…"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800"
+              className="w-full rounded-xl border border-slate-200/80 bg-slate-50 py-1.5 pl-8 pr-3 text-xs outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800"
             />
           </div>
 
@@ -379,7 +426,7 @@ export default function IndependentAssignmentsPage() {
           <select
             value={courseFilter}
             onChange={(e) => setCourseFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             <option value="">Toutes les matières</option>
             {courses.map((c) => (
@@ -393,7 +440,7 @@ export default function IndependentAssignmentsPage() {
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             <option value="">Toutes les priorités</option>
             {Object.entries(PRIORITY_LABELS).map(([k, v]) => (
@@ -413,7 +460,7 @@ export default function IndependentAssignmentsPage() {
       {viewMode === 'kanban' && (
         <div className="grid gap-5 md:grid-cols-3">
           {/* Column 1: TODO */}
-          <div className="flex flex-col rounded-3xl border border-slate-200/90 bg-slate-50/70 p-4.5 dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="flex flex-col rounded-3xl border border-slate-200/80 bg-slate-50/70 p-4.5 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900/60">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-blue-500" />
@@ -444,7 +491,7 @@ export default function IndependentAssignmentsPage() {
           </div>
 
           {/* Column 2: IN_PROGRESS */}
-          <div className="flex flex-col rounded-3xl border border-slate-200/90 bg-slate-50/70 p-4.5 dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="flex flex-col rounded-3xl border border-slate-200/80 bg-slate-50/70 p-4.5 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900/60">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
@@ -475,7 +522,7 @@ export default function IndependentAssignmentsPage() {
           </div>
 
           {/* Column 3: DONE */}
-          <div className="flex flex-col rounded-3xl border border-slate-200/90 bg-slate-50/70 p-4.5 dark:border-slate-800 dark:bg-slate-900/60">
+          <div className="flex flex-col rounded-3xl border border-slate-200/80 bg-slate-50/70 p-4.5 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900/60">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
@@ -509,7 +556,7 @@ export default function IndependentAssignmentsPage() {
 
       {/* ── VIEW 2: LIST MODE ── */}
       {viewMode === 'list' && (
-        <div className="rounded-3xl border border-slate-200/90 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900">
           {filteredAssignments.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-xs text-slate-400">
               Aucun devoir trouvé avec les filtres sélectionnés

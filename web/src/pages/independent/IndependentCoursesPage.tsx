@@ -186,30 +186,79 @@ export default function IndependentCoursesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-14 animate-fade-in">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
-            <UniIcon name="courses" weight="bold" size={16} />
-            <span>Catalogue Personnel</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">
-            Mes Matières &amp; Cours
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Organisez votre cursus, vos volumes horaires et suivez vos crédits ECTS en toute indépendance.
-          </p>
-        </div>
+      {/* =========================================================================
+          HERO BENTO - Mes Matières & Cours (Catalogue Personnel)
+         ========================================================================= */}
+      <section className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] px-5 py-3 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
-        >
-          <UniIcon name="plus" weight="bold" size={16} />
-          <span>Ajouter une matière</span>
-        </button>
-      </div>
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-semibold text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <UniIcon name="courses" weight="bold" size={14} />
+              <span>Catalogue Personnel</span>
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                Mes Matières &amp; Cours
+              </h1>
+              <p className="mt-1.5 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                Organisez votre cursus, vos volumes horaires et suivez vos crédits ECTS en toute indépendance.
+              </p>
+            </div>
+
+            {/* Micro-cartes Bento de statistiques */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Matières actives</span>
+                <span className="text-2xl font-black text-white">{courses.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Modules enregistrés</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Crédits ECTS cumulés</span>
+                <span className="text-2xl font-black text-emerald-300">{totalCredits}</span>
+                <span className="text-[10px] text-slate-200 block mt-0.5 font-medium">Total des crédits académiques</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Enseignants référencés</span>
+                <span className="text-2xl font-black text-white">{instructorsCount}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Professeurs / intervenants</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Créneaux de cours</span>
+                <span className="text-2xl font-black text-white">{schedules.length}</span>
+                <span className="text-[10px] text-emerald-300 block mt-0.5 font-medium">Sessions au planning</span>
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-[#1E3A8A] shadow-md transition hover:bg-cyan-50 cursor-pointer"
+              >
+                <UniIcon name="plus" weight="bold" size={16} />
+                <span>Ajouter une matière</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/illustrations/course_study_hero_3d.png"
+                alt="Espace d'apprentissage 3D"
+                className="relative z-10 w-44 sm:w-56 lg:w-64 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/uni_copilot_3d.png' }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Alerts ── */}
       {error && (
@@ -235,33 +284,9 @@ export default function IndependentCoursesPage() {
         </div>
       )}
 
-      {/* ── Summary Counters ── */}
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-[11px] font-bold uppercase text-slate-500">Matières actives</p>
-          <p className="mt-1 text-2xl font-black text-slate-900 dark:text-white">{courses.length}</p>
-          <p className="mt-0.5 text-xs text-slate-400">Modules enregistrés</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-[11px] font-bold uppercase text-slate-500">Crédits ECTS cumulés</p>
-          <p className="mt-1 text-2xl font-black text-[#0d9488]">{totalCredits}</p>
-          <p className="mt-0.5 text-xs text-slate-400">Total des crédits académiques</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-[11px] font-bold uppercase text-slate-500">Enseignants référencés</p>
-          <p className="mt-1 text-2xl font-black text-[#1e3a8a] dark:text-blue-400">{instructorsCount}</p>
-          <p className="mt-0.5 text-xs text-slate-400">Professeurs / intervenants</p>
-        </div>
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4.5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-[11px] font-bold uppercase text-slate-500">Créneaux de cours</p>
-          <p className="mt-1 text-2xl font-black text-purple-700 dark:text-purple-400">{schedules.length}</p>
-          <p className="mt-0.5 text-xs text-slate-400">Sessions au planning</p>
-        </div>
-      </section>
-
       {/* ── Search Bar ── */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative w-full sm:w-80">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900">
+        <div className="relative w-full sm:w-96">
           <UniIcon
             name="search"
             weight="bold"
@@ -273,10 +298,10 @@ export default function IndependentCoursesPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Rechercher par titre, code ou enseignant…"
-            className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-xs font-medium outline-none transition focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 dark:border-slate-800 dark:bg-slate-900"
+            className="w-full rounded-2xl border border-slate-200/80 bg-slate-50/70 py-2.5 pl-10 pr-4 text-xs font-medium outline-none transition focus:border-teal-500 focus:bg-white focus:ring-2 focus:ring-teal-500/20 dark:border-slate-800 dark:bg-slate-900"
           />
         </div>
-        <p className="text-xs text-slate-500">
+        <p className="text-xs font-semibold text-slate-500">
           {filteredCourses.length} matière(s) affichée(s)
         </p>
       </div>
@@ -326,7 +351,7 @@ export default function IndependentCoursesPage() {
             return (
               <div
                 key={course.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/90 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-teal-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
+                className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-teal-300 hover:shadow-md dark:border-slate-800 dark:bg-slate-900"
               >
                 {/* Accent top bar */}
                 <div

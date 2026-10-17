@@ -207,30 +207,95 @@ export default function IndependentGradesPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6 pb-14 animate-fade-in">
-      {/* ── Page Header ── */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-teal-700 dark:text-teal-400">
-            <UniIcon name="grades" weight="bold" size={16} />
-            <span>Relevé Académique</span>
-          </div>
-          <h1 className="mt-1 text-2xl font-black text-slate-900 dark:text-white sm:text-3xl">
-            Mes Notes &amp; Moyenne
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Enregistrez vos contrôles continus, partiels et examens pour simuler votre moyenne générale pondérée.
-          </p>
-        </div>
+      {/* =========================================================================
+          HERO BENTO - Mes Notes & Moyenne (Relevé Académique)
+         ========================================================================= */}
+      <section className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
 
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] px-5 py-3 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg"
-        >
-          <UniIcon name="plus" weight="bold" size={16} />
-          <span>Ajouter une note</span>
-        </button>
-      </div>
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-semibold text-cyan-200">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <UniIcon name="grades" weight="bold" size={14} />
+                <span>Relevé Académique</span>
+              </span>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-black text-teal-200 backdrop-blur-md border border-white/20">
+                <span className={`h-2 w-2 rounded-full ${
+                  appreciation.tone === 'emerald' ? 'bg-emerald-400' :
+                  appreciation.tone === 'teal' ? 'bg-teal-300' :
+                  appreciation.tone === 'blue' ? 'bg-blue-300' :
+                  appreciation.tone === 'amber' ? 'bg-amber-400' : 'bg-rose-400'
+                }`} />
+                <span>Mention {appreciation.label}</span>
+              </span>
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                Mes Notes &amp; Moyenne
+              </h1>
+              <p className="mt-1.5 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                Enregistrez vos contrôles continus, partiels et examens pour simuler votre moyenne générale pondérée. Calculée selon les coefficients attribués à chaque note.
+              </p>
+            </div>
+
+            {/* Micro-cartes Bento de statistiques */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Moyenne Générale Pondérée</span>
+                <span className="text-2xl font-black text-emerald-300">
+                  {weightedAverage != null ? weightedAverage.toFixed(2) : '—'}
+                  <span className="text-xs font-bold text-teal-200 ml-1">/20</span>
+                </span>
+                <span className="text-[10px] text-slate-200 block mt-0.5 font-medium">Mention {appreciation.label}</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Évaluations</span>
+                <span className="text-2xl font-black text-white">{grades.length}</span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Notes enregistrées</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Total Coeff.</span>
+                <span className="text-2xl font-black text-white">{totalCoefficients}</span>
+                <span className="text-[10px] text-emerald-300 block mt-0.5 font-medium">Pondération cumulée</span>
+              </div>
+              <div className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5 hover:bg-white/15 transition-all">
+                <span className="text-[11px] font-medium text-slate-300 block">Meilleure</span>
+                <span className="text-2xl font-black text-white">
+                  {bestScore != null ? `${bestScore.toFixed(1)}/20` : '—'}
+                </span>
+                <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">Normalisée sur 20</span>
+              </div>
+            </div>
+
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={openCreateModal}
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-2.5 text-xs font-black text-[#1E3A8A] shadow-md transition hover:bg-cyan-50 cursor-pointer"
+              >
+                <UniIcon name="plus" weight="bold" size={16} />
+                <span>Ajouter une note</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/grades.png"
+                alt="Notes et évaluations 3D"
+                className="relative z-10 w-40 sm:w-52 lg:w-60 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/uni_copilot_3d.png' }}
+              />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ── Alerts ── */}
       {error && (
@@ -256,60 +321,8 @@ export default function IndependentGradesPage() {
         </div>
       )}
 
-      {/* ── Big GPA Hero Analytics Card ── */}
-      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-[#1e3a8a] via-[#1e40af] to-[#0d9488] p-6 text-white shadow-lg sm:p-8">
-        <div className="pointer-events-none absolute -right-10 -top-10 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
-
-        <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-            <div className="flex h-28 w-28 shrink-0 flex-col items-center justify-center rounded-3xl bg-white/15 backdrop-blur-md border border-white/20 text-center shadow-inner">
-              <span className="text-3xl font-black">
-                {weightedAverage != null ? weightedAverage.toFixed(2) : '—'}
-              </span>
-              <span className="text-[11px] font-bold text-teal-200 uppercase tracking-wider">sur 20</span>
-            </div>
-
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-3 py-1 text-xs font-black text-teal-200 backdrop-blur-sm">
-                <span className={`h-2 w-2 rounded-full ${
-                  appreciation.tone === 'emerald' ? 'bg-emerald-400' :
-                  appreciation.tone === 'teal' ? 'bg-teal-300' :
-                  appreciation.tone === 'blue' ? 'bg-blue-300' :
-                  appreciation.tone === 'amber' ? 'bg-amber-400' : 'bg-rose-400'
-                }`} />
-                <span>Mention {appreciation.label}</span>
-              </div>
-              <h2 className="mt-2 text-xl font-black tracking-tight sm:text-2xl">
-                Moyenne Générale Pondérée
-              </h2>
-              <p className="mt-1 max-w-xl text-xs text-blue-100 sm:text-sm">
-                Calculée selon les coefficients attribués à chaque note. Les notes sur d'autres bases sont automatiquement normalisées sur 20.
-              </p>
-            </div>
-          </div>
-
-          {/* Quick Metrics */}
-          <div className="grid grid-cols-3 gap-3 rounded-2xl bg-black/15 p-4 backdrop-blur-sm border border-white/10 sm:min-w-[320px]">
-            <div className="text-center">
-              <p className="text-[10px] font-bold uppercase text-teal-200">Évaluations</p>
-              <p className="mt-1 text-lg font-black">{grades.length}</p>
-            </div>
-            <div className="text-center border-x border-white/15">
-              <p className="text-[10px] font-bold uppercase text-teal-200">Total Coeff.</p>
-              <p className="mt-1 text-lg font-black">{totalCoefficients}</p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] font-bold uppercase text-teal-200">Meilleure</p>
-              <p className="mt-1 text-lg font-black">
-                {bestScore != null ? `${bestScore.toFixed(1)}/20` : '—'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ── Filters bar ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/90 bg-white p-3.5 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative w-64">
             <UniIcon
@@ -323,14 +336,14 @@ export default function IndependentGradesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filtrer évaluations…"
-              className="w-full rounded-xl border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-xs outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800"
+              className="w-full rounded-xl border border-slate-200/80 bg-slate-50 py-1.5 pl-8 pr-3 text-xs outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800"
             />
           </div>
 
           <select
             value={selectedCourseFilter}
             onChange={(e) => setSelectedCourseFilter(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
+            className="rounded-xl border border-slate-200/80 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-700 outline-none focus:border-teal-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
           >
             <option value="">Toutes les matières</option>
             {courses.map((c) => (
@@ -388,7 +401,7 @@ export default function IndependentGradesPage() {
             return (
               <div
                 key={courseId}
-                className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
+                className="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-sm hover:shadow-md transition-all dark:border-slate-800 dark:bg-slate-900"
               >
                 {/* Course Header Banner */}
                 <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50/70 px-6 py-4 dark:border-slate-800 dark:bg-slate-800/40">

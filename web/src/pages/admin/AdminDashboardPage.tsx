@@ -201,42 +201,51 @@ export default function AdminDashboardPage() {
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white border border-[#e5e7eb] p-6 shadow-sm"
+        className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden"
       >
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-2xl font-black text-[#111827]">Tableau de bord Admin</h1>
-            <span className="rounded-full bg-[#eff3ff] px-3 py-1 text-xs font-extrabold text-[#1e3a8a] border border-[#1e3a8a]/20">
-              Vue analytique Appwrite
-            </span>
-            <span className="flex items-center gap-1.5 rounded-full bg-[#f3f4f6] px-3 py-1 text-xs font-bold text-[#374151] border border-[#e5e7eb]">
-              <UniIcon name="schedule" size={14} className="text-[#1e3a8a]" />
-              {formattedToday}
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/analytics.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold text-cyan-200">
+                  Vue analytique Appwrite
+                </span>
+                <span className="flex items-center gap-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1 text-xs font-bold text-slate-200">
+                  <UniIcon name="schedule" size={14} className="text-cyan-300" />
+                  {formattedToday}
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">Tableau de bord Admin</h1>
+              <p className="text-sm text-slate-200 mt-1.5 max-w-2xl">
+                Analyse dynamique connectée aux collections Appwrite{' '}
+                <code className="rounded bg-white/15 border border-white/20 px-1.5 py-0.5 font-mono text-xs text-cyan-200">
+                  academic_directory
+                </code>{' '}
+                et{' '}
+                <code className="rounded bg-white/15 border border-white/20 px-1.5 py-0.5 font-mono text-xs text-cyan-200">
+                  attendance_sessions
+                </code>
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-2 rounded-2xl border border-white/20 bg-white/15 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white hover:bg-white/25 transition-all shadow-sm"
+            >
+              <UniIcon name="refresh" weight="bold" size={16} className={`text-cyan-200 ${refreshing ? 'animate-spin' : ''}`} />
+              Rafraîchir les données
+            </button>
+            <span className="flex items-center gap-1.5 rounded-2xl bg-amber-400/20 backdrop-blur-md border border-amber-300/30 px-3.5 py-2.5 text-xs font-bold text-amber-200">
+              <UniIcon name="security" size={16} className="text-amber-300" /> {authUser?.isSuperAdmin ? 'Admin plateforme' : 'Administration'}
             </span>
           </div>
-          <p className="text-sm text-[#6b7280] mt-1">
-            Analyse dynamique connectée aux collections Appwrite{' '}
-            <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 font-mono text-xs text-[#1e3a8a]">
-              academic_directory
-            </code>{' '}
-            et{' '}
-            <code className="rounded bg-[#f3f4f6] px-1.5 py-0.5 font-mono text-xs text-[#1e3a8a]">
-              attendance_sessions
-            </code>
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 rounded-xl border border-[#e5e7eb] bg-white px-4 py-2.5 text-xs font-bold text-[#374151] hover:bg-[#f9fafb] hover:border-[#1e3a8a] transition-all shadow-sm"
-          >
-            <UniIcon name="refresh" weight="bold" size={16} className={`text-[#1e3a8a] ${refreshing ? 'animate-spin' : ''}`} />
-            Rafraîchir les données
-          </button>
-          <span className="flex items-center gap-1.5 rounded-xl bg-amber-50 border border-amber-200 px-3.5 py-2 text-xs font-bold text-amber-800">
-            <UniIcon name="security" size={16} className="text-amber-600" /> {authUser?.isSuperAdmin ? 'Admin plateforme' : 'Administration'}
-          </span>
         </div>
       </motion.div>
 
@@ -244,7 +253,7 @@ export default function AdminDashboardPage() {
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="flex items-center gap-3 rounded-2xl bg-red-50 border border-red-200 p-4 text-sm font-semibold text-red-800 shadow-sm"
+          className="flex items-center gap-3 rounded-3xl bg-red-50 border border-red-200 p-4 text-sm font-semibold text-red-800 shadow-sm"
         >
           <UniIcon name="warning" size={20} className="text-red-600 shrink-0" />
           <p>{error}</p>
@@ -261,7 +270,7 @@ export default function AdminDashboardPage() {
         <motion.div
           variants={cardVariants}
           whileHover={{ y: -4, transition: { duration: 0.2 } }}
-          className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
+          className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
             <IconTile name="students" color="#1E3A8A" variant="filled" size={56} index={0} />
@@ -276,7 +285,7 @@ export default function AdminDashboardPage() {
         <motion.div
           variants={cardVariants}
           whileHover={{ y: -4, transition: { duration: 0.2 } }}
-          className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
+          className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
             <IconTile name="attendance" color="#0D9488" variant="filled" size={56} index={1} />
@@ -291,7 +300,7 @@ export default function AdminDashboardPage() {
         <motion.div
           variants={cardVariants}
           whileHover={{ y: -4, transition: { duration: 0.2 } }}
-          className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
+          className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
             <IconTile name="schedule" color="#7C3AED" variant="filled" size={56} index={2} />
@@ -306,7 +315,7 @@ export default function AdminDashboardPage() {
         <motion.div
           variants={cardVariants}
           whileHover={{ y: -4, transition: { duration: 0.2 } }}
-          className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
+          className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm hover:shadow-md transition-shadow cursor-default"
         >
           <div className="flex items-start justify-between">
             <IconTile name="layers" color="#D97706" variant="filled" size={56} index={3} />
@@ -328,7 +337,7 @@ export default function AdminDashboardPage() {
         className="grid gap-6 lg:grid-cols-2"
       >
         {/* 1. Taux de présence hebdomadaires */}
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm flex flex-col justify-between">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -413,7 +422,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* 2. Répartition des apprenants par niveau */}
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm flex flex-col justify-between">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -461,7 +470,7 @@ export default function AdminDashboardPage() {
                 {studentFiliereData.map((item) => (
                   <div
                     key={item.name}
-                    className="flex items-center justify-between p-2.5 rounded-xl border border-[#e5e7eb] hover:bg-[#f9fafb] transition-colors"
+                    className="flex items-center justify-between p-2.5 rounded-2xl border border-slate-200/80 hover:bg-[#f9fafb] transition-colors"
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span
@@ -510,7 +519,7 @@ export default function AdminDashboardPage() {
         initial="hidden"
         animate="show"
         transition={{ delay: 0.35 }}
-        className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm space-y-4"
+        className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#f3f4f6] pb-4">
           <div>
@@ -526,7 +535,7 @@ export default function AdminDashboardPage() {
             <select
               value={selectedFiliere}
               onChange={(e) => setSelectedFiliere(e.target.value)}
-              className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-1.5 text-xs font-bold text-[#374151] outline-none focus:border-[#1e3a8a]"
+              className="rounded-2xl border border-slate-200/80 bg-white px-3 py-1.5 text-xs font-bold text-[#374151] outline-none focus:border-[#1e3a8a]"
             >
               <option value="Toutes">Tous les niveaux ({students.length})</option>
               {studentFiliereData.map((f) => (
@@ -584,7 +593,7 @@ export default function AdminDashboardPage() {
         initial="hidden"
         animate="show"
         transition={{ delay: 0.45 }}
-        className="rounded-2xl border border-[#e5e7eb] bg-white p-6 shadow-sm space-y-4"
+        className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm space-y-4"
       >
         <div className="flex items-center justify-between border-b border-[#f3f4f6] pb-4">
           <div>
@@ -611,7 +620,7 @@ export default function AdminDashboardPage() {
               <motion.div
                 key={sess.id}
                 whileHover={{ y: -3 }}
-                className="rounded-xl border border-[#e5e7eb] bg-[#fcfdfe] p-4 space-y-2 shadow-xs hover:border-[#1e3a8a]/40 transition-all"
+                className="rounded-2xl border border-slate-200/80 bg-[#fcfdfe] p-4 space-y-2 shadow-xs hover:border-[#1e3a8a]/40 transition-all"
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="flex items-center gap-2 font-mono text-xs font-bold text-[#1e3a8a]">

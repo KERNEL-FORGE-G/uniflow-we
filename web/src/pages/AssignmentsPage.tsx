@@ -197,52 +197,117 @@ export default function AssignmentsPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Mes devoirs & TPs</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">Suivi des rendus et évaluations académiques</p>
+    <div className="space-y-6 animate-fade-in pb-12 text-slate-800">
+      {/* =========================================================================
+          HERO BENTO - Design EdTech 2026 (Inspiration Pinterest / Kanban Tracker)
+         ========================================================================= */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-white/20 text-cyan-200">
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                Suivi des Évaluations & Travaux Pratiques
+              </span>
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                Mes devoirs & TPs
+              </h1>
+              <p className="mt-2 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                Suivi des rendus, projets de groupe et évaluations académiques. Remettez vos livrables en un clic et suivez les corrections de vos enseignants en temps réel.
+              </p>
+            </div>
+
+            {/* Micro-Bento Compteurs cliquables */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
+              {summary.map(({ key }) => {
+                const isSelected = filter === key
+                return (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => setFilter(prev => (prev === key ? 'Tous' : (key as AssignmentStatus)))}
+                    className={`rounded-2xl backdrop-blur-md border p-3.5 text-left transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-white/25 border-cyan-300 shadow-lg ring-2 ring-cyan-300/40'
+                        : 'bg-white/10 border-white/15 hover:bg-white/15'
+                    }`}
+                  >
+                    <span className="text-[11px] font-medium text-slate-300 block">{key}</span>
+                    <span className="text-2xl font-black text-white">{counts[key as AssignmentStatus]}</span>
+                    <span className="text-[10px] text-cyan-300 block mt-0.5 font-medium">
+                      {isSelected ? 'Filtre actif' : 'Cliquer pour filtrer'}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Actions Rapides */}
+            <div className="flex flex-wrap items-center gap-3 pt-1">
+              <div className="rounded-xl bg-white/10 backdrop-blur-md px-2 py-1 border border-white/15">
+                <PushNotificationControl compact />
+              </div>
+              <button
+                onClick={() => refetch()}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/15 hover:bg-white/25 px-4 py-2 text-xs font-bold text-white border border-white/20 transition-all backdrop-blur-md cursor-pointer"
+              >
+                <UniIcon name="refresh" weight="bold" size={16} className={loading ? 'animate-spin' : ''} />
+                <span>Actualiser</span>
+              </button>
+              {canCreate && (
+                <button
+                  onClick={() => setShowNew(true)}
+                  className="inline-flex items-center gap-2 rounded-xl bg-amber-400 hover:bg-amber-300 px-4 py-2 text-xs font-bold text-slate-950 shadow-md transition-all cursor-pointer"
+                >
+                  <UniIcon name="plus" weight="bold" size={16} /> Nouveau devoir
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/assignments.png"
+                alt="Devoirs & TPs 3D"
+                className="relative z-10 w-40 sm:w-48 lg:w-56 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/course_study_hero_3d.png' }}
+              />
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <PushNotificationControl compact />
-          <button onClick={() => refetch()} className="rounded-lg border border-[#e5e7eb] p-2 text-[#6b7280] hover:bg-[#f9fafb]">
-            <UniIcon name="refresh" weight="bold" size={16} className={loading ? 'animate-spin' : ''} />
-          </button>
-          {canCreate && (
-            <button
-              onClick={() => setShowNew(true)}
-              className="flex items-center gap-2 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors shadow-sm"
-            >
-              <UniIcon name="plus" weight="bold" size={16} /> Nouveau devoir
-            </button>
-          )}
-        </div>
-      </div>
+      </section>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-medium text-red-700" role="alert">
           Impossible de charger les devoirs : {error}
         </div>
       )}
 
-      {/* Search & Filters Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      {/* Search & Filters Bento Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-slate-200/80 bg-white p-4 shadow-sm">
         <div className="relative flex-1 min-w-[220px]">
-          <UniIcon name="search" weight="bold" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+          <UniIcon name="search" weight="bold" size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder="Rechercher par titre ou code d'UE..."
-            className="w-full rounded-xl border border-[#e5e7eb] bg-white pl-9 pr-4 py-2 text-sm text-[#374151] outline-none focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10"
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50/70 pl-10 pr-4 py-2.5 text-sm text-slate-700 outline-none focus:bg-white focus:border-[#1e3a8a] focus:ring-2 focus:ring-[#1e3a8a]/10 transition-all"
           />
         </div>
         <div className="flex flex-wrap gap-2">
           <select
             value={filter}
             onChange={e => setFilter(e.target.value as any)}
-            className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#374151] outline-none focus:border-[#1e3a8a]"
+            className="rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-[#1e3a8a]"
           >
             <option value="Tous">Tous les statuts</option>
             <option value="À rendre">À rendre</option>
@@ -253,7 +318,7 @@ export default function AssignmentsPage() {
           <select
             value={filterUE}
             onChange={e => setFilterUE(e.target.value)}
-            className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#374151] outline-none focus:border-[#1e3a8a]"
+            className="rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-[#1e3a8a]"
           >
             <option value="">Toutes les UE</option>
             {Array.from(new Set(assignments.map(a => a.code))).map(code => (
@@ -265,7 +330,7 @@ export default function AssignmentsPage() {
           <select
             value={sortOrder}
             onChange={e => setSortOrder(e.target.value as 'asc' | 'desc')}
-            className="rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm text-[#374151] outline-none focus:border-[#1e3a8a]"
+            className="rounded-2xl border border-slate-200 bg-slate-50/70 px-3.5 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-[#1e3a8a]"
           >
             <option value="asc">Date ↑ (Proches)</option>
             <option value="desc">Date ↓ (Éloignées)</option>
@@ -277,7 +342,7 @@ export default function AssignmentsPage() {
                 setFilterUE('')
                 setSearchQuery('')
               }}
-              className="flex items-center gap-1.5 rounded-xl border border-[#e5e7eb] bg-white px-3 py-2 text-sm font-semibold text-[#374151] hover:bg-red-50 hover:text-red-600 transition-all"
+              className="flex items-center gap-1.5 rounded-2xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm font-bold text-slate-700 hover:bg-red-50 hover:text-red-600 transition-all"
             >
               Réinitialiser
             </button>
@@ -285,29 +350,13 @@ export default function AssignmentsPage() {
         </div>
       </div>
 
-      {/* Summary Stat Cards */}
-      <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
-        {summary.map(({ key, color, bg }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(prev => (prev === key ? 'Tous' : (key as AssignmentStatus)))}
-            className={`rounded-xl border p-4 text-left transition-all shadow-sm hover:shadow-md ${
-              filter === key ? 'border-[#1e3a8a] ring-2 ring-[#1e3a8a]/20 ' + bg : 'border-[#e5e7eb] bg-white'
-            }`}
-          >
-            <p className={`text-3xl font-extrabold ${color}`}>{counts[key as AssignmentStatus]}</p>
-            <p className="text-xs font-semibold text-[#6b7280] mt-0.5">{key}</p>
-          </button>
-        ))}
-      </div>
-
       {/* Assignment List */}
       <div>
         {filtered.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-[#d1d5db] bg-white py-16 text-[#9ca3af]">
+          <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-slate-400 shadow-xs">
             <IconTile name="assignments" color="#1E3A8A" variant="soft" size={56} className="mb-3" />
-            <p className="text-sm font-semibold text-[#374151]">Aucun devoir ne correspond à vos critères.</p>
-            <p className="text-xs text-[#9ca3af] mt-1">Essayez de modifier vos filtres ou d'ajouter un nouveau devoir.</p>
+            <p className="text-sm font-bold text-slate-700">Aucun devoir ne correspond à vos critères.</p>
+            <p className="text-xs text-slate-400 mt-1">Essayez de modifier vos filtres ou d'ajouter un nouveau devoir.</p>
           </div>
         ) : (
           <AnimatedList
@@ -322,39 +371,39 @@ export default function AssignmentsPage() {
                 <div
                   key={a.id}
                   onClick={() => setSelectedAssignment(a)}
-                  className="group flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm hover:shadow-md hover:border-[#1e3a8a]/40 transition-all cursor-pointer"
+                  className="group flex flex-wrap items-center justify-between gap-4 rounded-3xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm hover:shadow-lg hover:-translate-y-0.5 hover:border-[#1e3a8a]/40 transition-all cursor-pointer"
                 >
                   <div className="flex-1 min-w-[240px]">
-                    <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <Badge variant="primary">{a.code}</Badge>
                       <Badge variant={meta.variant}>
                         <UniIcon name={meta.icon} weight="fill" size={12} className="mr-1 inline" />
                         {meta.label}
                       </Badge>
                       {a.grade && (
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-[#1e3a8a] bg-[#eff3ff] rounded-md px-2.5 py-0.5 border border-[#1e3a8a]/20">
+                        <span className="inline-flex items-center gap-1 text-xs font-bold text-[#1e3a8a] bg-[#eff3ff] rounded-full px-3 py-0.5 border border-[#1e3a8a]/20">
                           <UniIcon name="grades" weight="fill" size={12} className="text-[#1e3a8a]" /> Note : {a.grade}
                         </span>
                       )}
                     </div>
-                    <h3 className="font-bold text-[#111827] text-sm group-hover:text-[#1e3a8a] transition-colors">{a.title}</h3>
-                    <p className="text-xs text-[#6b7280] mt-1 line-clamp-1">{a.description || 'Devoir pratique'}</p>
-                    <div className="mt-3 flex items-center gap-4 text-xs text-[#9ca3af]">
-                      <span className="flex items-center gap-1">
+                    <h3 className="font-extrabold text-slate-900 text-base group-hover:text-[#1e3a8a] transition-colors">{a.title}</h3>
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-1">{a.description || 'Devoir pratique'}</p>
+                    <div className="mt-3 flex items-center gap-4 text-xs font-medium text-slate-500">
+                      <span className="flex items-center gap-1.5">
                         <UniIcon name="time" size={14} className="text-[#1e3a8a]" /> Échéance : {formatWhen(a.due)}
                       </span>
                       {a.submittedAt && (
-                        <span className="flex items-center gap-1 text-emerald-600 font-medium">
+                        <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
                           <UniIcon name="check" weight="bold" size={14} /> Rendu le {formatWhen(a.submittedAt)}
                         </span>
                       )}
                     </div>
                     {a.progress > 0 && a.status !== 'Noté' && a.status !== 'Soumis' && (
                       <div className="mt-3 flex items-center gap-3">
-                        <div className="h-1.5 flex-1 max-w-xs rounded-full bg-[#f3f4f6] overflow-hidden">
-                          <div className="h-full rounded-full bg-[#0d9488] transition-all" style={{ width: `${a.progress}%` }} />
+                        <div className="h-2 flex-1 max-w-xs rounded-full bg-slate-100 overflow-hidden">
+                          <div className="h-full rounded-full bg-gradient-to-r from-[#1e3a8a] to-[#0d9488] transition-all" style={{ width: `${a.progress}%` }} />
                         </div>
-                        <span className="text-xs font-medium text-[#6b7280]">{a.progress}%</span>
+                        <span className="text-xs font-bold text-slate-600">{a.progress}%</span>
                       </div>
                     )}
                   </div>

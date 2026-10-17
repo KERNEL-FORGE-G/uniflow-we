@@ -42,22 +42,35 @@ export default function AdminReportsPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <header className="rounded-3xl border border-[#dbeafe] bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex items-start gap-4"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#eff6ff] text-[#1e3a8a]"><BarChart3 className="h-5 w-5" /></div><div><h1 className="text-xl font-bold text-[#111827]">Rapports & analyses</h1><p className="mt-1 text-sm text-[#64748b]">Synthèse calculée à partir des cours, séances et comptes réellement enregistrés.</p></div></div>
-          <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-lg border border-[#d1d5db] px-3 py-2 text-xs font-bold text-[#374151] hover:bg-[#f8fafc]"><Download className="h-4 w-4" /> Imprimer la synthèse</button>
+      <header className="rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10 relative overflow-hidden">
+        <div className="relative z-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="flex items-center gap-5">
+            <img
+              src="/icons/nav/analytics.png"
+              alt=""
+              className="hidden sm:block h-20 w-20 object-contain drop-shadow-2xl shrink-0"
+            />
+            <div>
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-1 text-xs font-extrabold uppercase tracking-wider text-cyan-200">
+                <BarChart3 className="h-3.5 w-3.5 text-cyan-300" /> Synthèse Exécutive
+              </span>
+              <h1 className="mt-2 text-2xl sm:text-3xl font-black text-white tracking-tight">Rapports & analyses</h1>
+              <p className="mt-1 text-sm text-slate-200">Synthèse calculée à partir des cours, séances et comptes réellement enregistrés.</p>
+            </div>
+          </div>
+          <button onClick={() => window.print()} className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 text-xs font-bold text-[#0B132B] shadow-lg hover:bg-cyan-50 transition-all"><Download className="h-4 w-4 text-[#1E3A8A]" /> Imprimer la synthèse</button>
         </div>
       </header>
 
-      {error && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">{error}</div>}
+      {error && <div className="rounded-3xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 shadow-sm">{error}</div>}
 
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {metrics.map((metric) => <div key={metric.label} className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm"><span className={`mb-3 inline-flex rounded-lg p-2 ${metric.color}`}>{metric.icon}</span><p className="text-2xl font-black text-[#111827]">{metric.value}</p><p className="mt-1 text-xs font-medium text-[#64748b]">{metric.label}</p></div>)}
+        {metrics.map((metric) => <div key={metric.label} className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm"><span className={`mb-3 inline-flex rounded-2xl p-2.5 ${metric.color}`}>{metric.icon}</span><p className="text-2xl font-black text-[#111827]">{metric.value}</p><p className="mt-1 text-xs font-medium text-[#64748b]">{metric.label}</p></div>)}
       </section>
 
       <section className="grid gap-5 lg:grid-cols-2">
-        <div className="rounded-2xl border border-[#e5e7eb] bg-white p-5 shadow-sm"><h2 className="font-bold text-[#111827]">Assiduité consolidée</h2><p className="mt-1 text-sm text-[#64748b]">Calculée à partir de {attendance.records} relevé(s) de présence réellement enregistrés.</p><div className="mt-5 h-3 overflow-hidden rounded-full bg-[#e5e7eb]"><div className="h-full rounded-full bg-[#0d9488]" style={{ width: `${attendance.rate}%` }} /></div><div className="mt-3 flex justify-between text-sm"><span className="font-bold text-[#0f766e]">{attendance.rate}% de présence</span><span className="text-[#64748b]">{sessions.length} séance(s)</span></div></div>
-        <div className="rounded-3xl border border-[#e5e7eb] bg-white p-6 shadow-sm"><h2 className="font-bold text-[#111827]">Communauté</h2><dl className="mt-4 divide-y divide-[#eef2f7] text-sm"><Row label="Périmètre" value="Toute la plateforme UniFlow" /><Row label="Étudiants et délégués" value={`${studentCount}`} /><Row label="Enseignants" value={`${teacherCount}`} /></dl></div>
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm"><h2 className="font-bold text-[#111827]">Assiduité consolidée</h2><p className="mt-1 text-sm text-[#64748b]">Calculée à partir de {attendance.records} relevé(s) de présence réellement enregistrés.</p><div className="mt-5 h-3 overflow-hidden rounded-full bg-[#e5e7eb]"><div className="h-full rounded-full bg-[#0d9488]" style={{ width: `${attendance.rate}%` }} /></div><div className="mt-3 flex justify-between text-sm"><span className="font-bold text-[#0f766e]">{attendance.rate}% de présence</span><span className="text-[#64748b]">{sessions.length} séance(s)</span></div></div>
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm"><h2 className="font-bold text-[#111827]">Communauté</h2><dl className="mt-4 divide-y divide-[#eef2f7] text-sm"><Row label="Périmètre" value="Toute la plateforme UniFlow" /><Row label="Étudiants et délégués" value={`${studentCount}`} /><Row label="Enseignants" value={`${teacherCount}`} /></dl></div>
       </section>
     </div>
   )

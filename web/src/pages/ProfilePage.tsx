@@ -141,58 +141,90 @@ export default function ProfilePage() {
       : []
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-        <div className="flex flex-wrap items-start gap-5">
-          <div className="relative">
-            <Avatar name={user.name} avatarFileId={user.avatarFileId} size="2xl" />
-            {/* Le bouton mène aux réglages, seul endroit où la photo est
-                réellement téléversée dans Appwrite. */}
-            <button
-              onClick={() => navigate('/app/parametres')}
-              title="Changer la photo de profil"
-              className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#1e3a8a] text-white shadow-md hover:bg-[#2d4fa8] transition-colors"
-            >
-              <UniIcon name="camera" weight="fill" size={14} />
-            </button>
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-xl font-bold text-[#111827]">{user.name}</h1>
-              {user.username && (
-                <span className="rounded-full bg-[#0d9488]/10 px-2.5 py-0.5 text-xs font-semibold text-[#0d9488]">@{user.username}</span>
-              )}
-              <Badge variant="success"><UniIcon name="security" weight="fill" size={12} className="mr-1 inline" />Session Appwrite</Badge>
+    <div className="space-y-6 animate-fade-in pb-12 text-slate-800">
+      {/* =========================================================================
+          HERO BENTO - Carte d'Identité Académique Numérique
+         ========================================================================= */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-5">
+            <div className="flex flex-wrap items-start sm:items-center gap-5">
+              <div className="relative shrink-0 rounded-full ring-4 ring-white/25 shadow-2xl">
+                <Avatar name={user.name} avatarFileId={user.avatarFileId} size="2xl" />
+                <button
+                  onClick={() => navigate('/app/parametres')}
+                  title="Changer la photo de profil"
+                  className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg hover:bg-emerald-400 transition-colors border-2 border-[#0B132B]"
+                >
+                  <UniIcon name="camera" weight="fill" size={14} />
+                </button>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">{user.name}</h1>
+                  {user.username && (
+                    <span className="rounded-full bg-white/15 backdrop-blur-md border border-white/20 px-3 py-0.5 text-xs font-bold text-cyan-200">@{user.username}</span>
+                  )}
+                  <Badge variant="success"><UniIcon name="security" weight="fill" size={12} className="mr-1 inline" />Session Appwrite</Badge>
+                </div>
+                <p className="text-sm text-cyan-100/90 font-semibold mt-1">{[user.roleLabel, user.filiere, user.university].filter(Boolean).join(' · ')}</p>
+                <p className="text-xs text-slate-300 mt-1">{user.email}</p>
+              </div>
             </div>
-            <p className="text-sm text-[#6b7280] mt-0.5">{[user.roleLabel, user.filiere, user.university].filter(Boolean).join(' · ')}</p>
-            <p className="text-xs text-[#9ca3af] mt-1">{user.email}</p>
+
+            {stats.length > 0 && (
+              <div className="grid grid-cols-3 gap-3 pt-1">
+                {stats.map(({ label, value }) => (
+                  <div key={label} className="rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 p-3.5">
+                    <span className="text-[11px] font-medium text-slate-300 block">{label}</span>
+                    <span className="text-2xl font-black text-white">{value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Link to="/app/parametres" className="inline-flex items-center gap-2 rounded-2xl bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur-md px-4 py-2.5 text-xs font-bold text-white transition-colors">
+                <UniIcon name="settings" size={16} /> Paramètres & Avatars
+              </Link>
+              <button onClick={() => { setEditing(!editing); setSaveState(null) }}
+                className="inline-flex items-center gap-2 rounded-2xl bg-amber-400 hover:bg-amber-300 px-4 py-2.5 text-xs font-black text-slate-950 shadow-md transition-colors cursor-pointer">
+                <UniIcon name="edit" size={16} />
+                {editing ? 'Annuler' : 'Modifier mes coordonnées'}
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Link to="/app/parametres" className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">
-              <UniIcon name="settings" size={16} /> Paramètres
-            </Link>
-            <button onClick={() => { setEditing(!editing); setSaveState(null) }}
-              className="flex items-center gap-2 rounded-lg border border-[#e5e7eb] px-4 py-2 text-sm font-medium text-[#374151] hover:bg-[#f9fafb] transition-colors">
-              <UniIcon name="edit" size={16} />
-              {editing ? 'Annuler' : 'Modifier mes coordonnées'}
-            </button>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/students.png"
+                alt="Identité Académique 3D"
+                className="relative z-10 w-36 sm:w-44 lg:w-52 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+                onError={(e) => { e.currentTarget.src = '/illustrations/uni_copilot_3d.png' }}
+              />
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
       {saveState && (
-        <div role={saveState.ok ? 'status' : 'alert'} className={`rounded-xl px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in ${saveState.ok ? 'bg-slate-900 text-white' : 'border border-red-200 bg-red-50 text-red-700'}`}>
+        <div role={saveState.ok ? 'status' : 'alert'} className={`rounded-2xl px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in ${saveState.ok ? 'bg-slate-900 text-white' : 'border border-red-200 bg-red-50 text-red-700'}`}>
           {saveState.ok && <UniIcon name="check" weight="bold" size={16} className="text-[#0d9488]" />} {saveState.message}
         </div>
       )}
-      {loadError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div>}
+      {loadError && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{loadError}</div>}
 
       {tabs.length > 1 && (
-        <div className="flex flex-wrap gap-1 border-b border-[#e5e7eb]">
+        <div className="flex flex-wrap gap-2 rounded-2xl bg-white p-1.5 border border-slate-200/80 shadow-xs w-fit">
           {tabs.map(tab => (
             <button key={tab} onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                activeTab === tab ? 'border-[#1e3a8a] text-[#1e3a8a]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'
+              className={`px-4 py-2 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+                activeTab === tab ? 'bg-[#1e3a8a] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
               }`}>
               {tab}
             </button>
@@ -202,53 +234,53 @@ export default function ProfilePage() {
 
       {activeTab === 'Informations' && (
         <>
-          <div className="grid gap-5 lg:grid-cols-2">
-            <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-bold text-[#111827] mb-4">Informations personnelles</h2>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+              <h2 className="text-base font-extrabold text-slate-900 mb-4">Informations personnelles</h2>
               <dl className="space-y-3">
                 {personalFields.map((field) => (
-                  <div key={field.label} className="flex items-center justify-between gap-3 py-2 border-b border-[#f3f4f6] last:border-0">
-                    <dt className="text-sm text-[#6b7280]">{field.label}</dt>
+                  <div key={field.label} className="flex items-center justify-between gap-3 py-2.5 border-b border-slate-100 last:border-0">
+                    <dt className="text-sm font-medium text-slate-500">{field.label}</dt>
                     {editing && field.editable ? (
                       <input value={field.value} onChange={e => field.onChange?.(e.target.value)} placeholder={field.placeholder} aria-label={field.label}
-                        className="w-56 rounded-md border border-[#e5e7eb] px-2.5 py-1 text-sm text-right outline-none focus:border-[#1e3a8a]" />
+                        className="w-56 rounded-xl border border-slate-200 px-3 py-1.5 text-sm text-right outline-none focus:border-[#1e3a8a]" />
                     ) : (
-                      <dd className={`text-sm font-medium ${field.value ? 'text-[#111827]' : 'text-[#9ca3af]'}`}>{field.value || 'Non renseigné'}</dd>
+                      <dd className={`text-sm font-bold ${field.value ? 'text-slate-900' : 'text-slate-400'}`}>{field.value || 'Non renseigné'}</dd>
                     )}
                   </div>
                 ))}
               </dl>
               {editing && (
                 <button onClick={() => void handleSaveProfile()} disabled={saving}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-[#1e3a8a] py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-60">
+                  className="mt-5 flex w-full items-center justify-center gap-2 rounded-2xl bg-[#1e3a8a] py-2.5 text-sm font-bold text-white hover:bg-[#2d4fa8] transition-colors disabled:opacity-60">
                   {saving && <UniIcon name="spinner" weight="bold" size={16} className="animate-spin" />} {saving ? 'Enregistrement…' : 'Enregistrer les modifications'}
                 </button>
               )}
             </div>
 
-            <div className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
-              <h2 className="text-sm font-bold text-[#111827] mb-4">Informations académiques</h2>
+            <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+              <h2 className="text-base font-extrabold text-slate-900 mb-4">Informations académiques</h2>
               <dl className="space-y-3">
                 {academicFields.map(({ label, value }) => (
-                  <div key={label} className="flex items-center justify-between gap-3 py-2 border-b border-[#f3f4f6] last:border-0">
-                    <dt className="text-sm text-[#6b7280]">{label}</dt>
-                    <dd className="text-right text-sm font-medium text-[#111827]">{value}</dd>
+                  <div key={label} className="flex items-center justify-between gap-3 py-2.5 border-b border-slate-100 last:border-0">
+                    <dt className="text-sm font-medium text-slate-500">{label}</dt>
+                    <dd className="text-right text-sm font-bold text-slate-900">{value}</dd>
                   </div>
                 ))}
               </dl>
-              <p className="mt-3 text-xs text-[#9ca3af]">Ces informations sont gérées par l’administration de votre université ; contactez-la pour toute correction.</p>
+              <p className="mt-4 text-xs text-slate-400">Ces informations sont gérées par l’administration de votre université ; contactez-la pour toute correction.</p>
             </div>
           </div>
 
           {stats.length > 0 && (
             <div>
-              <h2 className="text-sm font-bold text-[#111827] mb-3">Mes statistiques</h2>
+              <h2 className="text-base font-extrabold text-slate-900 mb-3">Mes statistiques</h2>
               <div className="grid gap-4 sm:grid-cols-3">
                 {stats.map(({ label, value, icon, color }, index) => (
-                  <div key={label} className="rounded-xl border border-[#e5e7eb] bg-white p-5 shadow-sm">
+                  <div key={label} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
                     <div className="mb-3"><IconTile name={icon} color={color} variant="filled" size={44} index={index} /></div>
-                    <p className="text-3xl font-extrabold text-[#111827]">{value}</p>
-                    <p className="text-sm text-[#6b7280] mt-0.5">{label}</p>
+                    <p className="text-3xl font-black text-slate-900">{value}</p>
+                    <p className="text-sm font-semibold text-slate-500 mt-0.5">{label}</p>
                   </div>
                 ))}
               </div>
@@ -258,8 +290,8 @@ export default function ProfilePage() {
       )}
 
       {activeTab === 'Présences' && (
-        <div className="rounded-xl border border-[#e5e7eb] bg-white p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-[#111827] mb-4">Historique des présences</h2>
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm">
+          <h2 className="text-base font-extrabold text-slate-900 mb-4">Historique des présences</h2>
           {loading ? (
             <div className="flex items-center gap-2 text-sm text-[#6b7280]"><UniIcon name="spinner" weight="bold" size={16} className="animate-spin" /> Chargement de vos relevés…</div>
           ) : records.length === 0 ? (

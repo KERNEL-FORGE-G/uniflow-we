@@ -82,40 +82,68 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="space-y-5 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white border border-[#e5e7eb] p-5 shadow-sm">
-        <div>
-          <h1 className="text-xl font-bold text-[#111827]">Notifications</h1>
-          <p className="text-sm text-[#6b7280] mt-0.5">{unreadCount} non lue{unreadCount > 1 ? 's' : ''}</p>
+    <div className="space-y-6 animate-fade-in pb-12 text-slate-800">
+      {/* =========================================================================
+          HERO BENTO - Centre de Notifications & Alertes Push
+         ========================================================================= */}
+      <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] p-6 sm:p-8 text-white shadow-xl border border-white/10">
+        <div className="absolute -right-20 -top-20 w-80 h-80 rounded-full bg-cyan-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute -left-20 -bottom-20 w-80 h-80 rounded-full bg-blue-600/25 blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 grid gap-6 lg:grid-cols-12 items-center">
+          <div className="lg:col-span-8 space-y-4">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-md border border-white/20 text-cyan-200">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              Alertes Académiques en Temps Réel · Appwrite Push
+            </div>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Notifications</h1>
+              <p className="mt-2 text-sm sm:text-base text-slate-200/90 max-w-2xl leading-relaxed">
+                {unreadCount} notification{unreadCount > 1 ? 's' : ''} non lue{unreadCount > 1 ? 's' : ''} · Changements de salle, publications de notes, devoirs et annonces de promotion.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2.5 pt-1">
+              {['Par UE', 'Par type', 'Période'].map(f => (
+                <select key={f} className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md px-3.5 py-2 text-xs font-bold text-white outline-none">
+                  <option className="text-slate-900">{f} ▾</option>
+                </select>
+              ))}
+              <button onClick={markAllRead}
+                className="inline-flex items-center gap-1.5 rounded-2xl bg-emerald-400 hover:bg-emerald-300 px-4 py-2 text-xs font-black text-slate-950 shadow-md transition-colors cursor-pointer">
+                <Check className="h-4 w-4" /> Tout marquer comme lu
+              </button>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex justify-center lg:justify-end">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-amber-400/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all" />
+              <img
+                src="/icons/nav/notifications.png"
+                alt="Notifications 3D"
+                className="relative z-10 w-36 sm:w-44 lg:w-52 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500"
+              />
+            </div>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {['Par UE', 'Par type', 'Période'].map(f => (
-            <select key={f} className="rounded-lg border border-[#e5e7eb] bg-white px-3 py-2 text-sm outline-none focus:border-[#1e3a8a]">
-              <option>{f} ▾</option>
-            </select>
-          ))}
-          <button onClick={markAllRead}
-            className="flex items-center gap-1.5 rounded-lg bg-[#1e3a8a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#2d4fa8] transition-colors">
-            <Check className="h-4 w-4" /> Tout marquer comme lu
-          </button>
-        </div>
-      </div>
+      </section>
 
       {/* PWA Push Notification Control Box */}
       <PushNotificationControl />
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b border-[#e5e7eb]">
+      <div className="flex flex-wrap gap-2 rounded-2xl bg-white p-1.5 border border-slate-200/80 shadow-xs w-fit">
           {tabs.map(t => {
           const count = t.label === 'Non lues' ? unreadCount : t.filter ? (notifs ?? []).filter(n => n.type === t.filter).length : (notifs ?? []).length
           return (
             <button key={t.label} onClick={() => setActiveTab(t.label)}
-              className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition-colors ${
-                activeTab === t.label ? 'border-[#1e3a8a] text-[#1e3a8a]' : 'border-transparent text-[#6b7280] hover:text-[#374151]'
+              className={`flex items-center gap-2 px-4 py-2 text-xs font-extrabold rounded-xl transition-all cursor-pointer ${
+                activeTab === t.label ? 'bg-[#1e3a8a] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100'
               }`}>
               {t.label}
-              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === t.label ? 'bg-[#1e3a8a] text-white' : 'bg-[#f3f4f6] text-[#6b7280]'}`}>
+              <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${activeTab === t.label ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'}`}>
                 {count}
               </span>
             </button>
@@ -123,13 +151,13 @@ export default function NotificationsPage() {
         })}
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         {/* List */}
         <div>
           {visible.length === 0 ? (
-            <div className="flex flex-col items-center py-12 text-[#9ca3af]">
+            <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white py-16 text-slate-400 shadow-xs">
               <Check className="h-10 w-10 mb-2 opacity-30" />
-              <p className="text-sm">Tout est lu !</p>
+              <p className="text-sm font-bold text-slate-700">Tout est lu !</p>
             </div>
           ) : (
             <AnimatedList
