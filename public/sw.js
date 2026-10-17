@@ -65,24 +65,33 @@ self.addEventListener('install', (event) => {
 })
 
 // 2. Activation : récupérer depuis l'ancien cache les chunks inchangés (même
-// empreinte), supprimer les anciens caches, puis réchauffer le reste en
-// arrière-plan sans bloquer l'activation.
+// empreinte), supprimer TOUS les anciens caches, puis notifier les onglets ouverts.
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
     const cache = await caches.open(CACHE_NAME)
     const assets = await readManifest()
     const wanted = new Set(assets.map((asset) => new URL(asset.url, self.location.origin).href))
-    const oldNames = (await caches.keys()).filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
+    const oldNames = (await caches.keys()).filter((name) => name !== CACHE_NAME)
     for (const name of oldNames) {
-      const oldCache = await caches.open(name)
-      for (const request of await oldCache.keys()) {
-        if (!wanted.has(request.url) || (await cache.match(request))) continue
-        const response = await oldCache.match(request)
-        if (response) await cache.put(request, response)
+      if (name.startsWith(CACHE_PREFIX)) {
+        const oldCache = await caches.open(name)
+        for (const request of await oldCache.keys()) {
+          if (!wanted.has(request.url) || (await cache.match(request))) continue
+          const response = await oldCache.match(request)
+          if (response) await cache.put(request, response)
+        }
       }
       await caches.delete(name)
     }
     await self.clients.claim()
+    const windowClients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true })
+    for (const client of windowClients) {
+      try {
+        client.postMessage({ type: 'UNIFLOW_SW_ACTIVATED', buildId: BUILD_ID })
+      } catch {
+        // Ignore postMessage errors on closing tabs
+      }
+    }
     warmRemainingAssets(cache, assets)
   })())
 })
@@ -102,18 +111,31 @@ function warmRemainingAssets(cache, assets) {
   })()
 }
 
-// Activate a waiting worker when the application confirms it is online.
+// Activate a waiting worker or clear caches on demand.
 self.addEventListener('message', (event) => {
-  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting()
+  if (event.data?.type === 'SKIP_WAITING') {
+    self.skipWaiting()
+  } else if (event.data?.type === 'CLEAR_ALL_CACHES') {
+    event.waitUntil((async () => {
+      const names = await caches.keys()
+      await Promise.all(names.map((n) => caches.delete(n)))
+    })())
+  }
 })
 
-async function networkFirst(request, cache) {
+async function networkFirst(request, cache, isNavigation = false) {
   try {
     // Requête reconstruite depuis l'URL : `new Request(request, { cache })` lève
     // « Cannot construct a Request with a Request whose mode is 'navigate' » et
     // faisait échouer silencieusement toute la gestion hors ligne des navigations.
     const response = await fetch(request.url, { cache: 'no-store', credentials: 'same-origin' })
-    if (response && response.status === 200 && response.type === 'basic') await cache.put(request, response.clone())
+    if (response && response.status === 200 && response.type === 'basic') {
+      await cache.put(request, response.clone())
+      if (isNavigation) {
+        await cache.put('/index.html', response.clone())
+        await cache.put('/', response.clone())
+      }
+    }
     return response
   } catch (error) {
     const cached = await cache.match(request)
@@ -134,23 +156,24 @@ async function cacheFirst(request, cache) {
 // `/assets/*` (noms empreintés, immuables) en cache d'abord.
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return
-  // Les requêtes vers d'autres origines (Google Fonts, Appwrite, avatars…) sont
-  // laissées au navigateur : un fetch() relancé depuis le worker est soumis à la
-  // directive connect-src de la page, ce qui produisait en production
-  // « Fetch API cannot load https://fonts.googleapis.com/… Refused to connect »
-  // et des réponses 408 fabriquées ici. Le navigateur, lui, applique img-src /
-  // style-src / font-src, qui autorisent déjà ces ressources.
   const url = new URL(event.request.url)
   if (url.origin !== self.location.origin) return
-  // Appwrite/API requests must always reach the network; never cache user data.
-  if (url.pathname.includes('/api/')) return
+  // Never intercept API calls, the SW script itself, the manifest, or the boot version checker.
+  if (
+    url.pathname.includes('/api/') ||
+    url.pathname === '/sw.js' ||
+    url.pathname === '/version-check.js' ||
+    url.pathname === '/precache-manifest.json'
+  ) {
+    return
+  }
 
   event.respondWith((async () => {
     const cache = await caches.open(CACHE_NAME)
     const isNavigation = event.request.mode === 'navigate'
     try {
       if (url.pathname.startsWith('/assets/')) return await cacheFirst(event.request, cache)
-      return await networkFirst(event.request, cache)
+      return await networkFirst(event.request, cache, isNavigation)
     } catch {
       const isHtmlRequest = isNavigation || (event.request.headers.get('accept') || '').includes('text/html')
       if (isHtmlRequest) {

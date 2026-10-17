@@ -8,6 +8,7 @@ import { GlobalSearch } from './GlobalSearch'
 import { cn } from '../../utils/cn'
 import { useAuth } from '../../hooks/useAuth'
 import { NAV_GROUP_LABELS, navItemsForRole, type AppNavItem } from './navConfig'
+import { forceClearCacheAndReload } from '../../lib/versionManager'
 
 // Uni (l'assistant) est monté une seule fois dans `App.tsx`, pour le site
 // public comme pour l'espace connecté : plus rien à charger ici.
@@ -240,6 +241,15 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
         <span className={cn('hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold md:inline-flex', role.chip)}>
           <UniIcon name={role.icon} size={14} /> {role.badge}
         </span>
+        <button
+          type="button"
+          onClick={() => void forceClearCacheAndReload()}
+          className="rounded-xl p-2 text-slate-600 hover:bg-blue-50 hover:text-[#1e3a8a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a8a]/40 transition-colors"
+          title="Vider le cache et charger la dernière mise à jour"
+          aria-label="Vider le cache et charger la dernière mise à jour"
+        >
+          <UniIcon name="refresh" weight="bold" size={19} />
+        </button>
         <button
           type="button"
           onClick={() => navigate('/app/notifications')}

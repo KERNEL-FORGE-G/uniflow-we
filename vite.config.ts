@@ -32,10 +32,26 @@ function serviceWorkerPrecachePlugin(): Plugin {
     closeBundle() {
       const entries = [...assets].map((raw) => JSON.parse(raw) as { url: string; critical: boolean }).sort((a, b) => a.url.localeCompare(b.url))
       const buildId = createHash('sha1').update(entries.map((entry) => entry.url).join('\n')).digest('hex').slice(0, 12)
-      writeFileSync(path.join(outDir, 'precache-manifest.json'), JSON.stringify({ buildId, assets: entries }))
-      const swPath = path.join(outDir, 'sw.js')
-      if (existsSync(swPath)) {
-        writeFileSync(swPath, readFileSync(swPath, 'utf8').replace(/__BUILD_ID__/g, buildId))
+      writeFileSync(
+        path.join(outDir, 'precache-manifest.json'),
+        JSON.stringify({ buildId, builtAt: new Date().toISOString(), assets: entries }),
+      )
+      for (const file of ['sw.js', 'version-check.js']) {
+        const targetPath = path.join(outDir, file)
+        if (existsSync(targetPath)) {
+          writeFileSync(targetPath, readFileSync(targetPath, 'utf8').replace(/__BUILD_ID__/g, buildId))
+        }
+      }
+      for (const entry of entries) {
+        if (entry.url.endsWith('.js')) {
+          const jsPath = path.join(outDir, entry.url.replace(/^\//, ''))
+          if (existsSync(jsPath)) {
+            const content = readFileSync(jsPath, 'utf8')
+            if (content.includes('__BUILD_ID__')) {
+              writeFileSync(jsPath, content.replace(/__BUILD_ID__/g, buildId))
+            }
+          }
+        }
       }
     },
   }
@@ -55,9 +71,9 @@ export default defineConfig({
   },
   envPrefix: ['VITE_', 'GROQ'],
   define: {
-    'import.meta.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')),
-    'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')),
-    'process.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_')),
+    'import.meta.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ''),
+    'import.meta.env.VITE_GROQ_API_KEY': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ''),
+    'process.env.GROQ': JSON.stringify(process.env.GROQ || process.env.VITE_GROQ_API_KEY || ''),
   },
   server: {
     port: 3000,
