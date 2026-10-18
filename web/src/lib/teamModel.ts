@@ -17,6 +17,15 @@ export interface TeamMemberLike {
   website?: string
   avatarFileId?: string
   displayOrder: number
+  stacks?: string
+}
+
+export function parseStacks(stacks?: string): string[] {
+  if (!stacks || typeof stacks !== 'string') return []
+  return stacks
+    .split(/[,;\n]/)
+    .map((s) => s.trim())
+    .filter(Boolean)
 }
 
 export interface TeamLink {
@@ -79,6 +88,7 @@ export const DEFAULT_TEAM_ROSTER = [
     website: 'https://ravelnghomsi.me',
     linkedin: 'https://www.linkedin.com/in/kernelforge',
     bio: "Fondateur de KERNEL FORGE (kernelforge.codes) et architecte principal d'UniFlow. Étudiant à l'UY1.",
+    stacks: 'React, TypeScript, Flutter, Appwrite, Architecture, Docker, Python',
   },
   {
     $id: 'hassane',
@@ -95,6 +105,7 @@ export const DEFAULT_TEAM_ROSTER = [
     displayOrder: 1,
     website: 'https://hawadja.github.io/portfolio/',
     bio: 'Développeur Backend KERNEL FORGE. Spécialisé en microservices et architectures distribuées.',
+    stacks: 'NestJS, Microservices, Node.js, PostgreSQL, Docker, Linux',
   },
   {
     $id: 'sandra',
@@ -110,6 +121,7 @@ export const DEFAULT_TEAM_ROSTER = [
     avatarFileId: '/team/sandra.jpg',
     displayOrder: 2,
     bio: 'Développeuse Full-Stack chez KERNEL FORGE. Spécialisée en interfaces mobiles et web réactives (Flutter & React) et ergonomie UX.',
+    stacks: 'Flutter, React, Dart, Tailwind CSS, UI/UX Figma, Mobile',
   },
   {
     $id: 'william',
@@ -125,6 +137,7 @@ export const DEFAULT_TEAM_ROSTER = [
     avatarFileId: '/team/william.jpg',
     displayOrder: 3,
     bio: 'Technicien & Développeur chez KERNEL FORGE. Spécialisé en infrastructure réseau, sécurité des systèmes et bases de données.',
+    stacks: 'Cybersécurité, Réseaux, Linux SysAdmin, Sécurité, Cloud',
   },
   {
     $id: 'ange',
@@ -141,6 +154,7 @@ export const DEFAULT_TEAM_ROSTER = [
     displayOrder: 4,
     linkedin: 'https://www.linkedin.com/in/gabrielle-mokam-968389326',
     bio: 'Développeuse Backend & Sécurité chez KERNEL FORGE. Experte en APIs REST NestJS/TypeScript, PostgreSQL, webhooks sécurisés MoMo/OM et architecture BaaS Appwrite.',
+    stacks: 'NestJS, TypeScript, APIs REST, PostgreSQL, Appwrite BaaS',
   },
   {
     $id: 'aliya',
@@ -155,6 +169,7 @@ export const DEFAULT_TEAM_ROSTER = [
     accent: 'purple' as const,
     avatarFileId: '/team/aliya.jpg',
     displayOrder: 5,
+    stacks: 'React, TypeScript, Desktop Flutter, Tailwind CSS, Web',
   },
   {
     $id: 'judith',
@@ -169,6 +184,7 @@ export const DEFAULT_TEAM_ROSTER = [
     accent: 'emerald' as const,
     avatarFileId: '/team/judith.jpg',
     displayOrder: 6,
+    stacks: 'Flutter, Dart, Mobile Android, UI/UX, Git',
   },
   {
     $id: 'juvenal',
@@ -183,6 +199,7 @@ export const DEFAULT_TEAM_ROSTER = [
     accent: 'indigo' as const,
     avatarFileId: '/team/juvenal.jpg',
     displayOrder: 7,
+    stacks: 'Frontend, React, TypeScript, Multiplateforme, UI',
   },
   {
     $id: 'tessoh-pekam-marcel',
@@ -197,6 +214,7 @@ export const DEFAULT_TEAM_ROSTER = [
     accent: 'blue' as const,
     avatarFileId: '/team/marcel.jpg',
     displayOrder: 8,
+    stacks: 'Marketing Digital, Communication Tech, Frontend Web',
   },
   {
     $id: 'miguel',
@@ -211,5 +229,6 @@ export const DEFAULT_TEAM_ROSTER = [
     accent: 'purple' as const,
     avatarFileId: '/team/miguel.jpg',
     displayOrder: 9,
+    stacks: 'Desktop Flutter, Dart, C++, Windows, Linux',
   },
 ]

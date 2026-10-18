@@ -1696,6 +1696,7 @@ export interface TeamMemberDocument {
   bio?: string
   linkedin?: string
   website?: string
+  stacks?: string
 }
 
 /** Champs modifiables d'un membre. `memberId` est absent à la création. */
@@ -1715,6 +1716,7 @@ export type TeamMemberInput = {
   bio?: string
   linkedin?: string
   website?: string
+  stacks?: string
 }
 
 export type TeamRosterResponse = {

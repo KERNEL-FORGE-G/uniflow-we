@@ -1,5 +1,5 @@
-import { NavLink, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 import { useUserRole, type Role } from '../../utils/userRole'
 import { Avatar } from '../ui/Avatar'
 import { NavIcon, UniIcon, type UniIconName } from '../ui/UniIcon'
@@ -9,6 +9,9 @@ import { cn } from '../../utils/cn'
 import { useAuth } from '../../hooks/useAuth'
 import { NAV_GROUP_LABELS, navItemsForRole, type AppNavItem } from './navConfig'
 import { forceClearCacheAndReload } from '../../lib/versionManager'
+import { Sparkles } from 'lucide-react'
+import { isProjectCreatorMember } from '../../lib/teamMemberAuth'
+import { CreatorModeSwitchModal } from '../member/CreatorModeSwitchModal'
 
 // Uni (l'assistant) est monté une seule fois dans `App.tsx`, pour le site
 // public comme pour l'espace connecté : plus rien à charger ici.
@@ -97,6 +100,25 @@ function SidebarContent({ onNavigate, compact }: { onNavigate?: () => void; comp
             UniMail
           </span>
         </button>
+
+        {isProjectCreatorMember(currentUser) && (
+          <button
+            type="button"
+            onClick={() => { navigate('/app/membre'); onNavigate?.() }}
+            className="w-full flex items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-amber-500/15 to-amber-600/10 hover:bg-amber-500/25 border border-amber-400/40 px-3 py-2 text-left transition-colors"
+            title="Accéder à mon espace membre créateur KERNEL FORGE"
+          >
+            <span className="flex items-center gap-2 min-w-0">
+              <Sparkles className="h-4 w-4 shrink-0 text-amber-500" />
+              <span className="truncate text-[11px] font-black text-amber-900">
+                Espace Bâtisseur
+              </span>
+            </span>
+            <span className="shrink-0 rounded-md bg-amber-500 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-950">
+              Créateur
+            </span>
+          </button>
+        )}
       </div>
 
       <nav className="mt-3 flex-1 overflow-y-auto px-3 pb-3" aria-label="Navigation de l’espace">
@@ -187,13 +209,14 @@ export function Sidebar() {
   )
 }
 
-export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
+export function TopBar({ onMenuClick, onOpenCreatorModal }: { onMenuClick?: () => void; onOpenCreatorModal?: () => void }) {
   const navigate = useNavigate()
   const { currentUser, currentRole, authUser } = useUserRole()
   const { logout } = useAuth()
   const role = ROLE_STYLE[currentRole] ?? ROLE_STYLE.student
   const unreadCount = 0
   const isAdmin = currentRole === 'admin' || authUser?.role === 'ADMIN' || authUser?.isSuperAdmin
+  const isCreator = isProjectCreatorMember(currentUser)
 
   return (
     <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200/80 bg-white/85 px-4 backdrop-blur-xl sm:px-8">
@@ -209,6 +232,17 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
       <GlobalSearch />
 
       <div className="ml-auto flex items-center gap-2">
+        {isCreator && (
+          <button
+            type="button"
+            onClick={onOpenCreatorModal}
+            className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-amber-500/15 to-amber-600/15 hover:from-amber-500/25 hover:to-amber-600/25 px-3 py-1.5 text-xs font-black text-amber-900 border border-amber-400/40 transition-colors"
+            title="Choisir mon interface : Standard ou Espace Bâtisseur KERNEL FORGE"
+          >
+            <Sparkles className="h-3.5 w-3.5 text-amber-600" />
+            <span className="hidden sm:inline">Espace Bâtisseur</span>
+          </button>
+        )}
         {isAdmin && (
           <button
             type="button"
@@ -289,9 +323,27 @@ export function TopBar({ onMenuClick }: { onMenuClick?: () => void }) {
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showCreatorModal, setShowCreatorModal] = useState(false)
+  const { currentUser } = useUserRole()
+  const location = useLocation()
+  const isCreator = isProjectCreatorMember(currentUser)
+
+  useEffect(() => {
+    if (isCreator && typeof window !== 'undefined' && !localStorage.getItem('uniflow_creator_prompt_dismissed')) {
+      const timer = window.setTimeout(() => setShowCreatorModal(true), 800)
+      return () => window.clearTimeout(timer)
+    }
+  }, [isCreator])
 
   return (
     <div className="flex min-h-screen bg-[#F7F9FC]">
+      <CreatorModeSwitchModal
+        isOpen={showCreatorModal}
+        onClose={() => setShowCreatorModal(false)}
+        currentMode={location.pathname.startsWith('/app/membre') ? 'member' : 'standard'}
+        memberName={currentUser.name}
+      />
+
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-40 bg-slate-900/40 backdrop-blur-sm lg:hidden" onClick={() => setMobileMenuOpen(false)} aria-hidden="true" />
       )}
@@ -315,7 +367,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar onMenuClick={() => setMobileMenuOpen(true)} />
+        <TopBar onMenuClick={() => setMobileMenuOpen(true)} onOpenCreatorModal={() => setShowCreatorModal(true)} />
         <main className="mx-auto w-full max-w-[1400px] flex-1 p-4 sm:p-8">{children}</main>
         <Footer />
       </div>

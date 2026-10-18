@@ -8,6 +8,7 @@ import { useUserRole } from '../utils/userRole'
 import { attendanceApi, authApi, coursesApi, gradesApi, schedulesApi, studentsApi, type Course, type Grade } from '../lib/api'
 import { attendanceByCourse, gradesByCourse, learnerAttendanceSummary, overallAverage } from '../lib/profileModel'
 import { UniMascot } from '../components/mascot/UniMascot'
+import { isProjectCreatorMember } from '../lib/teamMemberAuth'
 
 type Tab = 'Informations' | 'Présences' | 'Notes' | 'Mes cours'
 
@@ -211,6 +212,39 @@ export default function ProfilePage() {
           </div>
         </div>
       </section>
+
+      {isProjectCreatorMember(user) && (
+        <section
+          aria-label="Espace Bâtisseur KERNEL FORGE"
+          className="rounded-3xl border border-amber-500/30 bg-gradient-to-r from-amber-500/10 via-amber-400/5 to-cyan-500/10 p-5 sm:p-6 backdrop-blur-md shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 text-slate-950 font-black shadow-md">
+              <UniIcon name="star" weight="fill" size={24} />
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base font-extrabold text-slate-900">Espace Bâtisseur KERNEL FORGE</h2>
+                <span className="rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold px-2.5 py-0.5 text-[11px]">
+                  Bâtisseur Officiel UniFlow
+                </span>
+              </div>
+              <p className="text-xs text-slate-600 mt-1 max-w-xl">
+                Votre compte est reconnu comme créateur du projet. Vous pouvez accéder à votre interface membre pour téléverser votre photo officielle, mettre à jour vos stacks technologiques et vos liens professionnels affichés publiquement.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <Link
+              to="/app/membre"
+              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-[#0B132B] to-[#1E3A8A] hover:from-[#1E3A8A] hover:to-[#0D9488] px-4 py-2.5 text-xs font-black text-white shadow-md hover:shadow-lg transition-all"
+            >
+              <UniIcon name="user" size={16} />
+              Accéder à mon Espace Bâtisseur
+            </Link>
+          </div>
+        </section>
+      )}
 
       {saveState && (
         <div role={saveState.ok ? 'status' : 'alert'} className={`rounded-2xl px-4 py-3 text-sm font-medium flex items-center gap-2 animate-fade-in ${saveState.ok ? 'bg-slate-900 text-white' : 'border border-red-200 bg-red-50 text-red-700'}`}>

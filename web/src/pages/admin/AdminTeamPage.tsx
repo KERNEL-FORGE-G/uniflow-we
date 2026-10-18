@@ -44,6 +44,7 @@ type FormState = {
   bio: string
   linkedin: string
   website: string
+  stacks: string
 }
 
 const EMPTY_FORM: FormState = {
@@ -62,6 +63,7 @@ const EMPTY_FORM: FormState = {
   bio: '',
   linkedin: '',
   website: '',
+  stacks: '',
 }
 
 /** Clé stable dérivée du nom, comme le fait la Function côté serveur. */
@@ -142,6 +144,7 @@ export default function AdminTeamPage() {
       bio: member.bio || '',
       linkedin: member.linkedin || '',
       website: member.website || '',
+      stacks: member.stacks || '',
     })
     setPhoto(null)
     setPreview('')
@@ -196,6 +199,7 @@ export default function AdminTeamPage() {
         bio: form.bio.trim(),
         linkedin: form.linkedin.trim(),
         website: form.website.trim(),
+        stacks: form.stacks?.trim() || '',
       }
 
       try {

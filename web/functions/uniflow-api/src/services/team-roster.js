@@ -81,6 +81,7 @@ function memberPayload(body) {
     // Les liens sont stockés en URL complète ; on tolère un simple identifiant LinkedIn.
     linkedin: normalizeLink(optionalText(body.linkedin, 255), 'https://www.linkedin.com/in/'),
     website: normalizeLink(optionalText(body.website, 255)),
+    stacks: optionalText(body.stacks, 2000),
   }
 }
 

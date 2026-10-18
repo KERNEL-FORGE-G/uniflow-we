@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { hasPhoto, sortTeamMembers, staggerOffsetClass, teamMemberBlurb, teamMemberLinks } from './teamModel.ts'
+import { hasPhoto, parseStacks, sortTeamMembers, staggerOffsetClass, teamMemberBlurb, teamMemberLinks } from './teamModel.ts'
 
 const base = { $id: 'x', slug: 'x', role: 'Dev', team: 'Frontend', displayOrder: 0 }
 
@@ -39,4 +39,16 @@ test('grille en escalier : colonne centrale décalée sur trois colonnes', () =>
   assert.match(staggerOffsetClass(0), /lg:translate-y-0/)
   assert.match(staggerOffsetClass(4), /lg:translate-y-12/)
   assert.match(staggerOffsetClass(1), /md:translate-y-8/)
+})
+
+test('parseStacks découpe par virgule, point-virgule et retour à la ligne sans vides', () => {
+  assert.deepEqual(parseStacks('Flutter, Dart; Node.js\nPostgreSQL ,  React'), [
+    'Flutter',
+    'Dart',
+    'Node.js',
+    'PostgreSQL',
+    'React',
+  ])
+  assert.deepEqual(parseStacks(''), [])
+  assert.deepEqual(parseStacks(undefined), [])
 })

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowRight, Github, Globe, Linkedin, Mail, Quote, type LucideIcon } from 'lucide-react'
 import type { TeamMemberDocument } from '@/lib/appwrite'
-import { sortTeamMembers, staggerOffsetClass, teamMemberBlurb, teamMemberLinks, type TeamLink } from '@/lib/teamModel'
+import { parseStacks, sortTeamMembers, staggerOffsetClass, teamMemberBlurb, teamMemberLinks, type TeamLink } from '@/lib/teamModel'
 import { EASE } from '@/components/motion/PageTransition'
 import { cn } from '@/utils/cn'
 import { TeamMemberAvatar } from './TeamMemberAvatar'
@@ -67,6 +67,19 @@ export function TeamMemberCard({ member, index = 0, useAvatar = false }: { membe
           <Quote aria-hidden className="mt-0.5 h-3 w-3 shrink-0 fill-current text-[#14b8a8]" />
           <span className="line-clamp-4">{teamMemberBlurb(member)}</span>
         </p>
+
+        {member.stacks ? (
+          <div className="mt-2.5 flex flex-wrap gap-1">
+            {parseStacks(member.stacks).map((stack) => (
+              <span
+                key={stack}
+                className="inline-flex items-center rounded-md border border-[#334155]/60 bg-[#1e293b]/70 px-2 py-0.5 text-[10px] font-semibold text-[#14b8a8]"
+              >
+                {stack}
+              </span>
+            ))}
+          </div>
+        ) : null}
 
         <div ref={menuRef} className="relative mt-4">
           {single ? (

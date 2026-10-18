@@ -77,6 +77,7 @@ const PersonalAccountPage = lazy(() => import('./pages/PersonalAccountPages'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 const GuestVisioPage = lazy(() => import('./pages/GuestVisioPage'))
+const CreatorMemberPage = lazy(() => import('./pages/member/CreatorMemberPage'))
 
 // Admin pages lazy loaded
 const AdminDashboardPage = lazy(() => import('./pages/admin/AdminDashboardPage'))
@@ -361,6 +362,9 @@ export default function App() {
               <Route path="/app/bourses" element={<Shell><ScholarshipsPage /></Shell>} />
               <Route path="/app/forum" element={<Shell><ForumPage /></Shell>} />
               <Route path="/app/equipe" element={<Shell><TeamsPage /></Shell>} />
+              <Route path="/app/membre" element={<Shell><CreatorMemberPage /></Shell>} />
+              <Route path="/app/createur" element={<Navigate to="/app/membre" replace />} />
+              <Route path="/membre" element={<Navigate to="/app/membre" replace />} />
               <Route path="/app/gamification" element={<Shell><GamificationPage /></Shell>} />
               <Route path="/app/sentinelle" element={<Shell><SentinellePage /></Shell>} />
               <Route path="/app/evaluations" element={<Shell><TeacherGradingPage /></Shell>} />
