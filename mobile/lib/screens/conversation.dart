@@ -477,7 +477,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const PhosphorIcon(PhosphorIconsBold.userPlus, size: 20, color: AppColors.teal),
-                title: const Text('Inviter des membres par @pseudo', style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
+                title: const Text('Inviter des membres par @pseudo',
+                    style: TextStyle(color: AppColors.textPrimary, fontSize: 14)),
                 onTap: () {
                   Navigator.pop(bottomSheetCtx);
                   _showAddMemberDialog(context, conversation.id);
@@ -486,7 +487,8 @@ class _ConversationScreenState extends ConsumerState<ConversationScreen> {
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const PhosphorIcon(PhosphorIconsBold.signOut, size: 20, color: AppColors.danger),
-                title: const Text('Quitter le groupe', style: TextStyle(color: AppColors.danger, fontSize: 14, fontWeight: FontWeight.bold)),
+                title: const Text('Quitter le groupe',
+                    style: TextStyle(color: AppColors.danger, fontSize: 14, fontWeight: FontWeight.bold)),
                 onTap: () async {
                   Navigator.pop(bottomSheetCtx);
                   final ok = await showDialog<bool>(

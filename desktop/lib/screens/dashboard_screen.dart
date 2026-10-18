@@ -25,7 +25,11 @@ class DashboardScreen extends StatelessWidget {
               padding: const EdgeInsets.all(24.0),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                  colors: [
+                    Color(0xFF0B132B),
+                    Color(0xFF1E3A8A),
+                    Color(0xFF0D9488)
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -50,51 +54,70 @@ class DashboardScreen extends StatelessWidget {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                                border: Border.all(
+                                    color: Colors.white.withValues(alpha: 0.2)),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.school_rounded, color: Color(0xFF67E8F9), size: 14),
+                                  Icon(Icons.school_rounded,
+                                      color: Color(0xFF67E8F9), size: 14),
                                   SizedBox(width: 6),
                                   Text(
                                     'Université de Yaoundé I · Faculté des Sciences',
-                                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF34D399)),
+                                border:
+                                    Border.all(color: const Color(0xFF34D399)),
                               ),
                               child: const Text(
                                 'BÊTA OUVERTE · etudiant.uy1@uniflow.cm',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w800),
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                                color: const Color(0xFF38BDF8)
+                                    .withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF38BDF8)),
+                                border:
+                                    Border.all(color: const Color(0xFF38BDF8)),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.sync_rounded, color: Color(0xFF38BDF8), size: 13),
+                                  Icon(Icons.sync_rounded,
+                                      color: Color(0xFF38BDF8), size: 13),
                                   SizedBox(width: 5),
                                   Text(
                                     'Résilience & Synchronisation Hors-Ligne',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
@@ -104,12 +127,18 @@ class DashboardScreen extends StatelessWidget {
                         const SizedBox(height: 12),
                         const Text(
                           'Espace de Travail Académique Desktop & Hub Résilient',
-                          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 6),
                         const Text(
                           'Plateforme Universitaire Connectée conçue pour les réalités du campus : consultation instantanée hors-ligne, synchronisation intelligente, courriels institutionnels signés @uniflow.cm, actualités officielles en continu et visioconférence locale P2P.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.5),
+                          style: TextStyle(
+                              color: Color(0xFFCBD5E1),
+                              fontSize: 13,
+                              height: 1.5),
                         ),
                         const SizedBox(height: 16),
                         Wrap(
@@ -117,47 +146,60 @@ class DashboardScreen extends StatelessWidget {
                           runSpacing: 10,
                           children: [
                             ElevatedButton.icon(
-                              onPressed: () => onNavigate(1), // Actualités Campus
-                              icon: const Icon(Icons.campaign_rounded, size: 16),
+                              onPressed: () =>
+                                  onNavigate(1), // Actualités Campus
+                              icon:
+                                  const Icon(Icons.campaign_rounded, size: 16),
                               label: const Text('Actualités Campus & Bêta'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF0B132B),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
                               ),
                             ),
                             ElevatedButton.icon(
                               onPressed: () => onNavigate(2), // UniMail
-                              icon: const Icon(Icons.alternate_email_rounded, size: 16),
+                              icon: const Icon(Icons.alternate_email_rounded,
+                                  size: 16),
                               label: const Text('UniMail (@uniflow.cm)'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0D9488),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
                               ),
                             ),
                             ElevatedButton.icon(
                               onPressed: () => onNavigate(3), // Emploi du Temps
-                              icon: const Icon(Icons.calendar_month_rounded, size: 16),
+                              icon: const Icon(Icons.calendar_month_rounded,
+                                  size: 16),
                               label: const Text('Emploi du Temps'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF1E3A8A),
                                 foregroundColor: Colors.white,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
                               ),
                             ),
                             OutlinedButton.icon(
                               onPressed: () => onNavigate(4), // Visio
-                              icon: const Icon(Icons.video_call_rounded, size: 16),
+                              icon: const Icon(Icons.video_call_rounded,
+                                  size: 16),
                               label: const Text('Visioconférence'),
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
                                 side: const BorderSide(color: Colors.white38),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
                               ),
                             ),
                           ],
@@ -173,7 +215,8 @@ class DashboardScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25)),
                       boxShadow: [
                         BoxShadow(
                           color: Colors.black.withValues(alpha: 0.1),
@@ -211,7 +254,9 @@ class DashboardScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.22)),
+                        border: Border.all(
+                            color: const Color(0xFF1E3A8A)
+                                .withValues(alpha: 0.22)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.02),
@@ -230,13 +275,16 @@ class DashboardScreen extends StatelessWidget {
                                 height: 44,
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.09),
+                                  color: const Color(0xFF1E3A8A)
+                                      .withValues(alpha: 0.09),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Image.asset(
                                   'assets/icons/nav/analytics.png',
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.campaign_rounded, color: Color(0xFF1E3A8A)),
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.campaign_rounded,
+                                      color: Color(0xFF1E3A8A)),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -245,20 +293,28 @@ class DashboardScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                                        color: const Color(0xFF1E3A8A)
+                                            .withValues(alpha: 0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Text(
                                         'ACTUALITÉS CAMPUS',
-                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A)),
+                                        style: TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w900,
+                                            color: Color(0xFF1E3A8A)),
                                       ),
                                     ),
                                     const SizedBox(height: 3),
                                     const Text(
                                       'Annonce Officielle : Plateforme en phase de test bêta',
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF0F172A)),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
@@ -269,7 +325,10 @@ class DashboardScreen extends StatelessWidget {
                           const SizedBox(height: 10),
                           const Text(
                             'Des améliorations majeures arrivent ! Consultez les vidéos, images et notes PDF du campus →',
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.4),
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF64748B),
+                                height: 1.4),
                           ),
                         ],
                       ),
@@ -289,7 +348,9 @@ class DashboardScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.25)),
+                        border: Border.all(
+                            color: const Color(0xFF0D9488)
+                                .withValues(alpha: 0.25)),
                         boxShadow: [
                           BoxShadow(
                             color: Colors.black.withValues(alpha: 0.02),
@@ -308,13 +369,16 @@ class DashboardScreen extends StatelessWidget {
                                 height: 44,
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                  color: const Color(0xFF0D9488)
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Image.asset(
                                   'assets/icons/nav/messages.png',
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.mail_rounded, color: Color(0xFF0D9488)),
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.mail_rounded,
+                                      color: Color(0xFF0D9488)),
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -323,20 +387,28 @@ class DashboardScreen extends StatelessWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
                                       decoration: BoxDecoration(
-                                        color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                                        color: const Color(0xFF0D9488)
+                                            .withValues(alpha: 0.12),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: const Text(
                                         'UNIMAIL SOUVERAIN',
-                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF0D9488)),
+                                        style: TextStyle(
+                                            fontSize: 9.5,
+                                            fontWeight: FontWeight.w900,
+                                            color: Color(0xFF0D9488)),
                                       ),
                                     ),
                                     const SizedBox(height: 3),
                                     const Text(
                                       'Boîte Institutionnelle : etudiant.uy1@uniflow.cm',
-                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                      style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w900,
+                                          color: Color(0xFF0F172A)),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ],
@@ -347,7 +419,11 @@ class DashboardScreen extends StatelessWidget {
                           const SizedBox(height: 10),
                           const Text(
                             'Courriels signés numériquement par UniFlow et liés au cycle de vie de votre compte →',
-                            style: TextStyle(fontSize: 11.5, color: Color(0xFF0D9488), fontWeight: FontWeight.w600, height: 1.4),
+                            style: TextStyle(
+                                fontSize: 11.5,
+                                color: Color(0xFF0D9488),
+                                fontWeight: FontWeight.w600,
+                                height: 1.4),
                           ),
                         ],
                       ),
@@ -393,21 +469,31 @@ class DashboardScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             const Text(
                               'Résilience Active',
-                              style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.w900),
+                              style: TextStyle(
+                                  color: Color(0xFF34D399),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w900),
                             ),
                             const Spacer(),
-                            const Icon(Icons.cloud_done_rounded, color: Color(0xFF67E8F9), size: 16),
+                            const Icon(Icons.cloud_done_rounded,
+                                color: Color(0xFF67E8F9), size: 16),
                           ],
                         ),
                         const SizedBox(height: 6),
                         const Text(
                           'Synchronisation Hors-Ligne',
-                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 4),
                         const Text(
                           'Cours, plannings & courriels indexés en cache local sécurisé.',
-                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.3),
+                          style: TextStyle(
+                              color: Color(0xFF94A3B8),
+                              fontSize: 11,
+                              height: 1.3),
                         ),
                       ],
                     ),
@@ -488,19 +574,27 @@ class DashboardScreen extends StatelessWidget {
                             const Expanded(
                               child: Text(
                                 'Prochaine Séance Universitaire',
-                                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF0F172A)),
                                 overflow: TextOverflow.ellipsis,
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 4),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                color: const Color(0xFF0D9488)
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(20),
                               ),
                               child: const Text(
                                 'Aujourd\'hui',
-                                style: TextStyle(color: Color(0xFF0D9488), fontSize: 11, fontWeight: FontWeight.bold),
+                                style: TextStyle(
+                                    color: Color(0xFF0D9488),
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -520,13 +614,17 @@ class DashboardScreen extends StatelessWidget {
                                 height: 50,
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                                  color: const Color(0xFF1E3A8A)
+                                      .withValues(alpha: 0.1),
                                   borderRadius: BorderRadius.circular(14),
                                 ),
                                 child: Image.asset(
                                   'assets/icons/nav/schedule.png',
                                   fit: BoxFit.contain,
-                                  errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, color: Color(0xFF1E3A8A), size: 24),
+                                  errorBuilder: (_, __, ___) => const Icon(
+                                      Icons.school_rounded,
+                                      color: Color(0xFF1E3A8A),
+                                      size: 24),
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -536,12 +634,17 @@ class DashboardScreen extends StatelessWidget {
                                   children: [
                                     Text(
                                       'INF4067 · Génie Logiciel Avancé',
-                                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                      style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A)),
                                     ),
                                     SizedBox(height: 4),
                                     Text(
                                       '08:00 – 11:00 · Amphi 501 UY1 · Prof. Melatagia Yonta',
-                                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: Color(0xFF64748B)),
                                     ),
                                   ],
                                 ),
@@ -551,7 +654,8 @@ class DashboardScreen extends StatelessWidget {
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF1E3A8A),
                                   foregroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10)),
                                 ),
                                 child: const Text('Rejoindre Amphi'),
                               ),
@@ -583,29 +687,38 @@ class DashboardScreen extends StatelessWidget {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.auto_awesome_rounded, color: Color(0xFF67E8F9), size: 20),
+                            Icon(Icons.auto_awesome_rounded,
+                                color: Color(0xFF67E8F9), size: 20),
                             SizedBox(width: 8),
                             Text(
                               'Uni Copilot (GROQ)',
-                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         const Text(
                           'Inférence ultra-rapide propulsée par l\'API GROQ pour répondre à vos questions académiques et générer vos fiches de cours.',
-                          style: TextStyle(color: Color(0xFFE2E8F0), fontSize: 12, height: 1.4),
+                          style: TextStyle(
+                              color: Color(0xFFE2E8F0),
+                              fontSize: 12,
+                              height: 1.4),
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
                           onPressed: () => onNavigate(7), // Assistant
-                          icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
+                          icon: const Icon(Icons.chat_bubble_outline_rounded,
+                              size: 16),
                           label: const Text('Ouvrir l\'Assistant Uni'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: const Color(0xFF1E3A8A),
                             minimumSize: const Size(double.infinity, 40),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10)),
                           ),
                         ),
                       ],
@@ -656,7 +769,8 @@ class DashboardScreen extends StatelessWidget {
               child: Image.asset(
                 assetPath,
                 fit: BoxFit.contain,
-                errorBuilder: (_, __, ___) => Icon(fallbackIcon, color: color, size: 24),
+                errorBuilder: (_, __, ___) =>
+                    Icon(fallbackIcon, color: color, size: 24),
               ),
             ),
             const SizedBox(width: 14),
@@ -666,17 +780,24 @@ class DashboardScreen extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: const TextStyle(fontSize: 11, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    style: const TextStyle(
+                        fontSize: 11,
+                        color: Color(0xFF64748B),
+                        fontWeight: FontWeight.w600),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     value,
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: color),
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: color),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
+                    style:
+                        const TextStyle(fontSize: 10, color: Color(0xFF94A3B8)),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],

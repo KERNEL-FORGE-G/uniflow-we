@@ -26,7 +26,8 @@ class LocalVisioServer {
   int get participantCount => _clients.length;
 
   /// Démarre le serveur local de visioconférence
-  Future<bool> startServer({int port = 7890, String room = 'AMPHI-VIRTUEL-UY1'}) async {
+  Future<bool> startServer(
+      {int port = 7890, String room = 'AMPHI-VIRTUEL-UY1'}) async {
     if (_isRunning) return true;
     _port = port;
     _activeRoom = room;
@@ -65,7 +66,8 @@ class LocalVisioServer {
               'participants': _clients.length,
               'port': _port,
               'localUrl': 'http://localhost:$_port/visio?room=$_activeRoom',
-              'networkUrl': 'http://${_localIp ?? 'localhost'}:$_port/visio?room=$_activeRoom',
+              'networkUrl':
+                  'http://${_localIp ?? 'localhost'}:$_port/visio?room=$_activeRoom',
             }));
             await request.response.close();
             return;
@@ -127,7 +129,8 @@ class LocalVisioServer {
   void _setCorsHeaders(HttpResponse response) {
     response.headers.set('Access-Control-Allow-Origin', '*');
     response.headers.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-    response.headers.set('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
+    response.headers
+        .set('Access-Control-Allow-Headers', 'Origin, Content-Type, Accept');
   }
 
   /// Gestion des connexions WebSocket et du relai de messages WebRTC (Signalling)
@@ -176,7 +179,9 @@ class LocalVisioServer {
       );
       for (final interface in interfaces) {
         for (final addr in interface.addresses) {
-          if (!addr.isLoopback && addr.address.startsWith(RegExp(r'^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)'))) {
+          if (!addr.isLoopback &&
+              addr.address.startsWith(RegExp(
+                  r'^(192\.168\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.)'))) {
             return addr.address;
           }
         }

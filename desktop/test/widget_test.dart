@@ -3,7 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:uniflow_desktop/main.dart';
 
 void main() {
-  testWidgets('UniFlow Desktop smoke test with Actualites Campus and UniMail', (WidgetTester tester) async {
+  testWidgets('UniFlow Desktop smoke test with Actualites Campus and UniMail',
+      (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(() {

@@ -1283,7 +1283,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
               ListTile(
                 leading: const Icon(PhosphorIconsBold.globe, color: Color(0xFF1E3A8A)),
                 title: const Text('Trier par langue (Alphabétique)', style: TextStyle(fontWeight: FontWeight.w600)),
-                trailing: _selectedSort == 'language' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
+                trailing:
+                    _selectedSort == 'language' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() => _selectedSort = 'language');
@@ -1293,7 +1294,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
               ListTile(
                 leading: const Icon(PhosphorIconsBold.sparkle, color: Color(0xFFEA580C)),
                 title: const Text('Plus populaires (Téléchargements)', style: TextStyle(fontWeight: FontWeight.w600)),
-                trailing: _selectedSort == 'popular' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
+                trailing:
+                    _selectedSort == 'popular' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() => _selectedSort = 'popular');
@@ -1303,7 +1305,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
               ListTile(
                 leading: const Icon(PhosphorIconsBold.calendarBlank, color: Color(0xFF0D9488)),
                 title: const Text('Plus récents (Année)', style: TextStyle(fontWeight: FontWeight.w600)),
-                trailing: _selectedSort == 'recent' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
+                trailing:
+                    _selectedSort == 'recent' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() => _selectedSort = 'recent');
@@ -1313,7 +1316,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
               ListTile(
                 leading: const Icon(PhosphorIconsBold.translate, color: Color(0xFF475569)),
                 title: const Text('Titre A-Z', style: TextStyle(fontWeight: FontWeight.w600)),
-                trailing: _selectedSort == 'title' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
+                trailing:
+                    _selectedSort == 'title' ? const Icon(PhosphorIconsBold.check, color: Color(0xFF1E3A8A)) : null,
                 onTap: () {
                   Navigator.pop(ctx);
                   setState(() => _selectedSort = 'title');

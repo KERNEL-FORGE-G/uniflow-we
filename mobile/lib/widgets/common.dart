@@ -38,7 +38,11 @@ class GradientHeader extends StatelessWidget {
     if (t.contains('bonjour') || t.contains('bienvenue') || t.contains('accueil')) {
       return 'assets/icons/nav/dashboard.png';
     }
-    if (t.contains('cours') || t.contains('ue') || t.contains('matière') || t.contains('matiere') || t.contains('unité')) {
+    if (t.contains('cours') ||
+        t.contains('ue') ||
+        t.contains('matière') ||
+        t.contains('matiere') ||
+        t.contains('unité')) {
       return 'assets/icons/nav/courses.png';
     }
     if (t.contains('emploi') || t.contains('agenda') || t.contains('séance') || t.contains('horaire')) {
@@ -86,7 +90,11 @@ class GradientHeader extends StatelessWidget {
     if (t.contains('enseignant') || t.contains('prof')) {
       return 'assets/icons/nav/teachers.png';
     }
-    if (t.contains('équipe') || t.contains('equipe') || t.contains('kernel') || t.contains('compte') || t.contains('accès')) {
+    if (t.contains('équipe') ||
+        t.contains('equipe') ||
+        t.contains('kernel') ||
+        t.contains('compte') ||
+        t.contains('accès')) {
       return 'assets/icons/nav/coordination.png';
     }
     return 'assets/icons/nav/dashboard.png';

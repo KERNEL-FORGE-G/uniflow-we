@@ -325,7 +325,8 @@ class LocalVisioServerNotifier extends StateNotifier<LocalVisioServerState> {
                 role: role,
                 micOn: micOn,
                 camOn: camOn,
-                joinedAt: '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                joinedAt:
+                    '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
                 socket: ws,
               );
 
@@ -375,7 +376,8 @@ class LocalVisioServerNotifier extends StateNotifier<LocalVisioServerState> {
                 senderName: senderName,
                 senderRole: senderRole,
                 text: text,
-                time: '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
+                time:
+                    '${DateTime.now().hour.toString().padLeft(2, '0')}:${DateTime.now().minute.toString().padLeft(2, '0')}',
               );
 
               state = state.copyWith(
@@ -901,7 +903,6 @@ class LocalVisioServerNotifier extends StateNotifier<LocalVisioServerState> {
 }
 
 /// Provider Riverpod global pour le serveur local de visioconférence
-final localVisioServerProvider =
-    StateNotifierProvider<LocalVisioServerNotifier, LocalVisioServerState>((ref) {
+final localVisioServerProvider = StateNotifierProvider<LocalVisioServerNotifier, LocalVisioServerState>((ref) {
   return LocalVisioServerNotifier();
 });

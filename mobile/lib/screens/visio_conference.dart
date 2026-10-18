@@ -26,8 +26,7 @@ extension VisioAttendanceExt on VisioAttendance {
       };
 
   Color get color => switch (this) {
-        VisioAttendance.present100 || VisioAttendance.present94 || VisioAttendance.present88 =>
-          const Color(0xFF10B981),
+        VisioAttendance.present100 || VisioAttendance.present94 || VisioAttendance.present88 => const Color(0xFF10B981),
         VisioAttendance.late => const Color(0xFFF59E0B),
       };
 }
@@ -521,13 +520,15 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
                           Expanded(
                             child: Text(
                               activeUrl,
-                              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, fontFamily: 'monospace'),
+                              style:
+                                  const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, fontFamily: 'monospace'),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           IconButton(
-                            icon: const PhosphorIcon(PhosphorIconsBold.clipboardText, size: 16, color: AppColors.primaryBlue),
+                            icon: const PhosphorIcon(PhosphorIconsBold.clipboardText,
+                                size: 16, color: AppColors.primaryBlue),
                             tooltip: 'Copier le lien',
                             onPressed: () {
                               Clipboard.setData(ClipboardData(text: activeUrl));
@@ -721,7 +722,8 @@ class _VisioConferenceScreenState extends ConsumerState<VisioConferenceScreen> {
                             children: [
                               Text(
                                 'Rejoindre en tant que Participant',
-                                style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                                style: TextStyle(
+                                    fontSize: 13.5, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                               ),
                               SizedBox(height: 2),
                               Text(
@@ -1736,7 +1738,8 @@ class _MeetQrScannerViewState extends State<_MeetQrScannerView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Scanner le QR Meet Desktop', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
-            Text('Pointez vers l\'écran du PC ou du vidéoprojecteur', style: TextStyle(fontSize: 11, color: Colors.white70)),
+            Text('Pointez vers l\'écran du PC ou du vidéoprojecteur',
+                style: TextStyle(fontSize: 11, color: Colors.white70)),
           ],
         ),
         actions: [
@@ -1917,4 +1920,3 @@ class _MeetQrScannerViewState extends State<_MeetQrScannerView> {
     );
   }
 }
-

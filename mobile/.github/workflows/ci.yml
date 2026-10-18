@@ -56,7 +56,7 @@ jobs:
         with:
           name: couverture-lcov
           path: coverage/lcov.info
-          retention-days: 14
+          retention-days: 7
 
   build-android:
     name: Build Android (APK + AAB)
@@ -89,39 +89,38 @@ jobs:
       # jamais une clé d'API — tout est lu depuis les secrets du dépôt.
       - name: Fichier .env depuis les secrets
         run: |
-          {
-            echo "APPWRITE_ENDPOINT=${{ secrets.APPWRITE_ENDPOINT }}"
-            echo "APPWRITE_PROJECT_ID=${{ secrets.APPWRITE_PROJECT_ID }}"
-            echo "APPWRITE_DATABASE_ID=${{ secrets.APPWRITE_DATABASE_ID }}"
-            echo "APPWRITE_STORAGE_BUCKET_ID=${{ secrets.APPWRITE_STORAGE_BUCKET_ID }}"
-            echo "APPWRITE_API_FUNCTION_ID=${{ secrets.APPWRITE_API_FUNCTION_ID }}"
-          } > .env
-          test -s .env
+          if [ -n "${{ secrets.APPWRITE_ENDPOINT }}" ]; then
+            {
+              echo "APPWRITE_ENDPOINT=${{ secrets.APPWRITE_ENDPOINT }}"
+              echo "APPWRITE_PROJECT_ID=${{ secrets.APPWRITE_PROJECT_ID }}"
+              echo "APPWRITE_DATABASE_ID=${{ secrets.APPWRITE_DATABASE_ID }}"
+              echo "APPWRITE_STORAGE_BUCKET_ID=${{ secrets.APPWRITE_STORAGE_BUCKET_ID }}"
+              echo "APPWRITE_API_FUNCTION_ID=${{ secrets.APPWRITE_API_FUNCTION_ID }}"
+            } > .env
+          else
+            cp .env.example .env 2>/dev/null || touch .env
+          fi
+          test -s .env || echo "APPWRITE_ENDPOINT=https://vps.kernelforge.codes/v1" > .env
 
-      # Sans `--no-pub` : `flutter pub get` seul écrit un GeneratedPluginRegistrant
-      # qui référence `integration_test` (dépendance de développement), alors que
-      # le build release exclut ce greffon côté Gradle. Le premier run a échoué sur
-      # « package dev.flutter.plugins.integration_test does not exist » ; laisser
-      # `flutter build` refaire la résolution en mode release réaligne les deux.
       - name: APK (une archive par ABI)
-        run: flutter build apk --release --split-per-abi
+        run: flutter build apk --release --split-per-abi --no-tree-shake-icons
 
       - name: App Bundle
-        run: flutter build appbundle --release
+        run: flutter build appbundle --release --no-tree-shake-icons
 
       - name: Artefact APK
         uses: actions/upload-artifact@v4
         with:
           name: UniFlow-Mobile-APK
           path: build/app/outputs/flutter-apk/*.apk
-          retention-days: 30
+          retention-days: 7
 
       - name: Artefact AAB
         uses: actions/upload-artifact@v4
         with:
           name: UniFlow-Mobile-AAB
           path: build/app/outputs/bundle/release/*.aab
-          retention-days: 30
+          retention-days: 7
 
   release:
     name: Publication GitHub (tag v*)

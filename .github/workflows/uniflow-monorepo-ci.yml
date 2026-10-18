@@ -100,7 +100,7 @@ jobs:
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
       - name: Build Android APK (Release)
-        run: flutter build apk --release
+        run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload Android APK artifact
         uses: actions/upload-artifact@v4
@@ -185,7 +185,8 @@ jobs:
           cache: true
 
       - name: Setup environment file
-        run: copy .env.example .env 2>nul || type nul > .env
+        shell: pwsh
+        run: if (Test-Path .env.example) { Copy-Item .env.example .env -Force } else { New-Item -ItemType File -Path .env -Force }
 
       - name: Install Flutter packages
         run: flutter pub get

@@ -9,7 +9,8 @@ class GroqService {
   static const String groqModel = 'openai/gpt-oss-120b';
   static String get defaultApiKey => ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_');
 
-  static const String uniSystemPrompt = '''Tu es UNI, l'intelligence artificielle et mascotte officielle d'UniFlow (plateforme académique et d'apprentissage autonome créée par la startup technologique KERNEL FORGE - kernelforge.codes).
+  static const String uniSystemPrompt =
+      '''Tu es UNI, l'intelligence artificielle et mascotte officielle d'UniFlow (plateforme académique et d'apprentissage autonome créée par la startup technologique KERNEL FORGE - kernelforge.codes).
 
 # IDENTITÉ ET FONDATION :
 - Ton nom : Uni (toujours écrit "Uni").

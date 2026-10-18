@@ -24,7 +24,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
   @override
   Widget build(BuildContext context) {
     final filtered = sampleCourses.where((c) {
-      final matchesFilter = _selectedFilter == 'Tous' || c.type == _selectedFilter;
+      final matchesFilter =
+          _selectedFilter == 'Tous' || c.type == _selectedFilter;
       final q = _searchQuery.toLowerCase();
       final matchesSearch = q.isEmpty ||
           c.name.toLowerCase().contains(q) ||
@@ -35,7 +36,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
 
     final avgProgress = sampleCourses.isEmpty
         ? 0
-        : (sampleCourses.map((c) => c.progressPercent).reduce((a, b) => a + b) / sampleCourses.length).round();
+        : (sampleCourses.map((c) => c.progressPercent).reduce((a, b) => a + b) /
+                sampleCourses.length)
+            .round();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -51,7 +54,11 @@ class _CoursesScreenState extends State<CoursesScreen> {
               padding: const EdgeInsets.all(24.0),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                  colors: [
+                    Color(0xFF0B132B),
+                    Color(0xFF1E3A8A),
+                    Color(0xFF0D9488)
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -76,11 +83,14 @@ class _CoursesScreenState extends State<CoursesScreen> {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 5),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                border: Border.all(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.25)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -89,31 +99,44 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                     'assets/icons/nav/courses.png',
                                     width: 16,
                                     height: 16,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.menu_book_rounded, color: Color(0xFF67E8F9), size: 14),
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.menu_book_rounded,
+                                        color: Color(0xFF67E8F9),
+                                        size: 14),
                                   ),
                                   const SizedBox(width: 6),
                                   const Text(
                                     'SYLLABUS OFFICIEL FACULTÉ DES SCIENCES · UY1',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF34D399)),
+                                border:
+                                    Border.all(color: const Color(0xFF34D399)),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.cloud_done_rounded, color: Color(0xFF34D399), size: 13),
+                                  Icon(Icons.cloud_done_rounded,
+                                      color: Color(0xFF34D399), size: 13),
                                   SizedBox(width: 5),
                                   Text(
                                     'Résilience & Synchronisation Hors-Ligne',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
@@ -123,22 +146,31 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         const SizedBox(height: 12),
                         const Text(
                           'Mes Cours & Unités d\'Enseignement',
-                          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 6),
                         const Text(
                           'Suivez vos Cours Magistraux (CM), Travaux Dirigés (TD) et Travaux Pratiques (TP) du Semestre LMD avec progression en temps réel et supports téléchargés en cache local résilient.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, height: 1.45),
+                          style: TextStyle(
+                              color: Color(0xFFCBD5E1),
+                              fontSize: 12.5,
+                              height: 1.45),
                         ),
                         const SizedBox(height: 16),
                         Wrap(
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-                            _buildHeroStatPill('UE Inscrites', '${sampleCourses.length} Cours'),
+                            _buildHeroStatPill('UE Inscrites',
+                                '${sampleCourses.length} Cours'),
                             _buildHeroStatPill('Crédits ECTS', '30 ECTS'),
-                            _buildHeroStatPill('Progression', '$avgProgress% Moyenne'),
-                            _buildHeroStatPill('Résilience', 'Cache Local Prêt'),
+                            _buildHeroStatPill(
+                                'Progression', '$avgProgress% Moyenne'),
+                            _buildHeroStatPill(
+                                'Résilience', 'Cache Local Prêt'),
                           ],
                         ),
                       ],
@@ -152,14 +184,18 @@ class _CoursesScreenState extends State<CoursesScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25)),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(14),
                       child: Image.asset(
                         'assets/illustrations/course_study_hero_3d.png',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => const Icon(Icons.school_rounded, color: Colors.white, size: 48),
+                        errorBuilder: (_, __, ___) => const Icon(
+                            Icons.school_rounded,
+                            color: Colors.white,
+                            size: 48),
                       ),
                     ),
                   ),
@@ -176,11 +212,14 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   child: TextField(
                     onChanged: (val) => setState(() => _searchQuery = val),
                     decoration: InputDecoration(
-                      hintText: 'Rechercher par matière, code UE, enseignant...',
-                      prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF94A3B8)),
+                      hintText:
+                          'Rechercher par matière, code UE, enseignant...',
+                      prefixIcon: const Icon(Icons.search_rounded,
+                          color: Color(0xFF94A3B8)),
                       filled: true,
                       fillColor: Colors.white,
-                      contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 16),
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 0, horizontal: 16),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
@@ -207,9 +246,12 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         onTap: () => setState(() => _selectedFilter = filter),
                         borderRadius: BorderRadius.circular(12),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(
-                            color: isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
+                            color: isSelected
+                                ? const Color(0xFF1E3A8A)
+                                : Colors.transparent,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
@@ -217,7 +259,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
-                              color: isSelected ? Colors.white : const Color(0xFF64748B),
+                              color: isSelected
+                                  ? Colors.white
+                                  : const Color(0xFF64748B),
                             ),
                           ),
                         ),
@@ -235,7 +279,8 @@ class _CoursesScreenState extends State<CoursesScreen> {
               child: filtered.isEmpty
                   ? const Center(child: Text('Aucun cours trouvé'))
                   : GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
@@ -273,29 +318,39 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                   ),
                                 ),
                                 child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 10, vertical: 4),
                                       decoration: BoxDecoration(
                                         color: color,
                                         borderRadius: BorderRadius.circular(10),
                                       ),
                                       child: Text(
                                         course.code,
-                                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                                        style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 3),
                                       decoration: BoxDecoration(
                                         color: Colors.white,
                                         borderRadius: BorderRadius.circular(8),
-                                        border: Border.all(color: const Color(0xFFE2E8F0)),
+                                        border: Border.all(
+                                            color: const Color(0xFFE2E8F0)),
                                       ),
                                       child: Text(
                                         course.type,
-                                        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold),
+                                        style: TextStyle(
+                                            color: color,
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                     ),
                                   ],
@@ -312,7 +367,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                       course.name,
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
-                                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                      style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF0F172A)),
                                     ),
                                     const SizedBox(height: 6),
                                     Row(
@@ -333,7 +391,9 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                         Expanded(
                                           child: Text(
                                             course.teacher,
-                                            style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                                            style: const TextStyle(
+                                                fontSize: 12,
+                                                color: Color(0xFF64748B)),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -343,12 +403,19 @@ class _CoursesScreenState extends State<CoursesScreen> {
 
                                     // Progression
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
-                                        const Text('Progression', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                                        const Text('Progression',
+                                            style: TextStyle(
+                                                fontSize: 10,
+                                                color: Color(0xFF94A3B8))),
                                         Text(
                                           '${course.progressPercent}%',
-                                          style: const TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                                          style: const TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF0F172A)),
                                         ),
                                       ],
                                     ),
@@ -356,21 +423,29 @@ class _CoursesScreenState extends State<CoursesScreen> {
                                     LinearProgressIndicator(
                                       value: course.progressPercent / 100.0,
                                       backgroundColor: const Color(0xFFE2E8F0),
-                                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                                      valueColor:
+                                          AlwaysStoppedAnimation<Color>(color),
                                       borderRadius: BorderRadius.circular(4),
                                     ),
 
                                     const SizedBox(height: 12),
                                     Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         Text(
                                           '${course.hours}h · ${course.credits} ECTS',
-                                          style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                              color: Color(0xFF1E3A8A)),
                                         ),
                                         Text(
                                           course.classroom,
-                                          style: const TextStyle(fontSize: 11, color: Color(0xFF0D9488), fontWeight: FontWeight.w600),
+                                          style: const TextStyle(
+                                              fontSize: 11,
+                                              color: Color(0xFF0D9488),
+                                              fontWeight: FontWeight.w600),
                                         ),
                                       ],
                                     ),
@@ -400,8 +475,13 @@ class _CoursesScreenState extends State<CoursesScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('$label : ', style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
-          Text(val, style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
+          Text('$label : ',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+          Text(val,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     );

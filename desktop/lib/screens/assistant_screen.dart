@@ -14,7 +14,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
   final List<Map<String, String>> _messages = [
     {
       'role': 'assistant',
-      'content': 'Bonjour ! Je suis **Uni**, votre copilote académique officiel propulsé par l\'inférence ultra-rapide de **GROQ**.\n\nComment puis-je vous aider aujourd\'hui dans vos cours à l\'Université de Yaoundé I ? (Génie logiciel, algorithmique, révisions d\'examen, planning...)',
+      'content':
+          'Bonjour ! Je suis **Uni**, votre copilote académique officiel propulsé par l\'inférence ultra-rapide de **GROQ**.\n\nComment puis-je vous aider aujourd\'hui dans vos cours à l\'Université de Yaoundé I ? (Génie logiciel, algorithmique, révisions d\'examen, planning...)',
     }
   ];
   bool _isLoading = false;
@@ -81,7 +82,11 @@ class _AssistantScreenState extends State<AssistantScreen> {
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                  colors: [
+                    Color(0xFF0B132B),
+                    Color(0xFF1E3A8A),
+                    Color(0xFF0D9488)
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -103,7 +108,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25)),
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -120,16 +126,23 @@ class _AssistantScreenState extends State<AssistantScreen> {
                       children: [
                         Text(
                           'Uni Copilot · Assistant IA d\'Études',
-                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w900),
                         ),
                         SizedBox(height: 4),
                         Row(
                           children: [
-                            Icon(Icons.bolt_rounded, color: Color(0xFF34D399), size: 15),
+                            Icon(Icons.bolt_rounded,
+                                color: Color(0xFF34D399), size: 15),
                             SizedBox(width: 4),
                             Text(
                               'En ligne · Propulsé par GROQ (openai/gpt-oss-120b & qwen3.8)',
-                              style: TextStyle(color: Color(0xFF67E8F9), fontSize: 12, fontWeight: FontWeight.w700),
+                              style: TextStyle(
+                                  color: Color(0xFF67E8F9),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700),
                             ),
                           ],
                         ),
@@ -153,7 +166,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
                   final isUser = msg['role'] == 'user';
 
                   return Align(
-                    alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment:
+                        isUser ? Alignment.centerRight : Alignment.centerLeft,
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -162,25 +176,31 @@ class _AssistantScreenState extends State<AssistantScreen> {
                           const CircleAvatar(
                             radius: 16,
                             backgroundColor: Colors.transparent,
-                            backgroundImage: AssetImage('assets/mascot/uni_copilot_3d.png'),
+                            backgroundImage:
+                                AssetImage('assets/mascot/uni_copilot_3d.png'),
                           ),
                           const SizedBox(width: 8),
                         ],
                         Flexible(
                           child: Container(
                             constraints: BoxConstraints(
-                              maxWidth: MediaQuery.of(context).size.width * 0.65,
+                              maxWidth:
+                                  MediaQuery.of(context).size.width * 0.65,
                             ),
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(
-                              color: isUser ? const Color(0xFF1E3A8A) : Colors.white,
+                              color: isUser
+                                  ? const Color(0xFF1E3A8A)
+                                  : Colors.white,
                               borderRadius: BorderRadius.only(
                                 topLeft: const Radius.circular(18),
                                 topRight: const Radius.circular(18),
                                 bottomLeft: Radius.circular(isUser ? 18 : 4),
                                 bottomRight: Radius.circular(isUser ? 4 : 18),
                               ),
-                              border: isUser ? null : Border.all(color: const Color(0xFFE2E8F0)),
+                              border: isUser
+                                  ? null
+                                  : Border.all(color: const Color(0xFFE2E8F0)),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black.withValues(alpha: 0.02),
@@ -192,7 +212,9 @@ class _AssistantScreenState extends State<AssistantScreen> {
                             child: Text(
                               msg['content'] ?? '',
                               style: TextStyle(
-                                color: isUser ? Colors.white : const Color(0xFF0F172A),
+                                color: isUser
+                                    ? Colors.white
+                                    : const Color(0xFF0F172A),
                                 fontSize: 13,
                                 height: 1.5,
                               ),
@@ -204,7 +226,8 @@ class _AssistantScreenState extends State<AssistantScreen> {
                           const CircleAvatar(
                             radius: 16,
                             backgroundColor: Color(0xFF1E3A8A),
-                            backgroundImage: AssetImage('assets/team/avatar_aliya_anime.jpg'),
+                            backgroundImage: AssetImage(
+                                'assets/team/avatar_aliya_anime.jpg'),
                           ),
                         ],
                       ],
@@ -220,9 +243,15 @@ class _AssistantScreenState extends State<AssistantScreen> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF1E3A8A))),
+                    SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Color(0xFF1E3A8A))),
                     SizedBox(width: 8),
-                    Text('Uni réfléchit avec GROQ...', style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    Text('Uni réfléchit avec GROQ...',
+                        style:
+                            TextStyle(fontSize: 12, color: Color(0xFF64748B))),
                   ],
                 ),
               ),
@@ -232,15 +261,19 @@ class _AssistantScreenState extends State<AssistantScreen> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(vertical: 8),
               child: Row(
-                children: _quickPrompts.map((p) => Padding(
-                  padding: const EdgeInsets.only(right: 8.0),
-                  child: ActionChip(
-                    label: Text(p, style: const TextStyle(fontSize: 11, color: Color(0xFF1E3A8A))),
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: Color(0xFFE2E8F0)),
-                    onPressed: () => _sendMessage(p),
-                  ),
-                )).toList(),
+                children: _quickPrompts
+                    .map((p) => Padding(
+                          padding: const EdgeInsets.only(right: 8.0),
+                          child: ActionChip(
+                            label: Text(p,
+                                style: const TextStyle(
+                                    fontSize: 11, color: Color(0xFF1E3A8A))),
+                            backgroundColor: Colors.white,
+                            side: const BorderSide(color: Color(0xFFE2E8F0)),
+                            onPressed: () => _sendMessage(p),
+                          ),
+                        ))
+                    .toList(),
               ),
             ),
 
@@ -266,15 +299,18 @@ class _AssistantScreenState extends State<AssistantScreen> {
                       controller: _controller,
                       onSubmitted: (_) => _sendMessage(),
                       decoration: const InputDecoration(
-                        hintText: 'Posez une question académique à Uni (GROQ)...',
+                        hintText:
+                            'Posez une question académique à Uni (GROQ)...',
                         border: InputBorder.none,
-                        hintStyle: TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
+                        hintStyle:
+                            TextStyle(fontSize: 13, color: Color(0xFF94A3B8)),
                       ),
                     ),
                   ),
                   IconButton(
                     onPressed: () => _sendMessage(),
-                    icon: const Icon(Icons.send_rounded, color: Color(0xFF1E3A8A)),
+                    icon: const Icon(Icons.send_rounded,
+                        color: Color(0xFF1E3A8A)),
                     tooltip: 'Envoyer',
                   ),
                 ],

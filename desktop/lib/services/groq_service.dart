@@ -3,10 +3,12 @@ import 'package:http/http.dart' as http;
 
 /// Service IA Uni Copilot propulsé par l'API GROQ ultra-rapide
 class GroqService {
-  static const String _groqEndpoint = 'https://api.groq.com/openai/v1/chat/completions';
-  
+  static const String _groqEndpoint =
+      'https://api.groq.com/openai/v1/chat/completions';
+
   // Clé d'API Groq configurée
-  static String get _defaultApiKey => ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_');
+  static String get _defaultApiKey =>
+      ['gsk', 'XiuX7OUeLiKUvWiAFkpxWGdyb3FYsrrCpDtbw9iX2VmBl5zgNVJ4'].join('_');
 
   /// Modèles Groq pris en charge
   static const String modelIntelligence = 'openai/gpt-oss-120b';
@@ -23,10 +25,10 @@ class GroqService {
 
     final sys = systemPrompt ??
         "Tu es Uni, l'assistant et copilote IA officiel de la plateforme UniFlow "
-        "développée par le laboratoire d'innovation KERNEL FORGE. "
-        "Tu assistes les étudiants et enseignants de l'Université de Yaoundé I (Faculté des Sciences : ICT4D, Informatique, SIGL, BIOS, GEOS). "
-        "Réponds de manière concise, précise, encourageante et structurée en français. "
-        "Mentionne fièrement que tu es propulsé par l'inférence ultra-rapide de GROQ.";
+            "développée par le laboratoire d'innovation KERNEL FORGE. "
+            "Tu assistes les étudiants et enseignants de l'Université de Yaoundé I (Faculté des Sciences : ICT4D, Informatique, SIGL, BIOS, GEOS). "
+            "Réponds de manière concise, précise, encourageante et structurée en français. "
+            "Mentionne fièrement que tu es propulsé par l'inférence ultra-rapide de GROQ.";
 
     try {
       final response = await http.post(

@@ -116,8 +116,7 @@ List<UniMailMessage> _defaultMessagesFor(String myAddress) => [
         senderAddress: 'direction.campus@uniflow.cm',
         recipientAddress: myAddress,
         subject: '[Officiel] Lancement de la phase de test bêta UniFlow & améliorations à venir',
-        preview:
-            'Découvrez la refonte Bento 3D, les Actualités Campus enrichies et le support hors-ligne amélioré.',
+        preview: 'Découvrez la refonte Bento 3D, les Actualités Campus enrichies et le support hors-ligne amélioré.',
         body: 'Chère communauté universitaire,\n\n'
             'La plateforme UniFlow est actuellement en phase de test bêta actif. De nombreuses améliorations de performance, de design (grille Bento 3D) et de collaboration arrivent progressivement.\n\n'
             'Vous pouvez désormais consulter les annonces multimédias officielles dans la rubrique « Actualités Campus » et échanger avec vos enseignants et camarades via votre adresse @uniflow.cm.\n\n'
@@ -765,7 +764,8 @@ class _UniMailIdentityCard extends StatelessWidget {
                 child: Image.asset(
                   'assets/icons/nav/messages.png',
                   fit: BoxFit.contain,
-                  errorBuilder: (_, __, ___) => const PhosphorIcon(PhosphorIconsDuotone.envelope, color: Colors.white, size: 22),
+                  errorBuilder: (_, __, ___) =>
+                      const PhosphorIcon(PhosphorIconsDuotone.envelope, color: Colors.white, size: 22),
                 ),
               ),
             ],

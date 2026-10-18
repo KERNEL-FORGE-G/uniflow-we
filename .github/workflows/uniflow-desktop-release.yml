@@ -160,7 +160,8 @@ jobs:
           cache: true
 
       - name: Setup environment file
-        run: copy .env.example .env 2>nul || type nul > .env
+        shell: pwsh
+        run: if (Test-Path .env.example) { Copy-Item .env.example .env -Force } else { New-Item -ItemType File -Path .env -Force }
 
       - name: Install Flutter dependencies
         run: flutter pub get

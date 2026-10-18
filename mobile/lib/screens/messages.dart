@@ -112,7 +112,8 @@ class _MessagesScreenState extends ConsumerState<MessagesScreen> with SingleTick
           ),
         ],
       ),
-      floatingActionButton: _tab.index == 0 ? _GradientFab(onPressed: _startConversation, onLongPress: _createGroupConversation) : null,
+      floatingActionButton:
+          _tab.index == 0 ? _GradientFab(onPressed: _startConversation, onLongPress: _createGroupConversation) : null,
     );
   }
 }
@@ -1949,9 +1950,8 @@ class _NewGroupSheetState extends ConsumerState<_NewGroupSheet> {
     });
 
     try {
-      final memberIdentifiers = _selectedMembers
-          .map((m) => m.username.isNotEmpty ? '@${m.username}' : m.userId)
-          .toList();
+      final memberIdentifiers =
+          _selectedMembers.map((m) => m.username.isNotEmpty ? '@${m.username}' : m.userId).toList();
 
       final group = await ref.read(messagingRepositoryProvider).createGroup(
             name: name,
@@ -2088,7 +2088,8 @@ class _NewGroupSheetState extends ConsumerState<_NewGroupSheet> {
               if (_searching)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 8),
-                  child: Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
+                  child:
+                      Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))),
                 ),
               if (_searchResults.isNotEmpty)
                 Container(
@@ -2108,7 +2109,9 @@ class _NewGroupSheetState extends ConsumerState<_NewGroupSheet> {
                       return ListTile(
                         dense: true,
                         leading: _Avatar(name: c.name, size: 32),
-                        title: Text(c.name, style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
+                        title: Text(c.name,
+                            style: const TextStyle(
+                                color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.bold)),
                         subtitle: Text(c.username.isNotEmpty ? '@${c.username}' : c.email,
                             style: const TextStyle(color: AppColors.teal, fontSize: 11)),
                         trailing: const PhosphorIcon(PhosphorIconsBold.plusCircle, color: AppColors.teal, size: 20),
@@ -2139,7 +2142,8 @@ class _NewGroupSheetState extends ConsumerState<_NewGroupSheet> {
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                   child: _creating
-                      ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                      ? const SizedBox(
+                          width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
                       : const Text('Créer le groupe', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                 ),
               ),
@@ -2150,4 +2154,3 @@ class _NewGroupSheetState extends ConsumerState<_NewGroupSheet> {
     );
   }
 }
-

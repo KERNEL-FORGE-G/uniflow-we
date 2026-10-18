@@ -64,8 +64,7 @@ const List<CampusNewsItem> _initialCampusNews = [
     publishedAt: 'À l\'instant · Épinglé',
     summary:
         'Bienvenue sur la version bêta d\'UniFlow ! Découvrez le nouveau design Bento 3D, la messagerie académique @uniflow.cm, le mode hors-ligne intégral et le copilote IA Uni.',
-    content:
-        'Chers étudiants, délégués, enseignants et membres de l\'administration,\n\n'
+    content: 'Chers étudiants, délégués, enseignants et membres de l\'administration,\n\n'
         'La plateforme académique unifiée UniFlow est actuellement déployée en phase de test bêta grandeur nature sur le campus. '
         'Cette mise à jour majeure inaugure l\'architecture visuelle « Pinterest Bento Grid & 3D Hero », pensée pour offrir une lisibilité optimale sur mobile, tablette et ordinateur.\n\n'
         'Parmi les nouveautés majeures disponibles dès aujourd\'hui :\n'
@@ -74,7 +73,8 @@ const List<CampusNewsItem> _initialCampusNews = [
         '• Copilote IA Uni & Quêtes XP : révisez vos unités d\'enseignement avec des parcours gamifiés.\n\n'
         'Vos retours sont précieux : signalez toute suggestion via le Centre d\'aide ou directement par UniMail à support@uniflow.cm.',
     imageAsset: 'assets/illustrations/about_campus_hero.png',
-    imageCaption: 'Déploiement officiel de la bêta UniFlow sur le campus universitaire avec synchronisation temps réel.',
+    imageCaption:
+        'Déploiement officiel de la bêta UniFlow sur le campus universitaire avec synchronisation temps réel.',
     videoTitle: 'Présentation vidéo : Tour d\'horizon d\'UniFlow Bêta 3D (2 min 45)',
     videoDuration: '02:45',
     videoUrl: 'https://uniflow.cm/beta-tour',
@@ -547,9 +547,8 @@ class _ActualitesScreenState extends ConsumerState<ActualitesScreen> {
   Widget build(BuildContext context) {
     final role = ref.watch(currentRoleProvider);
     final canPublish = role == UniFlowRole.admin || role == UniFlowRole.teacher || role == UniFlowRole.delegate;
-    final filtered = _selectedCategory == 'Toutes'
-        ? _news
-        : _news.where((n) => n.category == _selectedCategory).toList();
+    final filtered =
+        _selectedCategory == 'Toutes' ? _news : _news.where((n) => n.category == _selectedCategory).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),

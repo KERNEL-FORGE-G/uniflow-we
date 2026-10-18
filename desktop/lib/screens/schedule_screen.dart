@@ -11,11 +11,19 @@ class ScheduleScreen extends StatefulWidget {
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
   String _selectedDay = 'Lundi';
-  final List<String> _days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  final List<String> _days = [
+    'Lundi',
+    'Mardi',
+    'Mercredi',
+    'Jeudi',
+    'Vendredi',
+    'Samedi'
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final daySlots = sampleScheduleSlots.where((s) => s.dayOfWeek == _selectedDay).toList();
+    final daySlots =
+        sampleScheduleSlots.where((s) => s.dayOfWeek == _selectedDay).toList();
 
     return Scaffold(
       backgroundColor: const Color(0xFFF8FAFC),
@@ -31,7 +39,11 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               padding: const EdgeInsets.all(24.0),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                  colors: [
+                    Color(0xFF0B132B),
+                    Color(0xFF1E3A8A),
+                    Color(0xFF0D9488)
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -56,11 +68,14 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                           crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 5),
                               decoration: BoxDecoration(
                                 color: Colors.white.withValues(alpha: 0.14),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                                border: Border.all(
+                                    color:
+                                        Colors.white.withValues(alpha: 0.25)),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -69,31 +84,44 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                                     'assets/icons/nav/schedule.png',
                                     width: 16,
                                     height: 16,
-                                    errorBuilder: (_, __, ___) => const Icon(Icons.calendar_month_rounded, color: Color(0xFF67E8F9), size: 14),
+                                    errorBuilder: (_, __, ___) => const Icon(
+                                        Icons.calendar_month_rounded,
+                                        color: Color(0xFF67E8F9),
+                                        size: 14),
                                   ),
                                   const SizedBox(width: 6),
                                   const Text(
                                     'PLANNING SYNCHRONISÉ · PROMOTION ICT4D L3',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
                             ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
                               decoration: BoxDecoration(
-                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                color: const Color(0xFF10B981)
+                                    .withValues(alpha: 0.25),
                                 borderRadius: BorderRadius.circular(20),
-                                border: Border.all(color: const Color(0xFF34D399)),
+                                border:
+                                    Border.all(color: const Color(0xFF34D399)),
                               ),
                               child: const Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.cloud_done_rounded, color: Color(0xFF34D399), size: 13),
+                                  Icon(Icons.cloud_done_rounded,
+                                      color: Color(0xFF34D399), size: 13),
                                   SizedBox(width: 5),
                                   Text(
                                     'Résilience & Synchronisation Hors-Ligne',
-                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800),
                                   ),
                                 ],
                               ),
@@ -103,21 +131,29 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         const SizedBox(height: 12),
                         const Text(
                           'Emploi du Temps Universitaire UY1',
-                          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 6),
                         const Text(
                           'Consultez vos créneaux hebdomadaires par amphithéâtre et salle de TP avec alertes de séances, accès direct aux salles et synchronisation hors-ligne intégrale.',
-                          style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, height: 1.45),
+                          style: TextStyle(
+                              color: Color(0xFFCBD5E1),
+                              fontSize: 12.5,
+                              height: 1.45),
                         ),
                         const SizedBox(height: 14),
                         Wrap(
                           spacing: 12,
                           runSpacing: 8,
                           children: [
-                            _buildHeroBadge('Séances', '${sampleScheduleSlots.length} programmées'),
+                            _buildHeroBadge('Séances',
+                                '${sampleScheduleSlots.length} programmées'),
                             _buildHeroBadge('Volume Horaire', '18h / semaine'),
-                            _buildHeroBadge('Filière ICT4D', 'Semestre 1 (2026-2027)'),
+                            _buildHeroBadge(
+                                'Filière ICT4D', 'Semestre 1 (2026-2027)'),
                             _buildHeroBadge('Synchro', 'Cache Local Prêt'),
                           ],
                         ),
@@ -132,12 +168,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     decoration: BoxDecoration(
                       color: Colors.white.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25)),
                     ),
                     child: Image.asset(
                       'assets/illustrations/schedule_calendar_hero_3d.png',
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.event_note_rounded, color: Colors.white, size: 48),
+                      errorBuilder: (_, __, ___) => const Icon(
+                          Icons.event_note_rounded,
+                          color: Colors.white,
+                          size: 48),
                     ),
                   ),
                 ],
@@ -150,7 +190,8 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
             Row(
               children: _days.map((day) {
                 final isSelected = day == _selectedDay;
-                final count = sampleScheduleSlots.where((s) => s.dayOfWeek == day).length;
+                final count =
+                    sampleScheduleSlots.where((s) => s.dayOfWeek == day).length;
 
                 return Expanded(
                   child: Padding(
@@ -161,15 +202,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         decoration: BoxDecoration(
-                          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
+                          color: isSelected
+                              ? const Color(0xFF1E3A8A)
+                              : Colors.white,
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(
-                            color: isSelected ? const Color(0xFF1E3A8A) : const Color(0xFFE2E8F0),
+                            color: isSelected
+                                ? const Color(0xFF1E3A8A)
+                                : const Color(0xFFE2E8F0),
                           ),
                           boxShadow: isSelected
                               ? [
                                   BoxShadow(
-                                    color: const Color(0xFF1E3A8A).withValues(alpha: 0.2),
+                                    color: const Color(0xFF1E3A8A)
+                                        .withValues(alpha: 0.2),
                                     blurRadius: 8,
                                     offset: const Offset(0, 4),
                                   )
@@ -183,7 +229,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               style: TextStyle(
                                 fontSize: 13,
                                 fontWeight: FontWeight.bold,
-                                color: isSelected ? Colors.white : const Color(0xFF0F172A),
+                                color: isSelected
+                                    ? Colors.white
+                                    : const Color(0xFF0F172A),
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -191,7 +239,9 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                               '$count cours',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: isSelected ? const Color(0xFF93C5FD) : const Color(0xFF94A3B8),
+                                color: isSelected
+                                    ? const Color(0xFF93C5FD)
+                                    : const Color(0xFF94A3B8),
                               ),
                             ),
                           ],
@@ -212,16 +262,20 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.event_busy_rounded, size: 48, color: Colors.grey.shade400),
+                          Icon(Icons.event_busy_rounded,
+                              size: 48, color: Colors.grey.shade400),
                           const SizedBox(height: 12),
                           Text(
                             'Aucun cours programmé le $_selectedDay',
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF64748B)),
                           ),
                           const SizedBox(height: 4),
                           const Text(
                             'Consacrez cette journée aux révisions ou aux projets d\'ingénierie.',
-                            style: TextStyle(fontSize: 12, color: Color(0xFF94A3B8)),
+                            style: TextStyle(
+                                fontSize: 12, color: Color(0xFF94A3B8)),
                           ),
                         ],
                       ),
@@ -252,8 +306,13 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('$label : ', style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
-          Text(value, style: const TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.bold)),
+          Text('$label : ',
+              style: const TextStyle(color: Color(0xFFCBD5E1), fontSize: 11)),
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 11.5,
+                  fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -288,12 +347,19 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               children: [
                 Text(
                   slot.startTime,
-                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A)),
+                  style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF1E3A8A)),
                 ),
-                const Text('à', style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
+                const Text('à',
+                    style: TextStyle(fontSize: 10, color: Color(0xFF94A3B8))),
                 Text(
                   slot.endTime,
-                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B)),
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF64748B)),
                 ),
               ],
             ),
@@ -309,26 +375,34 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         slot.courseCode,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E3A8A)),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
                       decoration: BoxDecoration(
                         color: const Color(0xFF0D9488).withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(
                         slot.type,
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0D9488)),
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF0D9488)),
                       ),
                     ),
                   ],
@@ -336,23 +410,32 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                 const SizedBox(height: 6),
                 Text(
                   slot.courseName,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A)),
                 ),
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    const Icon(Icons.location_on_outlined, size: 14, color: Color(0xFF0D9488)),
+                    const Icon(Icons.location_on_outlined,
+                        size: 14, color: Color(0xFF0D9488)),
                     const SizedBox(width: 4),
                     Text(
                       slot.classroom,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF0D9488), fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF0D9488),
+                          fontWeight: FontWeight.w600),
                     ),
                     const SizedBox(width: 16),
-                    const Icon(Icons.person_outline_rounded, size: 14, color: Color(0xFF64748B)),
+                    const Icon(Icons.person_outline_rounded,
+                        size: 14, color: Color(0xFF64748B)),
                     const SizedBox(width: 4),
                     Text(
                       slot.teacher,
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF64748B)),
+                      style: const TextStyle(
+                          fontSize: 12, color: Color(0xFF64748B)),
                     ),
                   ],
                 ),

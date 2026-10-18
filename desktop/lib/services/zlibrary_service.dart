@@ -47,17 +47,20 @@ class ZLibraryService {
       if (response.statusCode == 200) {
         final data = jsonDecode(utf8.decode(response.bodyBytes));
         if (data is Map && data['books'] is List) {
-          return (data['books'] as List).map((b) => ZBook(
-            id: b['id']?.toString() ?? '',
-            title: b['title']?.toString() ?? 'Titre inconnu',
-            author: b['author']?.toString() ?? 'Auteur inconnu',
-            year: b['year']?.toString() ?? '2025',
-            publisher: b['publisher']?.toString() ?? 'Éditeur Universitaire',
-            extension: b['extension']?.toString() ?? 'PDF',
-            filesize: b['filesizeString']?.toString() ?? '4.2 MB',
-            coverUrl: b['cover']?.toString() ?? '',
-            downloadUrl: b['downloadUrl']?.toString() ?? '',
-          )).toList();
+          return (data['books'] as List)
+              .map((b) => ZBook(
+                    id: b['id']?.toString() ?? '',
+                    title: b['title']?.toString() ?? 'Titre inconnu',
+                    author: b['author']?.toString() ?? 'Auteur inconnu',
+                    year: b['year']?.toString() ?? '2025',
+                    publisher:
+                        b['publisher']?.toString() ?? 'Éditeur Universitaire',
+                    extension: b['extension']?.toString() ?? 'PDF',
+                    filesize: b['filesizeString']?.toString() ?? '4.2 MB',
+                    coverUrl: b['cover']?.toString() ?? '',
+                    downloadUrl: b['downloadUrl']?.toString() ?? '',
+                  ))
+              .toList();
         }
       }
     } catch (_) {}
@@ -65,7 +68,8 @@ class ZLibraryService {
     // Repli de sécurité avec les ouvrages de référence UY1
     return _getPopularAcademicBooks().where((b) {
       final q = query.toLowerCase();
-      return b.title.toLowerCase().contains(q) || b.author.toLowerCase().contains(q);
+      return b.title.toLowerCase().contains(q) ||
+          b.author.toLowerCase().contains(q);
     }).toList();
   }
 
@@ -80,7 +84,8 @@ class ZLibraryService {
         publisher: 'MIT Press',
         extension: 'PDF',
         filesize: '14.8 MB',
-        coverUrl: 'https://images.unsplash.com/photo-1532012164546-f432f2e3edd4?w=400&q=80',
+        coverUrl:
+            'https://images.unsplash.com/photo-1532012164546-f432f2e3edd4?w=400&q=80',
         downloadUrl: 'https://z-library.sk/book/intro-algorithms-4th',
       ),
       ZBook(
@@ -91,7 +96,8 @@ class ZLibraryService {
         publisher: 'Morgan Kaufmann',
         extension: 'PDF',
         filesize: '8.4 MB',
-        coverUrl: 'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
+        coverUrl:
+            'https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?w=400&q=80',
         downloadUrl: 'https://z-library.sk/book/computer-networks',
       ),
       ZBook(
@@ -102,7 +108,8 @@ class ZLibraryService {
         publisher: 'McGraw-Hill Education',
         extension: 'PDF',
         filesize: '12.1 MB',
-        coverUrl: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',
+        coverUrl:
+            'https://images.unsplash.com/photo-1512820790803-83ca734da794?w=400&q=80',
         downloadUrl: 'https://z-library.sk/book/database-concepts',
       ),
       ZBook(
@@ -113,7 +120,8 @@ class ZLibraryService {
         publisher: 'McGraw-Hill',
         extension: 'PDF',
         filesize: '10.5 MB',
-        coverUrl: 'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&q=80',
+        coverUrl:
+            'https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=400&q=80',
         downloadUrl: 'https://z-library.sk/book/software-eng-pressman',
       ),
       ZBook(
@@ -124,7 +132,8 @@ class ZLibraryService {
         publisher: 'Wiley',
         extension: 'PDF',
         filesize: '11.3 MB',
-        coverUrl: 'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&q=80',
+        coverUrl:
+            'https://images.unsplash.com/photo-1457369804613-52c61a468e7d?w=400&q=80',
         downloadUrl: 'https://z-library.sk/book/operating-systems-wiley',
       ),
       ZBook(
@@ -135,7 +144,8 @@ class ZLibraryService {
         publisher: 'Pearson',
         extension: 'PDF',
         filesize: '18.2 MB',
-        coverUrl: 'https://images.unsplash.com/photo-1507842229452-9533c3732c86?w=400&q=80',
+        coverUrl:
+            'https://images.unsplash.com/photo-1507842229452-9533c3732c86?w=400&q=80',
         downloadUrl: 'https://z-library.sk/book/ai-modern-approach-norvig',
       ),
     ];

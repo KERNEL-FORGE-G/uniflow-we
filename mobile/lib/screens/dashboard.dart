@@ -1707,4 +1707,3 @@ class _MeetQuickBanner extends StatelessWidget {
     );
   }
 }
-

@@ -62,7 +62,8 @@ class _DesktopShellState extends State<DesktopShell> {
               children: [
                 // Logo & Header
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
                   child: Row(
                     children: [
                       ClipRRect(
@@ -81,16 +82,26 @@ class _DesktopShellState extends State<DesktopShell> {
                           children: [
                             Text(
                               'UniFlow',
-                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 18,
+                                  letterSpacing: -0.5),
                             ),
                             Text(
                               'Plateforme Universitaire Connectée',
-                              style: TextStyle(color: Color(0xFF67E8F9), fontSize: 9.5, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: Color(0xFF67E8F9),
+                                  fontSize: 9.5,
+                                  fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
                               'Résilience & Synchronisation Hors-Ligne',
-                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 8.5, fontWeight: FontWeight.w600),
+                              style: TextStyle(
+                                  color: Color(0xFF94A3B8),
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w600),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -170,7 +181,8 @@ class _DesktopShellState extends State<DesktopShell> {
 
                 // Footer de la Sidebar : Statut Résilience & Synchronisation Hors-Ligne + Serveur Visio Local
                 Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: const Color(0xFF1E293B),
@@ -194,31 +206,44 @@ class _DesktopShellState extends State<DesktopShell> {
                           const Expanded(
                             child: Text(
                               'Synchro Hors-Ligne Active',
-                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 2),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              color: const Color(0xFF10B981)
+                                  .withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(6),
                             ),
-                            child: const Text('Résilient', style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontWeight: FontWeight.bold)),
+                            child: const Text('Résilient',
+                                style: TextStyle(
+                                    color: Color(0xFF34D399),
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
                       const SizedBox(height: 5),
                       Text(
                         'Données locales sécurisées · Visio Port ${_server.port}',
-                        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
+                        style: const TextStyle(
+                            color: Color(0xFF94A3B8), fontSize: 10),
                       ),
                       const SizedBox(height: 6),
                       InkWell(
                         onTap: () => setState(() => _selectedIndex = 4),
                         child: const Text(
                           'Serveur P2P & Visioconférence →',
-                          style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              color: Color(0xFF38BDF8),
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
@@ -236,14 +261,16 @@ class _DesktopShellState extends State<DesktopShell> {
                       end: Alignment.bottomRight,
                     ),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    border:
+                        Border.all(color: Colors.white.withValues(alpha: 0.2)),
                   ),
                   child: const Row(
                     children: [
                       CircleAvatar(
                         radius: 19,
                         backgroundColor: Color(0xFF0F172A),
-                        backgroundImage: AssetImage('assets/mascot/uni_copilot_3d.png'),
+                        backgroundImage:
+                            AssetImage('assets/mascot/uni_copilot_3d.png'),
                       ),
                       SizedBox(width: 10),
                       Expanded(
@@ -252,13 +279,19 @@ class _DesktopShellState extends State<DesktopShell> {
                           children: [
                             Text(
                               'Étudiant UY1 · ICT4D L3',
-                              style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w900),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w900),
                               overflow: TextOverflow.ellipsis,
                             ),
                             SizedBox(height: 2),
                             Text(
                               'etudiant.uy1@uniflow.cm',
-                              style: TextStyle(color: Color(0xFF67E8F9), fontSize: 10, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: Color(0xFF67E8F9),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
@@ -309,7 +342,9 @@ class _DesktopShellState extends State<DesktopShell> {
                 : null,
             color: isSelected ? null : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
-            border: isSelected ? Border.all(color: Colors.white.withValues(alpha: 0.2)) : null,
+            border: isSelected
+                ? Border.all(color: Colors.white.withValues(alpha: 0.2))
+                : null,
           ),
           child: Row(
             children: [
@@ -318,7 +353,9 @@ class _DesktopShellState extends State<DesktopShell> {
                 height: 28,
                 padding: const EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                  color: isSelected ? Colors.white.withValues(alpha: 0.16) : const Color(0xFF1E293B),
+                  color: isSelected
+                      ? Colors.white.withValues(alpha: 0.16)
+                      : const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Image.asset(
@@ -345,22 +382,27 @@ class _DesktopShellState extends State<DesktopShell> {
               ),
               if (badgeText != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                   decoration: BoxDecoration(
                     color: isSelected
                         ? Colors.white.withValues(alpha: 0.22)
-                        : (badgeColor ?? const Color(0xFF0D9488)).withValues(alpha: 0.2),
+                        : (badgeColor ?? const Color(0xFF0D9488))
+                            .withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
                       color: isSelected
                           ? Colors.white.withValues(alpha: 0.4)
-                          : (badgeColor ?? const Color(0xFF0D9488)).withValues(alpha: 0.4),
+                          : (badgeColor ?? const Color(0xFF0D9488))
+                              .withValues(alpha: 0.4),
                     ),
                   ),
                   child: Text(
                     badgeText,
                     style: TextStyle(
-                      color: isSelected ? Colors.white : (badgeColor ?? const Color(0xFF0D9488)),
+                      color: isSelected
+                          ? Colors.white
+                          : (badgeColor ?? const Color(0xFF0D9488)),
                       fontSize: 9,
                       fontWeight: FontWeight.bold,
                     ),
