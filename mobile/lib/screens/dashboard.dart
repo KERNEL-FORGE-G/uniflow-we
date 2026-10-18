@@ -19,6 +19,7 @@ import '../widgets/common.dart';
 import '../widgets/motion.dart';
 import '../widgets/uni/uni_mascot.dart';
 import '../widgets/uni_icons.dart';
+import '../widgets/uni_reminder_widget.dart';
 import '../widgets/gamification/gamification_widgets.dart';
 // `gradesListProvider`, `assignmentBoardProvider` et
 // `teacherAssignmentsProvider` sont déclarés dans leurs écrans : l'accueil les
@@ -216,6 +217,8 @@ class _LearnerHome extends ConsumerWidget {
         // ── Bannière hero « Book Lending » — mascotte + CTA ───────────────
         const _DashHeroBanner(),
         const SizedBox(height: 14),
+        const UniReminderWidget(),
+        const SizedBox(height: 14),
         const _MeetQuickBanner(),
         const SizedBox(height: 14),
 
@@ -389,6 +392,8 @@ class _TeacherHome extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _DashHeroBanner(),
+        const SizedBox(height: 14),
+        const UniReminderWidget(initialType: UniReminderType.upcomingClass),
         const SizedBox(height: 14),
         const _MeetQuickBanner(),
         const SizedBox(height: 14),
@@ -632,6 +637,8 @@ class _PersonalHome extends ConsumerWidget {
       children: [
         // ── Bannière hero « Book Lending » avec mascotte Uni ──
         const _DashHeroBanner(),
+        const SizedBox(height: 14),
+        const UniReminderWidget(),
         const SizedBox(height: 18),
 
         // ── Actions rapides immédiatement accessibles ────────

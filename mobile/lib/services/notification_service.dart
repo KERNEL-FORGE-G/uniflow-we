@@ -82,12 +82,29 @@ class LocalNotifications {
     return true;
   }
 
+  /// Identifiant du canal de rappels et widgets d'assiduité / cours Duolingo.
+  static const String reminderChannelId = 'uniflow_reminders';
+  static const String reminderChannelName = 'Rappels & Widgets Campus';
+  static const String reminderChannelDescription = 'Rappels de streak, cours imminents, devoirs et présence de la mascotte Uni.';
+
+  /// Notifications enregistrées pour les tests automatisés.
+  @visibleForTesting
+  static final List<Map<String, dynamic>> testDispatched = [];
+
   /// Affiche l'alerte d'un message urgent.
   static Future<void> showUrgent({
     required String title,
     required String body,
     String payload = '',
   }) async {
+    testDispatched.add({
+      'type': 'urgent',
+      'title': title,
+      'body': body,
+      'payload': payload,
+      'timestamp': DateTime.now(),
+    });
+
     await ensureInitialized();
     if (!_initialized) return;
     // `vibrationPattern` est un `Int64List` : une liste Dart ordinaire est
@@ -126,6 +143,104 @@ class LocalNotifications {
     } catch (error) {
       debugPrint('Affichage de la notification impossible : $error');
     }
+  }
+
+  /// Affiche un rappel ou une alerte issue du widget Duolingo d'Uni.
+  static Future<void> showReminder({
+    required String title,
+    required String body,
+    String payload = '',
+  }) async {
+    testDispatched.add({
+      'type': 'reminder',
+      'title': title,
+      'body': body,
+      'payload': payload,
+      'timestamp': DateTime.now(),
+    });
+
+    await ensureInitialized();
+    if (!_initialized) return;
+
+    final details = NotificationDetails(
+      android: AndroidNotificationDetails(
+        reminderChannelId,
+        reminderChannelName,
+        channelDescription: reminderChannelDescription,
+        importance: Importance.high,
+        priority: Priority.high,
+        icon: notificationIcon,
+        color: AppColors.primaryBlue,
+        enableVibration: true,
+        vibrationPattern: Int64List.fromList([0, 250, 150, 250]),
+        styleInformation: const BigTextStyleInformation(''),
+      ),
+      iOS: const DarwinNotificationDetails(
+        interruptionLevel: InterruptionLevel.active,
+      ),
+    );
+
+    try {
+      await _plugin.show(
+        id: (DateTime.now().millisecondsSinceEpoch ~/ 1000) + 1,
+        title: title,
+        body: body,
+        notificationDetails: details,
+        payload: payload,
+      );
+    } catch (error) {
+      debugPrint('Affichage du rappel impossible : $error');
+    }
+  }
+
+  /// Déclenche un test réel de notification push / locale selon le type de rappel.
+  static Future<void> triggerTestReminder({
+    required String reminderType,
+    String? customTitle,
+    String? customBody,
+  }) async {
+    String title;
+    String body;
+    String payload;
+
+    switch (reminderType) {
+      case 'streak':
+        title = customTitle ?? '🔥 Ton streak de 14 jours est en danger !';
+        body = customBody ?? 'Il ne te reste que quelques heures pour valider ton assiduité aujourd\'hui. Ne brise pas la chaîne !';
+        payload = '/quetes';
+        break;
+      case 'upcomingClass':
+        title = customTitle ?? '⏰ Cours dans 15 minutes !';
+        body = customBody ?? 'INF4067 · Algorithmique Avancée en Amphi 501 avec Dr. Njoya.';
+        payload = '/emploi-du-temps';
+        break;
+      case 'assignment':
+        title = customTitle ?? '📝 Devoir à rendre avant 23h59 !';
+        body = customBody ?? 'Projet Flutter Mobile & BDD Drift à déposer sur l\'espace académique.';
+        payload = '/devoirs';
+        break;
+      case 'attendance':
+        title = customTitle ?? '🛡️ Émargement QR Code ouvert !';
+        body = customBody ?? 'Le délégué vient d\'ouvrir la session d\'émargement. Scanne pour valider ta présence.';
+        payload = '/presence';
+        break;
+      case 'nightRest':
+        title = customTitle ?? '🌙 Pause révision & Repos';
+        body = customBody ?? 'Uni dort déjà ! Repose-toi bien pour être en pleine forme pour ton cours de 7h30 demain.';
+        payload = '/emploi-du-temps';
+        break;
+      case 'celebrate':
+        title = customTitle ?? '🎉 Félicitations ! Quêtes 100% validées !';
+        body = customBody ?? 'Toutes tes présences du jour sont enregistrées. Streak maintenu et +50 XP gagnés !';
+        payload = '/quetes';
+        break;
+      default:
+        title = customTitle ?? '🔔 Notification de test UniFlow';
+        body = customBody ?? 'Le service de notifications push fonctionne parfaitement sur votre appareil.';
+        payload = '/notifications';
+    }
+
+    await showReminder(title: title, body: body, payload: payload);
   }
 }
 
