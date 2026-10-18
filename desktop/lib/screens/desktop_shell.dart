@@ -12,6 +12,13 @@ import 'attendance_screen.dart';
 import 'zlibrary_screen.dart';
 import 'assistant_screen.dart';
 import 'settings_screen.dart';
+import 'messages_screen.dart';
+import 'sentinelle_screen.dart';
+import 'quests_screen.dart';
+import 'directory_screen.dart';
+import 'subscription_screen.dart';
+import 'notifications_screen.dart';
+import 'creator_member_screen.dart';
 
 class DesktopShell extends StatefulWidget {
   final String userName;
@@ -54,6 +61,21 @@ class _DesktopShellState extends State<DesktopShell> {
     setState(() => _selectedIndex = index);
   }
 
+  bool _isCreatorMember(String email, String role) {
+    final e = email.toLowerCase();
+    final r = role.toLowerCase();
+    return e.contains('ravel') ||
+        e.contains('founder') ||
+        e.contains('kernelforge') ||
+        e.contains('marcel') ||
+        e.contains('admin') ||
+        e.contains('sandra') ||
+        e.contains('hassane') ||
+        r.contains('fondateur') ||
+        r.contains('kernel forge') ||
+        r.contains('membre');
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
@@ -73,6 +95,20 @@ class _DesktopShellState extends State<DesktopShell> {
         userEmail: _currentUserEmail,
         userRole: _currentUserRole,
         onLogout: widget.onLogout ?? () {},
+        onRoleChanged: (newRole) {
+          setState(() => _currentUserRole = newRole);
+        },
+      ),
+      const MessagesScreen(),
+      const SentinelleScreen(),
+      const QuestsScreen(),
+      const DirectoryScreen(),
+      const SubscriptionScreen(),
+      NotificationsScreen(onNavigate: _onNavigate),
+      CreatorMemberScreen(
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+        userRole: _currentUserRole,
         onRoleChanged: (newRole) {
           setState(() => _currentUserRole = newRole);
         },
@@ -154,12 +190,23 @@ class _DesktopShellState extends State<DesktopShell> {
                   child: ListView(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     children: [
+                      // --- SECTION 1 : PRINCIPAL & COLLABORATION ---
+                      _buildSectionHeader('PRINCIPAL & COLLABORATION'),
                       _buildNavItem(
                         0,
                         'Tableau de Bord',
                         'assets/icons/nav/dashboard.png',
                         Icons.dashboard_rounded,
                       ),
+                      if (_isCreatorMember(_currentUserEmail, _currentUserRole))
+                        _buildNavItem(
+                          18,
+                          'Espace Membre KERNEL FORGE',
+                          'assets/icons/nav/coordination.png',
+                          Icons.developer_mode_rounded,
+                          badgeText: 'Créateur',
+                          badgeColor: const Color(0xFF0D9488),
+                        ),
                       _buildNavItem(
                         1,
                         'Actualités Campus',
@@ -176,6 +223,25 @@ class _DesktopShellState extends State<DesktopShell> {
                         badgeText: 'Signé',
                         badgeColor: const Color(0xFF10B981),
                       ),
+                      _buildNavItem(
+                        12,
+                        'Messagerie & Canaux P2P',
+                        'assets/icons/nav/messages.png',
+                        Icons.chat_bubble_rounded,
+                        badgeText: 'Direct',
+                        badgeColor: const Color(0xFF38BDF8),
+                      ),
+                      _buildNavItem(
+                        17,
+                        'Centre de Notifications',
+                        'assets/icons/nav/notifications.png',
+                        Icons.notifications_rounded,
+                        badgeText: '3',
+                        badgeColor: const Color(0xFFF59E0B),
+                      ),
+
+                      // --- SECTION 2 : ACADÉMIQUE LMD ---
+                      _buildSectionHeader('ACADÉMIQUE LMD'),
                       _buildNavItem(
                         3,
                         'Emploi du Temps',
@@ -227,6 +293,39 @@ class _DesktopShellState extends State<DesktopShell> {
                         Icons.local_library_rounded,
                         badgeText: 'VPS',
                         badgeColor: const Color(0xFF38BDF8),
+                      ),
+
+                      // --- SECTION 3 : CAMPUS & SERVICES ---
+                      _buildSectionHeader('CAMPUS & SERVICES'),
+                      _buildNavItem(
+                        13,
+                        'Sentinelle IoT & Caméras',
+                        'assets/icons/nav/sentinelle.png',
+                        Icons.shield_rounded,
+                        badgeText: '4 CCTV',
+                        badgeColor: const Color(0xFFEF4444),
+                      ),
+                      _buildNavItem(
+                        14,
+                        'Quêtes & Gamification',
+                        'assets/icons/nav/gamification.png',
+                        Icons.emoji_events_rounded,
+                        badgeText: 'Niv. 5',
+                        badgeColor: const Color(0xFFFBBF24),
+                      ),
+                      _buildNavItem(
+                        15,
+                        'Annuaire Campus UY1',
+                        'assets/icons/nav/students.png',
+                        Icons.badge_rounded,
+                      ),
+                      _buildNavItem(
+                        16,
+                        'Abonnements & Bourses',
+                        'assets/icons/nav/abonnement.png',
+                        Icons.credit_card_rounded,
+                        badgeText: 'MoMo',
+                        badgeColor: const Color(0xFF10B981),
                       ),
                       _buildNavItem(
                         10,
@@ -388,9 +487,19 @@ class _DesktopShellState extends State<DesktopShell> {
                             ],
                           ),
                         ),
+                        if (_isCreatorMember(_currentUserEmail, _currentUserRole)) ...[
+                          IconButton(
+                            icon: const Icon(Icons.workspace_premium_rounded, color: Color(0xFF67E8F9), size: 19),
+                            tooltip: 'Espace Membre Créateur',
+                            onPressed: () => setState(() => _selectedIndex = 18),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                          const SizedBox(width: 6),
+                        ],
                         IconButton(
                           icon: const Icon(Icons.settings, color: Colors.white70, size: 18),
-                          tooltip: 'Paramètres & Espace Membre',
+                          tooltip: 'Paramètres & Profil',
                           onPressed: () => setState(() => _selectedIndex = 11),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
@@ -420,6 +529,21 @@ class _DesktopShellState extends State<DesktopShell> {
             child: screens[_selectedIndex],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 14, 8, 6),
+      child: Text(
+        title,
+        style: const TextStyle(
+          color: Color(0xFF64748B),
+          fontSize: 9.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+        ),
       ),
     );
   }

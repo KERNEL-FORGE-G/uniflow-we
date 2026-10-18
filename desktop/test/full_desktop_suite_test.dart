@@ -6,6 +6,13 @@ import 'package:uniflow_desktop/screens/assignments_screen.dart';
 import 'package:uniflow_desktop/screens/grades_screen.dart';
 import 'package:uniflow_desktop/screens/attendance_screen.dart';
 import 'package:uniflow_desktop/screens/settings_screen.dart';
+import 'package:uniflow_desktop/screens/creator_member_screen.dart';
+import 'package:uniflow_desktop/screens/messages_screen.dart';
+import 'package:uniflow_desktop/screens/sentinelle_screen.dart';
+import 'package:uniflow_desktop/screens/quests_screen.dart';
+import 'package:uniflow_desktop/screens/subscription_screen.dart';
+import 'package:uniflow_desktop/screens/directory_screen.dart';
+import 'package:uniflow_desktop/screens/notifications_screen.dart';
 
 void main() {
   setUp(() {
@@ -148,5 +155,59 @@ void main() {
     await tester.tap(logoutBtn.first);
     await tester.pumpAndSettle();
     expect(loggedOut, isTrue);
+  });
+
+  testWidgets('New Parity Screens render properly (CreatorMember, Messages, Sentinelle, Quests, Subscription, Directory, Notifications)',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    // 1. CreatorMemberScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CreatorMemberScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Espace Développeur & Membre Créateur'), findsWidgets);
+    expect(find.text('Interface Membre Créateur'), findsWidgets);
+    expect(find.text('Interface Utilisateur Standard'), findsWidgets);
+    expect(find.textContaining('Mes Tâches & Jalons Membre'), findsWidgets);
+
+    // 2. MessagesScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: MessagesScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Messagerie Instantanée P2P'), findsWidgets);
+    expect(find.textContaining('Génie Logiciel (INF4067)'), findsWidgets);
+
+    // 3. SentinelleScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SentinelleScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Supervision Campus, Caméras CCTV'), findsWidgets);
+    expect(find.textContaining('FLUX CCTV EN DIRECT'), findsWidgets);
+
+    // 4. QuestsScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: QuestsScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Quêtes, Badges d’Honneur & Classement Campus'), findsWidgets);
+    expect(find.textContaining('Assiduité d’Or'), findsWidgets);
+
+    // 5. SubscriptionScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: SubscriptionScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Abonnements Pro, Paiements MoMo & Bourses'), findsWidgets);
+    expect(find.text('UniFlow Pro Campus'), findsWidgets);
+
+    // 6. DirectoryScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: DirectoryScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Annuaire des Étudiants & Corps Enseignant UY1'), findsWidgets);
+    expect(find.textContaining('Marcel Tessoh'), findsWidgets);
+
+    // 7. NotificationsScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: NotificationsScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Centre de Notifications Académiques'), findsWidgets);
+    expect(find.textContaining('Notes du Contrôle Continu'), findsWidgets);
   });
 }
