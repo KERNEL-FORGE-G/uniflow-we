@@ -17,8 +17,12 @@ import 'sentinelle_screen.dart';
 import 'quests_screen.dart';
 import 'directory_screen.dart';
 import 'subscription_screen.dart';
+import 'package:flutter/services.dart';
 import 'notifications_screen.dart';
 import 'creator_member_screen.dart';
+import 'enrollments_screen.dart';
+import 'classrooms_screen.dart';
+import 'help_screen.dart';
 
 class DesktopShell extends StatefulWidget {
   final String userName;
@@ -113,9 +117,12 @@ class _DesktopShellState extends State<DesktopShell> {
           setState(() => _currentUserRole = newRole);
         },
       ),
+      const EnrollmentsScreen(),
+      const ClassroomsScreen(),
+      HelpScreen(onNavigate: _onNavigate),
     ];
 
-    return Scaffold(
+    final scaffold = Scaffold(
       body: Row(
         children: [
           // =================================================================
@@ -249,6 +256,14 @@ class _DesktopShellState extends State<DesktopShell> {
                         Icons.calendar_month_rounded,
                       ),
                       _buildNavItem(
+                        19,
+                        'Inscriptions & Dossier LMD',
+                        'assets/icons/nav/inscriptions.png',
+                        Icons.how_to_reg_rounded,
+                        badgeText: '154 ECTS',
+                        badgeColor: const Color(0xFF10B981),
+                      ),
+                      _buildNavItem(
                         4,
                         'Visioconférence Amphi',
                         'assets/icons/nav/visio.png',
@@ -298,6 +313,14 @@ class _DesktopShellState extends State<DesktopShell> {
                       // --- SECTION 3 : CAMPUS & SERVICES ---
                       _buildSectionHeader('CAMPUS & SERVICES'),
                       _buildNavItem(
+                        20,
+                        'Salles & Amphis Campus',
+                        'assets/icons/nav/rooms.png',
+                        Icons.meeting_room_rounded,
+                        badgeText: '8 Salles',
+                        badgeColor: const Color(0xFF38BDF8),
+                      ),
+                      _buildNavItem(
                         13,
                         'Sentinelle IoT & Caméras',
                         'assets/icons/nav/sentinelle.png',
@@ -330,9 +353,17 @@ class _DesktopShellState extends State<DesktopShell> {
                       _buildNavItem(
                         10,
                         'Uni Copilot IA',
-                        'assets/icons/nav/aide.png',
+                        'assets/mascot/uni_copilot_3d.png',
                         Icons.auto_awesome_rounded,
                         badgeText: 'GROQ',
+                        badgeColor: const Color(0xFF0D9488),
+                      ),
+                      _buildNavItem(
+                        21,
+                        'Centre d\'Aide & FAQ',
+                        'assets/icons/nav/aide.png',
+                        Icons.help_outline_rounded,
+                        badgeText: 'F11 / FAQ',
                         badgeColor: const Color(0xFF0D9488),
                       ),
                       _buildNavItem(
@@ -529,6 +560,27 @@ class _DesktopShellState extends State<DesktopShell> {
             child: screens[_selectedIndex],
           ),
         ],
+      ),
+    );
+
+    return CallbackShortcuts(
+      bindings: <ShortcutActivator, VoidCallback>{
+        const SingleActivator(LogicalKeyboardKey.digit0, control: true): () => _onNavigate(0),
+        const SingleActivator(LogicalKeyboardKey.digit1, control: true): () => _onNavigate(1),
+        const SingleActivator(LogicalKeyboardKey.digit2, control: true): () => _onNavigate(2),
+        const SingleActivator(LogicalKeyboardKey.digit3, control: true): () => _onNavigate(3),
+        const SingleActivator(LogicalKeyboardKey.digit4, control: true): () => _onNavigate(4),
+        const SingleActivator(LogicalKeyboardKey.digit5, control: true): () => _onNavigate(5),
+        const SingleActivator(LogicalKeyboardKey.digit6, control: true): () => _onNavigate(6),
+        const SingleActivator(LogicalKeyboardKey.digit7, control: true): () => _onNavigate(7),
+        const SingleActivator(LogicalKeyboardKey.digit8, control: true): () => _onNavigate(8),
+        const SingleActivator(LogicalKeyboardKey.digit9, control: true): () => _onNavigate(9),
+        const SingleActivator(LogicalKeyboardKey.keyH, control: true): () => _onNavigate(21),
+        const SingleActivator(LogicalKeyboardKey.f1): () => _onNavigate(21),
+      },
+      child: Focus(
+        autofocus: true,
+        child: scaffold,
       ),
     );
   }

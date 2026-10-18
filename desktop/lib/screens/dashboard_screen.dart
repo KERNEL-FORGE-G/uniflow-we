@@ -202,6 +202,48 @@ class DashboardScreen extends StatelessWidget {
                                     horizontal: 14, vertical: 12),
                               ),
                             ),
+                            OutlinedButton.icon(
+                              onPressed: () => onNavigate(19), // Inscriptions LMD
+                              icon: const Icon(Icons.how_to_reg_rounded,
+                                  size: 16),
+                              label: const Text('Dossier LMD'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(color: Colors.white38),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () => onNavigate(20), // Salles & Amphis
+                              icon: const Icon(Icons.meeting_room_rounded,
+                                  size: 16),
+                              label: const Text('Salles & Amphis'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(color: Colors.white38),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                            OutlinedButton.icon(
+                              onPressed: () => onNavigate(21), // Aide & Raccourcis
+                              icon: const Icon(Icons.help_outline_rounded,
+                                  size: 16),
+                              label: const Text('Centre d\'Aide'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: const Color(0xFF67E8F9),
+                                side: const BorderSide(color: Color(0xFF67E8F9)),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 12),
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -709,7 +751,7 @@ class DashboardScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 16),
                         ElevatedButton.icon(
-                          onPressed: () => onNavigate(7), // Assistant
+                          onPressed: () => onNavigate(10), // Assistant Uni Copilot
                           icon: const Icon(Icons.chat_bubble_outline_rounded,
                               size: 16),
                           label: const Text('Ouvrir l\'Assistant Uni'),

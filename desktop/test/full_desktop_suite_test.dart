@@ -14,6 +14,12 @@ import 'package:uniflow_desktop/screens/subscription_screen.dart';
 import 'package:uniflow_desktop/screens/directory_screen.dart';
 import 'package:uniflow_desktop/screens/notifications_screen.dart';
 import 'package:uniflow_desktop/screens/visio_screen.dart';
+import 'package:uniflow_desktop/screens/enrollments_screen.dart';
+import 'package:uniflow_desktop/screens/classrooms_screen.dart';
+import 'package:uniflow_desktop/screens/help_screen.dart';
+import 'package:uniflow_desktop/screens/courses_screen.dart';
+import 'package:uniflow_desktop/screens/schedule_screen.dart';
+import 'package:uniflow_desktop/screens/desktop_shell.dart';
 
 void main() {
   setUp(() {
@@ -243,4 +249,183 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Architecture Visioconférence Autonome'), findsWidgets);
   });
+
+  testWidgets('EnrollmentsScreen renders administrative records and requests modal',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: EnrollmentsScreen())));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Inscriptions, Dossier & Cycle LMD'), findsWidgets);
+    expect(find.textContaining('154 / 180 ECTS'), findsWidgets);
+    expect(find.textContaining('21T2894'), findsWidgets);
+
+    // Switch to payments tab
+    final paymentsTab = find.text('Quittances & Frais');
+    await tester.tap(paymentsTab.first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Quittances de Frais Académiques'), findsWidgets);
+    expect(find.textContaining('50 000'), findsWidgets);
+
+    // Switch to requests tab and open administrative request modal
+    final requestsTab = find.text('Demandes Administratives');
+    await tester.tap(requestsTab.first);
+    await tester.pumpAndSettle();
+    final reqBtn = find.text('Nouvelle demande');
+    expect(reqBtn, findsWidgets);
+    await tester.tap(reqBtn.first);
+    await tester.pumpAndSettle();
+    expect(find.text('Nouvelle Demande Administrative'), findsWidgets);
+    expect(find.text('Annuler'), findsWidgets);
+    await tester.tap(find.text('Annuler').first);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('ClassroomsScreen renders amphitheaters occupancy and reservation modal',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ClassroomsScreen())));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Salles, Amphithéâtres & Laboratoires'), findsWidgets);
+    expect(find.textContaining('Amphithéâtre 1001'), findsWidgets);
+    expect(find.textContaining('Amphithéâtre 501'), findsWidgets);
+    expect(find.textContaining('Laboratoire C205'), findsWidgets);
+
+    // Open reservation dialog
+    final reserveBtn = find.text('Réserver');
+    await tester.ensureVisible(reserveBtn.first);
+    expect(reserveBtn, findsWidgets);
+    await tester.tap(reserveBtn.first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Réserver la salle'), findsWidgets);
+    expect(find.text('Annuler'), findsWidgets);
+    await tester.tap(find.text('Annuler').first);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('HelpScreen renders shortcuts table, FAQ, diagnostic tool, and support modal',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: HelpScreen())));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining("Centre d'Aide, Raccourcis & Guides"), findsWidgets);
+    expect(find.text('Raccourcis Clavier'), findsWidgets);
+    expect(find.text('Foire Aux Questions (FAQ)'), findsWidgets);
+    expect(find.text('Diagnostic & Synchronisation P2P'), findsWidgets);
+    expect(find.text('Ticket Support KERNEL FORGE'), findsWidgets);
+
+    // Check keyboard shortcuts
+    expect(find.text('Ctrl + 0'), findsWidgets);
+    expect(find.text('F11'), findsWidgets);
+
+    // Switch to FAQ
+    await tester.tap(find.text('Foire Aux Questions (FAQ)').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('hors connexion Internet'), findsWidgets);
+
+    // Switch to Support view and open modal
+    final supportTab = find.text('Ticket Support KERNEL FORGE');
+    await tester.ensureVisible(supportTab.first);
+    await tester.tap(supportTab.first);
+    await tester.pumpAndSettle();
+    expect(find.text('Nouveau Ticket'), findsWidgets);
+    await tester.tap(find.text('Nouveau Ticket').first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Ouvrir un Ticket'), findsWidgets);
+    expect(find.text('Annuler'), findsWidgets);
+    await tester.tap(find.text('Annuler').first);
+    await tester.pumpAndSettle();
+  });
+
+  testWidgets('CoursesScreen and ScheduleScreen render Bento layout with interactive modals',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    // Test CoursesScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: CoursesScreen())));
+    await tester.pumpAndSettle();
+    expect(find.text("Mes Cours & Unités d'Enseignement"), findsWidgets);
+    expect(find.textContaining('Génie Logiciel Avancé'), findsWidgets);
+
+    // Tap first course card to open details modal
+    await tester.tap(find.textContaining('Génie Logiciel Avancé').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Fermer'), findsWidgets);
+    await tester.tap(find.text('Fermer').first);
+    await tester.pumpAndSettle();
+
+    // Test ScheduleScreen
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: ScheduleScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Emploi du Temps Universitaire UY1'), findsWidgets);
+    expect(find.textContaining('Sécurité Informatique'), findsWidgets);
+  });
+
+  testWidgets('DesktopShell renders all navigation items and switches screens correctly',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: DesktopShell()));
+    await tester.pumpAndSettle();
+
+    // Verify main dashboard renders
+    expect(find.text('UniFlow'), findsWidgets);
+    expect(find.text('Plateforme Universitaire Connectée'), findsWidgets);
+    expect(find.text('Tableau de Bord'), findsWidgets);
+
+    // Navigate to Inscriptions & Dossier LMD
+    final enrollmentsNav = find.text('Inscriptions & Dossier LMD');
+    expect(enrollmentsNav, findsWidgets);
+    await tester.ensureVisible(enrollmentsNav.first);
+    await tester.tap(enrollmentsNav.first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Inscriptions, Dossier & Cycle LMD'), findsWidgets);
+
+    // Navigate to Salles & Amphis Campus
+    final classroomsNav = find.text('Salles & Amphis Campus');
+    expect(classroomsNav, findsWidgets);
+    await tester.ensureVisible(classroomsNav.first);
+    await tester.tap(classroomsNav.first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Salles, Amphithéâtres & Laboratoires'), findsWidgets);
+
+    // Navigate to Centre d'Aide & FAQ
+    final helpNav = find.text('Centre d\'Aide & FAQ');
+    expect(helpNav, findsWidgets);
+    await tester.ensureVisible(helpNav.first);
+    await tester.tap(helpNav.first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining("Centre d'Aide, Raccourcis & Guides"), findsWidgets);
+  });
 }
+

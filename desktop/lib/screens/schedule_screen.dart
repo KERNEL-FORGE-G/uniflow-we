@@ -318,23 +318,134 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
     );
   }
 
-  Widget _buildSlotCard(DesktopScheduleSlot slot) {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+  void _showSlotDetailsModal(DesktopScheduleSlot slot) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: const Color(0xFF1E3A8A),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                slot.courseCode,
+                style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                slot.courseName,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: 500,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  _buildSlotBadge('Jour', slot.dayOfWeek, const Color(0xFF1E3A8A)),
+                  _buildSlotBadge('Horaire', '${slot.startTime} à ${slot.endTime}', const Color(0xFF0D9488)),
+                  _buildSlotBadge('Type', slot.type, const Color(0xFF2563EB)),
+                  _buildSlotBadge('Salle', slot.classroom, const Color(0xFFEA580C)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(),
+              const SizedBox(height: 12),
+              const Text('Enseignant Titulaire :', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF64748B))),
+              const SizedBox(height: 4),
+              Row(
+                children: [
+                  const Icon(Icons.person_pin_rounded, color: Color(0xFF1E3A8A), size: 20),
+                  const SizedBox(width: 8),
+                  Text(slot.teacher, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFBFDBFE)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline_rounded, color: Color(0xFF1E40AF), size: 22),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Séance synchronisée avec le campus UY1. Présence enregistrée automatiquement via QR code certifié.',
+                        style: TextStyle(fontSize: 11.5, color: Color(0xFF1E40AF), height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Fermer', style: TextStyle(color: Color(0xFF64748B))),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildSlotBadge(String label, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
+          Text('$label: ', style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+          Text(value, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSlotCard(DesktopScheduleSlot slot) {
+    return InkWell(
+      onTap: () => _showSlotDetailsModal(slot),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.02),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
           // Horaire
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -444,6 +555,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  );
+}
 }
