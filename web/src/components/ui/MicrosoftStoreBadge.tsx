@@ -8,15 +8,18 @@ import {
 export function MicrosoftStoreBadge({
   className,
   width = 200,
+  onClick,
 }: {
   className?: string
   width?: number | string
+  onClick?: () => void
 }) {
   return (
     <motion.a
       href={MICROSOFT_STORE_INSTALLER_URL}
       target="_self"
       rel="noopener noreferrer"
+      onClick={onClick}
       whileHover={{ scale: 1.03, y: -2 }}
       whileTap={{ scale: 0.98 }}
       className={cn(

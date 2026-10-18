@@ -17,6 +17,7 @@ import {
   type AppRelease,
   type ReleasePlatform,
 } from '../../lib/appReleases'
+import { useDownloadStats } from '../../lib/downloadStats'
 
 /**
  * Section « Télécharger l'application » de la landing.
@@ -58,12 +59,13 @@ function ReleaseDetails({ release }: { release: AppRelease }) {
   )
 }
 
-function DownloadButton({ release, label, icon, tone = 'primary', download = false }: {
+function DownloadButton({ release, label, icon, tone = 'primary', download = false, onDownload }: {
   release: AppRelease
   label: string
   icon: UniIconName
   tone?: 'primary' | 'secondary'
   download?: boolean
+  onDownload?: () => void
 }) {
   const caption = releaseCaption(release)
   return (
@@ -74,6 +76,7 @@ function DownloadButton({ release, label, icon, tone = 'primary', download = fal
       // vient du serveur.
       download={download ? release.fileName || true : undefined}
       rel="noopener noreferrer"
+      onClick={() => onDownload?.()}
       whileHover={{ y: -2, scale: 1.01 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
@@ -110,6 +113,7 @@ function SoonPill({ label, icon }: { label: string; icon: UniIconName }) {
 
 export function DownloadSection() {
   const { data: releases, isPending } = useAppReleases()
+  const { totalDownloads, platformCounts, trackDownload } = useDownloadStats()
   const android = findRelease(releases, 'android')
   const desktop = findDesktopRelease(releases)
   const otherDesktop = DESKTOP_PLATFORMS
@@ -141,6 +145,83 @@ export function DownloadSection() {
               L’application Android native est distribuée dans les releases GitHub de KERNEL FORGE.
               Le site reste utilisable dans le navigateur et installable comme PWA.
             </motion.p>
+
+            {/* Compteur de téléchargements en direct et répartition par plateforme */}
+            <motion.div
+              variants={fadeInUp}
+              className="mt-4 rounded-2xl border border-slate-200/90 bg-gradient-to-br from-blue-50/80 via-white to-teal-50/80 p-4 shadow-sm"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#1e3a8a] to-[#0d9488] text-white shadow-md">
+                    <UniIcon name="download" weight="bold" className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-black text-[#0f172a] sm:text-2xl" data-testid="total-downloads-count">
+                        {totalDownloads.toLocaleString('fr-FR')}
+                      </span>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-black text-emerald-800">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Téléchargements au total
+                      </span>
+                    </div>
+                    <p className="text-xs font-semibold text-slate-500">
+                      Nombre cumulé de personnes ayant téléchargé ou installé UniFlow
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Badges de répartition par plateforme */}
+              <div className="mt-3.5 grid grid-cols-2 gap-2 pt-3 border-t border-slate-200/70 sm:grid-cols-5">
+                <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2 border border-slate-200/60 shadow-2xs">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+                    <UniIcon name="android" weight="fill" className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-bold text-slate-700 truncate">Android</span>
+                    <span className="block text-[10px] font-semibold text-slate-500">{platformCounts.android.toLocaleString('fr-FR')} clics</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2 border border-slate-200/60 shadow-2xs">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+                    <UniIcon name="windows" weight="fill" className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-bold text-slate-700 truncate">Windows</span>
+                    <span className="block text-[10px] font-semibold text-slate-500">{platformCounts.windows.toLocaleString('fr-FR')} clics</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2 border border-slate-200/60 shadow-2xs">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                    <UniIcon name="linux" weight="fill" className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-bold text-slate-700 truncate">Linux</span>
+                    <span className="block text-[10px] font-semibold text-slate-500">{platformCounts.linux.toLocaleString('fr-FR')} clics</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2 border border-slate-200/60 shadow-2xs">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-700">
+                    <UniIcon name="apple" weight="fill" className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-bold text-slate-700 truncate">macOS</span>
+                    <span className="block text-[10px] font-semibold text-slate-500">{platformCounts.macos.toLocaleString('fr-FR')} clics</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 rounded-xl bg-white/90 p-2 border border-slate-200/60 shadow-2xs">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-teal-50 text-[#0d9488]">
+                    <UniIcon name="globe" weight="fill" className="h-4 w-4" />
+                  </span>
+                  <div className="min-w-0">
+                    <span className="block text-[11px] font-bold text-slate-700 truncate">Web / PWA</span>
+                    <span className="block text-[10px] font-semibold text-slate-500">{platformCounts.web.toLocaleString('fr-FR')} accès</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
           </div>
 
           <motion.div variants={fadeInUp} className="space-y-3">
@@ -155,7 +236,13 @@ export function DownloadSection() {
               </span>
             ) : android ? (
               <div>
-                <DownloadButton release={android} label="Télécharger pour Android (APK)" icon="android" download />
+                <DownloadButton
+                  release={android}
+                  label="Télécharger pour Android (APK)"
+                  icon="android"
+                  download
+                  onDownload={() => trackDownload('android')}
+                />
                 <ReleaseDetails release={android} />
               </div>
             ) : (
@@ -165,6 +252,7 @@ export function DownloadSection() {
                   href={releaseFallbackUrl}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => trackDownload('android')}
                   className="inline-flex items-center gap-1.5 text-sm font-bold text-[#1e3a8a] hover:underline"
                 >
                   Suivre les publications sur GitHub
@@ -183,9 +271,9 @@ export function DownloadSection() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="flex flex-col gap-1 sm:items-start">
-              <MicrosoftStoreBadge width={190} className="shadow-md" />
-              <Link to="/download#bureau" className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#1e3a8a]">
+            <div className="flex flex-col gap-1 sm:items-start" onClick={() => trackDownload('windows')}>
+              <MicrosoftStoreBadge width={190} className="shadow-md cursor-pointer" />
+              <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#1e3a8a]">
                 <UniIcon name="windows" weight="duotone" className="h-3 w-3" />
                 Installeur direct Windows (.exe) disponible
               </Link>
@@ -198,11 +286,13 @@ export function DownloadSection() {
                   icon={PLATFORM_ICON[desktop.platform]}
                   tone="secondary"
                   download
+                  onDownload={() => trackDownload(desktop.platform)}
                 />
               </div>
             ) : null}
             <Link
               to="/login"
+              onClick={() => trackDownload('web')}
               className="inline-flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200/80 bg-white px-5 py-3.5 text-left text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#1e3a8a]/30 hover:shadow-md sm:w-auto"
             >
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#f0fdfa] text-[#0d9488]">

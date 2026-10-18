@@ -21,6 +21,7 @@ import androidIllustration from '../assets/illustrations/telecharger-android.web
 import desktopIllustration from '../assets/illustrations/telecharger-desktop.webp'
 import webIllustration from '../assets/illustrations/telecharger-web.webp'
 import { MicrosoftStoreBadge } from '../components/ui/MicrosoftStoreBadge'
+import { useDownloadStats, trackDownload } from '../lib/downloadStats'
 
 /**
  * Page publique « Télécharger UniFlow » (`/download`).
@@ -81,12 +82,13 @@ function ReleaseFacts({ release }: { release: AppRelease }) {
   )
 }
 
-function DownloadButton({ release, label, icon, tone = 'navy', size = 'lg' }: {
+function DownloadButton({ release, label, icon, tone = 'navy', size = 'lg', onDownload }: {
   release: AppRelease
   label: string
   icon: UniIconName
   tone?: 'navy' | 'teal' | 'white'
   size?: 'lg' | 'md'
+  onDownload?: () => void
 }) {
   const meta = releaseMetaLine(release)
   return (
@@ -94,6 +96,7 @@ function DownloadButton({ release, label, icon, tone = 'navy', size = 'lg' }: {
       href={release.url}
       download={release.fileName || true}
       rel="noopener noreferrer"
+      onClick={() => onDownload?.()}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
       data-testid={`download-${release.platform}`}
@@ -176,6 +179,7 @@ function ChannelCard({ image, alt, eyebrow, title, description, accent, children
 export default function DownloadPage() {
   const reduced = useReducedMotion()
   const { data: releases, isPending } = useAppReleases()
+  const { stats } = useDownloadStats()
   const channels = buildDownloadChannels(releases, isPending)
   const android = channels.android.release
   const windowsEntry = channels.desktop.entries.find((e) => e.platform === 'windows')
@@ -193,13 +197,22 @@ export default function DownloadPage() {
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(13,148,136,0.35),transparent_55%),radial-gradient(ellipse_at_bottom_right,rgba(30,58,138,0.55),transparent_60%)]" />
           <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 py-20 lg:grid-cols-[1fr_1fr] lg:py-24">
             <div className="space-y-7">
-              <motion.span
+              <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-teal-100 "
+                className="flex flex-wrap items-center gap-3"
               >
-                <UniIcon name="download" weight="bold" className="h-3.5 w-3.5" /> Téléchargements
-              </motion.span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-1.5 text-xs font-bold uppercase tracking-wider text-teal-100">
+                  <UniIcon name="download" weight="bold" className="h-3.5 w-3.5" /> Téléchargements
+                </span>
+                <span className="inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-500/20 px-3.5 py-1 text-xs font-bold text-teal-200 backdrop-blur-md">
+                  <span className="relative flex h-2 w-2">
+                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-teal-400 opacity-75" />
+                    <span className="relative inline-flex h-2 w-2 rounded-full bg-teal-300" />
+                  </span>
+                  <span>{stats.total.toLocaleString('fr-FR')} téléchargements au total</span>
+                </span>
+              </motion.div>
               <motion.h1
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -227,16 +240,23 @@ export default function DownloadPage() {
                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
               >
                 {android ? (
-                  <DownloadButton release={android} label="Télécharger pour Android (APK)" icon="android" tone="white" />
+                  <DownloadButton
+                    release={android}
+                    label="Télécharger pour Android (APK)"
+                    icon="android"
+                    tone="white"
+                    onDownload={() => trackDownload('android')}
+                  />
                 ) : (
                   <StatusPill status={channels.android.status} soonLabel="Version Android bientôt disponible" icon="android" dark />
                 )}
                 <div className="flex flex-col gap-1 sm:items-start">
-                  <MicrosoftStoreBadge width={190} className="shadow-lg" />
+                  <MicrosoftStoreBadge width={190} className="shadow-lg" onClick={() => trackDownload('windows')} />
                   {windowsEntry?.release ? (
                     <a
                       href={windowsEntry.release.url}
                       download={windowsEntry.release.fileName || true}
+                      onClick={() => trackDownload('windows')}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
                     >
                       <UniIcon name="download" weight="bold" className="h-3 w-3" />
@@ -339,6 +359,13 @@ export default function DownloadPage() {
                 description="Emploi du temps, cours, devoirs, notes, présence par QR code, forum et messagerie — dans la poche, même sans réseau."
                 accent="teal"
               >
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-teal-100/80 px-2.5 py-0.5 text-xs font-bold text-teal-800">
+                    <span className="h-1.5 w-1.5 rounded-full bg-teal-600 animate-pulse" />
+                    {stats.platforms.android.toLocaleString('fr-FR')} téléchargements
+                  </span>
+                </div>
+
                 {/* Information Google Play Store */}
                 <div className="rounded-2xl border border-teal-200/80 bg-teal-50/70 p-3.5">
                   <div className="flex items-center justify-between mb-1">
@@ -356,7 +383,14 @@ export default function DownloadPage() {
 
                 {android ? (
                   <>
-                    <DownloadButton release={android} label="Télécharger l’APK direct (v1.0.0)" icon="android" tone="teal" size="md" />
+                    <DownloadButton
+                      release={android}
+                      label="Télécharger l’APK direct (v1.0.0)"
+                      icon="android"
+                      tone="teal"
+                      size="md"
+                      onDownload={() => trackDownload('android')}
+                    />
                     <ReleaseFacts release={android} />
                   </>
                 ) : (
@@ -377,6 +411,13 @@ export default function DownloadPage() {
                   description="Pour les enseignants et l’administration : visioconférence embarquée, feuille de présence automatique, exports PDF et Excel."
                   accent="navy"
                 >
+                  <div className="flex items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-blue-100/80 px-2.5 py-0.5 text-xs font-bold text-[#1e3a8a]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#1e3a8a] animate-pulse" />
+                      {((stats.platforms.windows || 0) + (stats.platforms.linux || 0) + (stats.platforms.macos || 0)).toLocaleString('fr-FR')} téléchargements
+                    </span>
+                  </div>
+
                   <div className="space-y-4">
                     {/* Badge officiel Microsoft Store (Windows) */}
                     <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
@@ -388,7 +429,7 @@ export default function DownloadPage() {
                           Officiel
                         </span>
                       </div>
-                      <MicrosoftStoreBadge width={200} />
+                      <MicrosoftStoreBadge width={200} onClick={() => trackDownload('windows')} />
                       <p className="mt-2 text-[11px] font-medium text-slate-500">
                         Disponible sur le Microsoft Store (mise à jour v1.0.0 en cours de propagation).
                       </p>
@@ -410,6 +451,7 @@ export default function DownloadPage() {
                             icon="windows"
                             tone="navy"
                             size="md"
+                            onDownload={() => trackDownload('windows')}
                           />
                           <div className="mt-2">
                             <ReleaseFacts release={windowsEntry.release} />
@@ -431,7 +473,14 @@ export default function DownloadPage() {
                                 Disponible
                               </span>
                             </div>
-                            <DownloadButton release={entry.release} label={`Pour ${entry.label}`} icon={PLATFORM_ICON[entry.platform]} tone="navy" size="md" />
+                            <DownloadButton
+                              release={entry.release}
+                              label={`Pour ${entry.label}`}
+                              icon={PLATFORM_ICON[entry.platform]}
+                              tone="navy"
+                              size="md"
+                              onDownload={() => trackDownload(entry.platform)}
+                            />
                             <div className="mt-2">
                               <ReleaseFacts release={entry.release} />
                             </div>
@@ -463,8 +512,15 @@ export default function DownloadPage() {
                 description="Rien à télécharger : ouvrez UniFlow dans Chrome, Safari ou Firefox. Ajoutez-le à l’écran d’accueil pour l’utiliser comme une application."
                 accent="sky"
               >
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-sky-100/80 px-2.5 py-0.5 text-xs font-bold text-sky-800">
+                    <span className="h-1.5 w-1.5 rounded-full bg-sky-600 animate-pulse" />
+                    {stats.platforms.web.toLocaleString('fr-FR')} ouvertures
+                  </span>
+                </div>
                 <Link
                   to="/login"
+                  onClick={() => trackDownload('web')}
                   className="inline-flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200/80 bg-white px-4 py-3 text-left text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#1e3a8a]/30 hover:shadow-md"
                 >
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#f0fdfa] text-[#0d9488]">
