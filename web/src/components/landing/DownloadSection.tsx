@@ -273,10 +273,16 @@ export function DownloadSection() {
           <motion.div variants={fadeInUp} className="flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="flex flex-col gap-1 sm:items-start" onClick={() => trackDownload('windows')}>
               <MicrosoftStoreBadge width={190} className="shadow-md cursor-pointer" />
-              <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#1e3a8a]">
-                <UniIcon name="windows" weight="duotone" className="h-3 w-3" />
-                Installeur direct Windows (.exe) disponible
-              </Link>
+              <div className="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold text-slate-500">
+                <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 hover:text-[#1e3a8a]">
+                  <UniIcon name="windows" weight="duotone" className="h-3 w-3" />
+                  Installeur .exe
+                </Link>
+                <span>·</span>
+                <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 hover:text-[#1e3a8a]">
+                  Paquet .msi
+                </Link>
+              </div>
             </div>
             {desktop ? (
               <div>

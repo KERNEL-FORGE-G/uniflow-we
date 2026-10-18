@@ -13,6 +13,7 @@ import 'package:uniflow_desktop/screens/quests_screen.dart';
 import 'package:uniflow_desktop/screens/subscription_screen.dart';
 import 'package:uniflow_desktop/screens/directory_screen.dart';
 import 'package:uniflow_desktop/screens/notifications_screen.dart';
+import 'package:uniflow_desktop/screens/visio_screen.dart';
 
 void main() {
   setUp(() {
@@ -209,5 +210,37 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.textContaining('Centre de Notifications Académiques'), findsWidgets);
     expect(find.textContaining('Notes du Contrôle Continu'), findsWidgets);
+  });
+
+  testWidgets('VisioScreen renders properly (Console Amphi & Service Embarqué 100% Autonome)',
+      (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(() {
+      tester.view.resetPhysicalSize();
+      tester.view.resetDevicePixelRatio();
+    });
+
+    await tester.pumpWidget(const MaterialApp(home: Scaffold(body: VisioScreen())));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Amphi Virtuel & Visio Campus HD'), findsWidgets);
+    expect(find.text('Console Amphi en Direct'), findsWidgets);
+    expect(find.text('Accès Invités & QR Code'), findsWidgets);
+    expect(find.text('Zéro Dépendance & Moteur'), findsWidgets);
+    expect(find.text('EN DIRECT'), findsWidgets);
+
+    // Switch to Guest / QR Code tab
+    final qrTab = find.text('Accès Invités & QR Code');
+    expect(qrTab, findsWidgets);
+    await tester.tap(qrTab.first);
+    await tester.pumpAndSettle();
+    expect(find.text('Scanner pour rejoindre'), findsWidgets);
+
+    // Switch to Zero Dependency Architecture tab
+    final zeroDepTab = find.text('Zéro Dépendance & Moteur');
+    expect(zeroDepTab, findsWidgets);
+    await tester.tap(zeroDepTab.first);
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Architecture Visioconférence Autonome'), findsWidgets);
   });
 }

@@ -184,6 +184,25 @@ export default function DownloadPage() {
   const android = channels.android.release
   const windowsEntry = channels.desktop.entries.find((e) => e.platform === 'windows')
   const nonWindowsEntries = channels.desktop.entries.filter((e) => e.platform !== 'windows')
+  const windowsMsiRelease: AppRelease = windowsEntry?.release
+    ? {
+        ...windowsEntry.release,
+        fileName: (windowsEntry.release.fileName || 'UniFlow-Setup.exe').replace(/\.exe$/i, '.msi'),
+        url: windowsEntry.release.url.replace(/\.exe(\?.*)?$/i, '.msi$1'),
+        notes: 'Paquet MSI officiel pour déploiement Windows d\'entreprise et postes universitaires.',
+      }
+    : {
+        platform: 'windows',
+        version: '1.0.0',
+        url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Setup.msi',
+        fileName: 'UniFlow-Setup.msi',
+        sizeBytes: 46200000,
+        sha256: '',
+        notes: 'Paquet MSI officiel pour déploiement Windows d\'entreprise et postes universitaires.',
+        publishedAt: new Date().toISOString(),
+        enabled: true,
+        updatedAt: null,
+      }
   const notes = splitReleaseNotes(android?.notes)
   const anySoon = channels.android.status === 'soon' || channels.desktop.status === 'soon'
 
@@ -252,17 +271,28 @@ export default function DownloadPage() {
                 )}
                 <div className="flex flex-col gap-1 sm:items-start">
                   <MicrosoftStoreBadge width={190} className="shadow-lg" onClick={() => trackDownload('windows')} />
-                  {windowsEntry?.release ? (
+                  <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                    {windowsEntry?.release ? (
+                      <a
+                        href={windowsEntry.release.url}
+                        download={windowsEntry.release.fileName || true}
+                        onClick={() => trackDownload('windows')}
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
+                      >
+                        <UniIcon name="download" weight="bold" className="h-3 w-3" />
+                        Installeur direct (.exe)
+                      </a>
+                    ) : null}
                     <a
-                      href={windowsEntry.release.url}
-                      download={windowsEntry.release.fileName || true}
+                      href={windowsMsiRelease.url}
+                      download={windowsMsiRelease.fileName || true}
                       onClick={() => trackDownload('windows')}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
                     >
                       <UniIcon name="download" weight="bold" className="h-3 w-3" />
-                      Installeur direct Windows (.exe)
+                      Paquet entreprise (.msi)
                     </a>
-                  ) : null}
+                  </div>
                 </div>
                 <a
                   href="#bureau"
@@ -434,30 +464,53 @@ export default function DownloadPage() {
                         Disponible sur le Microsoft Store (mise à jour v1.0.0 en cours de propagation).
                       </p>
 
-                      {/* Lien secondaire : Installeur direct Windows .exe */}
-                      {windowsEntry?.release ? (
-                        <div className="mt-3.5 pt-3.5 border-t border-slate-200/80">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[11px] font-bold text-slate-700">
-                              Installeur direct Windows (.exe)
+                      {/* Liens secondaires : Installeur direct Windows .exe et paquet .msi */}
+                      <div className="mt-3.5 pt-3.5 border-t border-slate-200/80 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-slate-700">
+                            Installeurs directs Windows autonomes
+                          </span>
+                          <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#1e3a8a]">
+                            .exe & .msi
+                          </span>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2">
+                          {windowsEntry?.release ? (
+                            <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
+                              <span className="block text-[11px] font-black text-slate-800 mb-2">
+                                Installeur direct (.exe)
+                              </span>
+                              <DownloadButton
+                                release={windowsEntry.release}
+                                label="Télécharger (.exe)"
+                                icon="windows"
+                                tone="navy"
+                                size="md"
+                                onDownload={() => trackDownload('windows')}
+                              />
+                              <div className="mt-2">
+                                <ReleaseFacts release={windowsEntry.release} />
+                              </div>
+                            </div>
+                          ) : null}
+                          <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
+                            <span className="block text-[11px] font-black text-slate-800 mb-2">
+                              Paquet Entreprise / Univ (.msi)
                             </span>
-                            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#1e3a8a]">
-                              Lien direct
-                            </span>
-                          </div>
-                          <DownloadButton
-                            release={windowsEntry.release}
-                            label="Télécharger l’installeur Windows (.exe)"
-                            icon="windows"
-                            tone="navy"
-                            size="md"
-                            onDownload={() => trackDownload('windows')}
-                          />
-                          <div className="mt-2">
-                            <ReleaseFacts release={windowsEntry.release} />
+                            <DownloadButton
+                              release={windowsMsiRelease}
+                              label="Télécharger (.msi)"
+                              icon="windows"
+                              tone="navy"
+                              size="md"
+                              onDownload={() => trackDownload('windows')}
+                            />
+                            <div className="mt-2">
+                              <ReleaseFacts release={windowsMsiRelease} />
+                            </div>
                           </div>
                         </div>
-                      ) : null}
+                      </div>
                     </div>
 
                     {/* Autres systèmes (Linux, macOS, etc.) */}
