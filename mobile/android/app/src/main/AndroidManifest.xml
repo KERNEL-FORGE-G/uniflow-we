@@ -67,6 +67,43 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <!-- Widgets écran d'accueil Android (Style Duolingo) -->
+        <receiver
+            android:name=".widgets.UniStreakWidgetProvider"
+            android:exported="true"
+            android:label="UniFlow · Série &amp; Quêtes">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/uni_streak_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.UniScheduleWidgetProvider"
+            android:exported="true"
+            android:label="UniFlow · Prochain Cours">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/uni_schedule_widget_info" />
+        </receiver>
+
+        <receiver
+            android:name=".widgets.UniCompactWidgetProvider"
+            android:exported="true"
+            android:label="UniFlow · Mascotte Duo">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/uni_compact_widget_info" />
+        </receiver>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

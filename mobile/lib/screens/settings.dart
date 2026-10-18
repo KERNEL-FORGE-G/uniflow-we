@@ -6,6 +6,7 @@ import '../offline/offline_settings_section.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import '../widgets/phosphor.dart';
+import '../widgets/home_widget_dialog.dart';
 
 import '../app_info.dart';
 import '../services/profile_photo_service.dart';
@@ -287,6 +288,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     const Divider(height: 24),
                     const OfflineSettingsSection(),
                     const Divider(height: 24),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const IconTile(
+                          icon: PhosphorIconsDuotone.sparkle,
+                          color: Color(0xFFF59E0B),
+                          variant: IconTileVariant.soft,
+                          size: IconTile.dense),
+                      title: const Text('Widgets Écran d\'Accueil (Style Duolingo)'),
+                      subtitle: const Text('Flamme, quêtes & cours visibles sans ouvrir l\'app',
+                          style: TextStyle(fontSize: 12)),
+                      trailing:
+                          const PhosphorIcon(PhosphorIconsBold.caretRight, size: 18, color: AppColors.textSecondary),
+                      onTap: () => HomeWidgetSheet.show(context),
+                    ),
+                    const Divider(height: 1),
                     ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: const IconTile(

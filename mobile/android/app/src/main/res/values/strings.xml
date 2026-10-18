@@ -10,4 +10,9 @@
     <string name="raccourci_messages_long">Ouvrir la messagerie</string>
     <string name="raccourci_notifications_court">Notifications</string>
     <string name="raccourci_notifications_long">Voir les notifications</string>
+
+    <!-- Widgets écran d'accueil (Style Duolingo) -->
+    <string name="widget_streak_description">UniFlow Flamme &amp; Quêtes : Suis ta série active et tes quêtes avec Uni</string>
+    <string name="widget_schedule_description">UniFlow Prochain Cours : Ton prochain cours, salle et horaire en un coup d\'œil</string>
+    <string name="widget_compact_description">UniFlow Mascotte Duo : La mascotte Uni vivante avec rappels et humeur du jour</string>
 </resources>

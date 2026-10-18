@@ -8,6 +8,7 @@ import '../services/gamification_service.dart';
 import '../widgets/common.dart';
 import '../widgets/phosphor.dart';
 import '../widgets/uni/uni_mascot.dart';
+import '../widgets/home_widget_dialog.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  Écran Quêtes
@@ -198,18 +199,37 @@ class _QuestsHeader extends StatelessWidget {
           const SizedBox(width: 8),
           // XP total badge
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
               color: Colors.white.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(PhosphorIconsFill.star, size: 16, color: Color(0xFFF59E0B)),
+              const Icon(PhosphorIconsFill.star, size: 15, color: Color(0xFFF59E0B)),
               const SizedBox(width: 4),
               Text('$totalXp XP',
-                  style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w700)),
+                  style: const TextStyle(color: Colors.white, fontSize: 12.5, fontWeight: FontWeight.w700)),
             ]),
+          ),
+          const SizedBox(width: 6),
+          // Bouton Widgets Duolingo
+          InkWell(
+            onTap: () => HomeWidgetSheet.show(context),
+            borderRadius: BorderRadius.circular(20),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEA580C).withValues(alpha: 0.35),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFF97316)),
+              ),
+              child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                Text('🔥', style: TextStyle(fontSize: 12)),
+                SizedBox(width: 3),
+                Text('Widget', style: TextStyle(color: Colors.white, fontSize: 11.5, fontWeight: FontWeight.w800)),
+              ]),
+            ),
           ),
         ],
       ),
