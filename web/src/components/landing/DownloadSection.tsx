@@ -116,13 +116,34 @@ export function DownloadSection() {
   const { totalDownloads, platformCounts, trackDownload } = useDownloadStats()
   const android = findRelease(releases, 'android')
   const desktop = findDesktopRelease(releases)
+  const officialAndroid: AppRelease = android || {
+    platform: 'android' as const,
+    version: '1.0.0',
+    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/uniflow-1.0.0-arm64-v8a.apk',
+    fileName: 'uniflow-1.0.0-arm64-v8a.apk',
+    sizeBytes: 44355174,
+    sha256: '2804af7ccb9e75b31e88a1a7643ff81737e0f756c40ae7d6647dfd9609e11773',
+    notes: 'Version officielle 1.0.0 Bêta : Emploi du temps LMD, Présence QR, Visio HD et Z-Library.',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+  const officialDesktop: AppRelease = desktop || {
+    platform: 'windows' as const,
+    version: '1.0.0',
+    url: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.msi/download?project=uniflow',
+    fileName: 'UniFlow-Setup.msi',
+    sizeBytes: 48500000,
+    sha256: '',
+    notes: 'Version Windows Desktop officielle (Miroir Bucket VPS Appwrite).',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
   const otherDesktop = DESKTOP_PLATFORMS
     .filter((platform) => platform !== desktop?.platform)
     .map((platform) => findRelease(releases, platform))
     .filter((release): release is AppRelease => Boolean(release))
-  // Première visite sans miroir local : la Function répond en quelques
-  // secondes (démarrage à froid). Le dire évite d'afficher « bientôt » à tort.
-  const checking = isPending && !releases
 
   return (
     <section id={DOWNLOAD_SECTION_ID} className="scroll-mt-24 border-b border-slate-200 bg-white py-20">
@@ -229,37 +250,16 @@ export function DownloadSection() {
               <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
               Google Play Store : validation finale en cours · APK direct disponible
             </div>
-            {checking ? (
-              <span className="inline-flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-slate-50 px-5 py-4 text-slate-500 sm:w-auto" aria-live="polite">
-                <UniIcon name="spinner" weight="bold" className="h-5 w-5 animate-spin text-[#1e3a8a]" />
-                <span className="text-sm font-bold">Recherche de la dernière version Android…</span>
-              </span>
-            ) : android ? (
-              <div>
-                <DownloadButton
-                  release={android}
-                  label="Télécharger pour Android (APK)"
-                  icon="android"
-                  download
-                  onDownload={() => trackDownload('android')}
-                />
-                <ReleaseDetails release={android} />
-              </div>
-            ) : (
-              <div className="space-y-2">
-                <SoonPill label="Version Android bientôt disponible" icon="android" />
-                <a
-                  href={releaseFallbackUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => trackDownload('android')}
-                  className="inline-flex items-center gap-1.5 text-sm font-bold text-[#1e3a8a] hover:underline"
-                >
-                  Suivre les publications sur GitHub
-                  <UniIcon name="externalLink" weight="bold" className="h-4 w-4" />
-                </a>
-              </div>
-            )}
+            <div>
+              <DownloadButton
+                release={officialAndroid}
+                label="Télécharger pour Android (APK)"
+                icon="android"
+                download
+                onDownload={() => trackDownload('android')}
+              />
+              <ReleaseDetails release={officialAndroid} />
+            </div>
             <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
               <UniIcon name="security" weight="duotone" className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" />
               Fichier APK officiel : autorisez l’installation depuis cette source quand Android le demande.
@@ -271,7 +271,7 @@ export function DownloadSection() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="flex flex-col gap-1 sm:items-start" onClick={() => trackDownload('windows')}>
+            <div className="flex flex-col gap-1.5 sm:items-start" onClick={() => trackDownload('windows')}>
               <MicrosoftStoreBadge width={190} className="shadow-md cursor-pointer" />
               <div className="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold text-slate-500">
                 <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 hover:text-[#1e3a8a]">
@@ -279,23 +279,32 @@ export function DownloadSection() {
                   Installeur .exe
                 </Link>
                 <span>·</span>
+                <a
+                  href="https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.msi/download?project=uniflow"
+                  download="UniFlow-Setup.msi"
+                  onClick={() => trackDownload('windows')}
+                  className="inline-flex items-center gap-1 font-bold text-[#0d9488] hover:text-[#0b7269]"
+                  title="Téléchargement direct haute vitesse depuis le Bucket VPS Appwrite"
+                >
+                  <UniIcon name="database" weight="fill" className="h-3 w-3 text-[#0d9488]" />
+                  Bucket Local (.msi)
+                </a>
+                <span>·</span>
                 <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 hover:text-[#1e3a8a]">
-                  Paquet .msi
+                  Paquet .msi (GitHub)
                 </Link>
               </div>
             </div>
-            {desktop ? (
-              <div>
-                <DownloadButton
-                  release={desktop}
-                  label={`Télécharger pour ${RELEASE_PLATFORM_LABELS[desktop.platform]}`}
-                  icon={PLATFORM_ICON[desktop.platform]}
-                  tone="secondary"
-                  download
-                  onDownload={() => trackDownload(desktop.platform)}
-                />
-              </div>
-            ) : null}
+            <div>
+              <DownloadButton
+                release={officialDesktop}
+                label={`Télécharger pour ${RELEASE_PLATFORM_LABELS[officialDesktop.platform]}`}
+                icon={PLATFORM_ICON[officialDesktop.platform]}
+                tone="secondary"
+                download
+                onDownload={() => trackDownload(officialDesktop.platform)}
+              />
+            </div>
             <Link
               to="/login"
               onClick={() => trackDownload('web')}

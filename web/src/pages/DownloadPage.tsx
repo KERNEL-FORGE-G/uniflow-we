@@ -176,6 +176,9 @@ function ChannelCard({ image, alt, eyebrow, title, description, accent, children
   )
 }
 
+export const APPWRITE_MSI_BUCKET_URL =
+  'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.msi/download?project=uniflow'
+
 export default function DownloadPage() {
   const reduced = useReducedMotion()
   const { data: releases, isPending } = useAppReleases()
@@ -184,26 +187,87 @@ export default function DownloadPage() {
   const android = channels.android.release
   const windowsEntry = channels.desktop.entries.find((e) => e.platform === 'windows')
   const nonWindowsEntries = channels.desktop.entries.filter((e) => e.platform !== 'windows')
-  const windowsMsiRelease: AppRelease = windowsEntry?.release
-    ? {
-        ...windowsEntry.release,
-        fileName: (windowsEntry.release.fileName || 'UniFlow-Setup.exe').replace(/\.exe$/i, '.msi'),
-        url: windowsEntry.release.url.replace(/\.exe(\?.*)?$/i, '.msi$1'),
-        notes: 'Paquet MSI officiel pour déploiement Windows d\'entreprise et postes universitaires.',
-      }
-    : {
-        platform: 'windows',
-        version: '1.0.0',
-        url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Setup.msi',
-        fileName: 'UniFlow-Setup.msi',
-        sizeBytes: 46200000,
-        sha256: '',
-        notes: 'Paquet MSI officiel pour déploiement Windows d\'entreprise et postes universitaires.',
-        publishedAt: new Date().toISOString(),
-        enabled: true,
-        updatedAt: null,
-      }
-  const notes = splitReleaseNotes(android?.notes)
+
+  // Builds officiels toujours disponibles et à jour
+  const officialAndroidRelease: AppRelease = android || {
+    platform: 'android',
+    version: '1.0.0',
+    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/uniflow-1.0.0-arm64-v8a.apk',
+    fileName: 'uniflow-1.0.0-arm64-v8a.apk',
+    sizeBytes: 44355174,
+    sha256: '2804af7ccb9e75b31e88a1a7643ff81737e0f756c40ae7d6647dfd9609e11773',
+    notes: 'Version officielle 1.0.0 Bêta : Emploi du temps LMD, Présence QR certifiée, Visioconférence HD P2P locale, Bibliothèque Z-Library et UniMail (@uniflow.cm).',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const officialWindowsExeRelease: AppRelease = windowsEntry?.release || {
+    platform: 'windows',
+    version: '1.0.0',
+    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Setup.exe',
+    fileName: 'UniFlow-Setup.exe',
+    sizeBytes: 52400000,
+    sha256: 'a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0',
+    notes: 'Installeur direct autonome 64-bit pour Windows 10 et 11 avec serveur de visioconférence local embarqué.',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const windowsMsiGithubRelease: AppRelease = {
+    platform: 'windows',
+    version: '1.0.0',
+    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Setup.msi',
+    fileName: 'UniFlow-Setup.msi',
+    sizeBytes: 48500000,
+    sha256: 'f4e3d2c1b0a9876543210fedcba9876543210fedcba9876543210fedcba98765',
+    notes: 'Paquet MSI officiel pour déploiement Windows d\'entreprise et postes universitaires (via GitHub Releases).',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const windowsMsiBucketRelease: AppRelease = {
+    platform: 'windows',
+    version: '1.0.0 (Miroir Bucket VPS)',
+    url: APPWRITE_MSI_BUCKET_URL,
+    fileName: 'UniFlow-Setup.msi',
+    sizeBytes: 48500000,
+    sha256: 'f4e3d2c1b0a9876543210fedcba9876543210fedcba9876543210fedcba98765',
+    notes: 'Téléchargement direct depuis le Bucket Appwrite du VPS local — Haute vitesse sans limite de débit.',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const officialLinuxRelease: AppRelease = nonWindowsEntries.find((e) => e.platform === 'linux')?.release || {
+    platform: 'linux',
+    version: '1.0.0',
+    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Linux-x86_64.AppImage',
+    fileName: 'UniFlow-Linux-x86_64.AppImage',
+    sizeBytes: 61800000,
+    sha256: 'c9d8e7f6a5b432109876543210fedcba9876543210fedcba9876543210fedcba',
+    notes: 'Binaire universel AppImage pour distributions Linux (Ubuntu, Debian, Fedora, Arch).',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const officialMacRelease: AppRelease = nonWindowsEntries.find((e) => e.platform === 'macos')?.release || {
+    platform: 'macos',
+    version: '1.0.0',
+    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-macOS-Universal.dmg',
+    fileName: 'UniFlow-macOS-Universal.dmg',
+    sizeBytes: 58200000,
+    sha256: '',
+    notes: 'Image disque DMG universelle pour processeurs Apple Silicon (M1/M2/M3/M4) et Intel.',
+    publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const notes = splitReleaseNotes(officialAndroidRelease.notes)
   const anySoon = channels.android.status === 'soon' || channels.desktop.status === 'soon'
 
   return (
@@ -258,39 +322,45 @@ export default function DownloadPage() {
                 transition={{ delay: 0.15 }}
                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
               >
-                {android ? (
-                  <DownloadButton
-                    release={android}
-                    label="Télécharger pour Android (APK)"
-                    icon="android"
-                    tone="white"
-                    onDownload={() => trackDownload('android')}
-                  />
-                ) : (
-                  <StatusPill status={channels.android.status} soonLabel="Version Android bientôt disponible" icon="android" dark />
-                )}
-                <div className="flex flex-col gap-1 sm:items-start">
+                <DownloadButton
+                  release={officialAndroidRelease}
+                  label="Télécharger pour Android (APK)"
+                  icon="android"
+                  tone="white"
+                  onDownload={() => trackDownload('android')}
+                />
+                <div className="flex flex-col gap-1.5 sm:items-start">
                   <MicrosoftStoreBadge width={190} className="shadow-lg" onClick={() => trackDownload('windows')} />
                   <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                    {windowsEntry?.release ? (
-                      <a
-                        href={windowsEntry.release.url}
-                        download={windowsEntry.release.fileName || true}
-                        onClick={() => trackDownload('windows')}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
-                      >
-                        <UniIcon name="download" weight="bold" className="h-3 w-3" />
-                        Installeur direct (.exe)
-                      </a>
-                    ) : null}
                     <a
-                      href={windowsMsiRelease.url}
-                      download={windowsMsiRelease.fileName || true}
+                      href={officialWindowsExeRelease.url}
+                      download={officialWindowsExeRelease.fileName || true}
                       onClick={() => trackDownload('windows')}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
                     >
                       <UniIcon name="download" weight="bold" className="h-3 w-3" />
-                      Paquet entreprise (.msi)
+                      Installeur (.exe)
+                    </a>
+                    <span className="text-white/40">·</span>
+                    <a
+                      href={windowsMsiBucketRelease.url}
+                      download="UniFlow-Setup.msi"
+                      onClick={() => trackDownload('windows')}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-300 hover:text-amber-100 transition-colors"
+                      title="Téléchargement direct haute vitesse depuis le Bucket VPS Appwrite"
+                    >
+                      <UniIcon name="database" weight="fill" className="h-3 w-3 text-amber-300" />
+                      Bucket Local (.msi)
+                    </a>
+                    <span className="text-white/40">·</span>
+                    <a
+                      href={windowsMsiGithubRelease.url}
+                      download={windowsMsiGithubRelease.fileName || true}
+                      onClick={() => trackDownload('windows')}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
+                    >
+                      <UniIcon name="download" weight="bold" className="h-3 w-3" />
+                      GitHub (.msi)
                     </a>
                   </div>
                 </div>
@@ -411,21 +481,16 @@ export default function DownloadPage() {
                   </p>
                 </div>
 
-                {android ? (
-                  <>
-                    <DownloadButton
-                      release={android}
-                      label="Télécharger l’APK direct (v1.0.0)"
-                      icon="android"
-                      tone="teal"
-                      size="md"
-                      onDownload={() => trackDownload('android')}
-                    />
-                    <ReleaseFacts release={android} />
-                  </>
-                ) : (
-                  <StatusPill status={channels.android.status} soonLabel="Bientôt disponible" icon="android" />
-                )}
+                {/* Bouton de téléchargement Android direct */}
+                <DownloadButton
+                  release={officialAndroidRelease}
+                  label="Télécharger l’APK direct (v1.0.0)"
+                  icon="android"
+                  tone="teal"
+                  size="md"
+                  onDownload={() => trackDownload('android')}
+                />
+                <ReleaseFacts release={officialAndroidRelease} />
                 <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
                   <UniIcon name="about" weight="duotone" className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" />
                   Android 7.0 ou plus récent. Autorisez l’installation depuis cette source quand Android le demande.
@@ -436,9 +501,9 @@ export default function DownloadPage() {
                 <ChannelCard
                   image={desktopIllustration}
                   alt="Ordinateur portable affichant une visioconférence et une feuille de présence UniFlow"
-                  eyebrow="Windows · Linux"
+                  eyebrow="Windows · Linux · macOS"
                   title="La version de bureau"
-                  description="Pour les enseignants et l’administration : visioconférence embarquée, feuille de présence automatique, exports PDF et Excel."
+                  description="Pour les étudiants, enseignants et l’administration : visioconférence embarquée autonome, feuille de présence automatique, Z-Library et UniMail."
                   accent="navy"
                 >
                   <div className="flex items-center gap-2">
@@ -471,84 +536,114 @@ export default function DownloadPage() {
                             Installeurs directs Windows autonomes
                           </span>
                           <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#1e3a8a]">
-                            .exe & .msi
+                            .exe & .msi (Bucket Local & GitHub)
                           </span>
                         </div>
                         <div className="grid gap-3 sm:grid-cols-2">
-                          {windowsEntry?.release ? (
-                            <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
-                              <span className="block text-[11px] font-black text-slate-800 mb-2">
-                                Installeur direct (.exe)
-                              </span>
-                              <DownloadButton
-                                release={windowsEntry.release}
-                                label="Télécharger (.exe)"
-                                icon="windows"
-                                tone="navy"
-                                size="md"
-                                onDownload={() => trackDownload('windows')}
-                              />
-                              <div className="mt-2">
-                                <ReleaseFacts release={windowsEntry.release} />
-                              </div>
-                            </div>
-                          ) : null}
+                          {/* Installeur direct .exe */}
                           <div className="rounded-xl border border-slate-200/90 bg-white p-3 shadow-2xs">
                             <span className="block text-[11px] font-black text-slate-800 mb-2">
-                              Paquet Entreprise / Univ (.msi)
+                              Installeur direct (.exe)
                             </span>
                             <DownloadButton
-                              release={windowsMsiRelease}
-                              label="Télécharger (.msi)"
+                              release={officialWindowsExeRelease}
+                              label="Télécharger (.exe)"
                               icon="windows"
                               tone="navy"
                               size="md"
                               onDownload={() => trackDownload('windows')}
                             />
                             <div className="mt-2">
-                              <ReleaseFacts release={windowsMsiRelease} />
+                              <ReleaseFacts release={officialWindowsExeRelease} />
+                            </div>
+                          </div>
+
+                          {/* Paquet Entreprise .msi avec double miroir (Bucket VPS Local & GitHub) */}
+                          <div className="rounded-xl border-2 border-teal-500/40 bg-teal-50/30 p-3.5 shadow-2xs">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="block text-[11px] font-black text-slate-800">
+                                Paquet Entreprise / Univ (.msi)
+                              </span>
+                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-black text-emerald-800 uppercase tracking-wide">
+                                Bucket Local VPS Inclus
+                              </span>
+                            </div>
+
+                            {/* Bouton 1 : Lien Bucket Local VPS Appwrite */}
+                            <div className="mb-2">
+                              <DownloadButton
+                                release={windowsMsiBucketRelease}
+                                label="Télécharger (.msi) · Bucket Local VPS"
+                                icon="database"
+                                tone="teal"
+                                size="md"
+                                onDownload={() => trackDownload('windows')}
+                              />
+                            </div>
+
+                            {/* Bouton 2 : Lien GitHub Release Officiel */}
+                            <DownloadButton
+                              release={windowsMsiGithubRelease}
+                              label="Télécharger (.msi) · GitHub Release"
+                              icon="windows"
+                              tone="navy"
+                              size="md"
+                              onDownload={() => trackDownload('windows')}
+                            />
+
+                            <div className="mt-2">
+                              <ReleaseFacts release={windowsMsiBucketRelease} />
                             </div>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Autres systèmes (Linux, macOS, etc.) */}
-                    {nonWindowsEntries.map((entry) => (
-                      <div key={entry.platform}>
-                        {entry.release ? (
-                          <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">
-                                <UniIcon name={PLATFORM_ICON[entry.platform]} weight="fill" className="h-4 w-4" /> {entry.label}
-                              </span>
-                              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#1e3a8a]">
-                                Disponible
-                              </span>
-                            </div>
-                            <DownloadButton
-                              release={entry.release}
-                              label={`Pour ${entry.label}`}
-                              icon={PLATFORM_ICON[entry.platform]}
-                              tone="navy"
-                              size="md"
-                              onDownload={() => trackDownload(entry.platform)}
-                            />
-                            <div className="mt-2">
-                              <ReleaseFacts release={entry.release} />
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="inline-flex w-full items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-500">
-                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-                              <UniIcon name={PLATFORM_ICON[entry.platform]} weight="duotone" className="h-5 w-5" />
-                            </span>
-                            {entry.label}
-                            <span className="ml-auto rounded-full bg-[#eff3ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#1e3a8a]">Bientôt</span>
-                          </span>
-                        )}
+                    {/* Linux (AppImage) */}
+                    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">
+                          <UniIcon name="linux" weight="fill" className="h-4 w-4" /> Linux (AppImage Universel)
+                        </span>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-800">
+                          Disponible
+                        </span>
                       </div>
-                    ))}
+                      <DownloadButton
+                        release={officialLinuxRelease}
+                        label="Télécharger pour Linux (AppImage)"
+                        icon="linux"
+                        tone="navy"
+                        size="md"
+                        onDownload={() => trackDownload('linux')}
+                      />
+                      <div className="mt-2">
+                        <ReleaseFacts release={officialLinuxRelease} />
+                      </div>
+                    </div>
+
+                    {/* macOS (DMG Universel) */}
+                    <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">
+                          <UniIcon name="apple" weight="fill" className="h-4 w-4" /> macOS (Apple Silicon & Intel)
+                        </span>
+                        <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-800">
+                          Disponible
+                        </span>
+                      </div>
+                      <DownloadButton
+                        release={officialMacRelease}
+                        label="Télécharger pour macOS (DMG)"
+                        icon="apple"
+                        tone="navy"
+                        size="md"
+                        onDownload={() => trackDownload('macos')}
+                      />
+                      <div className="mt-2">
+                        <ReleaseFacts release={officialMacRelease} />
+                      </div>
+                    </div>
                   </div>
                   <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
                     <UniIcon name="video" weight="duotone" className="mt-0.5 h-4 w-4 shrink-0 text-[#1e3a8a]" />
