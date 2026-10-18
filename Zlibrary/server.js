@@ -582,7 +582,6 @@ async function searchMultiShadow(query, category = 'Tous', language = '', limit 
               coverUrl: `https://archive.org/services/img/${doc.identifier}`,
               description: typeof doc.description === 'string' ? doc.description.slice(0, 300) : 'Ouvrage académique intégral issu de la collection mondiale Z-Library.',
               downloadUrl: `https://archive.org/download/${doc.identifier}/${doc.identifier}.pdf`,
-              directReadUrl: `https://archive.org/details/${doc.identifier}`,
               format: 'PDF',
               source: 'Z-Library (Internet Archive)',
               downloadsCount: doc.downloads || 1500,
@@ -623,7 +622,6 @@ async function searchMultiShadow(query, category = 'Tous', language = '', limit 
                 coverUrl,
                 description: `Édition universitaire (${doc.first_publish_year || 'Récente'}). Sujets: ${(doc.subject || []).slice(0, 3).join(', ')}`,
                 downloadUrl: iaId ? `https://archive.org/download/${iaId}/${iaId}.pdf` : undefined,
-                directReadUrl: iaId ? `https://archive.org/details/${iaId}` : undefined,
                 format: 'PDF',
                 source: 'Z-Library (Open Library)',
                 downloadsCount: doc.edition_count ? doc.edition_count * 200 : 900,
@@ -916,7 +914,10 @@ async function streamBookToBucket(book) {
     console.warn('Mise à jour DB Appwrite non bloquante:', dbErr.message)
   }
 
-  const bucketDownloadUrl = `${process.env.APPWRITE_ENDPOINT || 'https://vps.kernelforge.codes/v1'}/storage/buckets/${BUCKET_ID}/files/${stored.$id}/download?project=${process.env.APPWRITE_PROJECT_ID || 'uniflow'}`
+  const endpoint = process.env.APPWRITE_ENDPOINT || 'https://vps.kernelforge.codes/v1'
+  const proj = process.env.APPWRITE_PROJECT_ID || 'uniflow'
+  const bucketDownloadUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${stored.$id}/download?project=${proj}`
+  const bucketViewUrl = `${endpoint}/storage/buckets/${BUCKET_ID}/files/${stored.$id}/view?project=${proj}`
 
   return {
     ...book,
@@ -924,6 +925,7 @@ async function streamBookToBucket(book) {
     appwriteDocId,
     appwriteFileId: stored.$id,
     downloadUrl: bucketDownloadUrl,
+    directReadUrl: bucketViewUrl,
   }
 }
 

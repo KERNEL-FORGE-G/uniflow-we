@@ -169,26 +169,67 @@ export default function LibraryPage() {
     return () => clearTimeout(timer)
   }, [toastMessage])
 
+  // Consultation directe du livre via son URL officielle dans le Bucket Appwrite
+  const handleOpenBucketBook = async (book: OpenBook, e?: React.MouseEvent) => {
+    e?.stopPropagation()
+    setCachingBookId(book.id)
+    try {
+      let targetBook = book
+      if (!targetBook.cachedInBucket || !targetBook.appwriteFileId) {
+        setToastMessage(`Transmission de « ${book.title} » vers le Bucket Appwrite...`)
+        targetBook = await openLibraryService.cacheBookToBucket(book)
+        setOpenBooks(prev => prev.map(b => (b.id === book.id ? targetBook : b)))
+        if (activeBookModal?.id === book.id) {
+          setActiveBookModal(targetBook)
+        }
+      }
+
+      const bucketUrl = targetBook.appwriteFileId
+        ? openLibraryService.getBucketViewUrl(targetBook.appwriteFileId)
+        : targetBook.downloadUrl
+
+      if (bucketUrl && typeof window !== 'undefined') {
+        window.open(bucketUrl, '_blank')
+        setToastMessage(`✓ Ouverture de « ${book.title} » depuis le Bucket`)
+      }
+    } catch (err) {
+      console.error('Erreur ouverture livre bucket:', err)
+      setToastMessage(`Accès au Bucket indisponible`)
+    } finally {
+      setCachingBookId(null)
+    }
+  }
+
   // Téléchargement certifié d'un livre numérique UniFlow & Z-Library
+  // Transmet d'abord au Bucket Appwrite, ouvre l'URL Bucket et déclenche le téléchargement du fichier
   const handleCacheAndDownloadBook = async (book: OpenBook, e?: React.MouseEvent) => {
     e?.stopPropagation()
     setCachingBookId(book.id)
     try {
-      // 1. Déclencher le téléchargement immédiat et propre (sans popup ni redirection)
-      const res = await openLibraryService.downloadBook(book)
-      if (res.success) {
-        setToastMessage(`✓ « ${book.title} » téléchargé (PDF Édition Académique)`)
-      }
+      setToastMessage(`Transmission de « ${book.title} » vers le Bucket Appwrite...`)
 
-      // 2. Marquer le livre comme synchronisé dans le bucket
-      const updatedBook: OpenBook = { ...book, cachedInBucket: true }
-      setOpenBooks(prev => prev.map(b => (b.id === book.id ? updatedBook : b)))
+      // 1. Transmettre le livre vers le Bucket BaaS
+      const cachedBook = await openLibraryService.cacheBookToBucket(book)
+
+      // 2. Mettre à jour l'état local avec les métadonnées du Bucket
+      setOpenBooks(prev => prev.map(b => (b.id === book.id ? cachedBook : b)))
       if (activeBookModal?.id === book.id) {
-        setActiveBookModal(updatedBook)
+        setActiveBookModal(cachedBook)
       }
 
-      // 3. Déclencher la mise en bucket sur le serveur en tâche de fond (sans bloquer)
-      openLibraryService.cacheBookToBucket(book).catch(() => undefined)
+      // 3. Rendre immédiatement disponible pour le user via l'URL bucket ouverte
+      const bucketUrl = cachedBook.appwriteFileId
+        ? openLibraryService.getBucketViewUrl(cachedBook.appwriteFileId)
+        : cachedBook.downloadUrl
+
+      if (bucketUrl && typeof window !== 'undefined') {
+        window.open(bucketUrl, '_blank')
+      }
+
+      // 4. Déclencher le téléchargement du fichier PDF propre
+      await openLibraryService.downloadBook(cachedBook)
+
+      setToastMessage(`✓ « ${book.title} » disponible dans le Bucket et téléchargé !`)
     } catch (err) {
       console.error('Erreur téléchargement livre:', err)
       try {
@@ -817,12 +858,12 @@ export default function LibraryPage() {
                         {isCaching ? (
                           <>
                             <HiArrowPath className="h-3.5 w-3.5 animate-spin" />
-                            <span>Téléchargement...</span>
+                            <span>Transmission...</span>
                           </>
                         ) : book.cachedInBucket ? (
                           <>
                             <HiArrowDownTray className="h-3.5 w-3.5" />
-                            <span>Télécharger</span>
+                            <span>Ouvrir / Télécharger</span>
                           </>
                         ) : (
                           <>
@@ -1054,7 +1095,11 @@ export default function LibraryPage() {
 
             {/* Pied de la modale */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-slate-100">
-              <span className="text-xs text-slate-400 font-medium">Disponibilité : Accès libre et gratuit Z-Library</span>
+              <span className="text-xs text-slate-400 font-medium">
+                {activeBookModal.cachedInBucket
+                  ? '✓ Disponible dans le Bucket BaaS UniFlow'
+                  : 'Source : Catalogue Z-Library · Prêt pour transmission Bucket'}
+              </span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setActiveBookModal(null)}
@@ -1062,17 +1107,14 @@ export default function LibraryPage() {
                 >
                   Fermer
                 </button>
-                {(activeBookModal.directReadUrl || activeBookModal.downloadUrl) && (
-                  <a
-                    href={activeBookModal.directReadUrl || activeBookModal.downloadUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 rounded-xl bg-[#0D9488] hover:bg-teal-700 text-white px-4 py-2 text-xs font-bold shadow-md transition-all"
-                  >
-                    <HiBookOpen className="h-4 w-4" />
-                    <span>Lire en ligne</span>
-                  </a>
-                )}
+                <button
+                  onClick={e => handleOpenBucketBook(activeBookModal, e)}
+                  disabled={cachingBookId === activeBookModal.id}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#0D9488] hover:bg-teal-700 text-white px-4 py-2 text-xs font-bold shadow-md transition-all"
+                >
+                  <HiBookOpen className="h-4 w-4" />
+                  <span>Consulter (URL Bucket)</span>
+                </button>
                 <button
                   onClick={e => handleCacheAndDownloadBook(activeBookModal, e)}
                   disabled={cachingBookId === activeBookModal.id}
@@ -1081,12 +1123,12 @@ export default function LibraryPage() {
                   {cachingBookId === activeBookModal.id ? (
                     <>
                       <HiArrowPath className="h-4 w-4 animate-spin" />
-                      <span>Téléchargement...</span>
+                      <span>Transmission Bucket...</span>
                     </>
                   ) : (
                     <>
                       <HiArrowDownTray className="h-4 w-4" />
-                      <span>Télécharger le livre (PDF)</span>
+                      <span>Télécharger (Bucket)</span>
                     </>
                   )}
                 </button>

@@ -133,7 +133,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Le chef-d’œuvre mondial du MIT sur les principes fondamentaux de la programmation, l’abstraction des procédures et des données, la métalinguistique et l’interprétation.',
     downloadUrl: 'https://web.mit.edu/6.001/6.037/sicp.pdf',
-    directReadUrl: 'https://mitpress.mit.edu/sites/default/files/sicp/index.html',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 48900,
@@ -151,7 +150,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Le guide pratique mondialement réputé pour automatiser les tâches quotidiennes avec Python : manipulation de fichiers, web scraping, calculs et scripts.',
     downloadUrl: 'https://archive.org/download/automatetheboringstuffwithpython_new/automatetheboringstuffwithpython_new.pdf',
-    directReadUrl: 'https://archive.org/details/automatetheboringstuffwithpython_new',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 82400,
@@ -169,7 +167,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'La bible mondiale du Deep Learning par Ian Goodfellow et Yoshua Bengio : algèbre linéaire, réseaux convolutifs, modèles récurrents et auto-encodeurs profonds.',
     downloadUrl: 'https://archive.org/download/deep-learning-collection-pdf/%28Adaptive%20Computation%20and%20Machine%20Learning%20series%29%20Ian%20Goodfellow%2C%20Yoshua%20Bengio%2C%20Aaron%20Courville%20-%20Deep%20Learning-The%20MIT%20Press%20%282016%29.pdf',
-    directReadUrl: 'https://archive.org/details/deep-learning-collection-pdf',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 71200,
@@ -187,7 +184,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Manuel pratique de référence sur Linux, le shell Bash, la gestion réseau, les permissions, la cryptographie et les architectures système.',
     downloadUrl: 'https://archive.org/download/linux-basics-for-hackers/OccupyTheWeb%20-%20Linux%20Basics%20for%20Hackers%20%282018%29.pdf',
-    directReadUrl: 'https://archive.org/details/linux-basics-for-hackers',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 53000,
@@ -205,7 +201,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Comprendre l’architecture bas niveau en langage C, la gestion de la mémoire vive, les débordements de tampon (buffer overflow) et la cryptographie.',
     downloadUrl: 'https://archive.org/download/HackingTheArtOfExploitation/Hacking%20-%20The%20Art%20of%20Exploitation_2nd%20Ed.pdf',
-    directReadUrl: 'https://archive.org/details/HackingTheArtOfExploitation',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 68400,
@@ -223,7 +218,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/library.jpg',
     description: 'Le manuscrit médiéval illustré codé le plus mystérieux de l’histoire de la cryptographie, reproduit en haute résolution avec ses 240 folios intégraux.',
     downloadUrl: 'https://archive.org/download/TheVoynichManuscript/Voynich_Manuscript.pdf',
-    directReadUrl: 'https://archive.org/details/TheVoynichManuscript',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 94000,
@@ -240,7 +234,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/grades.jpg',
     description: 'Le manuel mondial de référence absolue pour le calcul différentiel, intégral, les suites et séries, les équations différentielles et le calcul vectoriel.',
     downloadUrl: 'https://archive.org/download/stewart-j.-clegg-d.-watson-s.-calculus.-early-transcendentals-9ed-2020/Stewart%20J.%2C%20Clegg%20D.%2C%20Watson%20S.%20Calculus.%20Early%20Transcendentals%209ed%202020.pdf',
-    directReadUrl: 'https://archive.org/details/stewart-j.-clegg-d.-watson-s.-calculus.-early-transcendentals-9ed-2020',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 88500,
@@ -258,7 +251,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/library.jpg',
     description: 'Monument de la littérature française du XIXe siècle, fresque sociale et philosophique intégrale de Jean Valjean, Fantine, Cosette et Gavroche.',
     downloadUrl: 'https://archive.org/download/bub_gb_Oo0NAAAAQAAJ/bub_gb_Oo0NAAAAQAAJ.pdf',
-    directReadUrl: 'https://archive.org/details/bub_gb_Oo0NAAAAQAAJ',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 91400,
@@ -275,7 +267,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/library.jpg',
     description: 'La gran obra maestra de la literatura española e universal sobre el ingenioso hidalgo Don Quijote y su fiel escudero Sancho Panza.',
     downloadUrl: 'https://archive.org/download/donquijote00cervuoft/donquijote00cervuoft.pdf',
-    directReadUrl: 'https://archive.org/details/donquijote00cervuoft',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 64200,
@@ -292,7 +283,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/about_campus_hero.png',
     description: 'Texte fondateur de la philosophie et de la méthode scientifique cartésienne moderne : « Je pense, donc je suis » et les 4 règles de la méthode.',
     downloadUrl: 'https://archive.org/download/discoursdelamth00descgoog/discoursdelamth00descgoog.pdf',
-    directReadUrl: 'https://archive.org/details/discoursdelamth00descgoog',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 45600,
@@ -309,7 +299,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/library.jpg',
     description: 'Das klassische Meisterwerk der deutschen Literatur über das Streben des Gelehrten Heinrich Faust und seinen Pakt mit Mephistopheles.',
     downloadUrl: 'https://archive.org/download/faustpartsiii00goetuoft/faustpartsiii00goetuoft.pdf',
-    directReadUrl: 'https://archive.org/details/faustpartsiii00goetuoft',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 31200,
@@ -326,7 +315,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/grades.jpg',
     description: 'Traité classique de référence pour l’enseignement supérieur scientifique : polynômes, séries, fractions continues et calcul algébrique approfondi.',
     downloadUrl: 'https://archive.org/download/AlgebreIi/AlgebreIi.pdf',
-    directReadUrl: 'https://archive.org/details/AlgebreIi',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 28900,
@@ -343,7 +331,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/grades.jpg',
     description: 'Ouvrage encyclopédique de référence pour les étudiants de premier et second cycles universitaires en mathématiques et sciences physiques.',
     downloadUrl: 'https://archive.org/download/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf/Dictionnaire.Des.Mathematiques.Algebre.Analyse.Geometrie.pdf',
-    directReadUrl: 'https://archive.org/details/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 42100,
@@ -360,7 +347,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/about_campus_hero.png',
     description: 'Le texte fondamental rédigé par Albert Einstein exposant la théorie de la relativité restreinte et générale de manière claire et accessible aux étudiants.',
     downloadUrl: 'https://archive.org/download/relativitythespe00einsuoft/relativitythespe00einsuoft.pdf',
-    directReadUrl: 'https://archive.org/details/relativitythespe00einsuoft',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 78300,
@@ -377,7 +363,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/hero.jpg',
     description: 'Ouvrage majeur de philosophie politique et de théorie du droit définissant la souveraineté populaire, la volonté générale et les fondements de l’État de droit.',
     downloadUrl: 'https://archive.org/download/ducontratsocial00rousgoog/ducontratsocial00rousgoog.pdf',
-    directReadUrl: 'https://archive.org/details/ducontratsocial00rousgoog',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 56700,
@@ -394,7 +379,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/community.jpg',
     description: 'L’œuvre fondatrice de la science économique moderne : division du travail, théorie de la valeur, mécanismes de marché et commerce international.',
     downloadUrl: 'https://archive.org/download/wealthofnations00smituoft/wealthofnations00smituoft.pdf',
-    directReadUrl: 'https://archive.org/details/wealthofnations00smituoft',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 69200,
@@ -411,7 +395,6 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     coverUrl: '/illustrations/presence.jpg',
     description: 'Le manuel classique d’anatomie humaine illustré de renommée mondiale : ostéologie, myologie, angiologie, neurologie et organes sensoriels.',
     downloadUrl: 'https://archive.org/download/anatomyofhumanbo1918gray/anatomyofhumanbo1918gray.pdf',
-    directReadUrl: 'https://archive.org/details/anatomyofhumanbo1918gray',
     format: 'PDF',
     source: 'Z-Library',
     downloadsCount: 91500,
@@ -487,6 +470,20 @@ export const openLibraryService = {
   },
 
   /**
+   * Retourne l'URL de consultation directe du fichier PDF dans le Bucket Appwrite (affichage in-browser).
+   */
+  getBucketViewUrl(fileId: string): string {
+    return `https://vps.kernelforge.codes/v1/storage/buckets/${APPWRITE_BUCKET_ID}/files/${fileId}/view?project=uniflow`
+  },
+
+  /**
+   * Retourne l'URL de téléchargement direct du fichier PDF dans le Bucket Appwrite.
+   */
+  getBucketDownloadUrl(fileId: string): string {
+    return `https://vps.kernelforge.codes/v1/storage/buckets/${APPWRITE_BUCKET_ID}/files/${fileId}/download?project=uniflow`
+  },
+
+  /**
    * Récupère les livres déjà synchronisés ou stockés dans Appwrite Database (`academic_library`).
    */
   async getDbCachedBooks(): Promise<OpenBook[]> {
@@ -508,7 +505,8 @@ export const openLibraryService = {
         cachedInBucket: !!doc.fileId,
         appwriteDocId: doc.$id,
         appwriteFileId: doc.fileId || undefined,
-        downloadUrl: doc.fileId ? String(appwriteStorage.getFileDownload(APPWRITE_BUCKET_ID, doc.fileId)) : undefined,
+        downloadUrl: doc.fileId ? this.getBucketDownloadUrl(doc.fileId) : undefined,
+        directReadUrl: doc.fileId ? this.getBucketViewUrl(doc.fileId) : undefined,
       }))
     } catch {
       return []
@@ -577,22 +575,46 @@ export const openLibraryService = {
    */
   async cacheBookToBucket(book: OpenBook): Promise<OpenBook> {
     if (book.cachedInBucket && book.appwriteFileId) {
-      return book
+      return {
+        ...book,
+        downloadUrl: this.getBucketDownloadUrl(book.appwriteFileId),
+        directReadUrl: this.getBucketViewUrl(book.appwriteFileId),
+      }
     }
 
     try {
-      // 1. Tenter la synchronisation via le microservice VPS Z-Library (clé admin BaaS)
+      // 1. Transmission directe via le microservice VPS Z-Library (avec clé admin BaaS Appwrite)
       try {
-        const vpsSyncUrl = `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(book.id)}`
-        const res = await fetch(vpsSyncUrl, { method: 'GET', signal: AbortSignal.timeout(8000) })
-        if (res.ok || res.status === 302) {
-          return {
-            ...book,
-            cachedInBucket: true,
+        const vpsCacheUrl = 'https://vps.kernelforge.codes/zlibrary/api/books/cache'
+        const res = await fetch(vpsCacheUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ book }),
+          signal: AbortSignal.timeout(12000),
+        })
+        if (res.ok) {
+          const json = await res.json()
+          if (json.ok && json.book) {
+            const fileId = json.book.appwriteFileId || book.appwriteFileId
+            const downloadUrl = fileId
+              ? this.getBucketDownloadUrl(fileId)
+              : json.book.downloadUrl
+            const directReadUrl = fileId
+              ? this.getBucketViewUrl(fileId)
+              : undefined
+
+            return {
+              ...book,
+              ...json.book,
+              cachedInBucket: true,
+              appwriteFileId: fileId,
+              downloadUrl,
+              directReadUrl,
+            }
           }
         }
       } catch (e) {
-        console.warn('Synchronisation bucket VPS en arrière-plan:', e)
+        console.warn('Transmission bucket VPS via POST échouée:', e)
       }
 
       // 2. Repli côté client si permissions disponibles
@@ -627,10 +649,10 @@ export const openLibraryService = {
           ...syncedBook,
           cachedInBucket: true,
           appwriteFileId: stored.$id,
-          downloadUrl: String(appwriteStorage.getFileDownload(APPWRITE_BUCKET_ID, stored.$id)),
+          downloadUrl: this.getBucketDownloadUrl(stored.$id),
+          directReadUrl: this.getBucketViewUrl(stored.$id),
         }
       } catch (clientErr) {
-        // En cas d'absence de droits en écriture directe côté invité, marquage optimiste réussi
         console.warn('Mise en bucket client ignorée (droits restreints):', clientErr)
       }
 
@@ -664,8 +686,8 @@ export const openLibraryService = {
       // 1. Tenter la récupération directe depuis le bucket Appwrite si le fichier est indexé
       if (book.appwriteFileId) {
         try {
-          const directBucketUrl = String(appwriteStorage.getFileDownload(APPWRITE_BUCKET_ID, book.appwriteFileId))
-          const res = await fetch(directBucketUrl, { signal: AbortSignal.timeout(6000) })
+          const directBucketUrl = this.getBucketDownloadUrl(book.appwriteFileId)
+          const res = await fetch(directBucketUrl, { signal: AbortSignal.timeout(8000) })
           if (res.ok) {
             const b = await res.blob()
             if (b.size > 500) downloadedBlob = b
@@ -693,7 +715,7 @@ export const openLibraryService = {
       }
 
       // 3. Tenter depuis l'URL de téléchargement direct du livre si fournie
-      if (!downloadedBlob && book.downloadUrl && (book.downloadUrl.startsWith('http://') || book.downloadUrl.startsWith('https://'))) {
+      if (!downloadedBlob && book.downloadUrl && (book.downloadUrl.startsWith('http://') || book.downloadUrl.startsWith('https://')) && !book.downloadUrl.includes('/details/')) {
         try {
           const res = await fetch(book.downloadUrl, { signal: AbortSignal.timeout(6000) })
           if (res.ok) {
@@ -859,24 +881,31 @@ export const openLibraryService = {
             const apiData = await apiRes.json()
             const booksList = apiData.books || apiData.results
             if (Array.isArray(booksList) && booksList.length > 0) {
-              externalBooks = booksList.map((b: any): OpenBook => ({
-                id: b.id || `zlib-${Math.random().toString(36).slice(2)}`,
-                title: b.title || 'Livre Z-Library',
-                authors: Array.isArray(b.authors) ? b.authors : [b.author || 'Auteur Z-Library'],
-                year: b.year,
-                category: b.category || (category !== 'Tous' ? category : 'Sciences & Enseignement'),
-                language: b.language || 'Français',
-                coverUrl: sanitizeCoverUrl(b.coverUrl, b.category),
-                description: b.description || 'Ouvrage intégral Z-Library.',
-                downloadUrl: b.downloadUrl || (b.id ? `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(b.id)}` : undefined),
-                directReadUrl: b.directReadUrl || b.downloadUrl,
-                format: b.format || 'PDF',
-                source: 'Z-Library',
-                downloadsCount: b.downloadsCount || 1200,
-                cachedInBucket: !!b.cachedInBucket,
-                isbn: b.isbn,
-                size: b.size || 'Téléchargement direct',
-              }))
+              externalBooks = booksList.map((b: any): OpenBook => {
+                const fileId = b.appwriteFileId || (b.fileId || undefined)
+                return {
+                  id: b.id || `zlib-${Math.random().toString(36).slice(2)}`,
+                  title: b.title || 'Livre Z-Library',
+                  authors: Array.isArray(b.authors) ? b.authors : [b.author || 'Auteur Z-Library'],
+                  year: b.year,
+                  category: b.category || (category !== 'Tous' ? category : 'Sciences & Enseignement'),
+                  language: b.language || 'Français',
+                  coverUrl: sanitizeCoverUrl(b.coverUrl, b.category),
+                  description: b.description || 'Ouvrage intégral Z-Library.',
+                  downloadUrl: fileId
+                    ? this.getBucketDownloadUrl(fileId)
+                    : (b.downloadUrl || (b.id ? `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(b.id)}` : undefined)),
+                  directReadUrl: fileId ? this.getBucketViewUrl(fileId) : undefined,
+                  format: b.format || 'PDF',
+                  source: 'Z-Library',
+                  downloadsCount: b.downloadsCount || 1200,
+                  cachedInBucket: !!(b.cachedInBucket || fileId),
+                  appwriteFileId: fileId,
+                  appwriteDocId: b.appwriteDocId || undefined,
+                  isbn: b.isbn,
+                  size: b.size || 'Téléchargement direct',
+                }
+              })
               break
             }
           }
