@@ -501,27 +501,40 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
         res = null;
       }
 
-      // Le web UniFlow retransmet l'API book si le BaaS local/cloud tarde ou échoue
+      // Le service VPS Z-Library direct (zlibrary sur VPS avec Multi-Shadow & zéro stockage disque)
       if (res == null || res['ok'] != true) {
-        try {
-          final client = HttpClient();
-          final qParams = <String, String>{
-            'q': q,
-            'category': cat,
-            'limit': '35',
-            'sortBy': sort,
-          };
-          if (lang != 'Toutes' && lang.isNotEmpty) {
-            qParams['language'] = lang;
-          }
-          final uri = Uri.parse('https://uniflow.kernelforge.codes/api/books').replace(queryParameters: qParams);
-          final req = await client.getUrl(uri).timeout(const Duration(seconds: 5));
-          final resp = await req.close().timeout(const Duration(seconds: 5));
-          if (resp.statusCode == 200) {
-            final body = await resp.transform(utf8.decoder).join();
-            res = jsonDecode(body) as Map<String, dynamic>;
-          }
-        } catch (_) {}
+        final qParams = <String, String>{
+          'q': q,
+          'category': cat,
+          'limit': '35',
+          'sortBy': sort,
+        };
+        if (lang != 'Toutes' && lang.isNotEmpty) {
+          qParams['language'] = lang;
+        }
+
+        final zlibEndpoints = [
+          'https://vps.kernelforge.codes/zlibrary/api/books',
+          'http://5.189.146.147:7070/api/books',
+          'https://uniflow.kernelforge.codes/api/books',
+        ];
+
+        for (final endpoint in zlibEndpoints) {
+          try {
+            final client = HttpClient();
+            final uri = Uri.parse(endpoint).replace(queryParameters: qParams);
+            final req = await client.getUrl(uri).timeout(const Duration(seconds: 5));
+            final resp = await req.close().timeout(const Duration(seconds: 5));
+            if (resp.statusCode == 200) {
+              final body = await resp.transform(utf8.decoder).join();
+              final parsed = jsonDecode(body) as Map<String, dynamic>;
+              if (parsed['ok'] == true && (parsed['books'] is List || parsed['results'] is List)) {
+                res = parsed;
+                break;
+              }
+            }
+          } catch (_) {}
+        }
       }
 
       final rawList = res?['books'] ?? res?['results'];
@@ -653,8 +666,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> with SingleTicker
       Uint8List bytes;
       if (book.downloadUrl != null && book.downloadUrl!.isNotEmpty) {
         try {
+          var targetUrl = book.downloadUrl!;
+          if (targetUrl.startsWith('/')) {
+            targetUrl = 'https://vps.kernelforge.codes/zlibrary$targetUrl';
+          }
           final client = HttpClient();
-          final req = await client.getUrl(Uri.parse(book.downloadUrl!)).timeout(const Duration(seconds: 20));
+          final req = await client.getUrl(Uri.parse(targetUrl)).timeout(const Duration(seconds: 20));
           req.followRedirects = true;
           req.maxRedirects = 5;
           final resp = await req.close().timeout(const Duration(seconds: 35));

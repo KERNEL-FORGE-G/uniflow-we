@@ -28,46 +28,69 @@ class ZBook {
 
 /// Service de Bibliothèque Numérique Universitaire propulsé EXCLUSIVEMENT par Z-Library
 class ZLibraryService {
-  static const String _zlibBaseUrl = 'https://z-library.sk/api';
+  static const String _primaryBaseUrl = 'https://vps.kernelforge.codes/zlibrary/api';
+  static const String _fallbackBaseUrl = 'http://5.189.146.147:7070/api';
 
-  /// Recherche exclusive dans le catalogue Z-Library
+  /// Recherche dans le catalogue Z-Library hébergé sur le VPS UniFlow
   static Future<List<ZBook>> searchBooks(String query) async {
-    if (query.trim().isEmpty) {
-      return _getPopularAcademicBooks();
+    final cleanQuery = query.trim();
+
+    // Tenter l'appel vers l'API VPS Z-Library (primaire puis fallback direct)
+    final endpoints = [
+      '$_primaryBaseUrl/books',
+      '$_fallbackBaseUrl/books',
+    ];
+
+    for (final baseEndpoint in endpoints) {
+      try {
+        final uri = Uri.parse(baseEndpoint).replace(queryParameters: {
+          'q': cleanQuery,
+          'limit': '35',
+        });
+
+        final response =
+            await http.get(uri).timeout(const Duration(seconds: 6));
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(utf8.decode(response.bodyBytes));
+          final rawBooks = data is Map ? (data['books'] ?? data['results']) : null;
+          if (rawBooks is List && rawBooks.isNotEmpty) {
+            return rawBooks.map((b) {
+              final id = b['id']?.toString() ?? '';
+              final authors = b['authors'] is List
+                  ? (b['authors'] as List).join(', ')
+                  : (b['author']?.toString() ?? 'Auteur Universitaire');
+              
+              var dUrl = b['downloadUrl']?.toString() ?? '';
+              if (dUrl.isEmpty || dUrl.startsWith('/api/books/download')) {
+                dUrl = '$_primaryBaseUrl/books/download?id=${Uri.encodeComponent(id)}';
+              }
+
+              return ZBook(
+                id: id,
+                title: b['title']?.toString() ?? 'Titre académique',
+                author: authors,
+                year: b['year']?.toString() ?? '2025',
+                publisher: b['publisher']?.toString() ?? 'Z-Library Edition',
+                extension: b['format']?.toString() ?? 'PDF',
+                filesize: b['size']?.toString() ?? '4.2 MB',
+                coverUrl: b['coverUrl']?.toString() ?? (b['cover']?.toString() ?? ''),
+                downloadUrl: dUrl,
+              );
+            }).toList();
+          }
+        }
+      } catch (_) {
+        // Essayer le fallback suivant
+      }
     }
 
-    try {
-      final uri = Uri.parse('$_zlibBaseUrl/search').replace(queryParameters: {
-        'query': query,
-        'limit': '20',
-      });
-
-      final response = await http.get(uri).timeout(const Duration(seconds: 8));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(utf8.decode(response.bodyBytes));
-        if (data is Map && data['books'] is List) {
-          return (data['books'] as List)
-              .map((b) => ZBook(
-                    id: b['id']?.toString() ?? '',
-                    title: b['title']?.toString() ?? 'Titre inconnu',
-                    author: b['author']?.toString() ?? 'Auteur inconnu',
-                    year: b['year']?.toString() ?? '2025',
-                    publisher:
-                        b['publisher']?.toString() ?? 'Éditeur Universitaire',
-                    extension: b['extension']?.toString() ?? 'PDF',
-                    filesize: b['filesizeString']?.toString() ?? '4.2 MB',
-                    coverUrl: b['cover']?.toString() ?? '',
-                    downloadUrl: b['downloadUrl']?.toString() ?? '',
-                  ))
-              .toList();
-        }
-      }
-    } catch (_) {}
-
-    // Repli de sécurité avec les ouvrages de référence UY1
+    // Repli de sécurité avec les ouvrages de référence pré-indexés
+    if (cleanQuery.isEmpty) {
+      return _getPopularAcademicBooks();
+    }
     return _getPopularAcademicBooks().where((b) {
-      final q = query.toLowerCase();
+      final q = cleanQuery.toLowerCase();
       return b.title.toLowerCase().contains(q) ||
           b.author.toLowerCase().contains(q);
     }).toList();

@@ -650,10 +650,14 @@ export const openLibraryService = {
         }
       }
 
-      // Si toujours aucun downloadTarget, tenter via /api/books
+      // Si toujours aucun downloadTarget, cibler l'API VPS Z-Library de téléchargement direct
       if (!downloadTarget) {
+        downloadTarget = `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(book.id)}`
+      } else if (downloadTarget.startsWith('/api/books/download')) {
+        downloadTarget = `https://vps.kernelforge.codes/zlibrary${downloadTarget}`
+      } else if (downloadTarget.startsWith('/')) {
         const origin = window.location.origin || ''
-        downloadTarget = `${origin}/api/books?action=download&id=${encodeURIComponent(book.id)}`
+        downloadTarget = `${origin}${downloadTarget}`
       }
 
       const a = document.createElement('a')
@@ -726,47 +730,60 @@ export const openLibraryService = {
 
     let externalBooks: OpenBook[] = []
 
-    // Appel direct au service /api/books 100% Z-Library
+    // Appel direct au microservice VPS Z-Library multi-shadow
     try {
       const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : ''
       const langParam = cleanLang && cleanLang !== 'toutes' ? `&language=${encodeURIComponent(cleanLang)}` : ''
       const sortParam = sortBy ? `&sortBy=${encodeURIComponent(sortBy)}` : ''
-      const apiUrl = `${origin}/api/books?q=${encodeURIComponent(cleanQuery || searchTerms)}&category=${encodeURIComponent(category)}${langParam}${sortParam}&limit=35`
+      const queryParams = `q=${encodeURIComponent(cleanQuery || searchTerms)}&category=${encodeURIComponent(category)}${langParam}${sortParam}&limit=35`
 
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 6000)
-      const apiRes = await fetch(apiUrl, {
-        headers: { Accept: 'application/json' },
-        signal: controller.signal,
-      })
-      clearTimeout(timeout)
+      const candidateUrls = [
+        `https://vps.kernelforge.codes/zlibrary/api/books?${queryParams}`,
+        origin ? `${origin}/api/books?${queryParams}` : '',
+        `http://5.189.146.147:7070/api/books?${queryParams}`,
+      ].filter(Boolean)
 
-      if (apiRes.ok) {
-        const apiData = await apiRes.json()
-        const booksList = apiData.books || apiData.results
-        if (Array.isArray(booksList) && booksList.length > 0) {
-          externalBooks = booksList.map((b: any): OpenBook => ({
-            id: b.id || `zlib-${Math.random().toString(36).slice(2)}`,
-            title: b.title || 'Livre Z-Library',
-            authors: Array.isArray(b.authors) ? b.authors : [b.author || 'Auteur Z-Library'],
-            year: b.year,
-            category: b.category || (category !== 'Tous' ? category : 'Sciences & Enseignement'),
-            language: b.language || 'Français',
-            coverUrl: b.coverUrl,
-            description: b.description || 'Ouvrage intégral Z-Library.',
-            downloadUrl: b.downloadUrl || b.directReadUrl,
-            directReadUrl: b.directReadUrl || b.downloadUrl,
-            format: b.format || 'PDF',
-            source: 'Z-Library',
-            downloadsCount: b.downloadsCount || 1200,
-            cachedInBucket: !!b.cachedInBucket,
-            isbn: b.isbn,
-            size: b.size || 'Téléchargement direct',
-          }))
+      for (const apiUrl of candidateUrls) {
+        try {
+          const controller = new AbortController()
+          const timeout = setTimeout(() => controller.abort(), 5000)
+          const apiRes = await fetch(apiUrl, {
+            headers: { Accept: 'application/json' },
+            signal: controller.signal,
+          })
+          clearTimeout(timeout)
+
+          if (apiRes.ok) {
+            const apiData = await apiRes.json()
+            const booksList = apiData.books || apiData.results
+            if (Array.isArray(booksList) && booksList.length > 0) {
+              externalBooks = booksList.map((b: any): OpenBook => ({
+                id: b.id || `zlib-${Math.random().toString(36).slice(2)}`,
+                title: b.title || 'Livre Z-Library',
+                authors: Array.isArray(b.authors) ? b.authors : [b.author || 'Auteur Z-Library'],
+                year: b.year,
+                category: b.category || (category !== 'Tous' ? category : 'Sciences & Enseignement'),
+                language: b.language || 'Français',
+                coverUrl: b.coverUrl,
+                description: b.description || 'Ouvrage intégral Z-Library.',
+                downloadUrl: b.downloadUrl || (b.id ? `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(b.id)}` : undefined),
+                directReadUrl: b.directReadUrl || b.downloadUrl,
+                format: b.format || 'PDF',
+                source: 'Z-Library',
+                downloadsCount: b.downloadsCount || 1200,
+                cachedInBucket: !!b.cachedInBucket,
+                isbn: b.isbn,
+                size: b.size || 'Téléchargement direct',
+              }))
+              break
+            }
+          }
+        } catch {
+          // essayer l'endpoint suivant
         }
       }
     } catch (err) {
-      console.warn('API /api/books non joignable:', err)
+      console.warn('API Z-Library non joignable:', err)
     }
 
     // Auto-synchronisation des premiers résultats en base de données de manière asynchrone

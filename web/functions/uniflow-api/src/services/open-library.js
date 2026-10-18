@@ -1,4 +1,4 @@
-import { Client, Databases, Storage, Query, ID, Permission, Role } from 'node-appwrite'
+import { Client, Databases, Storage, Query, ID, Permission, Role, InputFile } from 'node-appwrite'
 import { DATABASE_ID } from '../lib/caller.js'
 
 const BUCKET_ID = process.env.APPWRITE_STORAGE_BUCKET_ID || 'uniflow_assets'
@@ -232,7 +232,7 @@ export default async function openLibraryService({ req, res, log, error }) {
       const file = await storage.createFile(
         BUCKET_ID,
         ID.unique(),
-        new File([buffer], fileName, { type: 'application/pdf' }),
+        InputFile.fromBuffer(buffer, fileName),
         [Permission.read(Role.any()), Permission.read(Role.users())]
       )
 
