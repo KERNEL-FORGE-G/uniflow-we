@@ -383,12 +383,20 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
                           size: 18, color: Color(0xFF0D9488)),
                       onPressed: () async {
                         final uri = Uri.parse(book.downloadUrl);
-                        if (await canLaunchUrl(uri)) {
-                          await launchUrl(uri,
+                        try {
+                          final launched = await launchUrl(uri,
                               mode: LaunchMode.externalApplication);
+                          if (!launched) {
+                            await launchUrl(uri,
+                                mode: LaunchMode.platformDefault);
+                          }
+                        } catch (_) {
+                          try {
+                            await launchUrl(uri);
+                          } catch (_) {}
                         }
                       },
-                      tooltip: 'Télécharger via Z-Library',
+                      tooltip: 'Télécharger le manuel intégral (PDF)',
                     ),
                   ],
                 ),

@@ -1137,6 +1137,23 @@ const ZLIBRARY_CURATED_BOOKS: ApiBook[] = [
   },
   {
     id: 'zlib-lit-703',
+    title: 'Discours de la méthode pour bien conduire sa raison',
+    authors: ['René Descartes'],
+    year: 1637,
+    category: 'Littérature & Lettres',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'Texte fondateur de la philosophie et de la méthode scientifique cartésienne moderne : « Je pense, donc je suis » et les 4 règles de la méthode.',
+    downloadUrl: 'https://archive.org/download/discoursdelamth00descgoog/discoursdelamth00descgoog.pdf',
+    directReadUrl: 'https://archive.org/details/discoursdelamth00descgoog',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 45600,
+    cachedInBucket: false,
+    size: '5.5 Mo (Texte Intégral)',
+  },
+  {
+    id: 'zlib-lit-704',
     title: 'Faust: Eine Tragödie (Erster und zweiter Teil)',
     authors: ['Johann Wolfgang von Goethe'],
     year: 1808,
@@ -1151,6 +1168,108 @@ const ZLIBRARY_CURATED_BOOKS: ApiBook[] = [
     downloadsCount: 31200,
     cachedInBucket: false,
     size: '20.0 Mo (Vollständige Ausgabe)',
+  },
+  {
+    id: 'zlib-math-202',
+    title: 'Algèbre - Tome II : Analyse algébrique et équations',
+    authors: ['Émile Borel'],
+    year: 1905,
+    category: 'Mathématiques & Data',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+    description: 'Traité classique de référence pour l’enseignement supérieur scientifique : polynômes, séries, fractions continues et calcul algébrique approfondi.',
+    downloadUrl: 'https://archive.org/download/AlgebreIi/AlgebreIi.pdf',
+    directReadUrl: 'https://archive.org/details/AlgebreIi',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 28900,
+    cachedInBucket: false,
+    size: '30.8 Mo (Édition Complète)',
+  },
+  {
+    id: 'zlib-math-203',
+    title: 'Dictionnaire des Mathématiques : Algèbre, Analyse, Géométrie',
+    authors: ['Alain Bouvier', 'Michel George', 'François Le Lionnais'],
+    year: 1993,
+    category: 'Mathématiques & Data',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+    description: 'Ouvrage encyclopédique de référence pour les étudiants de premier et second cycles universitaires en mathématiques et sciences physiques.',
+    downloadUrl: 'https://archive.org/download/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf/Dictionnaire.Des.Mathematiques.Algebre.Analyse.Geometrie.pdf',
+    directReadUrl: 'https://archive.org/details/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 42100,
+    cachedInBucket: false,
+    size: '47.6 Mo (Manuel de Référence)',
+  },
+  {
+    id: 'zlib-phys-301',
+    title: 'Relativity: The Special and the General Theory',
+    authors: ['Albert Einstein'],
+    year: 1920,
+    category: 'Physique & Sciences',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    description: 'Le texte fondamental rédigé par Albert Einstein exposant la théorie de la relativité restreinte et générale de manière claire et accessible aux étudiants.',
+    downloadUrl: 'https://archive.org/download/relativitythespe00einsuoft/relativitythespe00einsuoft.pdf',
+    directReadUrl: 'https://archive.org/details/relativitythespe00einsuoft',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 78300,
+    cachedInBucket: false,
+    size: '8.5 Mo (Ouvrage Intégral)',
+  },
+  {
+    id: 'zlib-law-401',
+    title: 'Du contrat social ou Principes du droit politique',
+    authors: ['Jean-Jacques Rousseau'],
+    year: 1762,
+    category: 'Droit & Sciences Po',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'Ouvrage majeur de philosophie politique et de théorie du droit définissant la souveraineté populaire, la volonté générale et les fondements de l’État de droit.',
+    downloadUrl: 'https://archive.org/download/ducontratsocial00rousgoog/ducontratsocial00rousgoog.pdf',
+    directReadUrl: 'https://archive.org/details/ducontratsocial00rousgoog',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 56700,
+    cachedInBucket: false,
+    size: '2.6 Mo (Texte Intégral)',
+  },
+  {
+    id: 'zlib-econ-501',
+    title: 'The Wealth of Nations (An Inquiry into the Nature and Causes)',
+    authors: ['Adam Smith'],
+    year: 1776,
+    category: 'Économie & Gestion',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'L’œuvre fondatrice de la science économique moderne : division du travail, théorie de la valeur, mécanismes de marché et commerce international.',
+    downloadUrl: 'https://archive.org/download/wealthofnations00smituoft/wealthofnations00smituoft.pdf',
+    directReadUrl: 'https://archive.org/details/wealthofnations00smituoft',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 69200,
+    cachedInBucket: false,
+    size: '35.8 Mo (Édition Complète)',
+  },
+  {
+    id: 'zlib-med-601',
+    title: 'Anatomy of the Human Body (Gray’s Anatomy)',
+    authors: ['Henry Gray', 'Warren H. Lewis'],
+    year: 1918,
+    category: 'Médecine & Santé',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    description: 'Le manuel classique d’anatomie humaine illustré de renommée mondiale : ostéologie, myologie, angiologie, neurologie et organes sensoriels.',
+    downloadUrl: 'https://archive.org/download/anatomyofhumanbo1918gray/anatomyofhumanbo1918gray.pdf',
+    directReadUrl: 'https://archive.org/details/anatomyofhumanbo1918gray',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 91500,
+    cachedInBucket: false,
+    size: '139.2 Mo (Édition Illustrée Complète)',
   },
 ]
 
@@ -1277,6 +1396,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const qTitle = (req.query.q as string) || (req.query.title as string) || ''
 
       const isRawRequested = req.query.raw === '1' || req.query.raw === 'true'
+      const directParamUrl = (req.query.downloadUrl as string) || (req.query.url as string) || ''
+
+      // Si une URL directe http/https est fournie
+      if (!isRawRequested && (directParamUrl || bookId.startsWith('http://') || bookId.startsWith('https://'))) {
+        const targetUrl = directParamUrl || bookId
+        if (typeof res.redirect === 'function') {
+          return res.redirect(302, targetUrl)
+        }
+        res.setHeader('Location', targetUrl)
+        return res.status(302).send(Buffer.from([]))
+      }
 
       // Si l'identifiant provient d'Archive.org (ia-...)
       if (!isRawRequested && bookId && bookId.startsWith('ia-')) {
@@ -1292,8 +1422,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             const pdf = files.find((f: any) =>
               (f.name || '').toLowerCase().endsWith('.pdf') &&
               !f.name.includes('_encrypted') &&
-              !f.name.includes('_text')
-            )
+              !f.name.includes('_text') &&
+              f.private !== 'true'
+            ) || files.find((f: any) => (f.name || '').toLowerCase().endsWith('.pdf'))
             if (pdf && pdf.name) {
               const directUrl = `https://archive.org/download/${iaId}/${encodeURIComponent(pdf.name)}`
               if (typeof res.redirect === 'function') {

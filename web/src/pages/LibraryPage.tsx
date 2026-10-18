@@ -1020,9 +1020,9 @@ export default function LibraryPage() {
                 >
                   Fermer
                 </button>
-                {activeBookModal.directReadUrl && (
+                {(activeBookModal.directReadUrl || activeBookModal.downloadUrl) && (
                   <a
-                    href={activeBookModal.directReadUrl}
+                    href={activeBookModal.directReadUrl || activeBookModal.downloadUrl}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-1.5 rounded-xl bg-[#0D9488] hover:bg-teal-700 text-white px-4 py-2 text-xs font-bold shadow-md transition-all"

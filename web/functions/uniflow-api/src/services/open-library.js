@@ -166,6 +166,7 @@ export default async function openLibraryService({ req, res, log, error }) {
                 coverUrl,
                 description: `Édition académique (${doc.first_publish_year || 'Récente'}). Sujets: ${(doc.subject || []).slice(0, 3).join(', ')}`,
                 downloadUrl,
+                directReadUrl: iaId ? `https://archive.org/details/${iaId}` : undefined,
                 format: 'PDF',
                 source: 'Open Library',
                 downloadsCount: doc.edition_count ? doc.edition_count * 250 : 800,

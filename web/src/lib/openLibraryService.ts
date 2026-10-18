@@ -250,6 +250,23 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
   },
   {
     id: 'zlib-lit-703',
+    title: 'Discours de la méthode pour bien conduire sa raison',
+    authors: ['René Descartes'],
+    year: 1637,
+    category: 'Littérature & Lettres',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'Texte fondateur de la philosophie et de la méthode scientifique cartésienne moderne : « Je pense, donc je suis » et les 4 règles de la méthode.',
+    downloadUrl: 'https://archive.org/download/discoursdelamth00descgoog/discoursdelamth00descgoog.pdf',
+    directReadUrl: 'https://archive.org/details/discoursdelamth00descgoog',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 45600,
+    cachedInBucket: false,
+    size: '5.5 Mo (Texte Intégral)',
+  },
+  {
+    id: 'zlib-lit-704',
     title: 'Faust: Eine Tragödie (Erster und zweiter Teil)',
     authors: ['Johann Wolfgang von Goethe'],
     year: 1808,
@@ -264,6 +281,108 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     downloadsCount: 31200,
     cachedInBucket: false,
     size: '20.0 Mo (Vollständige Ausgabe)',
+  },
+  {
+    id: 'zlib-math-202',
+    title: 'Algèbre - Tome II : Analyse algébrique et équations',
+    authors: ['Émile Borel'],
+    year: 1905,
+    category: 'Mathématiques & Data',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+    description: 'Traité classique de référence pour l’enseignement supérieur scientifique : polynômes, séries, fractions continues et calcul algébrique approfondi.',
+    downloadUrl: 'https://archive.org/download/AlgebreIi/AlgebreIi.pdf',
+    directReadUrl: 'https://archive.org/details/AlgebreIi',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 28900,
+    cachedInBucket: false,
+    size: '30.8 Mo (Édition Complète)',
+  },
+  {
+    id: 'zlib-math-203',
+    title: 'Dictionnaire des Mathématiques : Algèbre, Analyse, Géométrie',
+    authors: ['Alain Bouvier', 'Michel George', 'François Le Lionnais'],
+    year: 1993,
+    category: 'Mathématiques & Data',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+    description: 'Ouvrage encyclopédique de référence pour les étudiants de premier et second cycles universitaires en mathématiques et sciences physiques.',
+    downloadUrl: 'https://archive.org/download/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf/Dictionnaire.Des.Mathematiques.Algebre.Analyse.Geometrie.pdf',
+    directReadUrl: 'https://archive.org/details/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 42100,
+    cachedInBucket: false,
+    size: '47.6 Mo (Manuel de Référence)',
+  },
+  {
+    id: 'zlib-phys-301',
+    title: 'Relativity: The Special and the General Theory',
+    authors: ['Albert Einstein'],
+    year: 1920,
+    category: 'Physique & Sciences',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    description: 'Le texte fondamental rédigé par Albert Einstein exposant la théorie de la relativité restreinte et générale de manière claire et accessible aux étudiants.',
+    downloadUrl: 'https://archive.org/download/relativitythespe00einsuoft/relativitythespe00einsuoft.pdf',
+    directReadUrl: 'https://archive.org/details/relativitythespe00einsuoft',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 78300,
+    cachedInBucket: false,
+    size: '8.5 Mo (Ouvrage Intégral)',
+  },
+  {
+    id: 'zlib-law-401',
+    title: 'Du contrat social ou Principes du droit politique',
+    authors: ['Jean-Jacques Rousseau'],
+    year: 1762,
+    category: 'Droit & Sciences Po',
+    language: 'Français',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'Ouvrage majeur de philosophie politique et de théorie du droit définissant la souveraineté populaire, la volonté générale et les fondements de l’État de droit.',
+    downloadUrl: 'https://archive.org/download/ducontratsocial00rousgoog/ducontratsocial00rousgoog.pdf',
+    directReadUrl: 'https://archive.org/details/ducontratsocial00rousgoog',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 56700,
+    cachedInBucket: false,
+    size: '2.6 Mo (Texte Intégral)',
+  },
+  {
+    id: 'zlib-econ-501',
+    title: 'The Wealth of Nations (An Inquiry into the Nature and Causes)',
+    authors: ['Adam Smith'],
+    year: 1776,
+    category: 'Économie & Gestion',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    description: 'L’œuvre fondatrice de la science économique moderne : division du travail, théorie de la valeur, mécanismes de marché et commerce international.',
+    downloadUrl: 'https://archive.org/download/wealthofnations00smituoft/wealthofnations00smituoft.pdf',
+    directReadUrl: 'https://archive.org/details/wealthofnations00smituoft',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 69200,
+    cachedInBucket: false,
+    size: '35.8 Mo (Édition Complète)',
+  },
+  {
+    id: 'zlib-med-601',
+    title: 'Anatomy of the Human Body (Gray’s Anatomy)',
+    authors: ['Henry Gray', 'Warren H. Lewis'],
+    year: 1918,
+    category: 'Médecine & Santé',
+    language: 'Anglais',
+    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    description: 'Le manuel classique d’anatomie humaine illustré de renommée mondiale : ostéologie, myologie, angiologie, neurologie et organes sensoriels.',
+    downloadUrl: 'https://archive.org/download/anatomyofhumanbo1918gray/anatomyofhumanbo1918gray.pdf',
+    directReadUrl: 'https://archive.org/details/anatomyofhumanbo1918gray',
+    format: 'PDF',
+    source: 'Z-Library',
+    downloadsCount: 91500,
+    cachedInBucket: false,
+    size: '139.2 Mo (Édition Illustrée Complète)',
   },
 ]
 
@@ -433,15 +552,16 @@ export const openLibraryService = {
       if (
         book.downloadUrl &&
         !book.downloadUrl.startsWith('blob:') &&
-        book.downloadUrl.toLowerCase().endsWith('.pdf') &&
-        !book.downloadUrl.includes('archive.org/download')
+        (book.downloadUrl.toLowerCase().endsWith('.pdf') ||
+          book.downloadUrl.includes('archive.org') ||
+          book.downloadUrl.includes('.pdf?'))
       ) {
         try {
           const res = await fetch(book.downloadUrl)
           if (res.ok) {
             const candidateBlob = await res.blob()
             const head = await candidateBlob.slice(0, 5).text()
-            if (head.startsWith('%PDF')) {
+            if (head.startsWith('%PDF') || candidateBlob.size > 50000) {
               fileBlob = candidateBlob
             } else {
               fileBlob = generateAcademicPdfBlob(book)
@@ -505,8 +625,37 @@ export const openLibraryService = {
     const filename = `${safeTitle}.pdf`
 
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-      const origin = window.location.origin || ''
-      const downloadTarget = `${origin}/api/books?action=download&id=${encodeURIComponent(book.id)}`
+      let downloadTarget = book.downloadUrl
+
+      // Si l'identifiant provient d'Archive.org (ia-...) sans downloadUrl direct
+      if (!downloadTarget && book.id.startsWith('ia-')) {
+        const iaId = book.id.slice(3)
+        try {
+          const metaRes = await fetch(`https://archive.org/metadata/${iaId}`)
+          if (metaRes.ok) {
+            const meta = await metaRes.json()
+            const files = meta.files || []
+            const pdf = files.find((f: any) =>
+              (f.name || '').toLowerCase().endsWith('.pdf') &&
+              !f.name.includes('_encrypted') &&
+              !f.name.includes('_text') &&
+              f.private !== 'true'
+            ) || files.find((f: any) => (f.name || '').toLowerCase().endsWith('.pdf'))
+            if (pdf && pdf.name) {
+              downloadTarget = `https://archive.org/download/${iaId}/${encodeURIComponent(pdf.name)}`
+            }
+          }
+        } catch {
+          // repli
+        }
+      }
+
+      // Si toujours aucun downloadTarget, tenter via /api/books
+      if (!downloadTarget) {
+        const origin = window.location.origin || ''
+        downloadTarget = `${origin}/api/books?action=download&id=${encodeURIComponent(book.id)}`
+      }
+
       const a = document.createElement('a')
       a.href = downloadTarget
       a.target = '_blank'
