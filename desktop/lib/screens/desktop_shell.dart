@@ -6,11 +6,28 @@ import 'unimail_screen.dart';
 import 'schedule_screen.dart';
 import 'visio_screen.dart';
 import 'courses_screen.dart';
+import 'assignments_screen.dart';
+import 'grades_screen.dart';
+import 'attendance_screen.dart';
 import 'zlibrary_screen.dart';
 import 'assistant_screen.dart';
+import 'settings_screen.dart';
 
 class DesktopShell extends StatefulWidget {
-  const DesktopShell({super.key});
+  final String userName;
+  final String userEmail;
+  final String userRole;
+  final VoidCallback? onLogout;
+  final VoidCallback? onShowOnboarding;
+
+  const DesktopShell({
+    super.key,
+    this.userName = 'Marcel Tessoh',
+    this.userEmail = 'etudiant.uy1@uniflow.cm',
+    this.userRole = 'Membre Fondateur KERNEL FORGE',
+    this.onLogout,
+    this.onShowOnboarding,
+  });
 
   @override
   State<DesktopShell> createState() => _DesktopShellState();
@@ -19,10 +36,16 @@ class DesktopShell extends StatefulWidget {
 class _DesktopShellState extends State<DesktopShell> {
   int _selectedIndex = 0;
   final LocalVisioServer _server = LocalVisioServer.instance;
+  late String _currentUserName;
+  late String _currentUserEmail;
+  late String _currentUserRole;
 
   @override
   void initState() {
     super.initState();
+    _currentUserName = widget.userName;
+    _currentUserEmail = widget.userEmail;
+    _currentUserRole = widget.userRole;
     // Démarrage automatique du serveur de visio local dès le lancement du desktop
     _server.startServer();
   }
@@ -40,8 +63,20 @@ class _DesktopShellState extends State<DesktopShell> {
       const ScheduleScreen(),
       const VisioScreen(),
       const CoursesScreen(),
+      const AssignmentsScreen(),
+      const GradesScreen(),
+      const AttendanceScreen(),
       const ZLibraryScreen(),
       const AssistantScreen(),
+      SettingsScreen(
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+        userRole: _currentUserRole,
+        onLogout: widget.onLogout ?? () {},
+        onRoleChanged: (newRole) {
+          setState(() => _currentUserRole = newRole);
+        },
+      ),
     ];
 
     return Scaffold(
@@ -163,17 +198,51 @@ class _DesktopShellState extends State<DesktopShell> {
                       ),
                       _buildNavItem(
                         6,
-                        'Bibliothèque Z-Library',
-                        'assets/icons/nav/library.png',
-                        Icons.local_library_rounded,
+                        'Devoirs & Projets',
+                        'assets/icons/nav/assignments.png',
+                        Icons.assignment_rounded,
+                        badgeText: '3 Actifs',
+                        badgeColor: const Color(0xFFF59E0B),
                       ),
                       _buildNavItem(
                         7,
+                        'Notes & Bulletins LMD',
+                        'assets/icons/nav/grades.png',
+                        Icons.grade_rounded,
+                        badgeText: 'GPA 3.82',
+                        badgeColor: const Color(0xFF10B981),
+                      ),
+                      _buildNavItem(
+                        8,
+                        'Présence & QR Code',
+                        'assets/icons/nav/attendance.png',
+                        Icons.qr_code_scanner_rounded,
+                        badgeText: '98.5%',
+                        badgeColor: const Color(0xFF0D9488),
+                      ),
+                      _buildNavItem(
+                        9,
+                        'Bibliothèque Z-Library',
+                        'assets/icons/nav/library.png',
+                        Icons.local_library_rounded,
+                        badgeText: 'VPS',
+                        badgeColor: const Color(0xFF38BDF8),
+                      ),
+                      _buildNavItem(
+                        10,
                         'Uni Copilot IA',
                         'assets/icons/nav/aide.png',
                         Icons.auto_awesome_rounded,
                         badgeText: 'GROQ',
                         badgeColor: const Color(0xFF0D9488),
+                      ),
+                      _buildNavItem(
+                        11,
+                        'Paramètres & Profil',
+                        'assets/icons/nav/settings.png',
+                        Icons.settings_rounded,
+                        badgeText: _currentUserRole.contains('Membre') ? 'Fondateur' : null,
+                        badgeColor: const Color(0xFFF59E0B),
                       ),
                     ],
                   ),
@@ -236,68 +305,108 @@ class _DesktopShellState extends State<DesktopShell> {
                             color: Color(0xFF94A3B8), fontSize: 10),
                       ),
                       const SizedBox(height: 6),
-                      InkWell(
-                        onTap: () => setState(() => _selectedIndex = 4),
-                        child: const Text(
-                          'Serveur P2P & Visioconférence →',
-                          style: TextStyle(
-                              color: Color(0xFF38BDF8),
-                              fontSize: 10,
-                              fontWeight: FontWeight.bold),
-                        ),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        alignment: WrapAlignment.spaceBetween,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          InkWell(
+                            onTap: () => setState(() => _selectedIndex = 4),
+                            child: const Text(
+                              'Serveur Visio →',
+                              style: TextStyle(
+                                  color: Color(0xFF38BDF8),
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          if (widget.onShowOnboarding != null)
+                            InkWell(
+                              onTap: widget.onShowOnboarding,
+                              child: const Text(
+                                'Onboarding ↺',
+                                style: TextStyle(
+                                    color: Color(0xFF94A3B8),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                        ],
                       ),
                     ],
                   ),
                 ),
 
-                // Carte Profil Utilisateur Bento Dégradé avec adresse @uniflow.cm
-                Container(
-                  margin: const EdgeInsets.fromLTRB(12, 4, 12, 14),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
+                // Carte Profil Utilisateur Bento Dégradé avec adresse @uniflow.cm & action Paramètres / Déconnexion
+                InkWell(
+                  onTap: () => setState(() => _selectedIndex = 11),
+                  borderRadius: BorderRadius.circular(18),
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(12, 4, 12, 14),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(18),
+                      border:
+                          Border.all(color: Colors.white.withValues(alpha: 0.2)),
                     ),
-                    borderRadius: BorderRadius.circular(18),
-                    border:
-                        Border.all(color: Colors.white.withValues(alpha: 0.2)),
-                  ),
-                  child: const Row(
-                    children: [
-                      CircleAvatar(
-                        radius: 19,
-                        backgroundColor: Color(0xFF0F172A),
-                        backgroundImage:
-                            AssetImage('assets/mascot/uni_copilot_3d.png'),
-                      ),
-                      SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Étudiant UY1 · ICT4D L3',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w900),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SizedBox(height: 2),
-                            Text(
-                              'etudiant.uy1@uniflow.cm',
-                              style: TextStyle(
-                                  color: Color(0xFF67E8F9),
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
+                    child: Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 19,
+                          backgroundColor: Color(0xFF0F172A),
+                          backgroundImage:
+                              AssetImage('assets/mascot/uni_copilot_3d.png'),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '$_currentUserName · $_currentUserRole',
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w900),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                _currentUserEmail,
+                                style: const TextStyle(
+                                    color: Color(0xFF67E8F9),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.settings, color: Colors.white70, size: 18),
+                          tooltip: 'Paramètres & Espace Membre',
+                          onPressed: () => setState(() => _selectedIndex = 11),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                        if (widget.onLogout != null) ...[
+                          const SizedBox(width: 8),
+                          IconButton(
+                            icon: const Icon(Icons.logout_rounded, color: Colors.white70, size: 18),
+                            tooltip: 'Se déconnecter',
+                            onPressed: widget.onLogout,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ],
