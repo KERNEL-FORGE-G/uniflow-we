@@ -70,29 +70,55 @@ class _CoursesScreenState extends State<CoursesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/icons/nav/courses.png',
-                                width: 16,
-                                height: 16,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.menu_book_rounded, color: Color(0xFF67E8F9), size: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                               ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'SYLLABUS OFFICIEL FACULTÉ DES SCIENCES · UY1',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/icons/nav/courses.png',
+                                    width: 16,
+                                    height: 16,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.menu_book_rounded, color: Color(0xFF67E8F9), size: 14),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Text(
+                                    'SYLLABUS OFFICIEL FACULTÉ DES SCIENCES · UY1',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF34D399)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.cloud_done_rounded, color: Color(0xFF34D399), size: 13),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Résilience & Synchronisation Hors-Ligne',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -101,7 +127,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Suivez vos Cours Magistraux (CM), Travaux Dirigés (TD) et Travaux Pratiques (TP) du Semestre LMD avec progression en temps réel.',
+                          'Suivez vos Cours Magistraux (CM), Travaux Dirigés (TD) et Travaux Pratiques (TP) du Semestre LMD avec progression en temps réel et supports téléchargés en cache local résilient.',
                           style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, height: 1.45),
                         ),
                         const SizedBox(height: 16),
@@ -112,6 +138,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
                             _buildHeroStatPill('UE Inscrites', '${sampleCourses.length} Cours'),
                             _buildHeroStatPill('Crédits ECTS', '30 ECTS'),
                             _buildHeroStatPill('Progression', '$avgProgress% Moyenne'),
+                            _buildHeroStatPill('Résilience', 'Cache Local Prêt'),
                           ],
                         ),
                       ],

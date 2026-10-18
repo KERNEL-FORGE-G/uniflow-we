@@ -426,33 +426,56 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Badge verre dépoli
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/icons/nav/analytics.png',
-                                width: 16,
-                                height: 16,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.campaign_rounded, color: Color(0xFF67E8F9), size: 15),
+                        // Badges positionnement et canal
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                               ),
-                              const SizedBox(width: 8),
-                              const Flexible(
-                                child: Text(
-                                  'CANAL OFFICIEL D\'INFORMATION · UNIVERSITÉ DE YAOUNDÉ I',
-                                  style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.4),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/icons/nav/analytics.png',
+                                    width: 16,
+                                    height: 16,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.campaign_rounded, color: Color(0xFF67E8F9), size: 15),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  const Text(
+                                    'CANAL OFFICIEL D\'INFORMATION · UY1',
+                                    style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800, letterSpacing: 0.4),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF34D399)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.wifi_off_rounded, color: Color(0xFF34D399), size: 13),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Résilience & Synchronisation Hors-Ligne',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 14),
                         const Text(
@@ -461,7 +484,7 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Suivez en temps réel les communiqués rectoraux, l\'évolution de la bêta UniFlow, les supports vidéo de cours, les galeries photos commentées et les notes administratives PDF.',
+                          'Suivez en temps réel les communiqués rectoraux, l\'évolution de la bêta UniFlow, les supports vidéo de cours, les galeries photos commentées et les notes administratives PDF — avec mise en cache locale permanente pour consultation sans connexion Internet.',
                           style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.5),
                         ),
                         const SizedBox(height: 18),
@@ -472,7 +495,7 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
                           children: [
                             _buildHeroMicroBento(Icons.verified_rounded, 'Statut Plateforme', 'Phase Test Bêta Active', const Color(0xFF34D399)),
                             _buildHeroMicroBento(Icons.dynamic_feed_rounded, 'Publications', '${_newsItems.length} Médias & Notes', const Color(0xFF38BDF8)),
-                            _buildHeroMicroBento(Icons.security_rounded, 'Certification', 'Rectorat & Kernel Forge', const Color(0xFFFBBF24)),
+                            _buildHeroMicroBento(Icons.cloud_done_rounded, 'Résilience', 'Cache Local Synchro', const Color(0xFFFBBF24)),
                           ],
                         ),
                       ],
@@ -867,6 +890,19 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
   }
 
   Widget _buildNewsBentoCard(CampusNewsItem item) {
+    Color catColor = const Color(0xFF1E3A8A);
+    IconData catIcon = Icons.campaign_rounded;
+    if (item.category == 'Images') {
+      catColor = const Color(0xFF0D9488);
+      catIcon = Icons.photo_camera_rounded;
+    } else if (item.category == 'Vidéos') {
+      catColor = const Color(0xFF7C3AED);
+      catIcon = Icons.play_circle_fill_rounded;
+    } else if (item.category == 'Documents') {
+      catColor = const Color(0xFFEA580C);
+      catIcon = Icons.description_rounded;
+    }
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -887,16 +923,46 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  item.category,
-                  style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)),
-                ),
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: catColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(catIcon, size: 13, color: catColor),
+                        const SizedBox(width: 5),
+                        Text(
+                          item.category,
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: catColor),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10B981).withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.offline_pin_rounded, size: 11, color: Color(0xFF059669)),
+                        SizedBox(width: 4),
+                        Text(
+                          'Hors-Ligne',
+                          style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.bold, color: Color(0xFF059669)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               Text(item.date, style: const TextStyle(fontSize: 11, color: Color(0xFF94A3B8))),
             ],

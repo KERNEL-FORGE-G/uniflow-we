@@ -694,12 +694,20 @@ class _BetaAnnouncementBanner extends StatelessWidget {
                       borderRadius: BorderRadius.circular(999),
                       border: Border.all(color: const Color(0xFFFBBF24).withValues(alpha: 0.5)),
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        PhosphorIcon(PhosphorIconsFill.sparkle, size: 12, color: Color(0xFFFBBF24)),
-                        SizedBox(width: 5),
-                        Flexible(
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4),
+                          child: Image.asset(
+                            'assets/brand/uniflow_logo_final.png',
+                            width: 14,
+                            height: 14,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        const Flexible(
                           child: Text(
                             'COMMUNIQUÉ OFFICIEL · BÊTA',
                             maxLines: 1,
@@ -732,7 +740,7 @@ class _BetaAnnouncementBanner extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'Architecture Bento 3D, messagerie @uniflow.cm signée, synchronisation hors-ligne et nouveaux outils d\'apprentissage.',
+              'Architecture Bento 3D, messagerie @uniflow.cm signée, connecté en continu avec synchronisation hors-ligne.',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.85),
                 fontSize: 12,

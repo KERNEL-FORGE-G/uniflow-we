@@ -1269,6 +1269,39 @@ class _DashHeroBanner extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: Image.asset(
+                            'assets/brand/uniflow_logo_final.png',
+                            width: 14,
+                            height: 14,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        const Text(
+                          'UniFlow Campus',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.3,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                   Text(
                     first.isEmpty ? 'Bienvenue !' : 'Bonjour, $first !',
                     style: const TextStyle(
@@ -1357,7 +1390,8 @@ class _DashHeroBanner extends ConsumerWidget {
 }
 
 /// Grille 4 colonnes de raccourcis — style « Book Lending » : icônes rondes
-/// blanches avec ombre douce, libellé en dessous.
+/// Grille 4 colonnes de raccourcis — style Bento avec icônes 3D officielles :
+/// conteneur squircle blanc, ombre douce et libellé lisible.
 class _ActionGrid extends StatelessWidget {
   final List<_QuickAction> actions;
   const _ActionGrid({required this.actions});
@@ -1372,6 +1406,7 @@ class _ActionGrid extends StatelessWidget {
               icon: actions[i].icon,
               label: actions[i].label,
               color: actions[i].color,
+              route: actions[i].route,
               index: i,
               onTap: () => context.push(actions[i].route),
             ),
@@ -1381,11 +1416,12 @@ class _ActionGrid extends StatelessWidget {
   }
 }
 
-/// Raccourci rond — style « Book Lending » : fond blanc avec ombre, icône colorée.
+/// Raccourci Bento avec icône 3D navigation et fallback Phosphor.
 class _ActionIcon extends StatelessWidget {
   final PhosphorIconData icon;
   final String label;
   final Color color;
+  final String route;
   final int index;
   final VoidCallback onTap;
 
@@ -1393,15 +1429,36 @@ class _ActionIcon extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.color,
+    required this.route,
     required this.index,
     required this.onTap,
   });
 
+  static String? _navIconForRoute(String route) => switch (route) {
+        '/emploi-du-temps' => 'assets/icons/nav/schedule.png',
+        '/bibliotheque' => 'assets/icons/nav/library.png',
+        '/presence' => 'assets/icons/nav/attendance.png',
+        '/forum' => 'assets/icons/nav/messages.png',
+        '/actualites' => 'assets/icons/nav/notifications.png',
+        '/mail' => 'assets/icons/nav/messages.png',
+        '/inscriptions' => 'assets/icons/nav/inscriptions.png',
+        '/quetes' => 'assets/icons/nav/gamification.png',
+        '/etudiants' => 'assets/icons/nav/students.png',
+        '/devoirs' => 'assets/icons/nav/assignments.png',
+        '/notes' => 'assets/icons/nav/grades.png',
+        '/messages' => 'assets/icons/nav/messages.png',
+        '/ues' => 'assets/icons/nav/courses.png',
+        '/visio' => 'assets/icons/nav/visio.png',
+        '/reglages' || '/settings' => 'assets/icons/nav/settings.png',
+        _ => null,
+      };
+
   @override
   Widget build(BuildContext context) {
+    final navIcon = _navIconForRoute(route);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(18),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -1410,26 +1467,39 @@ class _ActionIcon extends StatelessWidget {
             height: 56,
             decoration: BoxDecoration(
               color: AppColors.cardWhite,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(18),
               boxShadow: [
                 BoxShadow(
-                  color: color.withValues(alpha: 0.18),
-                  blurRadius: 14,
-                  offset: const Offset(0, 5),
+                  color: color.withValues(alpha: 0.16),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: AppColors.primaryBlue.withValues(alpha: 0.06),
-                  blurRadius: 8,
+                  color: AppColors.primaryBlue.withValues(alpha: 0.05),
+                  blurRadius: 6,
                   offset: const Offset(0, 2),
                 ),
               ],
             ),
             child: Center(
-              child: PhosphorIcon(
-                icon,
-                size: 24,
-                color: color,
-              ),
+              child: navIcon != null
+                  ? Image.asset(
+                      navIcon,
+                      width: 32,
+                      height: 32,
+                      fit: BoxFit.contain,
+                      filterQuality: FilterQuality.high,
+                      errorBuilder: (_, __, ___) => PhosphorIcon(
+                        icon,
+                        size: 24,
+                        color: color,
+                      ),
+                    )
+                  : PhosphorIcon(
+                      icon,
+                      size: 24,
+                      color: color,
+                    ),
             ),
           ),
           const SizedBox(height: 8),

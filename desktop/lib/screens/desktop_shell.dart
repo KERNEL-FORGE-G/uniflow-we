@@ -84,8 +84,14 @@ class _DesktopShellState extends State<DesktopShell> {
                               style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18, letterSpacing: -0.5),
                             ),
                             Text(
-                              'KERNEL FORGE · Bêta Desktop',
-                              style: TextStyle(color: Color(0xFF67E8F9), fontSize: 10, fontWeight: FontWeight.bold),
+                              'Plateforme Universitaire Connectée',
+                              style: TextStyle(color: Color(0xFF67E8F9), fontSize: 9.5, fontWeight: FontWeight.bold),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            Text(
+                              'Résilience & Synchronisation Hors-Ligne',
+                              style: TextStyle(color: Color(0xFF94A3B8), fontSize: 8.5, fontWeight: FontWeight.w600),
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ],
                         ),
@@ -162,7 +168,7 @@ class _DesktopShellState extends State<DesktopShell> {
                   ),
                 ),
 
-                // Footer de la Sidebar : Statut Serveur Visio Local
+                // Footer de la Sidebar : Statut Résilience & Synchronisation Hors-Ligne + Serveur Visio Local
                 Container(
                   margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   padding: const EdgeInsets.all(12),
@@ -179,31 +185,39 @@ class _DesktopShellState extends State<DesktopShell> {
                           Container(
                             width: 8,
                             height: 8,
-                            decoration: BoxDecoration(
-                              color: _server.isRunning ? const Color(0xFF10B981) : Colors.amber,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF10B981),
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Expanded(
+                          const Expanded(
                             child: Text(
-                              _server.isRunning ? 'Serveur Visio Local Actif' : 'Serveur En Attente',
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                              'Synchro Hors-Ligne Active',
+                              style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
                               overflow: TextOverflow.ellipsis,
                             ),
                           ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Text('Résilient', style: TextStyle(color: Color(0xFF34D399), fontSize: 9, fontWeight: FontWeight.bold)),
+                          ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 5),
                       Text(
-                        'Port ${_server.port} · P2P LAN',
+                        'Données locales sécurisées · Visio Port ${_server.port}',
                         style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
                       ),
                       const SizedBox(height: 6),
                       InkWell(
                         onTap: () => setState(() => _selectedIndex = 4),
                         child: const Text(
-                          'Gérer la salle & inviter →',
+                          'Serveur P2P & Visioconférence →',
                           style: TextStyle(color: Color(0xFF38BDF8), fontSize: 10, fontWeight: FontWeight.bold),
                         ),
                       ),

@@ -22,7 +22,7 @@ const comparisonCategories = [
       { name: 'Espace de cours & devoirs', student: true, teacher: true, campus: true },
       { name: 'Relevés de notes numériques', student: true, teacher: true, campus: true },
       { name: 'Exports PDF et Excel', student: true, teacher: true, campus: true },
-      { name: 'Mode Offline-First (PWA)', student: true, teacher: true, campus: true },
+      { name: 'Moteur de résilience & synchronisation hors-ligne', student: true, teacher: true, campus: true },
     ]
   },
   {
@@ -58,8 +58,8 @@ const faqs = [
     cat: 'Général'
   },
   {
-    q: 'Comment fonctionne le mode Offline-First ?',
-    a: 'UniFlow utilise une technologie PWA (Progressive Web App) et IndexedDB. Vos données de cours, devoirs et emplois du temps sont sauvegardées localement sur votre téléphone ou ordinateur. Vous pouvez consulter et travailler sans aucune connexion Internet, et la synchronisation s\'effectue automatiquement dès que vous retrouvez un réseau.',
+    q: 'Comment fonctionne la synchronisation et la résilience hors-ligne ?',
+    a: 'UniFlow fonctionne connecté au cloud tout en intégrant un stockage local haute performance. Vos données de cours, devoirs et emplois du temps sont conservées localement. Vous pouvez ainsi continuer à travailler même lors de coupures réseau : la synchronisation en arrière-plan s\'effectue automatiquement dès que vous retrouvez une connexion.',
     cat: 'Technologie'
   },
   {

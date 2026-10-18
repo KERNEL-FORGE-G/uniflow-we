@@ -13,6 +13,7 @@ class UniMailMessage {
   final String timestamp;
   final List<String> attachments;
   final bool isSignedByUniFlow;
+  final String priority; // URGENT, OFFICIEL, COURS, NORMAL
   bool isRead;
   bool isStarred;
 
@@ -28,6 +29,7 @@ class UniMailMessage {
     required this.timestamp,
     this.attachments = const [],
     this.isSignedByUniFlow = true,
+    this.priority = 'NORMAL',
     this.isRead = false,
     this.isStarred = false,
   });
@@ -73,6 +75,7 @@ class _UniMailScreenState extends State<UniMailScreen> {
           'Cordialement,\n'
           'La Direction des Systèmes d\'Information UniFlow',
       timestamp: 'Aujourd\'hui, 09:15',
+      priority: 'OFFICIEL',
       attachments: [
         'Certificat_Authenticite_UniMail_UY1.pdf',
         'Guide_Messagerie_Institutionnelle_UniFlow.pdf',
@@ -95,6 +98,7 @@ class _UniMailScreenState extends State<UniMailScreen> {
           'Bonne préparation,\n'
           'Prof. Melatagia Yonta — Département d\'Informatique UY1',
       timestamp: 'Hier, 17:40',
+      priority: 'COURS',
       attachments: ['TP2_Specifications_INF4067.pdf'],
       isRead: true,
       isStarred: true,
@@ -112,6 +116,7 @@ class _UniMailScreenState extends State<UniMailScreen> {
           'Pour la séance de travaux pratiques de Sécurité Informatique (INF4077) au Labo C205, veuillez télécharger l\'énoncé ci-joint et vérifier l\'empreinte SHA-256 de votre certificat étudiant UniMail.\n\n'
           'Dr. Tapamo',
       timestamp: '15 Oct. 2026',
+      priority: 'URGENT',
       attachments: ['Enonce_TP_Crypto_X509.pdf'],
       isRead: true,
       isStarred: false,
@@ -130,6 +135,7 @@ class _UniMailScreenState extends State<UniMailScreen> {
           'Respectueusement,\n'
           'Étudiant UY1',
       timestamp: '14 Oct. 2026',
+      priority: 'OFFICIEL',
       attachments: ['Quitus_Droits_Universitaires_2026.pdf'],
       isRead: true,
       isStarred: false,
@@ -146,6 +152,7 @@ class _UniMailScreenState extends State<UniMailScreen> {
           'Bonjour l\'équipe Kernel Forge,\n\n'
           'Voici mes retours suite aux tests de la version bêta Desktop...',
       timestamp: 'Brouillon enregistré',
+      priority: 'NORMAL',
       isRead: true,
     ),
   ];
@@ -397,6 +404,25 @@ class _UniMailScreenState extends State<UniMailScreen> {
                                 ],
                               ),
                             ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF34D399)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.cloud_done_rounded, color: Color(0xFF34D399), size: 13),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Résilience & Synchronisation Hors-Ligne',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
+                              ),
+                            ),
                             InkWell(
                               onTap: () {
                                 Clipboard.setData(const ClipboardData(text: _activeUserEmail));
@@ -438,7 +464,7 @@ class _UniMailScreenState extends State<UniMailScreen> {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Votre adresse électronique dédiée est générée à la création de votre compte UniFlow, signée cryptographiquement par la plateforme et synchronisée avec votre statut étudiant.',
+                          'Votre adresse électronique dédiée est générée à la création de votre compte UniFlow, signée cryptographiquement par la plateforme, synchronisée avec votre statut étudiant et consultable 100% hors-ligne.',
                           style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, height: 1.45),
                         ),
                       ],
@@ -656,10 +682,40 @@ class _UniMailScreenState extends State<UniMailScreen> {
                                             ),
                                           ],
                                         ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          msg.senderEmail,
-                                          style: const TextStyle(fontSize: 11, color: Color(0xFF0D9488), fontWeight: FontWeight.w600),
+                                        const SizedBox(height: 5),
+                                        Row(
+                                          children: [
+                                            // Badge de Priorité
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: _getPriorityColor(msg.priority).withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(6),
+                                                border: Border.all(color: _getPriorityColor(msg.priority).withValues(alpha: 0.3)),
+                                              ),
+                                              child: Text(
+                                                msg.priority,
+                                                style: TextStyle(
+                                                  fontSize: 9,
+                                                  fontWeight: FontWeight.w900,
+                                                  color: _getPriorityColor(msg.priority),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 6),
+                                            Expanded(
+                                              child: Text(
+                                                msg.senderEmail,
+                                                style: const TextStyle(fontSize: 11, color: Color(0xFF0D9488), fontWeight: FontWeight.w600),
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                            if (msg.attachments.isNotEmpty)
+                                              Container(
+                                                margin: const EdgeInsets.only(left: 4),
+                                                child: const Icon(Icons.attach_file_rounded, size: 14, color: Color(0xFF64748B)),
+                                              ),
+                                          ],
                                         ),
                                         const SizedBox(height: 6),
                                         Text(
@@ -674,6 +730,23 @@ class _UniMailScreenState extends State<UniMailScreen> {
                                           maxLines: 2,
                                           overflow: TextOverflow.ellipsis,
                                           style: const TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Row(
+                                          children: [
+                                            const Icon(Icons.offline_pin_rounded, size: 12, color: Color(0xFF10B981)),
+                                            const SizedBox(width: 4),
+                                            const Text(
+                                              'Cache Local Synchro',
+                                              style: TextStyle(fontSize: 9.5, color: Color(0xFF059669), fontWeight: FontWeight.w600),
+                                            ),
+                                            const Spacer(),
+                                            if (msg.attachments.isNotEmpty)
+                                              Text(
+                                                '${msg.attachments.length} PJ',
+                                                style: const TextStyle(fontSize: 10, color: Color(0xFF94A3B8), fontWeight: FontWeight.bold),
+                                              ),
+                                          ],
                                         ),
                                       ],
                                     ),
@@ -703,29 +776,89 @@ class _UniMailScreenState extends State<UniMailScreen> {
                           : Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // En-tête du courriel
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                Wrap(
+                                  spacing: 8,
+                                  runSpacing: 6,
+                                  crossAxisAlignment: WrapCrossAlignment.center,
+                                  alignment: WrapAlignment.spaceBetween,
                                   children: [
-                                    Expanded(
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: _getPriorityColor(selectedMessage.priority).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(color: _getPriorityColor(selectedMessage.priority).withValues(alpha: 0.3)),
+                                      ),
                                       child: Text(
-                                        selectedMessage.subject,
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                        'PRIORITÉ : ${selectedMessage.priority}',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w900,
+                                          color: _getPriorityColor(selectedMessage.priority),
+                                        ),
                                       ),
                                     ),
-                                    IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          selectedMessage.isStarred = !selectedMessage.isStarred;
-                                        });
-                                      },
-                                      icon: Icon(
-                                        selectedMessage.isStarred ? Icons.star_rounded : Icons.star_border_rounded,
-                                        color: selectedMessage.isStarred ? Colors.amber : const Color(0xFF94A3B8),
-                                      ),
-                                      tooltip: 'Ajouter aux favoris',
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 6,
+                                      crossAxisAlignment: WrapCrossAlignment.center,
+                                      children: [
+                                        OutlinedButton.icon(
+                                          onPressed: () => _openComposeDialog(
+                                            initialTo: selectedMessage.senderEmail,
+                                            initialSubject: 'Re: ${selectedMessage.subject}',
+                                          ),
+                                          icon: const Icon(Icons.reply_rounded, size: 14),
+                                          label: const Text('Répondre', style: TextStyle(fontSize: 11)),
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                        ),
+                                        OutlinedButton.icon(
+                                          onPressed: () => _openComposeDialog(
+                                            initialSubject: 'Fwd: ${selectedMessage.subject}',
+                                          ),
+                                          icon: const Icon(Icons.forward_rounded, size: 14),
+                                          label: const Text('Transférer', style: TextStyle(fontSize: 11)),
+                                          style: OutlinedButton.styleFrom(
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              const SnackBar(
+                                                content: Text('Exportation du courriel certifié au format PDF...'),
+                                                backgroundColor: Color(0xFF1E3A8A),
+                                              ),
+                                            );
+                                          },
+                                          icon: const Icon(Icons.picture_as_pdf_rounded, size: 18, color: Color(0xFF1E3A8A)),
+                                          tooltip: 'Exporter en PDF',
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              selectedMessage.isStarred = !selectedMessage.isStarred;
+                                            });
+                                          },
+                                          icon: Icon(
+                                            selectedMessage.isStarred ? Icons.star_rounded : Icons.star_border_rounded,
+                                            color: selectedMessage.isStarred ? Colors.amber : const Color(0xFF94A3B8),
+                                          ),
+                                          tooltip: 'Ajouter aux favoris',
+                                        ),
+                                      ],
                                     ),
                                   ],
+                                ),
+                                const SizedBox(height: 12),
+                                // En-tête du courriel
+                                Text(
+                                  selectedMessage.subject,
+                                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
                                 ),
                                 const SizedBox(height: 10),
                                 // Badge de signature cryptographique UniFlow
@@ -742,10 +875,18 @@ class _UniMailScreenState extends State<UniMailScreen> {
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
-                                          'Signé numériquement par UniFlow · De: ${selectedMessage.senderEmail} → À: ${selectedMessage.recipientEmail}',
+                                          'Signé numériquement par UniFlow (X.509) · De: ${selectedMessage.senderEmail} → À: ${selectedMessage.recipientEmail}',
                                           style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF0F172A)),
                                           overflow: TextOverflow.ellipsis,
                                         ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF10B981).withValues(alpha: 0.2),
+                                          borderRadius: BorderRadius.circular(6),
+                                        ),
+                                        child: const Text('Certifié UY1', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Color(0xFF059669))),
                                       ),
                                     ],
                                   ),
@@ -867,5 +1008,19 @@ class _UniMailScreenState extends State<UniMailScreen> {
         ),
       ),
     );
+  }
+
+  Color _getPriorityColor(String priority) {
+    switch (priority) {
+      case 'URGENT':
+        return const Color(0xFFE11D48);
+      case 'OFFICIEL':
+        return const Color(0xFF0284C7);
+      case 'COURS':
+        return const Color(0xFF0D9488);
+      case 'NORMAL':
+      default:
+        return const Color(0xFF64748B);
+    }
   }
 }

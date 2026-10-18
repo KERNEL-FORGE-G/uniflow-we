@@ -80,16 +80,35 @@ class DashboardScreen extends StatelessWidget {
                                 style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
                               ),
                             ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF38BDF8).withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF38BDF8)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.sync_rounded, color: Color(0xFF38BDF8), size: 13),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Résilience & Synchronisation Hors-Ligne',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 12),
                         const Text(
-                          'Espace de Travail Académique Desktop',
+                          'Espace de Travail Académique Desktop & Hub Résilient',
                           style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900),
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Bienvenue sur UniFlow Desktop natif (Phase de test Bêta). Consultez les actualités officielles du campus, gérez vos courriels signés @uniflow.cm, hébergez vos visioconférences P2P et révisez avec Uni Copilot.',
+                          'Plateforme Universitaire Connectée conçue pour les réalités du campus : consultation instantanée hors-ligne, synchronisation intelligente, courriels institutionnels signés @uniflow.cm, actualités officielles en continu et visioconférence locale P2P.',
                           style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 13, height: 1.5),
                         ),
                         const SizedBox(height: 16),
@@ -100,7 +119,7 @@ class DashboardScreen extends StatelessWidget {
                             ElevatedButton.icon(
                               onPressed: () => onNavigate(1), // Actualités Campus
                               icon: const Icon(Icons.campaign_rounded, size: 16),
-                              label: const Text('Actualités & Bêta'),
+                              label: const Text('Actualités Campus & Bêta'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF0B132B),
@@ -114,6 +133,17 @@ class DashboardScreen extends StatelessWidget {
                               label: const Text('UniMail (@uniflow.cm)'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: const Color(0xFF0D9488),
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                              ),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: () => onNavigate(3), // Emploi du Temps
+                              icon: const Icon(Icons.calendar_month_rounded, size: 16),
+                              label: const Text('Emploi du Temps'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E3A8A),
                                 foregroundColor: Colors.white,
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -166,11 +196,13 @@ class DashboardScreen extends StatelessWidget {
             const SizedBox(height: 20),
 
             // =================================================================
-            // BANNIÈRE BENTO : PHASE DE TEST BÊTA & UNIMAIL @UNIFLOW.CM
+            // BENTO GRID : RACCOURCIS PRODUCTIVITÉ CAMPUS & RÉSILIENCE HORS-LIGNE
             // =================================================================
             Row(
               children: [
+                // Carte 1 : Actualités Campus Bêta
                 Expanded(
+                  flex: 4,
                   child: InkWell(
                     onTap: () => onNavigate(1),
                     borderRadius: BorderRadius.circular(20),
@@ -179,48 +211,76 @@ class DashboardScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.25)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF1E3A8A).withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Image.asset(
-                              'assets/icons/nav/analytics.png',
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.campaign_rounded, color: Color(0xFF1E3A8A)),
-                            ),
+                        border: Border.all(color: const Color(0xFF1E3A8A).withValues(alpha: 0.22)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
-                          const SizedBox(width: 14),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Annonce Officielle : Plateforme en phase de test bêta',
-                                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF1E3A8A).withValues(alpha: 0.09),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
-                                SizedBox(height: 3),
-                                Text(
-                                  'Des améliorations majeures arrivent ! Consultez les vidéos, images et notes PDF du campus →',
-                                  style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B)),
+                                child: Image.asset(
+                                  'assets/icons/nav/analytics.png',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.campaign_rounded, color: Color(0xFF1E3A8A)),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1E3A8A).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'ACTUALITÉS CAMPUS',
+                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF1E3A8A)),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    const Text(
+                                      'Annonce Officielle : Plateforme en phase de test bêta',
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Des améliorations majeures arrivent ! Consultez les vidéos, images et notes PDF du campus →',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFF64748B), height: 1.4),
                           ),
                         ],
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
+
+                // Carte 2 : UniMail @uniflow.cm
                 Expanded(
+                  flex: 4,
                   child: InkWell(
                     onTap: () => onNavigate(2),
                     borderRadius: BorderRadius.circular(20),
@@ -229,43 +289,127 @@ class DashboardScreen extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF0D9488).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Image.asset(
-                              'assets/icons/nav/messages.png',
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, __, ___) => const Icon(Icons.mail_rounded, color: Color(0xFF0D9488)),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          const Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Boîte Institutionnelle : etudiant.uy1@uniflow.cm',
-                                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
-                                ),
-                                SizedBox(height: 3),
-                                Text(
-                                  'Courriels signés numériquement par UniFlow et liés au cycle de vie de votre compte →',
-                                  style: TextStyle(fontSize: 11.5, color: Color(0xFF0D9488), fontWeight: FontWeight.w600),
-                                ),
-                              ],
-                            ),
+                        border: Border.all(color: const Color(0xFF0D9488).withValues(alpha: 0.25)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.02),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
                           ),
                         ],
                       ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Image.asset(
+                                  'assets/icons/nav/messages.png',
+                                  fit: BoxFit.contain,
+                                  errorBuilder: (_, __, ___) => const Icon(Icons.mail_rounded, color: Color(0xFF0D9488)),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF0D9488).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'UNIMAIL SOUVERAIN',
+                                        style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w900, color: Color(0xFF0D9488)),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    const Text(
+                                      'Boîte Institutionnelle : etudiant.uy1@uniflow.cm',
+                                      style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFF0F172A)),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          const Text(
+                            'Courriels signés numériquement par UniFlow et liés au cycle de vie de votre compte →',
+                            style: TextStyle(fontSize: 11.5, color: Color(0xFF0D9488), fontWeight: FontWeight.w600, height: 1.4),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+
+                // Carte 3 : Résilience & Synchronisation Hors-Ligne
+                Expanded(
+                  flex: 3,
+                  child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFF334155)),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.05),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: Color(0xFF10B981),
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Text(
+                              'Résilience Active',
+                              style: TextStyle(color: Color(0xFF34D399), fontSize: 10, fontWeight: FontWeight.w900),
+                            ),
+                            const Spacer(),
+                            const Icon(Icons.cloud_done_rounded, color: Color(0xFF67E8F9), size: 16),
+                          ],
+                        ),
+                        const SizedBox(height: 6),
+                        const Text(
+                          'Synchronisation Hors-Ligne',
+                          style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w900),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Cours, plannings & courriels indexés en cache local sécurisé.',
+                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 11, height: 1.3),
+                        ),
+                      ],
                     ),
                   ),
                 ),

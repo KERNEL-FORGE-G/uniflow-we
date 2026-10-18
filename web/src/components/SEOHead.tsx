@@ -14,7 +14,7 @@ const PAGE_SEO_CONFIG: Record<string, { title: string; description: string }> = 
   },
   '/about': {
     title: 'À propos — UniFlow & KERNEL FORGE | Innovation Éducative',
-    description: 'Découvrez la vision d\'UniFlow par KERNEL FORGE : transformer la gestion universitaire en Afrique grâce aux technologies PWA Offline-First et IoT.'
+    description: 'Découvrez la vision d\'UniFlow par KERNEL FORGE : transformer la gestion universitaire en Afrique grâce aux technologies cloud modernes, synchronisation résiliente et IoT.'
   },
   '/teams': {
     title: 'L\'Équipe — KERNEL FORGE & Développeurs UniFlow',
@@ -30,11 +30,11 @@ const PAGE_SEO_CONFIG: Record<string, { title: string; description: string }> = 
   },
   '/download': {
     title: 'Télécharger UniFlow — Android (APK), bureau et web | KERNEL FORGE',
-    description: 'Téléchargez l\'application Android UniFlow (APK) et la version de bureau pour Windows, Linux et macOS. Emploi du temps, cours, présence QR code et notes, même hors ligne.'
+    description: 'Téléchargez l\'application Android UniFlow (APK) et la version de bureau pour Windows, Linux et macOS. Emploi du temps, cours, présence QR code et notes avec synchronisation résiliente.'
   },
   '/presentation': {
     title: 'Présentation & Vidéos Démo — UniFlow Platform',
-    description: 'Visionnez les démonstrations interactives des fonctionnalités d\'UniFlow : Visioconférence, PWA offline, Sentinelle IoT et émargement QR Code.'
+    description: 'Visionnez les démonstrations interactives des fonctionnalités d\'UniFlow : Visioconférence, synchronisation résiliente, Sentinelle IoT et émargement QR Code.'
   },
   '/forum': {
     title: 'Forum Communautaire Universitaire — UniFlow',

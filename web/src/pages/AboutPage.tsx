@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { motion, useReducedMotion } from 'framer-motion'
 import {
- ArrowRight, CalendarDays, QrCode, MessageSquare, Video, WifiOff, ShieldCheck, Sparkles,
+ ArrowRight, CalendarDays, QrCode, MessageSquare, Video, Wifi, WifiOff, ShieldCheck, Sparkles,
  Building2, GraduationCap, BookOpen, Users, Cloud, Smartphone, Monitor, Globe2, Bot, Heart,
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
@@ -59,10 +59,10 @@ const pillars = [
     color: "from-amber-500 to-orange-500",
   },
   {
-    icon: WifiOff,
-    title: "Résilience totale hors ligne",
-    desc: "Mobile et web conservent vos données en local, mettent vos actions en file d'attente et synchronisent dès le retour du réseau.",
-    color: "from-rose-500 to-pink-500",
+    icon: Wifi,
+    title: "Connecté avec résilience hors ligne",
+    desc: "Mobile et web fonctionnent en ligne en continu, conservent vos données en local, mettent vos actions en file d'attente et synchronisent automatiquement en arrière-plan dès le retour du réseau.",
+    color: "from-teal-500 to-emerald-500",
   },
   {
     icon: ShieldCheck,
@@ -126,7 +126,7 @@ const timeline = [
 
 const platforms = [
  { icon: Globe2, label: 'Web', detail: 'uniflow.kernelforge.codes' },
- { icon: Smartphone, label: 'Android', detail: 'hors ligne, synchro en arrière-plan' },
+ { icon: Smartphone, label: 'Android', detail: 'connecté & synchro résiliente en arrière-plan' },
  { icon: Monitor, label: 'Desktop', detail: 'Linux · Windows · visioconférence locale' },
 ]
 

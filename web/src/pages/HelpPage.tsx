@@ -8,7 +8,7 @@ const defaultFaqs = [
   { q: 'Comment réinitialiser mon mot de passe ?', a: 'Cliquez sur "Mot de passe oublié" sur la page de connexion, puis suivez les instructions envoyées par email.', cat: 'Compte' },
   { q: 'Comment télécharger un bulletin de notes en PDF ?', a: 'Allez dans Mes Notes > Bulletin du semestre > Télécharger PDF.', cat: 'Notes' },
   { q: 'Comment activer les notifications push ?', a: 'Paramètres > Notifications > Activer "Notifications push".', cat: 'Paramètres' },
-  { q: 'Puis-je utiliser UniFlow hors ligne ?', a: 'Oui, UniFlow est Offline-First. Les données sont stockées localement et synchronisées au retour de connexion.', cat: 'Technique' },
+  { q: 'Puis-je utiliser UniFlow hors ligne ?', a: 'Oui, UniFlow fonctionne en ligne en continu et dispose d\'un moteur intelligent de synchronisation et de résilience en arrière-plan. Vos données sont sécurisées localement et synchronisées automatiquement dès le retour de la connexion.', cat: 'Technique' },
   { q: 'Comment rejoindre une visioconférence ?', a: 'Cliquez sur le lien de visioconférence envoyé par votre enseignant, ou allez dans Visioconférence > Rejoindre.', cat: 'Visioconférence' },
   { q: 'Comment marquer les présences en tant que délégué ?', a: 'Espace Délégué > Gestion des présences > Sélectionner le cours > Marquer les présences.', cat: 'Présences' },
 ]
@@ -17,8 +17,8 @@ const guides = [
   { title: 'Guide de démarrage rapide', desc: 'Découvrez les fonctionnalités essentielles en 5 minutes.', icon: BookOpen, duration: '5 min', content: 'Bienvenue sur UniFlow! Commencez par configurer votre profil, consultez votre emploi du temps hebdomadaire dans l\'onglet "Planning", et accédez à vos cours en un clic.' },
   { title: 'Tutoriel vidéo : Mes Cours', desc: 'Comment naviguer dans vos cours et ressources.', icon: Video, duration: '8 min', content: 'Dans l\'onglet Cours, retrouvez vos unités d\'enseignement (UE), vos travaux dirigés (TD) et travaux pratiques (TP). Vous pouvez télécharger vos supports de cours directement en mode hors ligne.' },
   { title: 'Tutoriel vidéo : Visioconférence', desc: 'Organiser et rejoindre une visioconférence.', icon: Video, duration: '12 min', content: 'Créez une salle de visioconférence sécurisée depuis l\'onglet Visioconférence pour échanger en direct avec vos enseignants et vos camarades de promotion.' },
-  { title: 'Présentation vidéo du projet', desc: 'Regardez la démo et découvrez l’interface UniFlow.', icon: Video, duration: '10 min', content: 'Explorez toutes les innovations d\'UniFlow : PWA Offline First, QR-code d\'émargement dynamique et synchronisation hybride.' },
-  { title: 'Guide Offline First', desc: 'Utiliser UniFlow sans connexion Internet.', icon: BookOpen, duration: '7 min', content: 'UniFlow enregistre automatiquement vos actions en local si le réseau est indisponible. Vos modifications sont transmises au serveur dès qu\'une connexion stable est rétablie.' },
+  { title: 'Présentation vidéo du projet', desc: 'Regardez la démo et découvrez l’interface UniFlow.', icon: Video, duration: '10 min', content: 'Explorez toutes les innovations d\'UniFlow : plateforme universitaire connectée, QR-code d\'émargement dynamique et synchronisation résiliente.' },
+  { title: 'Guide Résilience & Synchronisation', desc: 'Utiliser UniFlow même en cas de coupure de réseau.', icon: BookOpen, duration: '7 min', content: 'UniFlow enregistre automatiquement vos actions en local si le réseau est indisponible. Vos modifications sont transmises au serveur dès qu\'une connexion stable est rétablie.' },
 ]
 
 export default function HelpPage() {

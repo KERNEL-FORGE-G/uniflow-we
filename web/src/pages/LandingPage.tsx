@@ -44,8 +44,8 @@ const features = [
   },
   {
     icon: Wifi,
-    title: 'Offline First puissant',
-    desc: 'Fonctionne sans Internet. Base de données locale avec synchronisation automatique au retour du réseau.',
+    title: 'Synchronisation & Résilience',
+    desc: 'Connecté en continu avec le cloud campus, avec module de résilience locale et synchronisation automatique en arrière-plan en cas de coupure.',
     color: 'bg-[#f0fdfa] text-[#0d9488]',
     gradient: 'from-[#f0fdfa] to-[#ccfbf1]'
   },
@@ -83,8 +83,8 @@ const platforms = [
 
 const faqs = [
   {
-    q: "UniFlow fonctionne-t-il réellement sans connexion Internet ?",
-    a: "Oui ! UniFlow utilise une architecture Offline-First avec stockage local haute performance. Vous pouvez consulter vos cours, émarger par QR code ou enregistrer vos notes sans réseau. Dès que la connexion revient, les données sont synchronisées automatiquement."
+    q: "UniFlow fonctionne-t-il si la connexion Internet est instable ou coupée ?",
+    a: "Oui ! UniFlow fonctionne en ligne avec le cloud campus et intègre un moteur intelligent de synchronisation et de résilience hors-ligne en arrière-plan. Vous pouvez continuer à consulter vos cours, émarger par QR code ou enregistrer vos notes même lors de coupures réseau. Dès que la connexion est rétablie, les données sont synchronisées automatiquement sans aucune perte."
   },
   {
     q: "Comment s'effectue le passage de présence par QR Code ?",
@@ -212,7 +212,7 @@ export default function LandingPage() {
                 className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#eff3ff] to-[#dce5fd] px-4 py-2 text-xs font-black uppercase tracking-wider text-[#1e3a8a] border border-[#1e3a8a]/20 shadow-xs"
               >
                 <img src="/brand/uniflow_logo_final.png" alt="UniFlow" className="h-4 w-4 object-contain" />
-                <span>Plateforme d'Apprentissage Autonome & Offline-First</span>
+                <span>Plateforme Universitaire Connectée · Résilience & Synchronisation Hors-Ligne</span>
               </motion.span>
 
               <motion.h1
@@ -290,8 +290,8 @@ export default function LandingPage() {
                     <Wifi className="h-5 w-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-bold uppercase text-teal-100">Technologie</p>
-                    <p className="text-xs font-black text-white">Offline-First Actif ⚡</p>
+                    <p className="text-[10px] font-bold uppercase text-teal-100">Connectivité</p>
+                    <p className="text-xs font-black text-white">Synchro Cloud & Résilience ⚡</p>
                   </div>
                 </div>
               </motion.div>
@@ -496,7 +496,7 @@ export default function LandingPage() {
                   <div className="md:col-span-6 bg-slate-950 rounded-2xl p-4 border border-slate-800 space-y-3 font-sans">
                     <div className="flex justify-between items-center text-xs font-bold text-slate-400 border-b border-slate-800 pb-2">
                       <span>Emploi du temps · Aujourd'hui</span>
-                      <span className="text-emerald-400 flex items-center gap-1"><Wifi className="h-3 w-3" /> Hors-ligne actif</span>
+                      <span className="text-emerald-400 flex items-center gap-1"><Wifi className="h-3 w-3" /> Synchronisé & Résilient</span>
                     </div>
                     <div className="p-3 rounded-xl bg-blue-900/40 border border-blue-600/40 space-y-1">
                       <div className="flex justify-between text-xs font-black text-blue-200">

@@ -119,15 +119,15 @@ class AuthScaffold extends StatelessWidget {
                                       child: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
-                                          PhosphorIcon(PhosphorIconsBold.checkCircle,
-                                              size: 11, color: AppColors.primaryBlue.withValues(alpha: 0.55)),
+                                          PhosphorIcon(PhosphorIconsBold.cloudCheck,
+                                              size: 12, color: AppColors.primaryBlue.withValues(alpha: 0.70)),
                                           const SizedBox(width: 5),
                                           Text(
-                                            'Plateforme autonome et hors-ligne',
+                                            'Connecté en continu & Synchronisation Hors-ligne',
                                             style: TextStyle(
                                               fontSize: 10.5,
-                                              color: AppColors.primaryBlue.withValues(alpha: 0.65),
-                                              fontWeight: FontWeight.w500,
+                                              color: AppColors.primaryBlue.withValues(alpha: 0.75),
+                                              fontWeight: FontWeight.w600,
                                             ),
                                           ),
                                         ],
@@ -608,15 +608,21 @@ class AccountTypeSelector extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(7),
+                              padding: const EdgeInsets.all(4),
+                              width: 32,
+                              height: 32,
                               decoration: BoxDecoration(
-                                color: isUni ? AppColors.primaryBlue : AppColors.surface,
+                                color: isUni ? AppColors.primaryBlue.withValues(alpha: 0.15) : AppColors.surface,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: PhosphorIcon(
-                                PhosphorIconsBold.buildings,
-                                size: 18,
-                                color: isUni ? Colors.white : AppColors.textSecondary,
+                              child: Image.asset(
+                                'assets/icons/nav/structure.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => PhosphorIcon(
+                                  PhosphorIconsBold.buildings,
+                                  size: 18,
+                                  color: isUni ? AppColors.primaryBlue : AppColors.textSecondary,
+                                ),
                               ),
                             ),
                             if (isUni)
@@ -688,15 +694,21 @@ class AccountTypeSelector extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Container(
-                              padding: const EdgeInsets.all(7),
+                              padding: const EdgeInsets.all(4),
+                              width: 32,
+                              height: 32,
                               decoration: BoxDecoration(
-                                color: isPersonal ? const Color(0xFF0D9488) : AppColors.surface,
+                                color: isPersonal ? const Color(0xFF0D9488).withValues(alpha: 0.15) : AppColors.surface,
                                 borderRadius: BorderRadius.circular(10),
                               ),
-                              child: PhosphorIcon(
-                                PhosphorIconsBold.userCircle,
-                                size: 18,
-                                color: isPersonal ? Colors.white : AppColors.textSecondary,
+                              child: Image.asset(
+                                'assets/icons/nav/students.png',
+                                fit: BoxFit.contain,
+                                errorBuilder: (_, __, ___) => PhosphorIcon(
+                                  PhosphorIconsBold.userCircle,
+                                  size: 18,
+                                  color: isPersonal ? const Color(0xFF0D9488) : AppColors.textSecondary,
+                                ),
                               ),
                             ),
                             if (isPersonal)

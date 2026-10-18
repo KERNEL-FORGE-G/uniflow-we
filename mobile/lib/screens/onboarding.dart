@@ -94,9 +94,9 @@ const _kPages = [
     accentColor: Color(0xFFEA580C), // corail / orange
     cardColor: Color(0xFFEA580C),
     textColor: Colors.white,
-    tagline: 'KERNEL FORGE',
-    title: '100% Hors-ligne &\nConfidentialité',
-    body: 'Tes données restent sur ton appareil. Conçu pour ton indépendance et ta réussite.',
+    tagline: 'RÉSILIENCE & SYNCHRO',
+    title: 'Connecté en continu &\nSynchro Hors-ligne',
+    body: 'Résilience automatique et synchronisation en arrière-plan. Conçu pour ton indépendance et ta réussite.',
     chips: [],
     dialogue: [],
     uniPose: UniPose.wave,

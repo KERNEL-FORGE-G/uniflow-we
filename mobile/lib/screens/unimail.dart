@@ -680,12 +680,20 @@ class _UniMailIdentityCard extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.16),
                     borderRadius: BorderRadius.circular(999),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      PhosphorIcon(PhosphorIconsFill.shieldCheck, size: 13, color: Color(0xFF5EEAD4)),
-                      SizedBox(width: 5),
-                      Flexible(
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(4),
+                        child: Image.asset(
+                          'assets/brand/uniflow_logo_final.png',
+                          width: 14,
+                          height: 14,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      const Flexible(
                         child: Text(
                           'IDENTITÉ SIGNÉE UNIFLOW',
                           maxLines: 1,
@@ -742,6 +750,22 @@ class _UniMailIdentityCard extends StatelessWidget {
                       ),
                     ),
                   ],
+                ),
+              ),
+              Container(
+                width: 44,
+                height: 44,
+                margin: const EdgeInsets.only(left: 10),
+                padding: const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                ),
+                child: Image.asset(
+                  'assets/icons/nav/messages.png',
+                  fit: BoxFit.contain,
+                  errorBuilder: (_, __, ___) => const PhosphorIcon(PhosphorIconsDuotone.envelope, color: Colors.white, size: 22),
                 ),
               ),
             ],

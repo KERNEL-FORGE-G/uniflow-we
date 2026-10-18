@@ -50,29 +50,55 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.14),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/icons/nav/schedule.png',
-                                width: 16,
-                                height: 16,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.calendar_month_rounded, color: Color(0xFF67E8F9), size: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.14),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
                               ),
-                              const SizedBox(width: 6),
-                              const Text(
-                                'PLANNING SYNCHRONISÉ · PROMOTION ICT4D L3',
-                                style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset(
+                                    'assets/icons/nav/schedule.png',
+                                    width: 16,
+                                    height: 16,
+                                    errorBuilder: (_, __, ___) => const Icon(Icons.calendar_month_rounded, color: Color(0xFF67E8F9), size: 14),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  const Text(
+                                    'PLANNING SYNCHRONISÉ · PROMOTION ICT4D L3',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.25),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(color: const Color(0xFF34D399)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.cloud_done_rounded, color: Color(0xFF34D399), size: 13),
+                                  SizedBox(width: 5),
+                                  Text(
+                                    'Résilience & Synchronisation Hors-Ligne',
+                                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -81,7 +107,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                         ),
                         const SizedBox(height: 6),
                         const Text(
-                          'Consultez vos créneaux hebdomadaires par amphithéâtre et salle de TP avec alertes de séances et accès direct aux salles de visioconférence.',
+                          'Consultez vos créneaux hebdomadaires par amphithéâtre et salle de TP avec alertes de séances, accès direct aux salles et synchronisation hors-ligne intégrale.',
                           style: TextStyle(color: Color(0xFFCBD5E1), fontSize: 12.5, height: 1.45),
                         ),
                         const SizedBox(height: 14),
@@ -92,6 +118,7 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
                             _buildHeroBadge('Séances', '${sampleScheduleSlots.length} programmées'),
                             _buildHeroBadge('Volume Horaire', '18h / semaine'),
                             _buildHeroBadge('Filière ICT4D', 'Semestre 1 (2026-2027)'),
+                            _buildHeroBadge('Synchro', 'Cache Local Prêt'),
                           ],
                         ),
                       ],

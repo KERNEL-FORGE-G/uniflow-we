@@ -58,7 +58,7 @@ const agenda = [
 ]
 
 const highlights = [
-  { icon: Wifi, title: 'Offline-First', desc: 'PWA optimisée pour fonctionner sans connexion Internet permanente' },
+  { icon: Wifi, title: 'Connecté & Résilience', desc: 'Connecté au cloud avec module de résilience locale en cas de coupure réseau' },
   { icon: Smartphone, title: 'Multi-plateforme', desc: 'Adaptation fluide sur Mobile, Tablette, PC et Bornes tactiles' },
   { icon: Lock, title: 'Sécurité & RGPD', desc: 'Authentification JWT sécurisée, rôles granulaires (RBAC) et données isolées' },
   { icon: Lightbulb, title: 'Low-Cost & Sobriété', desc: 'Architecture sobre et économique adaptée au contexte universitaire' },

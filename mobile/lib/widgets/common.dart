@@ -32,6 +32,9 @@ class GradientHeader extends StatelessWidget {
 
   static String _iconAssetForTitle(String title) {
     final t = title.toLowerCase();
+    if (t.contains('uniflow') && !t.contains('mail')) {
+      return 'assets/brand/uniflow_logo_final.png';
+    }
     if (t.contains('bonjour') || t.contains('bienvenue') || t.contains('accueil')) {
       return 'assets/icons/nav/dashboard.png';
     }
@@ -167,6 +170,7 @@ class GradientHeader extends StatelessWidget {
                           child: Image.asset(
                             _iconAssetForTitle(title),
                             fit: BoxFit.contain,
+                            filterQuality: FilterQuality.high,
                             errorBuilder: (_, __, ___) => const Icon(
                               PhosphorIconsDuotone.sparkle,
                               color: Colors.white,

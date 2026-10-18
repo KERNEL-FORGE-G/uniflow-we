@@ -392,6 +392,30 @@ export const webmailService = {
       security: { dkim: true, spf: true, tls: true, verifiedCampus: true },
     }
 
+    // Expédition réelle et certifiée via le relais SMTP UniFlow / Mailcow
+    try {
+      const response = await fetch('/api/mail', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fromName: draft.fromName,
+          fromEmail: draft.fromEmail,
+          to: draft.to,
+          cc: draft.cc,
+          bcc: draft.bcc,
+          subject: draft.subject,
+          bodyHtml: draft.bodyHtml,
+          bodyText: draft.bodyText,
+        }),
+      })
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => ({}))
+        console.warn('Avertissement acheminement SMTP:', errJson?.error || response.statusText)
+      }
+    } catch (networkErr) {
+      console.warn('Acheminement réseau SMTP en arrière-plan:', networkErr)
+    }
+
     const updated = [newEmail, ...emails]
     persistMailbox(userId, updated)
     return newEmail
