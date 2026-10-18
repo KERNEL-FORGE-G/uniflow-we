@@ -35,22 +35,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   String? _error;
 
   @override
-  void initState() {
-    super.initState();
-    _applyTypeDefaults(_type);
-  }
-
-  void _applyTypeDefaults(UniFlowAccountType type) {
-    if (type == UniFlowAccountType.university) {
-      _email.text = 'ict@uy1.cm';
-      _password.text = 'password123';
-    } else {
-      _email.text = 'independant@uniflow.test';
-      _password.text = 'password123';
-    }
-  }
-
-  @override
   void dispose() {
     _email.dispose();
     _password.dispose();
@@ -165,7 +149,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     setState(() {
                       _type = newType;
                       _error = null;
-                      _applyTypeDefaults(newType);
                     });
                   },
           ),
@@ -275,67 +258,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             onPressed: _busy ? null : _submit,
           ),
 
-          // ── Raccourcis démo pour test rapide ──
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            alignment: WrapAlignment.center,
-            children: [
-              if (isUni) ...[
-                _DemoChip(
-                  label: 'Étudiant ICT4D',
-                  onTap: _busy
-                      ? null
-                      : () {
-                          setState(() {
-                            _email.text = 'ict@uy1.cm';
-                            _password.text = 'password123';
-                            _error = null;
-                          });
-                        },
-                ),
-                _DemoChip(
-                  label: 'Enseignant UY1',
-                  onTap: _busy
-                      ? null
-                      : () {
-                          setState(() {
-                            _email.text = 'prof@uy1.cm';
-                            _password.text = 'password123';
-                            _error = null;
-                          });
-                        },
-                ),
-                _DemoChip(
-                  label: 'Admin FS',
-                  onTap: _busy
-                      ? null
-                      : () {
-                          setState(() {
-                            _email.text = 'admin@uy1.cm';
-                            _password.text = 'password123';
-                            _error = null;
-                          });
-                        },
-                ),
-              ] else ...[
-                _DemoChip(
-                  label: 'Étudiant Indépendant',
-                  onTap: _busy
-                      ? null
-                      : () {
-                          setState(() {
-                            _email.text = 'independant@uniflow.test';
-                            _password.text = 'password123';
-                            _error = null;
-                          });
-                        },
-                ),
-              ],
-            ],
-          ),
-
           if (!isUni) ...[
             const SizedBox(height: 14),
             const Row(children: [
@@ -350,40 +272,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             _GoogleSignInButton(busy: _busy, onPressed: _signInWithGoogle),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _DemoChip extends StatelessWidget {
-  final String label;
-  final VoidCallback? onTap;
-
-  const _DemoChip({required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: AppColors.inputFill,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.inputBorder),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const PhosphorIcon(PhosphorIconsBold.lightning, size: 12, color: Color(0xFFF59E0B)),
-            const SizedBox(width: 4),
-            Text(
-              label,
-              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.textSecondary),
-            ),
-          ],
-        ),
       ),
     );
   }
