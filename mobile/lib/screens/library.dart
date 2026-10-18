@@ -32,11 +32,12 @@ final libraryListProvider = FutureProvider<List<AcademicLibraryEntry>>((ref) asy
     replace: true,
   ).first;
   final scope = ref.watch(academicScopeProvider);
-  if (scope.nothing) return const [];
+  if (scope.nothing) return all;
   final courses = await ref.watch(scopedCoursesProvider.future);
-  final general = all.where((e) => e.courseId.isEmpty && e.course.isEmpty).toList();
+  final general = all.where((e) => e.courseId.isEmpty).toList();
   final scoped = scope.byCourse(all, courses, (e) => e.courseId, courseCodeOf: (e) => e.course);
-  return [...scoped, ...general.where((g) => !scoped.contains(g))];
+  final combined = [...scoped, ...general.where((g) => !scoped.contains(g))];
+  return combined.isNotEmpty ? combined : all;
 });
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -2097,6 +2098,79 @@ class _DownloadButton extends StatelessWidget {
   }
 }
 
+// ── Téléchargement direct et ouverture locale d'un livre Uni Book ─────────────
+
+Future<void> _downloadAndOpenUniBook(BuildContext context, UniBookItem book) async {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text('Téléchargement en cours : « ${book.title} »...'),
+      duration: const Duration(seconds: 4),
+    ),
+  );
+
+  try {
+    List<int>? bytes;
+    final client = HttpClient();
+
+    // 1. Tenter via Appwrite bucket si cached
+    if (book.appwriteFileId != null && book.appwriteFileId!.isNotEmpty) {
+      try {
+        final bUrl =
+            'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/${book.appwriteFileId}/download?project=uniflow';
+        final req = await client.getUrl(Uri.parse(bUrl));
+        final res = await req.close();
+        if (res.statusCode == 200) {
+          final builder = await res.fold<List<int>>([], (p, e) => p..addAll(e));
+          if (builder.length > 500) bytes = builder;
+        }
+      } catch (_) {}
+    }
+
+    // 2. Tenter via microservice streaming VPS
+    if (bytes == null) {
+      try {
+        final sUrl =
+            'https://vps.kernelforge.codes/zlibrary/api/books/download?id=${Uri.encodeComponent(book.id)}&stream=1';
+        final req = await client.getUrl(Uri.parse(sUrl));
+        final res = await req.close();
+        if (res.statusCode == 200) {
+          final builder = await res.fold<List<int>>([], (p, e) => p..addAll(e));
+          if (builder.length > 500) bytes = builder;
+        }
+      } catch (_) {}
+    }
+
+    if (bytes != null && bytes.isNotEmpty) {
+      final dir = await getApplicationDocumentsDirectory();
+      final safeTitle = book.title.replaceAll(RegExp(r'[^a-zA-Z0-9_\-\.]'), '_');
+      final file = File('${dir.path}/$safeTitle.pdf');
+      await file.writeAsBytes(bytes);
+      await OpenFilex.open(file.path);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            backgroundColor: const Color(0xFF0D9488),
+            content: Text('✓ « ${book.title} » téléchargé et ouvert avec succès !'),
+          ),
+        );
+      }
+      return;
+    }
+
+    // Repli externe
+    if (book.downloadUrl != null && book.downloadUrl!.isNotEmpty) {
+      final uri = Uri.parse(book.downloadUrl!);
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur de téléchargement : $e')),
+      );
+    }
+  }
+}
+
 // ── Carte livre Uni Book ────────────────────────────────────────────────────
 
 class _UniBookCard extends StatelessWidget {
@@ -2308,6 +2382,31 @@ class _UniBookCard extends StatelessWidget {
                   spacing: 8,
                   runSpacing: 6,
                   children: [
+                    GestureDetector(
+                      onTap: () => _downloadAndOpenUniBook(context, book),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF0D9488),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(PhosphorIconsBold.downloadSimple, size: 12, color: Colors.white),
+                            SizedBox(width: 5),
+                            Text(
+                              'Télécharger (PDF)',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     if (book.downloadUrl != null && book.downloadUrl!.isNotEmpty)
                       GestureDetector(
                         onTap: () async {

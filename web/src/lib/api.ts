@@ -1391,8 +1391,11 @@ const asLibraryResource = (resource: Awaited<ReturnType<typeof academicAppwriteA
 })
 export const libraryApi = {
   list: async (): Promise<LibraryResource[]> => {
-    if (getAccountType() === 'PERSONAL') return []
-    return (await academicAppwriteApi.library.list()).map(asLibraryResource)
+    try {
+      return (await academicAppwriteApi.library.list()).map(asLibraryResource)
+    } catch {
+      return []
+    }
   },
   forCourse: async (courseId: string): Promise<LibraryResource[]> =>
     (await academicAppwriteApi.library.byCourse(courseId)).map(asLibraryResource).sort((a, b) => (b.date || '').localeCompare(a.date || '')),
