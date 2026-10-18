@@ -62,7 +62,24 @@ class ZLibraryService {
 
   /// Recherche dans le catalogue Z-Library hébergé sur le VPS UniFlow
   static Future<List<ZBook>> searchBooks(String query) async {
-    final cleanQuery = query.trim();
+    var cleanQuery = query.trim();
+    final lowerQ = cleanQuery.toLowerCase();
+    const directTypoMap = {
+      'minecrft': 'minecraft',
+      'minicraft': 'minecraft',
+      'mnecraft': 'minecraft',
+      'minecraf': 'minecraft',
+      'pythn': 'python',
+      'pyton': 'python',
+      'pyhton': 'python',
+      'algoritm': 'algorithme',
+      'algorythm': 'algorithm',
+      'javascrip': 'javascript',
+      'javscript': 'javascript',
+    };
+    if (directTypoMap.containsKey(lowerQ)) {
+      cleanQuery = directTypoMap[lowerQ]!;
+    }
 
     // Tenter l'appel vers l'API VPS Z-Library (primaire puis fallback direct)
     final endpoints = [
@@ -74,11 +91,11 @@ class ZLibraryService {
       try {
         final uri = Uri.parse(baseEndpoint).replace(queryParameters: {
           'q': cleanQuery,
-          'limit': '35',
+          'limit': '60',
         });
 
         final response =
-            await http.get(uri).timeout(const Duration(seconds: 6));
+            await http.get(uri).timeout(const Duration(seconds: 8));
 
         if (response.statusCode == 200) {
           final data = jsonDecode(utf8.decode(response.bodyBytes));

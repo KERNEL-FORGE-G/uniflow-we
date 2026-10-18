@@ -404,35 +404,168 @@ async function resolveArchiveOrgDirectPdf(iaId) {
   return null
 }
 
+// Dictionnaire étendu de termes académiques et requêtes courantes
+const COMMON_SEARCH_DICTIONARY = [
+  'minecraft', 'python', 'javascript', 'typescript', 'algorithm', 'algorithms', 'algorithme', 'algorithmes',
+  'programming', 'programmation', 'computer', 'science', 'informatique', 'mathematics', 'mathematiques',
+  'calculus', 'algebra', 'algebre', 'physics', 'physique', 'chemistry', 'chimie', 'biology', 'biologie',
+  'database', 'donnees', 'reseau', 'reseaux', 'network', 'networks', 'security', 'securite', 'hacking',
+  'linux', 'operating', 'system', 'systeme', 'intelligence', 'artificial', 'artificielle', 'machine', 'learning',
+  'deep', 'robotics', 'economics', 'economie', 'finance', 'management', 'droit', 'law', 'medicine', 'medecine',
+  'anatomy', 'anatomie', 'philosophy', 'philosophie', 'literature', 'litterature', 'history', 'histoire',
+  'sociology', 'sociologie', 'grammar', 'grammaire', 'dictionary', 'dictionnaire'
+]
+
+function levenshteinDistance(s1, s2) {
+  if (s1 === s2) return 0
+  if (s1.length === 0) return s2.length
+  if (s2.length === 0) return s1.length
+  const matrix = Array.from({ length: s2.length + 1 }, () => Array(s1.length + 1).fill(0))
+  for (let i = 0; i <= s2.length; i++) matrix[i][0] = i
+  for (let j = 0; j <= s1.length; j++) matrix[0][j] = j
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        )
+      }
+    }
+  }
+  return matrix[s2.length][s1.length]
+}
+
+function suggestQueryTerm(term) {
+  const norm = normalizeTerm(term)
+  if (!norm || norm.length < 3) return norm
+  
+  const directMap = {
+    'minecrft': 'minecraft',
+    'minicraft': 'minecraft',
+    'mnecraft': 'minecraft',
+    'minecraf': 'minecraft',
+    'pythn': 'python',
+    'pyton': 'python',
+    'pyhton': 'python',
+    'algoritm': 'algorithme',
+    'algorythm': 'algorithm',
+    'algo': 'algorithme',
+    'javascrip': 'javascript',
+    'javscript': 'javascript',
+    'javascrpt': 'javascript',
+    'cplusplus': 'c++',
+    'cplus': 'c++',
+    'intellegence': 'intelligence',
+    'inteligence': 'intelligence',
+    'artificiel': 'artificielle',
+    'securte': 'securite',
+    'secutity': 'security',
+    'medcine': 'medecine',
+    'medecin': 'medecine',
+    'calculs': 'calculus',
+    'calclus': 'calculus',
+    'reseau': 'reseaux',
+  }
+  if (directMap[norm]) return directMap[norm]
+
+  let bestWord = norm
+  let minDistance = 999
+  const maxAllowedDist = norm.length > 5 ? 2 : 1
+
+  for (const dictWord of COMMON_SEARCH_DICTIONARY) {
+    const dist = levenshteinDistance(norm, dictWord)
+    if (dist < minDistance && dist <= maxAllowedDist) {
+      minDistance = dist
+      bestWord = dictWord
+    }
+  }
+
+  return bestWord
+}
+
+function expandQueryTerms(rawQuery) {
+  if (!rawQuery) return []
+  const original = rawQuery.trim()
+  const words = original.split(/\s+/)
+  const correctedWords = words.map(suggestQueryTerm)
+  const corrected = correctedWords.join(' ')
+
+  const terms = [original]
+  if (corrected.toLowerCase() !== original.toLowerCase()) {
+    terms.push(corrected)
+  }
+  return terms
+}
+
+function scoreRelevance(book, cleanQuery, candidateTerms = []) {
+  if (!cleanQuery) return Number(book.downloadsCount) || 0
+  let score = 0
+  const titleNorm = normalizeTerm(book.title)
+  const authorNorm = Array.isArray(book.authors)
+    ? book.authors.map(normalizeTerm).join(' ')
+    : normalizeTerm(book.author || '')
+  const descNorm = normalizeTerm(book.description || '')
+
+  const termsToTest = candidateTerms.length > 0 ? candidateTerms : [cleanQuery]
+  for (const rawTerm of termsToTest) {
+    const term = normalizeTerm(rawTerm)
+    if (!term) continue
+    if (titleNorm === term) score += 2000
+    else if (titleNorm.startsWith(term)) score += 1000
+    else if (titleNorm.includes(term)) score += 500
+
+    if (authorNorm.includes(term)) score += 300
+    if (descNorm.includes(term)) score += 100
+  }
+
+  // Bonus proportionnel aux téléchargements (log10 jusqu'à 50 pts)
+  const dl = Number(book.downloadsCount) || 0
+  if (dl > 0) {
+    score += Math.min(50, Math.log10(dl + 1) * 10)
+  }
+
+  return score
+}
+
 // ── Recherche Multi-Shadow (Archive.org & Open Library) sans limites ──
-async function searchMultiShadow(query, category = 'Tous', language = '', limit = 35) {
+async function searchMultiShadow(query, category = 'Tous', language = '', limit = 60) {
   const cleanQ = normalizeTerm(query)
   const cleanLang = normalizeTerm(language)
+  const candidateTerms = expandQueryTerms(query)
 
   // 1. Filtrage sur le catalogue de référence certifié
   const curatedMatches = CURATED_ACADEMIC_BOOKS.filter(b => {
     const matchCat = category === 'Tous' || b.category === category
     const matchLang = !cleanLang || cleanLang === 'toutes' || normalizeTerm(b.language).includes(cleanLang)
-    const matchQ = !cleanQ ||
-      normalizeTerm(b.title).includes(cleanQ) ||
-      b.authors.some(a => normalizeTerm(a).includes(cleanQ)) ||
-      (b.description && normalizeTerm(b.description).includes(cleanQ))
+    const matchQ = !cleanQ || candidateTerms.some(term => {
+      const nTerm = normalizeTerm(term)
+      return (
+        normalizeTerm(b.title).includes(nTerm) ||
+        b.authors.some(a => normalizeTerm(a).includes(nTerm)) ||
+        (b.description && normalizeTerm(b.description).includes(nTerm))
+      )
+    })
     return matchCat && matchLang && matchQ
   })
 
   // 2. Recherche distante multi-shadow
   let externalResults = []
-  if (cleanQ) {
+  if (candidateTerms.length > 0) {
     try {
-      const searchTerms = encodeURIComponent(query.trim())
+      const primaryTerm = candidateTerms[candidateTerms.length - 1] // privilégier le terme corrigé s'il existe
+      const searchTerms = encodeURIComponent(primaryTerm.trim())
       const [iaRes, olRes] = await Promise.allSettled([
-        // Source 1 : Archive.org Academic Full Texts
+        // Source 1 : Archive.org Academic Full Texts (Recherche par pertinence, SANS filtre de téléchargement destructeur)
         (async () => {
           const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), 2500)
+          const timeout = setTimeout(() => controller.abort(), 7000)
           try {
             const resp = await fetch(
-              `https://archive.org/advancedsearch.php?q=mediatype:texts+AND+(${searchTerms})&fl[]=identifier,title,creator,year,downloads,description&sort[]=downloads+desc&rows=25&output=json`,
+              `https://archive.org/advancedsearch.php?q=mediatype:texts+AND+(title:(${searchTerms})+OR+subject:(${searchTerms})+OR+(${searchTerms}))&fl[]=identifier,title,creator,year,downloads,description&rows=40&output=json`,
               { signal: controller.signal }
             )
             clearTimeout(timeout)
@@ -462,13 +595,13 @@ async function searchMultiShadow(query, category = 'Tous', language = '', limit 
           }
         })(),
 
-        // Source 2 : Open Library
+        // Source 2 : Open Library (Index mondial de livres numériques et manuels complets)
         (async () => {
           const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), 2500)
+          const timeout = setTimeout(() => controller.abort(), 7000)
           try {
             const resp = await fetch(
-              `https://openlibrary.org/search.json?q=${searchTerms}&limit=25`,
+              `https://openlibrary.org/search.json?q=${searchTerms}&limit=40`,
               { signal: controller.signal }
             )
             clearTimeout(timeout)
@@ -477,6 +610,9 @@ async function searchMultiShadow(query, category = 'Tous', language = '', limit 
             const docs = data?.docs || []
             return docs.map(doc => {
               const iaId = doc.ia?.[0]
+              const coverUrl = doc.cover_i
+                ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+                : '/illustrations/library.jpg'
               return {
                 id: `ol-${doc.key ? doc.key.replace('/works/', '') : Math.random().toString(36).slice(2)}`,
                 title: doc.title,
@@ -484,7 +620,7 @@ async function searchMultiShadow(query, category = 'Tous', language = '', limit 
                 year: doc.first_publish_year || 2022,
                 category: category !== 'Tous' ? category : 'Sciences & Enseignement',
                 language: doc.language?.includes('fre') ? 'Français' : 'Anglais',
-                coverUrl: '/illustrations/library.jpg',
+                coverUrl,
                 description: `Édition universitaire (${doc.first_publish_year || 'Récente'}). Sujets: ${(doc.subject || []).slice(0, 3).join(', ')}`,
                 downloadUrl: iaId ? `https://archive.org/download/${iaId}/${iaId}.pdf` : undefined,
                 directReadUrl: iaId ? `https://archive.org/details/${iaId}` : undefined,
@@ -505,7 +641,8 @@ async function searchMultiShadow(query, category = 'Tous', language = '', limit 
 
       const iaBooks = iaRes.status === 'fulfilled' ? iaRes.value : []
       const olBooks = olRes.status === 'fulfilled' ? olRes.value : []
-      externalResults = [...iaBooks, ...olBooks]
+      // Prioriser les livres OpenLibrary qui correspondent exactement au titre, suivis d'Archive.org
+      externalResults = [...olBooks, ...iaBooks]
     } catch (err) {
       console.warn('Erreur Multi-Shadow non bloquante:', err)
     }
@@ -517,7 +654,7 @@ async function searchMultiShadow(query, category = 'Tous', language = '', limit 
 
   for (const b of [...curatedMatches, ...externalResults]) {
     const norm = normalizeTerm(b.title)
-    if (!seen.has(norm)) {
+    if (norm && !seen.has(norm)) {
       seen.add(norm)
       merged.push(b)
     }
@@ -847,7 +984,7 @@ app.get(['/api/books', '/api/books/search', '/search'], async (req, res) => {
     const category = req.query.category || 'Tous'
     const language = req.query.language || ''
     const sortBy = req.query.sortBy || 'popular'
-    const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 35))
+    const limit = Math.min(150, Math.max(1, parseInt(req.query.limit, 10) || 60))
 
     const cacheKey = `search:${query.toLowerCase()}:${category}:${language.toLowerCase()}:${sortBy}:${limit}`
     const cached = getFromCache(cacheKey)
@@ -865,7 +1002,16 @@ app.get(['/api/books', '/api/books/search', '/search'], async (req, res) => {
     } else if (sortBy === 'alpha' || sortBy === 'title') {
       results.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
     } else {
-      results.sort((a, b) => (b.downloadsCount || 0) - (a.downloadsCount || 0))
+      if (query) {
+        const terms = expandQueryTerms(query)
+        results.sort((a, b) => scoreRelevance(b, query, terms) - scoreRelevance(a, query, terms))
+        const relevantOnly = results.filter(b => scoreRelevance(b, query, terms) >= 100)
+        if (relevantOnly.length > 0) {
+          results = relevantOnly
+        }
+      } else {
+        results.sort((a, b) => (b.downloadsCount || 0) - (a.downloadsCount || 0))
+      }
     }
 
     const payload = {

@@ -52,6 +52,18 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
     setState(() => _loading = true);
     if (_activeTab == 0) {
       final campus = await ZLibraryService.fetchCampusResources(query);
+      if (campus.isEmpty && query.trim().isNotEmpty) {
+        final books = await ZLibraryService.searchBooks(query);
+        if (mounted) {
+          setState(() {
+            _activeTab = 1;
+            _books = books;
+            _campusResources = campus;
+            _loading = false;
+          });
+          return;
+        }
+      }
       if (mounted) setState(() { _campusResources = campus; _loading = false; });
     } else {
       final books = await ZLibraryService.searchBooks(query);

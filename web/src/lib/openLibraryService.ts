@@ -714,7 +714,7 @@ export const openLibraryService = {
   },
 
   /**
-   * Recherche 100% Z-Library avec filtrage et tri par langue.
+   * Recherche 100% Z-Library avec filtrage et tri par langue, sans limites ni blocages.
    */
   async search(
     query: string = '',
@@ -725,9 +725,39 @@ export const openLibraryService = {
     const cleanQuery = query.trim().toLowerCase()
     const cleanLang = language.trim().toLowerCase()
 
+    // Expansion des fautes de frappe courantes (ex: minecrft -> minecraft)
+    const directTypoMap: Record<string, string> = {
+      minecrft: 'minecraft',
+      minicraft: 'minecraft',
+      mnecraft: 'minecraft',
+      minecraf: 'minecraft',
+      pythn: 'python',
+      pyton: 'python',
+      pyhton: 'python',
+      algoritm: 'algorithme',
+      algorythm: 'algorithm',
+      algo: 'algorithme',
+      javascrip: 'javascript',
+      javscript: 'javascript',
+      javascrpt: 'javascript',
+      cplusplus: 'c++',
+      intellegence: 'intelligence',
+      inteligence: 'intelligence',
+      artificiel: 'artificielle',
+      securte: 'securite',
+      medcine: 'medecine',
+      calculs: 'calculus',
+    }
+
+    const candidateTerms = [cleanQuery]
+    if (cleanQuery && directTypoMap[cleanQuery] && directTypoMap[cleanQuery] !== cleanQuery) {
+      candidateTerms.push(directTypoMap[cleanQuery])
+    }
+
     // 1. Livres locaux et pré-indexés certifiés Z-Library
     const filteredCurated = CURATED_ACADEMIC_BOOKS.filter((b) => {
-      const matchCat = category === 'Tous' || b.category === category
+      // Si une recherche textuelle est saisie, ne pas bloquer les résultats par catégorie
+      const matchCat = category === 'Tous' || !cleanQuery || b.category === category
       const matchLang =
         !cleanLang ||
         cleanLang === 'toutes' ||
@@ -735,17 +765,22 @@ export const openLibraryService = {
         cleanLang.includes(b.language.toLowerCase())
       const matchQuery =
         !cleanQuery ||
-        b.title.toLowerCase().includes(cleanQuery) ||
-        b.authors.some((a) => a.toLowerCase().includes(cleanQuery)) ||
-        (b.isbn && b.isbn.toLowerCase().includes(cleanQuery)) ||
-        (b.description && b.description.toLowerCase().includes(cleanQuery))
+        candidateTerms.some((term) => {
+          const t = term.toLowerCase()
+          return (
+            b.title.toLowerCase().includes(t) ||
+            b.authors.some((a) => a.toLowerCase().includes(t)) ||
+            (b.isbn && b.isbn.toLowerCase().includes(t)) ||
+            (b.description && b.description.toLowerCase().includes(t))
+          )
+        })
       return matchCat && matchLang && matchQuery
     })
 
     // 2. Livres déjà en base Appwrite
     const dbBooks = await this.getDbCachedBooks().catch(() => [])
     const filteredDb = dbBooks.filter((b) => {
-      const matchCat = category === 'Tous' || b.category === category
+      const matchCat = category === 'Tous' || !cleanQuery || b.category === category
       const matchLang =
         !cleanLang ||
         cleanLang === 'toutes' ||
@@ -753,8 +788,13 @@ export const openLibraryService = {
         cleanLang.includes(b.language.toLowerCase())
       const matchQuery =
         !cleanQuery ||
-        b.title.toLowerCase().includes(cleanQuery) ||
-        b.authors.some((a) => a.toLowerCase().includes(cleanQuery))
+        candidateTerms.some((term) => {
+          const t = term.toLowerCase()
+          return (
+            b.title.toLowerCase().includes(t) ||
+            b.authors.some((a) => a.toLowerCase().includes(t))
+          )
+        })
       return matchCat && matchLang && matchQuery
     })
 
@@ -774,7 +814,7 @@ export const openLibraryService = {
       const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : ''
       const langParam = cleanLang && cleanLang !== 'toutes' ? `&language=${encodeURIComponent(cleanLang)}` : ''
       const sortParam = sortBy ? `&sortBy=${encodeURIComponent(sortBy)}` : ''
-      const queryParams = `q=${encodeURIComponent(cleanQuery || searchTerms)}&category=${encodeURIComponent(category)}${langParam}${sortParam}&limit=35`
+      const queryParams = `q=${encodeURIComponent(cleanQuery || searchTerms)}&category=${encodeURIComponent(category)}${langParam}${sortParam}&limit=60`
 
       const candidateUrls = [
         `https://vps.kernelforge.codes/zlibrary/api/books?${queryParams}`,
@@ -817,7 +857,6 @@ export const openLibraryService = {
             }
           }
         } catch (err: any) {
-          // Erreur non critique ou timeout d'un endpoint, tester le suivant silencieusement
           if (err?.name !== 'AbortError') {
             console.debug?.(`Repli candidate URL ${apiUrl}:`, err?.message || err)
           }
@@ -858,8 +897,31 @@ export const openLibraryService = {
     } else if (sortBy === 'alpha' || sortBy === 'title') {
       merged.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
     } else {
-      // popular
-      merged.sort((a, b) => (b.downloadsCount || 0) - (a.downloadsCount || 0))
+      if (cleanQuery) {
+        const score = (b: OpenBook) => {
+          let s = 0
+          const t = b.title.toLowerCase()
+          const a = b.authors.map((x) => x.toLowerCase()).join(' ')
+          for (const cand of candidateTerms) {
+            const c = cand.toLowerCase()
+            if (t === c) s += 2000
+            else if (t.startsWith(c)) s += 1000
+            else if (t.includes(c)) s += 500
+            if (a.includes(c)) s += 300
+            if (b.description && b.description.toLowerCase().includes(c)) s += 100
+          }
+          const dl = b.downloadsCount || 0
+          if (dl > 0) s += Math.min(50, Math.log10(dl + 1) * 10)
+          return s
+        }
+        merged.sort((a, b) => score(b) - score(a))
+        const relevantOnly = merged.filter((b) => score(b) >= 100)
+        if (relevantOnly.length > 0) {
+          merged = relevantOnly
+        }
+      } else {
+        merged.sort((a, b) => (b.downloadsCount || 0) - (a.downloadsCount || 0))
+      }
     }
 
     // Mettre en cache local

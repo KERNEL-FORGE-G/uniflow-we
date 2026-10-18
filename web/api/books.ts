@@ -959,7 +959,7 @@ export interface ApiBook {
   downloadUrl?: string
   directReadUrl?: string
   format: 'PDF' | 'EPUB' | 'HTML'
-  source: 'Z-Library'
+  source: string
   downloadsCount?: number
   cachedInBucket: boolean
   isbn?: string
@@ -1281,6 +1281,131 @@ function normalizeTerm(str: string): string {
     .trim()
 }
 
+const COMMON_SEARCH_DICTIONARY = [
+  'minecraft', 'python', 'javascript', 'typescript', 'algorithm', 'algorithms', 'algorithme', 'algorithmes',
+  'programming', 'programmation', 'computer', 'science', 'informatique', 'mathematics', 'mathematiques',
+  'calculus', 'algebra', 'algebre', 'physics', 'physique', 'chemistry', 'chimie', 'biology', 'biologie',
+  'database', 'donnees', 'reseau', 'reseaux', 'network', 'networks', 'security', 'securite', 'hacking',
+  'linux', 'operating', 'system', 'systeme', 'intelligence', 'artificial', 'artificielle', 'machine', 'learning',
+  'deep', 'robotics', 'economics', 'economie', 'finance', 'management', 'droit', 'law', 'medicine', 'medecine',
+  'anatomy', 'anatomie', 'philosophy', 'philosophie', 'literature', 'litterature', 'history', 'histoire',
+  'sociology', 'sociologie', 'grammar', 'grammaire', 'dictionary', 'dictionnaire',
+]
+
+function levenshteinDistance(s1: string, s2: string): number {
+  if (s1 === s2) return 0
+  if (s1.length === 0) return s2.length
+  if (s2.length === 0) return s1.length
+  const matrix: number[][] = Array.from({ length: s2.length + 1 }, () => Array(s1.length + 1).fill(0))
+  for (let i = 0; i <= s2.length; i++) matrix[i][0] = i
+  for (let j = 0; j <= s1.length; j++) matrix[0][j] = j
+  for (let i = 1; i <= s2.length; i++) {
+    for (let j = 1; j <= s1.length; j++) {
+      if (s2.charAt(i - 1) === s1.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1]
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        )
+      }
+    }
+  }
+  return matrix[s2.length][s1.length]
+}
+
+function suggestQueryTerm(term: string): string {
+  const norm = normalizeTerm(term)
+  if (!norm || norm.length < 3) return norm
+
+  const directMap: Record<string, string> = {
+    minecrft: 'minecraft',
+    minicraft: 'minecraft',
+    mnecraft: 'minecraft',
+    minecraf: 'minecraft',
+    pythn: 'python',
+    pyton: 'python',
+    pyhton: 'python',
+    algoritm: 'algorithme',
+    algorythm: 'algorithm',
+    algo: 'algorithme',
+    javascrip: 'javascript',
+    javscript: 'javascript',
+    javascrpt: 'javascript',
+    cplusplus: 'c++',
+    cplus: 'c++',
+    intellegence: 'intelligence',
+    inteligence: 'intelligence',
+    artificiel: 'artificielle',
+    securte: 'securite',
+    secutity: 'security',
+    medcine: 'medecine',
+    medecin: 'medecine',
+    calculs: 'calculus',
+    calclus: 'calculus',
+    reseau: 'reseaux',
+  }
+  if (directMap[norm]) return directMap[norm]
+
+  let bestWord = norm
+  let minDistance = 999
+  const maxAllowedDist = norm.length > 5 ? 2 : 1
+
+  for (const dictWord of COMMON_SEARCH_DICTIONARY) {
+    const dist = levenshteinDistance(norm, dictWord)
+    if (dist < minDistance && dist <= maxAllowedDist) {
+      minDistance = dist
+      bestWord = dictWord
+    }
+  }
+
+  return bestWord
+}
+
+function expandQueryTerms(rawQuery: string): string[] {
+  if (!rawQuery) return []
+  const original = rawQuery.trim()
+  const words = original.split(/\s+/)
+  const correctedWords = words.map(suggestQueryTerm)
+  const corrected = correctedWords.join(' ')
+
+  const terms = [original]
+  if (corrected.toLowerCase() !== original.toLowerCase()) {
+    terms.push(corrected)
+  }
+  return terms
+}
+
+function scoreRelevance(book: ApiBook, cleanQuery: string, candidateTerms: string[] = []): number {
+  if (!cleanQuery) return Number(book.downloadsCount) || 0
+  let score = 0
+  const titleNorm = normalizeTerm(book.title)
+  const authorNorm = Array.isArray(book.authors)
+    ? book.authors.map(normalizeTerm).join(' ')
+    : normalizeTerm((book as any).author || '')
+  const descNorm = normalizeTerm(book.description || '')
+
+  const termsToTest = candidateTerms.length > 0 ? candidateTerms : [cleanQuery]
+  for (const rawTerm of termsToTest) {
+    const term = normalizeTerm(rawTerm)
+    if (!term) continue
+    if (titleNorm === term) score += 2000
+    else if (titleNorm.startsWith(term)) score += 1000
+    else if (titleNorm.includes(term)) score += 500
+
+    if (authorNorm.includes(term)) score += 300
+    if (descNorm.includes(term)) score += 100
+  }
+
+  const dl = Number(book.downloadsCount) || 0
+  if (dl > 0) {
+    score += Math.min(50, Math.log10(dl + 1) * 10)
+  }
+
+  return score
+}
+
 /**
  * Résout une langue saisie (ex: "fr", "français", "french", "anglais", "en") vers sa clé normalisée.
  */
@@ -1505,18 +1630,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       category = (req.query.category as string) || 'Tous'
       language = ((req.query.language as string) || (req.query.lang as string) || '').trim()
       sortBy = ((req.query.sortBy as string) || (req.query.sort as string) || 'popular').toLowerCase()
-      limit = Math.min(100, Math.max(10, parseInt(req.query.limit as string, 10) || 35))
+      limit = Math.min(150, Math.max(10, parseInt(req.query.limit as string, 10) || 60))
     } else if (req.method === 'POST') {
       const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
       query = (body.query || body.q || '').trim()
       category = body.category || 'Tous'
       language = (body.language || body.lang || '').trim()
       sortBy = (body.sortBy || body.sort || 'popular').toLowerCase()
-      limit = Math.min(100, Math.max(10, parseInt(body.limit, 10) || 35))
+      limit = Math.min(150, Math.max(10, parseInt(body.limit, 10) || 60))
     }
 
     const normQuery = normalizeTerm(query)
     const normCategory = normalizeTerm(category)
+    const candidateTerms = expandQueryTerms(query)
 
     // Filtrer d'abord parmi le catalogue certifié
     let results: ApiBook[] = ZLIBRARY_CURATED_BOOKS.filter((b) => {
@@ -1535,71 +1661,124 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
       // Filtre recherche textuelle (titre, auteurs, description, isbn)
       if (!normQuery) return true
-      const titleMatch = normalizeTerm(b.title).includes(normQuery)
-      const authorMatch = b.authors.some((a) => normalizeTerm(a).includes(normQuery))
-      const descMatch = b.description ? normalizeTerm(b.description).includes(normQuery) : false
-      const isbnMatch = b.isbn ? normalizeTerm(b.isbn).includes(normQuery) : false
-
-      return titleMatch || authorMatch || descMatch || isbnMatch
+      return candidateTerms.some((term) => {
+        const nTerm = normalizeTerm(term)
+        return (
+          normalizeTerm(b.title).includes(nTerm) ||
+          b.authors.some((a) => normalizeTerm(a).includes(nTerm)) ||
+          (b.description && normalizeTerm(b.description).includes(nTerm)) ||
+          (b.isbn && normalizeTerm(b.isbn).includes(nTerm))
+        )
+      })
     })
 
-    // ── 4. RECHERCHE DYNAMIQUE DANS LES ARCHIVES NUMÉRIQUES OUVERTES ──
+    // ── 4. RECHERCHE DYNAMIQUE DANS LES ARCHIVES NUMÉRIQUES OUVERTES (OPEN LIBRARY & ARCHIVE.ORG) ──
     const fetchedBooks: ApiBook[] = []
 
-    const searchDynamicArchive = async (): Promise<ApiBook[]> => {
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 2500)
+    if (candidateTerms.length > 0) {
       try {
-        const queryTerm = query || (category !== 'Tous' ? category : 'computer science')
-        let q = `(title:("${queryTerm}") OR description:("${queryTerm}")) AND mediatype:texts AND -access-restricted-item:true`
-        if (language && language !== 'tous' && language !== 'all' && language !== 'toutes') {
-          q += ` AND (language:${encodeURIComponent(language)} OR language:${encodeURIComponent(normalizeTerm(language))})`
-        }
-        const archiveUrl = `https://archive.org/advancedsearch.php?q=${encodeURIComponent(q)}&fl[]=identifier,title,creator,year,downloads,description,language&sort[]=downloads+desc&rows=15&output=json`
-        const zRes = await fetch(archiveUrl, { signal: controller.signal })
-        clearTimeout(timeout)
-        if (!zRes.ok) return []
-        const zData = await zRes.json()
-        const items = zData.response?.docs || []
-        if (!Array.isArray(items)) return []
+        const primaryTerm = candidateTerms[candidateTerms.length - 1]
+        const searchTerms = encodeURIComponent(primaryTerm.trim())
 
-        return items.map((zb: any): ApiBook => {
-          const authorList = Array.isArray(zb.creator)
-            ? zb.creator
-            : zb.creator
-            ? [zb.creator]
-            : ['Auteur du Domaine Public']
-          const safeId = `ia-${zb.identifier}`
-          return {
-            id: safeId,
-            title: zb.title || 'Livre Numérique',
-            authors: authorList,
-            year: zb.year ? Number(zb.year) : undefined,
-            category: category !== 'Tous' ? category : 'Sciences Universitaires',
-            language: zb.language || (language ? language : 'Français / Anglais'),
-            coverUrl: `https://archive.org/services/img/${zb.identifier}`,
-            description: (zb.description && Array.isArray(zb.description) ? zb.description.join(' ') : zb.description) || `Ouvrage intégral vérifié issu de la bibliothèque numérique ouverte Archive.org.`,
-            downloadUrl: `/api/books?action=download&id=${encodeURIComponent(safeId)}`,
-            directReadUrl: `https://archive.org/details/${zb.identifier}`,
-            format: 'PDF',
-            source: 'Z-Library',
-            downloadsCount: zb.downloads || 1500,
-            cachedInBucket: false,
-            isbn: zb.isbn,
-            size: 'PDF Intégral',
-          }
-        })
+        const [iaRes, olRes] = await Promise.allSettled([
+          // Source 1 : Archive.org
+          (async (): Promise<ApiBook[]> => {
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 7000)
+            try {
+              const archiveUrl = `https://archive.org/advancedsearch.php?q=mediatype:texts+AND+(title:(${searchTerms})+OR+subject:(${searchTerms})+OR+(${searchTerms}))&fl[]=identifier,title,creator,year,downloads,description,language&rows=40&output=json`
+              const zRes = await fetch(archiveUrl, { signal: controller.signal })
+              clearTimeout(timeout)
+              if (!zRes.ok) return []
+              const zData = await zRes.json()
+              const items = zData.response?.docs || []
+              if (!Array.isArray(items)) return []
+
+              return items.map((zb: any): ApiBook => {
+                const authorList = Array.isArray(zb.creator)
+                  ? zb.creator
+                  : zb.creator
+                  ? [zb.creator]
+                  : ['Auteur du Domaine Public']
+                const safeId = `ia-${zb.identifier}`
+                return {
+                  id: safeId,
+                  title: zb.title || 'Livre Numérique',
+                  authors: authorList,
+                  year: zb.year ? Number(zb.year) : undefined,
+                  category: category !== 'Tous' ? category : 'Sciences Universitaires',
+                  language: zb.language || (language ? language : 'Français / Anglais'),
+                  coverUrl: `https://archive.org/services/img/${zb.identifier}`,
+                  description:
+                    (zb.description && Array.isArray(zb.description) ? zb.description.join(' ') : zb.description) ||
+                    `Ouvrage intégral vérifié issu de la bibliothèque numérique ouverte Archive.org.`,
+                  downloadUrl: `/api/books?action=download&id=${encodeURIComponent(safeId)}`,
+                  directReadUrl: `https://archive.org/details/${zb.identifier}`,
+                  format: 'PDF',
+                  source: 'Z-Library (Internet Archive)',
+                  downloadsCount: zb.downloads || 1500,
+                  cachedInBucket: false,
+                  isbn: zb.isbn,
+                  size: 'PDF Intégral',
+                }
+              })
+            } catch {
+              clearTimeout(timeout)
+              return []
+            }
+          })(),
+
+          // Source 2 : Open Library
+          (async (): Promise<ApiBook[]> => {
+            const controller = new AbortController()
+            const timeout = setTimeout(() => controller.abort(), 7000)
+            try {
+              const olUrl = `https://openlibrary.org/search.json?q=${searchTerms}&limit=40`
+              const olRes = await fetch(olUrl, { signal: controller.signal })
+              clearTimeout(timeout)
+              if (!olRes.ok) return []
+              const data = await olRes.json()
+              const docs = data?.docs || []
+              return docs.map((doc: any): ApiBook => {
+                const iaId = doc.ia?.[0]
+                const safeId = `ol-${doc.key ? doc.key.replace('/works/', '') : Math.random().toString(36).slice(2)}`
+                const coverUrl = doc.cover_i
+                  ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg`
+                  : '/illustrations/library.jpg'
+                return {
+                  id: safeId,
+                  title: doc.title || 'Livre Numérique',
+                  authors: doc.author_name || ['Auteur Académique'],
+                  year: doc.first_publish_year || 2022,
+                  category: category !== 'Tous' ? category : 'Sciences Universitaires',
+                  language: doc.language?.includes('fre') ? 'Français' : 'Anglais',
+                  coverUrl,
+                  description: `Édition universitaire (${doc.first_publish_year || 'Récente'}). Sujets: ${(doc.subject || []).slice(0, 3).join(', ')}`,
+                  downloadUrl: iaId
+                    ? `/api/books?action=download&id=ia-${iaId}`
+                    : `/api/books?action=download&id=${encodeURIComponent(safeId)}`,
+                  directReadUrl: iaId ? `https://archive.org/details/${iaId}` : undefined,
+                  format: 'PDF',
+                  source: 'Z-Library (Open Library)',
+                  downloadsCount: doc.edition_count ? doc.edition_count * 200 : 900,
+                  cachedInBucket: false,
+                  isbn: doc.isbn?.[0],
+                  size: 'Catalogue ouvert',
+                }
+              })
+            } catch {
+              clearTimeout(timeout)
+              return []
+            }
+          })(),
+        ])
+
+        const iaBooks = iaRes.status === 'fulfilled' ? iaRes.value : []
+        const olBooks = olRes.status === 'fulfilled' ? olRes.value : []
+        fetchedBooks.push(...olBooks, ...iaBooks)
       } catch {
-        clearTimeout(timeout)
-        return []
+        // Ignorer erreur réseau dynamique
       }
-    }
-
-    try {
-      const dynResults = await searchDynamicArchive()
-      fetchedBooks.push(...dynResults)
-    } catch {
-      // Ignorer erreur réseau dynamique
     }
 
     // ── 5. DÉDUPLICATION PAR TITRE NORMALISÉ ──
@@ -1614,7 +1793,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     }
 
-    // ── 6. APPLICATION DE L'OPTION DE TRI (PAR LANGUE, POPULARITÉ, ANNÉE, TITRE) ──
+    // ── 6. APPLICATION DE L'OPTION DE TRI (PAR LANGUE, POPULARITÉ / PERTINENCE, ANNÉE, TITRE) ──
     if (sortBy === 'language' || sortBy === 'langue') {
       merged.sort((a, b) => a.language.localeCompare(b.language, 'fr'))
     } else if (sortBy === 'year' || sortBy === 'recent') {
@@ -1622,8 +1801,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (sortBy === 'title' || sortBy === 'alpha') {
       merged.sort((a, b) => a.title.localeCompare(b.title, 'fr'))
     } else {
-      // Default: 'popular'
-      merged.sort((a, b) => (b.downloadsCount || 0) - (a.downloadsCount || 0))
+      if (query) {
+        merged.sort((a, b) => scoreRelevance(b, query, candidateTerms) - scoreRelevance(a, query, candidateTerms))
+        const relevantOnly = merged.filter((b) => scoreRelevance(b, query, candidateTerms) >= 100)
+        if (relevantOnly.length > 0) {
+          merged = relevantOnly
+        }
+      } else {
+        merged.sort((a, b) => (b.downloadsCount || 0) - (a.downloadsCount || 0))
+      }
     }
 
     const mappedResults = merged.slice(0, limit).map((b) => ({
