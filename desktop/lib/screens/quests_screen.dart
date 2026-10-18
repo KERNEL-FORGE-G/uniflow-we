@@ -272,8 +272,14 @@ class _QuestsScreenState extends State<QuestsScreen> {
                                     const SizedBox(width: 12),
                                     Row(
                                       children: [
-                                        const Icon(Icons.local_fire_department_rounded, color: Color(0xFFF97316), size: 18),
-                                        const SizedBox(width: 4),
+                                        Image.asset(
+                                          'assets/mascot/uni_duo_streak_fire.png',
+                                          width: 26,
+                                          height: 26,
+                                          fit: BoxFit.contain,
+                                          errorBuilder: (_, __, ___) => const Icon(Icons.local_fire_department_rounded, color: Color(0xFFF97316), size: 18),
+                                        ),
+                                        const SizedBox(width: 6),
                                         Text(
                                           'Série : $_streakDays jours d\'affilée',
                                           style: const TextStyle(color: Color(0xFFFDBA74), fontWeight: FontWeight.bold, fontSize: 12),
@@ -306,21 +312,32 @@ class _QuestsScreenState extends State<QuestsScreen> {
                 ),
                 const SizedBox(width: 24),
 
-                // Illustration 3D Trophée
+                // Illustration 3D Mascotte Célébration Duolingo & Trophée
                 Container(
                   width: 140,
                   height: 140,
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.1),
+                    color: Colors.white.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+                    border: Border.all(color: Colors.white.withValues(alpha: 0.22)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.25),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(24),
                     child: Image.asset(
-                      'assets/icons/nav/gamification.png',
+                      'assets/mascot/uni_duo_celebrate_streak.png',
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, size: 60, color: Colors.white),
+                      errorBuilder: (_, __, ___) => Image.asset(
+                        'assets/icons/nav/gamification.png',
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Icon(Icons.emoji_events, size: 60, color: Colors.white),
+                      ),
                     ),
                   ),
                 ),

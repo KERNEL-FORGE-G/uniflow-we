@@ -36,9 +36,7 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = 'etudiant.uy1@uniflow.cm';
-    _passwordController.text = 'uniflow2026';
-    _nameController.text = 'Marcel Tessoh';
+    // Start with clean, empty input fields for security and privacy
   }
 
   @override
