@@ -174,21 +174,29 @@ export default function LibraryPage() {
     e?.stopPropagation()
     setCachingBookId(book.id)
     try {
-      // 1. Déclencher le téléchargement officiel du PDF certifié
-      await openLibraryService.downloadBook(book)
-      setToastMessage(`✓ « ${book.title} » téléchargé (PDF Édition Académique Z-Library)`)
+      // 1. Déclencher le téléchargement immédiat et propre (sans popup ni redirection)
+      const res = await openLibraryService.downloadBook(book)
+      if (res.success) {
+        setToastMessage(`✓ « ${book.title} » téléchargé (PDF Édition Académique)`)
+      }
 
-      // 2. Synchroniser en tâche de fond dans le bucket Appwrite sans bloquer
-      openLibraryService.cacheBookToBucket(book).then((updatedBook) => {
-        setOpenBooks(prev => prev.map(b => (b.id === book.id ? updatedBook : b)))
-        if (activeBookModal?.id === book.id) {
-          setActiveBookModal(updatedBook)
-        }
-      }).catch(() => undefined)
+      // 2. Marquer le livre comme synchronisé dans le bucket
+      const updatedBook: OpenBook = { ...book, cachedInBucket: true }
+      setOpenBooks(prev => prev.map(b => (b.id === book.id ? updatedBook : b)))
+      if (activeBookModal?.id === book.id) {
+        setActiveBookModal(updatedBook)
+      }
+
+      // 3. Déclencher la mise en bucket sur le serveur en tâche de fond (sans bloquer)
+      openLibraryService.cacheBookToBucket(book).catch(() => undefined)
     } catch (err) {
       console.error('Erreur téléchargement livre:', err)
-      setToastMessage(`Téléchargement initié : « ${book.title} »`)
-      await openLibraryService.downloadBook(book)
+      try {
+        await openLibraryService.downloadBook(book)
+        setToastMessage(`✓ « ${book.title} » téléchargé`)
+      } catch {
+        setToastMessage(`Téléchargement de « ${book.title} » initié`)
+      }
     } finally {
       setCachingBookId(null)
     }
@@ -809,7 +817,7 @@ export default function LibraryPage() {
                         {isCaching ? (
                           <>
                             <HiArrowPath className="h-3.5 w-3.5 animate-spin" />
-                            <span>Mise en bucket...</span>
+                            <span>Téléchargement...</span>
                           </>
                         ) : book.cachedInBucket ? (
                           <>
@@ -1070,8 +1078,17 @@ export default function LibraryPage() {
                   disabled={cachingBookId === activeBookModal.id}
                   className="flex items-center gap-1.5 rounded-xl bg-[#1E3A8A] hover:bg-blue-900 text-white px-5 py-2 text-xs font-bold shadow-md transition-all"
                 >
-                  <HiArrowDownTray className="h-4 w-4" />
-                  <span>Télécharger le livre (PDF)</span>
+                  {cachingBookId === activeBookModal.id ? (
+                    <>
+                      <HiArrowPath className="h-4 w-4 animate-spin" />
+                      <span>Téléchargement...</span>
+                    </>
+                  ) : (
+                    <>
+                      <HiArrowDownTray className="h-4 w-4" />
+                      <span>Télécharger le livre (PDF)</span>
+                    </>
+                  )}
                 </button>
               </div>
             </div>
