@@ -178,6 +178,8 @@ export default function DownloadPage() {
   const { data: releases, isPending } = useAppReleases()
   const channels = buildDownloadChannels(releases, isPending)
   const android = channels.android.release
+  const windowsEntry = channels.desktop.entries.find((e) => e.platform === 'windows')
+  const nonWindowsEntries = channels.desktop.entries.filter((e) => e.platform !== 'windows')
   const notes = splitReleaseNotes(android?.notes)
   const anySoon = channels.android.status === 'soon' || channels.desktop.status === 'soon'
 
@@ -225,11 +227,23 @@ export default function DownloadPage() {
                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
               >
                 {android ? (
-                  <DownloadButton release={android} label="Télécharger pour Android" icon="android" tone="white" />
+                  <DownloadButton release={android} label="Télécharger pour Android (APK)" icon="android" tone="white" />
                 ) : (
                   <StatusPill status={channels.android.status} soonLabel="Version Android bientôt disponible" icon="android" dark />
                 )}
-                <MicrosoftStoreBadge width={190} className="shadow-lg" />
+                <div className="flex flex-col gap-1 sm:items-start">
+                  <MicrosoftStoreBadge width={190} className="shadow-lg" />
+                  {windowsEntry?.release ? (
+                    <a
+                      href={windowsEntry.release.url}
+                      download={windowsEntry.release.fileName || true}
+                      className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
+                    >
+                      <UniIcon name="download" weight="bold" className="h-3 w-3" />
+                      Installeur direct Windows (.exe)
+                    </a>
+                  ) : null}
+                </div>
                 <a
                   href="#bureau"
                   className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-3.5 text-sm font-bold text-white transition hover:bg-white/15"
@@ -325,9 +339,24 @@ export default function DownloadPage() {
                 description="Emploi du temps, cours, devoirs, notes, présence par QR code, forum et messagerie — dans la poche, même sans réseau."
                 accent="teal"
               >
+                {/* Information Google Play Store */}
+                <div className="rounded-2xl border border-teal-200/80 bg-teal-50/70 p-3.5">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#0d9488]">
+                      <UniIcon name="android" weight="fill" className="h-4 w-4" /> Google Play Store
+                    </span>
+                    <span className="rounded-full bg-teal-100 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-teal-800">
+                      Validation en cours
+                    </span>
+                  </div>
+                  <p className="text-[11px] font-medium text-slate-600">
+                    La version validée par Google Play arrive très prochainement. En attendant, installez l’APK officiel direct ci-dessous :
+                  </p>
+                </div>
+
                 {android ? (
                   <>
-                    <DownloadButton release={android} label="Télécharger l’APK" icon="android" tone="teal" size="md" />
+                    <DownloadButton release={android} label="Télécharger l’APK direct (v1.0.0)" icon="android" tone="teal" size="md" />
                     <ReleaseFacts release={android} />
                   </>
                 ) : (
@@ -351,38 +380,73 @@ export default function DownloadPage() {
                   <div className="space-y-4">
                     {/* Badge officiel Microsoft Store (Windows) */}
                     <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
-                      <div className="flex items-center justify-between mb-2.5">
+                      <div className="flex items-center justify-between mb-2">
                         <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">
-                          <UniIcon name="windows" weight="fill" className="h-4 w-4" /> Windows
+                          <UniIcon name="windows" weight="fill" className="h-4 w-4" /> Microsoft Store
                         </span>
                         <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-800">
-                          Recommandé
+                          Officiel
                         </span>
                       </div>
                       <MicrosoftStoreBadge width={200} />
                       <p className="mt-2 text-[11px] font-medium text-slate-500">
-                        Installation officielle, rapide et vérifiée en 1 clic via le Microsoft Store.
+                        Disponible sur le Microsoft Store (mise à jour v1.0.0 en cours de propagation).
                       </p>
+
+                      {/* Lien secondaire : Installeur direct Windows .exe */}
+                      {windowsEntry?.release ? (
+                        <div className="mt-3.5 pt-3.5 border-t border-slate-200/80">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[11px] font-bold text-slate-700">
+                              Installeur direct Windows (.exe)
+                            </span>
+                            <span className="rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-bold text-[#1e3a8a]">
+                              Lien direct
+                            </span>
+                          </div>
+                          <DownloadButton
+                            release={windowsEntry.release}
+                            label="Télécharger l’installeur Windows (.exe)"
+                            icon="windows"
+                            tone="navy"
+                            size="md"
+                          />
+                          <div className="mt-2">
+                            <ReleaseFacts release={windowsEntry.release} />
+                          </div>
+                        </div>
+                      ) : null}
                     </div>
 
-                    {/* Autres systèmes (Linux, etc.) */}
-                    {channels.desktop.entries
-                      .filter((e) => e.platform !== 'windows')
-                      .map((entry) => (
-                        <div key={entry.platform}>
-                          {entry.release ? (
-                            <DownloadButton release={entry.release} label={`Pour ${entry.label}`} icon={PLATFORM_ICON[entry.platform]} tone="navy" size="md" />
-                          ) : (
-                            <span className="inline-flex w-full items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-500">
-                              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
-                                <UniIcon name={PLATFORM_ICON[entry.platform]} weight="duotone" className="h-5 w-5" />
+                    {/* Autres systèmes (Linux, macOS, etc.) */}
+                    {nonWindowsEntries.map((entry) => (
+                      <div key={entry.platform}>
+                        {entry.release ? (
+                          <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">
+                                <UniIcon name={PLATFORM_ICON[entry.platform]} weight="fill" className="h-4 w-4" /> {entry.label}
                               </span>
-                              {entry.label}
-                              <span className="ml-auto rounded-full bg-[#eff3ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#1e3a8a]">Bientôt</span>
+                              <span className="rounded-full bg-blue-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-[#1e3a8a]">
+                                Disponible
+                              </span>
+                            </div>
+                            <DownloadButton release={entry.release} label={`Pour ${entry.label}`} icon={PLATFORM_ICON[entry.platform]} tone="navy" size="md" />
+                            <div className="mt-2">
+                              <ReleaseFacts release={entry.release} />
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="inline-flex w-full items-center gap-3 rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-500">
+                            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400">
+                              <UniIcon name={PLATFORM_ICON[entry.platform]} weight="duotone" className="h-5 w-5" />
                             </span>
-                          )}
-                        </div>
-                      ))}
+                            {entry.label}
+                            <span className="ml-auto rounded-full bg-[#eff3ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#1e3a8a]">Bientôt</span>
+                          </span>
+                        )}
+                      </div>
+                    ))}
                   </div>
                   <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
                     <UniIcon name="video" weight="duotone" className="mt-0.5 h-4 w-4 shrink-0 text-[#1e3a8a]" />

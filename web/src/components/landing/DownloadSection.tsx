@@ -144,6 +144,10 @@ export function DownloadSection() {
           </div>
 
           <motion.div variants={fadeInUp} className="space-y-3">
+            <div className="inline-flex items-center gap-2 rounded-lg bg-teal-50 px-2.5 py-1 text-xs font-bold text-teal-800">
+              <span className="h-2 w-2 rounded-full bg-teal-500 animate-pulse" />
+              Google Play Store : validation finale en cours · APK direct disponible
+            </div>
             {checking ? (
               <span className="inline-flex w-full items-center gap-4 rounded-2xl border-2 border-slate-200 bg-slate-50 px-5 py-4 text-slate-500 sm:w-auto" aria-live="polite">
                 <UniIcon name="spinner" weight="bold" className="h-5 w-5 animate-spin text-[#1e3a8a]" />
@@ -170,7 +174,7 @@ export function DownloadSection() {
             )}
             <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
               <UniIcon name="security" weight="duotone" className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" />
-              Fichier APK : autorisez l’installation depuis cette source quand Android le demande.
+              Fichier APK officiel : autorisez l’installation depuis cette source quand Android le demande.
             </p>
             <Link to="/download" className="inline-flex items-center gap-1.5 text-sm font-bold text-[#1e3a8a] hover:underline">
               Toutes les versions, l’installation pas à pas et l’empreinte du fichier
@@ -179,7 +183,13 @@ export function DownloadSection() {
           </motion.div>
 
           <motion.div variants={fadeInUp} className="flex flex-col gap-4 border-t border-slate-100 pt-6 sm:flex-row sm:flex-wrap sm:items-center">
-            <MicrosoftStoreBadge width={190} className="shadow-md" />
+            <div className="flex flex-col gap-1 sm:items-start">
+              <MicrosoftStoreBadge width={190} className="shadow-md" />
+              <Link to="/download#bureau" className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500 hover:text-[#1e3a8a]">
+                <UniIcon name="windows" weight="duotone" className="h-3 w-3" />
+                Installeur direct Windows (.exe) disponible
+              </Link>
+            </div>
             {desktop ? (
               <div>
                 <DownloadButton
