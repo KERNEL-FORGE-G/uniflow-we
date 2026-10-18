@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../models/user_role.dart';
 import '../providers/providers.dart';
@@ -75,13 +76,13 @@ const List<CampusNewsItem> _initialCampusNews = [
     imageAsset: 'assets/illustrations/about_campus_hero.png',
     imageCaption:
         'Déploiement officiel de la bêta UniFlow sur le campus universitaire avec synchronisation temps réel.',
-    videoTitle: 'Présentation vidéo : Tour d\'horizon d\'UniFlow Bêta 3D (2 min 45)',
-    videoDuration: '02:45',
-    videoUrl: 'https://uniflow.cm/beta-tour',
+    videoTitle: 'Présentation officielle : Nouveautés UniFlow (3 min 45)',
+    videoDuration: '03:45',
+    videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
     documentTitle: 'Guide_Officiel_Beta_UniFlow_2026.pdf',
     documentSize: '2.4 Mo · PDF Signé',
-    externalLinkLabel: 'Consulter la feuille de route officielle (uniflow.cm)',
-    externalLinkUrl: 'https://uniflow.cm/roadmap',
+    externalLinkLabel: 'Consulter la feuille de route & Téléchargements',
+    externalLinkUrl: 'https://uniflow.kernelforge.codes/download',
     isPinned: true,
     likes: 342,
     views: 1280,
@@ -102,14 +103,14 @@ const List<CampusNewsItem> _initialCampusNews = [
     imageCaption: 'Répartition numérique des créneaux d\'évaluation et contrôle d\'accès QR.',
     documentTitle: 'Calendrier_Examens_Semestre_Officiel.pdf',
     documentSize: '1.8 Mo · PDF Officiel',
-    externalLinkLabel: 'Vérifier mon emploi du temps',
-    externalLinkUrl: 'https://uniflow.cm/schedule',
+    externalLinkLabel: 'Consulter mon emploi du temps officiel',
+    externalLinkUrl: 'https://uniflow.kernelforge.codes/app/emploi-du-temps',
     likes: 189,
     views: 845,
   ),
   CampusNewsItem(
     id: 'news-hackathon-forge',
-    title: 'Grand Hackathon Campus IA & Cybersécurité — Inscriptions ouvertes',
+    title: 'Grand Hackathon Campus IA & Sentinelle IoT — Laboratoire Ouvert',
     category: 'Événements',
     author: 'Club Tech & KERNEL FORGE',
     authorRole: 'Innovation & Recherche',
@@ -117,15 +118,17 @@ const List<CampusNewsItem> _initialCampusNews = [
     summary:
         '48 heures d\'innovation intensive autour de l\'intelligence artificielle embarquée, de la santé connectée et des réseaux résilients.',
     content:
-        'Formez votre équipe de 3 à 5 étudiants et participez au Grand Hackathon annuel du Campus ! Les meilleures équipes bénéficieront d\'un accompagnement technique, de bourses d\'excellence et d\'une intégration directe au laboratoire d\'innovation.\n\n'
+        'Formez votre équipe de 3 à 5 étudiants et participez au Grand Hackathon annuel du Campus ! Les meilleures équipes bénéficieront d\'un accompagnement technique, de bourses d\'excellence et d\'une intégration directe au laboratoire d\'innovation Sentinelle.\n\n'
         'Des ateliers préparatoires en visioconférence LAN et des ressources dédiées sont dès à présent accessibles dans la Bibliothèque Uni Book.',
     imageAsset: 'assets/illustrations/about_team_lab.png',
-    imageCaption: 'Les équipes lauréates lors de la session préparatoire au laboratoire informatique.',
-    videoTitle: 'Teaser Hackathon Campus & Interviews des mentors',
-    videoDuration: '01:50',
-    videoUrl: 'https://uniflow.cm/hackathon-teaser',
+    imageCaption: 'Séance préparatoire au Laboratoire IA & IoT avec les étudiants de la Faculté des Sciences.',
+    videoTitle: 'Démo Sentinelle IoT & Caméras Edge AI',
+    videoDuration: '03:45',
+    videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
     documentTitle: 'Reglement_Hackathon_Campus_2026.pdf',
     documentSize: '940 Ko · PDF',
+    externalLinkLabel: 'Découvrir la Sentinelle IoT',
+    externalLinkUrl: 'https://uniflow.kernelforge.codes/sentinelle',
     likes: 276,
     views: 990,
   ),
@@ -142,8 +145,11 @@ const List<CampusNewsItem> _initialCampusNews = [
         'Grâce à l\'interconnexion du module Uni Book avec le stockage institutionnel Appwrite, les ouvrages téléchargés par les enseignants et étudiants restent accessibles en cache rapide sur le réseau du campus.',
     imageAsset: 'assets/illustrations/course_study_hero_3d.png',
     imageCaption: 'Nouvelle interface de lecture et d\'archivage hors-ligne dans la Bibliothèque UniFlow.',
-    externalLinkLabel: 'Explorer le catalogue numérique',
-    externalLinkUrl: 'https://uniflow.cm/library',
+    videoTitle: 'Démo Bibliothèque Z-Library & Mode Hors-Ligne',
+    videoDuration: '03:45',
+    videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
+    externalLinkLabel: 'Explorer le catalogue numérique Z-Library',
+    externalLinkUrl: 'https://uniflow.kernelforge.codes/app/bibliotheque',
     likes: 215,
     views: 710,
   ),
@@ -397,6 +403,17 @@ class _ActualitesScreenState extends ConsumerState<ActualitesScreen> {
     );
   }
 
+  Future<void> _launchMediaUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+    } catch (e) {
+      debugPrint('Impossible d\'ouvrir l\'URL: $e');
+    }
+  }
+
   void _openNewsDetail(CampusNewsItem item) {
     showModalBottomSheet<void>(
       context: context,
@@ -513,6 +530,7 @@ class _ActualitesScreenState extends ConsumerState<ActualitesScreen> {
                     title: item.videoTitle!,
                     subtitle: 'Vidéo HD Campus · ${item.videoDuration ?? "Lecture directe"}',
                     badge: 'VIDÉO',
+                    onTap: item.videoUrl != null ? () => _launchMediaUrl(item.videoUrl!) : null,
                   ),
                 ],
                 if (item.documentTitle != null) ...[
@@ -523,6 +541,7 @@ class _ActualitesScreenState extends ConsumerState<ActualitesScreen> {
                     title: item.documentTitle!,
                     subtitle: item.documentSize ?? 'Document officiel PDF',
                     badge: 'PDF',
+                    onTap: () => _launchMediaUrl('https://uniflow.kernelforge.codes/download'),
                   ),
                 ],
                 if (item.externalLinkLabel != null) ...[
@@ -531,8 +550,9 @@ class _ActualitesScreenState extends ConsumerState<ActualitesScreen> {
                     icon: PhosphorIconsBold.arrowSquareOut,
                     color: AppColors.teal,
                     title: item.externalLinkLabel!,
-                    subtitle: item.externalLinkUrl ?? 'https://uniflow.cm',
+                    subtitle: item.externalLinkUrl ?? 'https://uniflow.kernelforge.codes',
                     badge: 'LIEN',
+                    onTap: () => _launchMediaUrl(item.externalLinkUrl ?? 'https://uniflow.kernelforge.codes'),
                   ),
                 ],
               ],
@@ -1064,6 +1084,7 @@ class _MediaAttachmentTile extends StatelessWidget {
   final String title;
   final String subtitle;
   final String badge;
+  final VoidCallback? onTap;
 
   const _MediaAttachmentTile({
     required this.icon,
@@ -1071,69 +1092,77 @@ class _MediaAttachmentTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.badge,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.22)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, size: 20, color: color),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: color.withValues(alpha: 0.22)),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(9),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 20, color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitle,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  badge,
                   style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.textPrimary,
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(6),
-            ),
-            child: Text(
-              badge,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

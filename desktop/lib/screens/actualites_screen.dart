@@ -82,11 +82,11 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
           'Déploiement pilote UniFlow Bêta sur le campus de la Faculté des Sciences — Université de Yaoundé I.',
       videoTitle:
           'Présentation Vidéo : Nouveautés UniFlow Bêta & Architecture Hybride',
-      videoDuration: '04:35 · 1080p HD',
-      videoUrl: 'https://uniflow.cm/beta-keynote',
+      videoDuration: '03:45 · 1080p HD',
+      videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
       documentTitle: 'Feuille_de_Route_UniFlow_Beta_2026_UY1.pdf',
       documentSize: '2.4 MB · PDF Signé',
-      externalLink: 'https://uniflow.cm/roadmap',
+      externalLink: 'https://uniflow.kernelforge.codes/download',
       likes: 248,
       isLiked: true,
     ),
@@ -100,9 +100,12 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
       date: 'Il y a 2 heures',
       content:
           'Le calendrier révisé des évaluations de fin de semestre et la répartition par amphithéâtre (Amphi 1001, Amphi 501, Amphi 250 et Bloc Pédagogique) sont désormais disponibles en téléchargement. Veuillez vérifier vos codes UE et vos créneaux horaires.',
+      imageAsset: 'assets/illustrations/schedule_calendar_hero_3d.png',
+      imageCaption:
+          'Grille d\'évaluation et planning des examens semestriels certifiés UY1.',
       documentTitle: 'Calendrier_Examens_S1_FacSciences_UY1_2026.pdf',
       documentSize: '1.8 MB · PDF Officiel',
-      externalLink: 'https://uy1.uninet.cm/examens-s1',
+      externalLink: 'https://uniflow.kernelforge.codes/app/emploi-du-temps',
       likes: 112,
     ),
     CampusNewsItem(
@@ -118,6 +121,10 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
       imageAsset: 'assets/illustrations/about_team_lab.png',
       imageCaption:
           'Séance inaugurale au Laboratoire IA & IoT avec les étudiants de la filière ICT4D.',
+      videoTitle: 'Démo Sentinelle IoT & Caméras Edge AI Campus',
+      videoDuration: '03:45 · Démo Matériel',
+      videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
+      externalLink: 'https://uniflow.kernelforge.codes/sentinelle',
       likes: 94,
     ),
     CampusNewsItem(
@@ -134,10 +141,11 @@ class _ActualitesScreenState extends State<ActualitesScreen> {
       imageCaption:
           'Support visuel 3D du séminaire conjoint Génie Logiciel & Cryptographie.',
       videoTitle: 'Masterclass_Architectures_Distribuees_UY1.mp4',
-      videoDuration: '58:12 · Replay Amphi 501',
-      videoUrl: 'https://uniflow.cm/visio/replay-inf4067',
+      videoDuration: '03:45 · Présentation Vidéo HD',
+      videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
       documentTitle: 'Slides_Masterclass_INF4067_Cryptographie.pdf',
       documentSize: '5.1 MB · Support CM',
+      externalLink: 'https://uniflow.kernelforge.codes/app/cours',
       likes: 167,
     ),
   ];

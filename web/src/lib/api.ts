@@ -876,13 +876,13 @@ Nous vous remercions chaleureusement pour votre participation et vos précieux r
     createdAt: '2026-10-17T00:00:00.000Z',
     pinned: true,
     important: true,
-    imageUrl: '/illustrations/uni_copilot_3d.png',
-    imageCaption: 'Déploiement pilote de la suite UniFlow — Surveillance, assistance intelligente Uni et retours d\'expérience en conditions réelles sur le campus UY1.',
-    videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+    imageUrl: '/illustrations/about_campus_hero.png',
+    imageCaption: 'Déploiement pilote de la suite UniFlow sur le campus universitaire — Faculté des Sciences, Université de Yaoundé I.',
+    videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
     documentName: 'Guide_Officiel_Phase_Pilote_UniFlow.pdf',
     documentUrl: '/docs/guide-etudiant.pdf',
-    linkLabel: 'Transmettre une remarque ou un retour d\'expérience',
-    linkUrl: '/contact',
+    linkLabel: 'Consulter la feuille de route & Téléchargements',
+    linkUrl: '/download',
     tags: ['Phase de test', 'Pilote UY1', 'Mise à jour v1.2', 'KERNEL FORGE', 'Innovation'],
   },
   {
@@ -900,9 +900,30 @@ Chaque étudiant peut désormais filtrer ses cours par son groupe officiel et co
     important: false,
     imageUrl: '/illustrations/schedule_calendar_hero_3d.png',
     imageCaption: 'Grille interactive des cours et synchronisation en direct avec les tableaux d\'affichage d\'amphithéâtre.',
+    videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
     linkLabel: 'Consulter mon emploi du temps officiel',
     linkUrl: '/app/emploi-du-temps',
     tags: ['Planning', 'Faculté des Sciences', 'UY1', 'Officiel'],
+  },
+  {
+    id: 'news-hackathon-forge',
+    title: 'Inauguration du laboratoire IA & Systèmes Embarqués Sentinelle',
+    content: `Découvrez en images les nouvelles stations de travail GPU et le banc d'essai IoT Sentinelle mis à la disposition des étudiants de Licence 3 et Master ICT4D pour leurs projets intégrateurs, travaux pratiques et expérimentations Edge AI.`,
+    channel: 'Communiqué Officiel',
+    icon: 'sentinelle',
+    color: '#0D9488',
+    author: 'Département d\'Informatique & KERNEL FORGE',
+    createdAt: '2026-10-15T16:30:00.000Z',
+    pinned: false,
+    important: false,
+    imageUrl: '/illustrations/about_team_lab.png',
+    imageCaption: 'Séance inaugurale au Laboratoire IA & IoT avec les étudiants et enseignants de la filière ICT4D.',
+    videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
+    documentName: 'Documentation_Sentinelle_IoT_Campus.pdf',
+    documentUrl: '/docs/guide-etudiant.pdf',
+    linkLabel: 'Découvrir la Sentinelle IoT',
+    linkUrl: '/sentinelle',
+    tags: ['Laboratoire', 'Sentinelle', 'IoT', 'ICT4D'],
   },
   {
     id: 'news-zlibrary-integration',
@@ -917,6 +938,7 @@ Chaque étudiant peut désormais filtrer ses cours par son groupe officiel et co
     important: false,
     imageUrl: '/illustrations/course_study_hero_3d.png',
     imageCaption: 'Espace d\'étude et manuels académiques complets accessibles en ligne et hors connexion.',
+    videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
     linkLabel: 'Explorer le catalogue Z-Library',
     linkUrl: '/app/bibliotheque',
     tags: ['Bibliothèque', 'Z-Library', 'Livres Gratuits', 'Manuels'],
@@ -928,7 +950,27 @@ function readStoredNews(): NewsItem[] {
     const raw = localStorage.getItem('uniflow_news_items')
     if (raw) {
       const parsed = JSON.parse(raw)
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        // Sanitize cached items to ensure proper images & valid official videos
+        let modified = false
+        const sanitized = parsed.map((item) => {
+          if (item.videoUrl && item.videoUrl.includes('dQw4w9WgXcQ')) {
+            modified = true
+            return {
+              ...item,
+              videoUrl: 'https://www.youtube.com/watch?v=cIXm0cJJH18',
+              imageUrl: item.id === 'news-phase-pilote-2026' ? '/illustrations/about_campus_hero.png' : item.imageUrl,
+            }
+          }
+          if (item.id === 'news-phase-pilote-2026' && item.imageUrl === '/illustrations/uni_copilot_3d.png') {
+            modified = true
+            return { ...item, imageUrl: '/illustrations/about_campus_hero.png' }
+          }
+          return item
+        })
+        if (modified) persistNews(sanitized)
+        return sanitized
+      }
     }
   } catch {
     // repli
