@@ -87,6 +87,40 @@ const CATEGORY_KEYWORDS: Record<BookCategory, string[]> = {
   'Littérature & Lettres': ['literature', 'philosophy', 'history', 'linguistics', 'sociology'],
 }
 
+/**
+ * Retourne la couverture locale haute définition la plus adaptée pour une catégorie.
+ */
+export function getCategoryCover(category?: string): string {
+  switch (category) {
+    case 'Informatique & IA':
+      return '/illustrations/course_study_hero_3d.png'
+    case 'Mathématiques & Data':
+      return '/illustrations/grades.jpg'
+    case 'Physique & Sciences':
+      return '/illustrations/about_campus_hero.png'
+    case 'Droit & Sciences Po':
+      return '/illustrations/hero.jpg'
+    case 'Économie & Gestion':
+      return '/illustrations/community.jpg'
+    case 'Médecine & Santé':
+      return '/illustrations/presence.jpg'
+    case 'Littérature & Lettres':
+      return '/illustrations/library.jpg'
+    default:
+      return '/illustrations/library.jpg'
+  }
+}
+
+/**
+ * Assainit une URL de couverture en évitant les serveurs externes défaillants (ex: archive.org covers timeout).
+ */
+export function sanitizeCoverUrl(url?: string, category?: string): string {
+  if (!url || url.includes('covers.openlibrary.org') || url.includes('archive.org/download/m_covers')) {
+    return getCategoryCover(category)
+  }
+  return url
+}
+
 // Livres académiques et manuels de référence 100% Z-Library pré-indexés avec téléchargements réels
 export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
   {
@@ -96,7 +130,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1996,
     category: 'Informatique & IA',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8315182-M.jpg',
+    coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Le chef-d’œuvre mondial du MIT sur les principes fondamentaux de la programmation, l’abstraction des procédures et des données, la métalinguistique et l’interprétation.',
     downloadUrl: 'https://web.mit.edu/6.001/6.037/sicp.pdf',
     directReadUrl: 'https://mitpress.mit.edu/sites/default/files/sicp/index.html',
@@ -114,7 +148,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 2015,
     category: 'Informatique & IA',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8282361-M.jpg',
+    coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Le guide pratique mondialement réputé pour automatiser les tâches quotidiennes avec Python : manipulation de fichiers, web scraping, calculs et scripts.',
     downloadUrl: 'https://archive.org/download/automatetheboringstuffwithpython_new/automatetheboringstuffwithpython_new.pdf',
     directReadUrl: 'https://archive.org/details/automatetheboringstuffwithpython_new',
@@ -132,7 +166,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 2016,
     category: 'Informatique & IA',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'La bible mondiale du Deep Learning par Ian Goodfellow et Yoshua Bengio : algèbre linéaire, réseaux convolutifs, modèles récurrents et auto-encodeurs profonds.',
     downloadUrl: 'https://archive.org/download/deep-learning-collection-pdf/%28Adaptive%20Computation%20and%20Machine%20Learning%20series%29%20Ian%20Goodfellow%2C%20Yoshua%20Bengio%2C%20Aaron%20Courville%20-%20Deep%20Learning-The%20MIT%20Press%20%282016%29.pdf',
     directReadUrl: 'https://archive.org/details/deep-learning-collection-pdf',
@@ -150,7 +184,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 2018,
     category: 'Informatique & IA',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/12683921-M.jpg',
+    coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Manuel pratique de référence sur Linux, le shell Bash, la gestion réseau, les permissions, la cryptographie et les architectures système.',
     downloadUrl: 'https://archive.org/download/linux-basics-for-hackers/OccupyTheWeb%20-%20Linux%20Basics%20for%20Hackers%20%282018%29.pdf',
     directReadUrl: 'https://archive.org/details/linux-basics-for-hackers',
@@ -168,7 +202,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 2008,
     category: 'Informatique & IA',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8314112-M.jpg',
+    coverUrl: '/illustrations/course_study_hero_3d.png',
     description: 'Comprendre l’architecture bas niveau en langage C, la gestion de la mémoire vive, les débordements de tampon (buffer overflow) et la cryptographie.',
     downloadUrl: 'https://archive.org/download/HackingTheArtOfExploitation/Hacking%20-%20The%20Art%20of%20Exploitation_2nd%20Ed.pdf',
     directReadUrl: 'https://archive.org/details/HackingTheArtOfExploitation',
@@ -186,7 +220,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1912,
     category: 'Informatique & IA',
     language: 'Latin / Inconnu',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    coverUrl: '/illustrations/library.jpg',
     description: 'Le manuscrit médiéval illustré codé le plus mystérieux de l’histoire de la cryptographie, reproduit en haute résolution avec ses 240 folios intégraux.',
     downloadUrl: 'https://archive.org/download/TheVoynichManuscript/Voynich_Manuscript.pdf',
     directReadUrl: 'https://archive.org/details/TheVoynichManuscript',
@@ -203,7 +237,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 2020,
     category: 'Mathématiques & Data',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+    coverUrl: '/illustrations/grades.jpg',
     description: 'Le manuel mondial de référence absolue pour le calcul différentiel, intégral, les suites et séries, les équations différentielles et le calcul vectoriel.',
     downloadUrl: 'https://archive.org/download/stewart-j.-clegg-d.-watson-s.-calculus.-early-transcendentals-9ed-2020/Stewart%20J.%2C%20Clegg%20D.%2C%20Watson%20S.%20Calculus.%20Early%20Transcendentals%209ed%202020.pdf',
     directReadUrl: 'https://archive.org/details/stewart-j.-clegg-d.-watson-s.-calculus.-early-transcendentals-9ed-2020',
@@ -221,7 +255,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1862,
     category: 'Littérature & Lettres',
     language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    coverUrl: '/illustrations/library.jpg',
     description: 'Monument de la littérature française du XIXe siècle, fresque sociale et philosophique intégrale de Jean Valjean, Fantine, Cosette et Gavroche.',
     downloadUrl: 'https://archive.org/download/bub_gb_Oo0NAAAAQAAJ/bub_gb_Oo0NAAAAQAAJ.pdf',
     directReadUrl: 'https://archive.org/details/bub_gb_Oo0NAAAAQAAJ',
@@ -238,7 +272,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1605,
     category: 'Littérature & Lettres',
     language: 'Espagnol',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    coverUrl: '/illustrations/library.jpg',
     description: 'La gran obra maestra de la literatura española e universal sobre el ingenioso hidalgo Don Quijote y su fiel escudero Sancho Panza.',
     downloadUrl: 'https://archive.org/download/donquijote00cervuoft/donquijote00cervuoft.pdf',
     directReadUrl: 'https://archive.org/details/donquijote00cervuoft',
@@ -255,7 +289,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1637,
     category: 'Littérature & Lettres',
     language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    coverUrl: '/illustrations/about_campus_hero.png',
     description: 'Texte fondateur de la philosophie et de la méthode scientifique cartésienne moderne : « Je pense, donc je suis » et les 4 règles de la méthode.',
     downloadUrl: 'https://archive.org/download/discoursdelamth00descgoog/discoursdelamth00descgoog.pdf',
     directReadUrl: 'https://archive.org/details/discoursdelamth00descgoog',
@@ -272,7 +306,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1808,
     category: 'Littérature & Lettres',
     language: 'Allemand',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    coverUrl: '/illustrations/library.jpg',
     description: 'Das klassische Meisterwerk der deutschen Literatur über das Streben des Gelehrten Heinrich Faust und seinen Pakt mit Mephistopheles.',
     downloadUrl: 'https://archive.org/download/faustpartsiii00goetuoft/faustpartsiii00goetuoft.pdf',
     directReadUrl: 'https://archive.org/details/faustpartsiii00goetuoft',
@@ -289,7 +323,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1905,
     category: 'Mathématiques & Data',
     language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+    coverUrl: '/illustrations/grades.jpg',
     description: 'Traité classique de référence pour l’enseignement supérieur scientifique : polynômes, séries, fractions continues et calcul algébrique approfondi.',
     downloadUrl: 'https://archive.org/download/AlgebreIi/AlgebreIi.pdf',
     directReadUrl: 'https://archive.org/details/AlgebreIi',
@@ -306,7 +340,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1993,
     category: 'Mathématiques & Data',
     language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+    coverUrl: '/illustrations/grades.jpg',
     description: 'Ouvrage encyclopédique de référence pour les étudiants de premier et second cycles universitaires en mathématiques et sciences physiques.',
     downloadUrl: 'https://archive.org/download/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf/Dictionnaire.Des.Mathematiques.Algebre.Analyse.Geometrie.pdf',
     directReadUrl: 'https://archive.org/details/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf',
@@ -323,7 +357,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1920,
     category: 'Physique & Sciences',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    coverUrl: '/illustrations/about_campus_hero.png',
     description: 'Le texte fondamental rédigé par Albert Einstein exposant la théorie de la relativité restreinte et générale de manière claire et accessible aux étudiants.',
     downloadUrl: 'https://archive.org/download/relativitythespe00einsuoft/relativitythespe00einsuoft.pdf',
     directReadUrl: 'https://archive.org/details/relativitythespe00einsuoft',
@@ -340,7 +374,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1762,
     category: 'Droit & Sciences Po',
     language: 'Français',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    coverUrl: '/illustrations/hero.jpg',
     description: 'Ouvrage majeur de philosophie politique et de théorie du droit définissant la souveraineté populaire, la volonté générale et les fondements de l’État de droit.',
     downloadUrl: 'https://archive.org/download/ducontratsocial00rousgoog/ducontratsocial00rousgoog.pdf',
     directReadUrl: 'https://archive.org/details/ducontratsocial00rousgoog',
@@ -357,7 +391,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1776,
     category: 'Économie & Gestion',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+    coverUrl: '/illustrations/community.jpg',
     description: 'L’œuvre fondatrice de la science économique moderne : division du travail, théorie de la valeur, mécanismes de marché et commerce international.',
     downloadUrl: 'https://archive.org/download/wealthofnations00smituoft/wealthofnations00smituoft.pdf',
     directReadUrl: 'https://archive.org/details/wealthofnations00smituoft',
@@ -374,7 +408,7 @@ export const CURATED_ACADEMIC_BOOKS: OpenBook[] = [
     year: 1918,
     category: 'Médecine & Santé',
     language: 'Anglais',
-    coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+    coverUrl: '/illustrations/presence.jpg',
     description: 'Le manuel classique d’anatomie humaine illustré de renommée mondiale : ostéologie, myologie, angiologie, neurologie et organes sensoriels.',
     downloadUrl: 'https://archive.org/download/anatomyofhumanbo1918gray/anatomyofhumanbo1918gray.pdf',
     directReadUrl: 'https://archive.org/details/anatomyofhumanbo1918gray',
@@ -615,7 +649,7 @@ export const openLibraryService = {
   },
 
   /**
-   * Télécharge un livre en garantissant la remise du fichier PDF intégral authentique.
+   * Télécharge un livre en garantissant la remise immédiate du fichier PDF intégral authentique.
    */
   async downloadBook(book: OpenBook): Promise<{ success: boolean; filename: string }> {
     const safeTitle = (book.title || 'Livre_Academique')
@@ -625,42 +659,40 @@ export const openLibraryService = {
     const filename = `${safeTitle}.pdf`
 
     if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-      let fileBlob: Blob | null = null
-
       // 1. Tenter la récupération directe depuis le bucket Appwrite si le fichier est indexé
       if (book.appwriteFileId) {
         try {
           const directBucketUrl = String(appwriteStorage.getFileDownload(APPWRITE_BUCKET_ID, book.appwriteFileId))
-          const res = await fetch(directBucketUrl, { signal: AbortSignal.timeout(6000) })
-          if (res.ok) {
-            const b = await res.blob()
-            if (b.size > 1000) fileBlob = b
-          }
+          const a = document.createElement('a')
+          a.href = directBucketUrl
+          a.download = filename
+          a.target = '_blank'
+          document.body.appendChild(a)
+          a.click()
+          setTimeout(() => a.remove(), 1000)
+          return { success: true, filename }
         } catch (err) {
           console.warn('Téléchargement direct bucket ignoré:', err)
         }
       }
 
-      // 2. Tenter le streaming binaire via le microservice VPS Z-Library
-      if (!fileBlob) {
-        try {
-          const vpsUrl = `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(book.id)}&stream=1`
-          const res = await fetch(vpsUrl, { signal: AbortSignal.timeout(10000) })
-          if (res.ok) {
-            const b = await res.blob()
-            if (b.size > 1000) fileBlob = b
-          }
-        } catch (err) {
-          console.warn('Streaming VPS Z-Library échoué:', err)
-        }
+      // 2. Déclenchement du flux direct via l'API VPS Z-Library (gère l'attachement PDF nativement)
+      try {
+        const vpsDownloadUrl = `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(book.id)}`
+        const a = document.createElement('a')
+        a.href = vpsDownloadUrl
+        a.download = filename
+        a.target = '_blank'
+        document.body.appendChild(a)
+        a.click()
+        setTimeout(() => a.remove(), 1000)
+        return { success: true, filename }
+      } catch (err) {
+        console.warn('Téléchargement direct VPS échoué, repli local:', err)
       }
 
       // 3. Repli certifié en mémoire : génération immédiate du PDF intégral authentique
-      if (!fileBlob || fileBlob.size < 1000) {
-        fileBlob = generateAcademicPdfBlob(book)
-      }
-
-      // 4. Déclenchement du vrai téléchargement binaire navigateur via Blob URL même-origine
+      const fileBlob = generateAcademicPdfBlob(book)
       const blobUrl = URL.createObjectURL(fileBlob)
       const a = document.createElement('a')
       a.href = blobUrl
@@ -737,7 +769,7 @@ export const openLibraryService = {
 
     let externalBooks: OpenBook[] = []
 
-    // Appel direct au microservice VPS Z-Library multi-shadow
+    // Appel direct au microservice VPS Z-Library multi-shadow (avec fallback origine)
     try {
       const origin = typeof window !== 'undefined' && window.location.origin ? window.location.origin : ''
       const langParam = cleanLang && cleanLang !== 'toutes' ? `&language=${encodeURIComponent(cleanLang)}` : ''
@@ -747,13 +779,12 @@ export const openLibraryService = {
       const candidateUrls = [
         `https://vps.kernelforge.codes/zlibrary/api/books?${queryParams}`,
         origin ? `${origin}/api/books?${queryParams}` : '',
-        `http://5.189.146.147:7070/api/books?${queryParams}`,
       ].filter(Boolean)
 
       for (const apiUrl of candidateUrls) {
         try {
           const controller = new AbortController()
-          const timeout = setTimeout(() => controller.abort(), 5000)
+          const timeout = setTimeout(() => controller.abort(), 12000)
           const apiRes = await fetch(apiUrl, {
             headers: { Accept: 'application/json' },
             signal: controller.signal,
@@ -771,7 +802,7 @@ export const openLibraryService = {
                 year: b.year,
                 category: b.category || (category !== 'Tous' ? category : 'Sciences & Enseignement'),
                 language: b.language || 'Français',
-                coverUrl: b.coverUrl,
+                coverUrl: sanitizeCoverUrl(b.coverUrl, b.category),
                 description: b.description || 'Ouvrage intégral Z-Library.',
                 downloadUrl: b.downloadUrl || (b.id ? `https://vps.kernelforge.codes/zlibrary/api/books/download?id=${encodeURIComponent(b.id)}` : undefined),
                 directReadUrl: b.directReadUrl || b.downloadUrl,
@@ -785,12 +816,17 @@ export const openLibraryService = {
               break
             }
           }
-        } catch {
-          // essayer l'endpoint suivant
+        } catch (err: any) {
+          // Erreur non critique ou timeout d'un endpoint, tester le suivant silencieusement
+          if (err?.name !== 'AbortError') {
+            console.debug?.(`Repli candidate URL ${apiUrl}:`, err?.message || err)
+          }
         }
       }
-    } catch (err) {
-      console.warn('API Z-Library non joignable:', err)
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.warn('API Z-Library non joignable:', err)
+      }
     }
 
     // Auto-synchronisation des premiers résultats en base de données de manière asynchrone

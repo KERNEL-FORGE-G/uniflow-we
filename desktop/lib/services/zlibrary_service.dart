@@ -305,7 +305,7 @@ class ZLibraryService {
         publisher: 'MIT Press',
         extension: 'PDF',
         filesize: '7.4 MB (Intégral MIT)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8315182-M.jpg',
+        coverUrl: 'assets/illustrations/course_study_hero_3d.png',
         downloadUrl: 'https://web.mit.edu/6.001/6.037/sicp.pdf',
       ),
       ZBook(
@@ -316,7 +316,7 @@ class ZLibraryService {
         publisher: 'No Starch Press',
         extension: 'PDF',
         filesize: '14.8 MB (Édition Complète)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8282361-M.jpg',
+        coverUrl: 'assets/illustrations/course_study_hero_3d.png',
         downloadUrl: 'https://archive.org/download/automatetheboringstuffwithpython_new/automatetheboringstuffwithpython_new.pdf',
       ),
       ZBook(
@@ -327,7 +327,7 @@ class ZLibraryService {
         publisher: 'MIT Press',
         extension: 'PDF',
         filesize: '16.0 MB (MIT Press)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+        coverUrl: 'assets/illustrations/course_study_hero_3d.png',
         downloadUrl: 'https://archive.org/download/deep-learning-collection-pdf/%28Adaptive%20Computation%20and%20Machine%20Learning%20series%29%20Ian%20Goodfellow%2C%20Yoshua%20Bengio%2C%20Aaron%20Courville%20-%20Deep%20Learning-The%20MIT%20Press%20%282016%29.pdf',
       ),
       ZBook(
@@ -338,7 +338,7 @@ class ZLibraryService {
         publisher: 'No Starch Press',
         extension: 'PDF',
         filesize: '14.0 MB (Livre Complet)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/12683921-M.jpg',
+        coverUrl: 'assets/illustrations/course_study_hero_3d.png',
         downloadUrl: 'https://archive.org/download/linux-basics-for-hackers/OccupyTheWeb%20-%20Linux%20Basics%20for%20Hackers%20%282018%29.pdf',
       ),
       ZBook(
@@ -349,7 +349,7 @@ class ZLibraryService {
         publisher: 'No Starch Press',
         extension: 'PDF',
         filesize: '4.0 MB (Livre Complet)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8314112-M.jpg',
+        coverUrl: 'assets/illustrations/course_study_hero_3d.png',
         downloadUrl: 'https://archive.org/download/HackingTheArtOfExploitation/Hacking%20-%20The%20Art%20of%20Exploitation_2nd%20Ed.pdf',
       ),
       ZBook(
@@ -360,7 +360,7 @@ class ZLibraryService {
         publisher: 'Beinecke Rare Book Library',
         extension: 'PDF',
         filesize: '56.0 MB (Haute Résolution)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+        coverUrl: 'assets/illustrations/library.jpg',
         downloadUrl: 'https://archive.org/download/TheVoynichManuscript/Voynich_Manuscript.pdf',
       ),
       ZBook(
@@ -371,7 +371,7 @@ class ZLibraryService {
         publisher: 'Cengage Learning',
         extension: 'PDF',
         filesize: '44.0 MB (1394 Pages)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+        coverUrl: 'assets/illustrations/grades.jpg',
         downloadUrl: 'https://archive.org/download/stewart-j.-clegg-d.-watson-s.-calculus.-early-transcendentals-9ed-2020/Stewart%20J.%2C%20Clegg%20D.%2C%20Watson%20S.%20Calculus.%20Early%20Transcendentals%209ed%202020.pdf',
       ),
       ZBook(
@@ -382,7 +382,7 @@ class ZLibraryService {
         publisher: 'Gauthier-Villars',
         extension: 'PDF',
         filesize: '30.8 MB (Édition Complète)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+        coverUrl: 'assets/illustrations/grades.jpg',
         downloadUrl: 'https://archive.org/download/AlgebreIi/AlgebreIi.pdf',
       ),
       ZBook(
@@ -393,7 +393,7 @@ class ZLibraryService {
         publisher: 'PUF',
         extension: 'PDF',
         filesize: '47.6 MB (Manuel de Référence)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8521094-M.jpg',
+        coverUrl: 'assets/illustrations/grades.jpg',
         downloadUrl: 'https://archive.org/download/dictionnaire-des-mathematiques-algebre-analyse-geometrie-pdf/Dictionnaire.Des.Mathematiques.Algebre.Analyse.Geometrie.pdf',
       ),
       ZBook(
@@ -404,7 +404,7 @@ class ZLibraryService {
         publisher: 'Methuen & Co',
         extension: 'PDF',
         filesize: '8.5 MB (Ouvrage Intégral)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+        coverUrl: 'assets/illustrations/about_campus_hero.png',
         downloadUrl: 'https://archive.org/download/relativitythespe00einsuoft/relativitythespe00einsuoft.pdf',
       ),
       ZBook(
@@ -415,7 +415,7 @@ class ZLibraryService {
         publisher: 'Marc-Michel Rey',
         extension: 'PDF',
         filesize: '2.6 MB (Texte Intégral)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+        coverUrl: 'assets/illustrations/hero.jpg',
         downloadUrl: 'https://archive.org/download/ducontratsocial00rousgoog/ducontratsocial00rousgoog.pdf',
       ),
       ZBook(
@@ -426,7 +426,7 @@ class ZLibraryService {
         publisher: 'W. Strahan and T. Cadell',
         extension: 'PDF',
         filesize: '35.8 MB (Édition Complète)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+        coverUrl: 'assets/illustrations/community.jpg',
         downloadUrl: 'https://archive.org/download/wealthofnations00smituoft/wealthofnations00smituoft.pdf',
       ),
       ZBook(
@@ -437,7 +437,7 @@ class ZLibraryService {
         publisher: 'Lea & Febiger',
         extension: 'PDF',
         filesize: '139.2 MB (Édition Illustrée)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8231856-M.jpg',
+        coverUrl: 'assets/illustrations/presence.jpg',
         downloadUrl: 'https://archive.org/download/anatomyofhumanbo1918gray/anatomyofhumanbo1918gray.pdf',
       ),
       ZBook(
@@ -448,7 +448,7 @@ class ZLibraryService {
         publisher: 'A. Lacroix, Verboeckhoven & Cie',
         extension: 'PDF',
         filesize: '17.0 MB (Texte Intégral)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+        coverUrl: 'assets/illustrations/library.jpg',
         downloadUrl: 'https://archive.org/download/bub_gb_Oo0NAAAAQAAJ/bub_gb_Oo0NAAAAQAAJ.pdf',
       ),
       ZBook(
@@ -459,7 +459,7 @@ class ZLibraryService {
         publisher: 'Jan Maire',
         extension: 'PDF',
         filesize: '5.5 MB (Texte Intégral)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+        coverUrl: 'assets/illustrations/about_campus_hero.png',
         downloadUrl: 'https://archive.org/download/discoursdelamth00descgoog/discoursdelamth00descgoog.pdf',
       ),
       ZBook(
@@ -470,7 +470,7 @@ class ZLibraryService {
         publisher: 'Juan de la Cuesta',
         extension: 'PDF',
         filesize: '54.0 MB (Edición Crítica)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+        coverUrl: 'assets/illustrations/library.jpg',
         downloadUrl: 'https://archive.org/download/donquijote00cervuoft/donquijote00cervuoft.pdf',
       ),
       ZBook(
@@ -481,7 +481,7 @@ class ZLibraryService {
         publisher: 'Cotta’sche Verlagsbuchhandlung',
         extension: 'PDF',
         filesize: '20.0 MB (Vollständige Ausgabe)',
-        coverUrl: 'https://covers.openlibrary.org/b/id/8276189-M.jpg',
+        coverUrl: 'assets/illustrations/library.jpg',
         downloadUrl: 'https://archive.org/download/faustpartsiii00goetuoft/faustpartsiii00goetuoft.pdf',
       ),
     ];

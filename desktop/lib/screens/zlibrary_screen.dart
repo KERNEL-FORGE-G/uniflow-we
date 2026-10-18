@@ -696,13 +696,21 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
                 border: Border.all(color: const Color(0xFFE2E8F0)),
               ),
               child: book.coverUrl.isNotEmpty
-                  ? Image.network(
-                      book.coverUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => const Center(
-                        child: Icon(Icons.menu_book_rounded, color: Color(0xFF1E3A8A), size: 28),
-                      ),
-                    )
+                  ? (book.coverUrl.startsWith('assets/')
+                      ? Image.asset(
+                          book.coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Icon(Icons.menu_book_rounded, color: Color(0xFF1E3A8A), size: 28),
+                          ),
+                        )
+                      : Image.network(
+                          book.coverUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Center(
+                            child: Icon(Icons.menu_book_rounded, color: Color(0xFF1E3A8A), size: 28),
+                          ),
+                        ))
                   : const Center(
                       child: Icon(Icons.book_rounded, color: Color(0xFF1E3A8A), size: 28),
                     ),

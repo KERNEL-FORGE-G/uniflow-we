@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useTransition } from 'react'
+import React, { useState, useEffect, useTransition, useRef } from 'react'
 import {
   HiBookOpen,
   HiDocumentText,
@@ -31,7 +31,9 @@ import {
   type BookCategory,
   BOOK_CATEGORIES,
   ZLIB_LANGUAGES,
-  type ApiLanguage
+  type ApiLanguage,
+  getCategoryCover,
+  sanitizeCoverUrl,
 } from '../lib/openLibraryService'
 import { buildCourseResourcePdfBlob } from '../lib/academicPdfGenerator'
 import { appwriteStorage, APPWRITE_BUCKET_ID } from '../lib/appwrite'
@@ -116,6 +118,8 @@ export default function LibraryPage() {
   // API Integration pour les supports de cours
   const { data: backendData } = useApi(() => libraryApi.list(), [], { key: 'library.list' })
 
+  const searchReqIdRef = useRef(0)
+
   // Chargement initial et recherche 100% Z-Library avec filtrage et tri par langue
   const loadOpenBooks = async (
     query = bookSearch,
@@ -123,6 +127,7 @@ export default function LibraryPage() {
     lang = selectedLanguage,
     sort = bookSortBy
   ) => {
+    const reqId = ++searchReqIdRef.current
     setIsLoadingBooks(true)
     try {
       const results = await openLibraryService.search(
@@ -131,11 +136,17 @@ export default function LibraryPage() {
         lang === 'Toutes' ? '' : lang,
         sort
       )
-      setOpenBooks(results)
-    } catch (err) {
-      console.error('Erreur chargement livres Z-Library:', err)
+      if (reqId === searchReqIdRef.current) {
+        setOpenBooks(results)
+      }
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
+        console.error('Erreur chargement livres Z-Library:', err)
+      }
     } finally {
-      setIsLoadingBooks(false)
+      if (reqId === searchReqIdRef.current) {
+        setIsLoadingBooks(false)
+      }
     }
   }
 
@@ -693,25 +704,16 @@ export default function LibraryPage() {
                     <div>
                       {/* En-tête de la carte avec couverture / visuel */}
                       <div className="relative aspect-[4/3] w-full rounded-2xl bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 p-3 flex items-center justify-center overflow-hidden shadow-inner mb-3.5">
-                        {book.coverUrl ? (
-                          <img
-                            src={book.coverUrl}
-                            alt={book.title}
-                            className="h-full w-auto object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
-                            loading="lazy"
-                            onError={e => {
-                              // Fallback si l'image externe échoue
-                              ;(e.target as HTMLElement).style.display = 'none'
-                            }}
-                          />
-                        ) : (
-                          <div className="text-center p-4">
-                            <HiBookOpen className="h-12 w-12 text-teal-400/80 mx-auto mb-2" />
-                            <span className="text-[11px] font-bold text-slate-300 line-clamp-2">
-                              {book.title}
-                            </span>
-                          </div>
-                        )}
+                        <img
+                          src={sanitizeCoverUrl(book.coverUrl, book.category)}
+                          alt={book.title}
+                          className="h-full w-auto object-contain drop-shadow-lg group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                          onError={e => {
+                            const target = e.target as HTMLImageElement
+                            target.src = getCategoryCover(book.category)
+                          }}
+                        />
 
                         {/* Badges flottants en haut de la couverture */}
                         <div className="absolute top-2.5 left-2.5 flex flex-wrap items-center gap-1.5 z-10">
@@ -1019,13 +1021,15 @@ export default function LibraryPage() {
             {/* Corps de la modale */}
             <div className="space-y-4">
               <div className="flex gap-4">
-                {activeBookModal.coverUrl && (
-                  <img
-                    src={activeBookModal.coverUrl}
-                    alt={activeBookModal.title}
-                    className="h-36 w-24 object-cover rounded-xl shadow-md border border-slate-200 shrink-0"
-                  />
-                )}
+                <img
+                  src={sanitizeCoverUrl(activeBookModal.coverUrl, activeBookModal.category)}
+                  alt={activeBookModal.title}
+                  className="h-36 w-24 object-cover rounded-xl shadow-md border border-slate-200 shrink-0"
+                  onError={e => {
+                    const target = e.target as HTMLImageElement
+                    target.src = getCategoryCover(activeBookModal.category)
+                  }}
+                />
                 <div className="space-y-2 text-xs text-slate-600 leading-relaxed flex-1">
                   <div className="grid grid-cols-2 gap-2 bg-slate-50 p-3 rounded-xl border border-slate-100 text-[11px]">
                     <div><span className="font-bold text-slate-700">Format :</span> {activeBookModal.format}</div>
