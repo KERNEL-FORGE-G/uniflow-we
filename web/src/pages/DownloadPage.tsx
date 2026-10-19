@@ -179,6 +179,24 @@ function ChannelCard({ image, alt, eyebrow, title, description, accent, children
 export const APPWRITE_MSI_BUCKET_URL =
   'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.msi/download?project=uniflow'
 
+export const APPWRITE_WINDOWS_EXE_BUCKET_URL =
+  'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.exe/download?project=uniflow'
+
+export const APPWRITE_APK_BUCKET_URL =
+  'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow-1.0.0-arm64-v8a.apk/download?project=uniflow'
+
+export const APPWRITE_LINUX_BUCKET_URL =
+  'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Linux-x86_64.AppImage/download?project=uniflow'
+
+export const GITHUB_APK_RELEASE_URL =
+  'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/download/uniflow/app-release.apk'
+
+export const GITHUB_WINDOWS_EXE_RELEASE_URL =
+  'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/download/uniflow/uniflow-1.0.0%2B1-windows-setup.exe'
+
+export const GITHUB_LINUX_DEB_RELEASE_URL =
+  'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/download/uniflow/uniflow-1.0.0%2B1-linux.deb'
+
 export default function DownloadPage() {
   const reduced = useReducedMotion()
   const { data: releases, isPending } = useAppReleases()
@@ -188,16 +206,29 @@ export default function DownloadPage() {
   const windowsEntry = channels.desktop.entries.find((e) => e.platform === 'windows')
   const nonWindowsEntries = channels.desktop.entries.filter((e) => e.platform !== 'windows')
 
-  // Builds officiels toujours disponibles et à jour
+  // Builds officiels toujours disponibles et vérifiés (Miroir Appwrite VPS local + GitHub Releases)
   const officialAndroidRelease: AppRelease = android || {
     platform: 'android',
     version: '1.0.0',
-    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/uniflow-1.0.0-arm64-v8a.apk',
+    url: APPWRITE_APK_BUCKET_URL,
     fileName: 'uniflow-1.0.0-arm64-v8a.apk',
-    sizeBytes: 44355174,
-    sha256: '2804af7ccb9e75b31e88a1a7643ff81737e0f756c40ae7d6647dfd9609e11773',
+    sizeBytes: 183321535,
+    sha256: '3183edf2a25d78516258b28a8b0667ac29a149059d921fdf615eae3e8fb21b0a',
     notes: 'Version officielle 1.0.0 Bêta : Emploi du temps LMD, Présence QR certifiée, Visioconférence HD P2P locale, Bibliothèque Z-Library et UniMail (@uniflow.cm).',
     publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const androidGithubRelease: AppRelease = {
+    platform: 'android',
+    version: '1.0.0 (Miroir GitHub)',
+    url: GITHUB_APK_RELEASE_URL,
+    fileName: 'app-release.apk',
+    sizeBytes: 87184725,
+    sha256: '2804af7ccb9e75b31e88a1a7643ff81737e0f756c40ae7d6647dfd9609e11773',
+    notes: 'Paquet APK officiel hébergé sur GitHub Releases.',
+    publishedAt: '2026-09-21T14:52:33.000Z',
     enabled: true,
     updatedAt: null,
   }
@@ -205,24 +236,11 @@ export default function DownloadPage() {
   const officialWindowsExeRelease: AppRelease = windowsEntry?.release || {
     platform: 'windows',
     version: '1.0.0',
-    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Setup.exe',
+    url: APPWRITE_WINDOWS_EXE_BUCKET_URL,
     fileName: 'UniFlow-Setup.exe',
-    sizeBytes: 52400000,
-    sha256: 'a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0',
+    sizeBytes: 21461704,
+    sha256: 'b8e0e521b74c42362f4b0aaf22ffa21d6e9d2f8cca778840b334edd2cdfab4e1',
     notes: 'Installeur direct autonome 64-bit pour Windows 10 et 11 avec serveur de visioconférence local embarqué.',
-    publishedAt: '2026-10-18T12:00:00.000Z',
-    enabled: true,
-    updatedAt: null,
-  }
-
-  const windowsMsiGithubRelease: AppRelease = {
-    platform: 'windows',
-    version: '1.0.0',
-    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Setup.msi',
-    fileName: 'UniFlow-Setup.msi',
-    sizeBytes: 48500000,
-    sha256: 'f4e3d2c1b0a9876543210fedcba9876543210fedcba9876543210fedcba98765',
-    notes: 'Paquet MSI officiel pour déploiement Windows d\'entreprise et postes universitaires (via GitHub Releases).',
     publishedAt: '2026-10-18T12:00:00.000Z',
     enabled: true,
     updatedAt: null,
@@ -233,10 +251,23 @@ export default function DownloadPage() {
     version: '1.0.0 (Miroir Bucket VPS)',
     url: APPWRITE_MSI_BUCKET_URL,
     fileName: 'UniFlow-Setup.msi',
-    sizeBytes: 48500000,
-    sha256: 'f4e3d2c1b0a9876543210fedcba9876543210fedcba9876543210fedcba98765',
+    sizeBytes: 21461704,
+    sha256: 'b8e0e521b74c42362f4b0aaf22ffa21d6e9d2f8cca778840b334edd2cdfab4e1',
     notes: 'Téléchargement direct depuis le Bucket Appwrite du VPS local — Haute vitesse sans limite de débit.',
     publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const windowsExeGithubRelease: AppRelease = {
+    platform: 'windows',
+    version: '1.0.0 (Miroir GitHub)',
+    url: GITHUB_WINDOWS_EXE_RELEASE_URL,
+    fileName: 'uniflow-1.0.0-windows-setup.exe',
+    sizeBytes: 21461704,
+    sha256: 'b8e0e521b74c42362f4b0aaf22ffa21d6e9d2f8cca778840b334edd2cdfab4e1',
+    notes: 'Installeur direct Windows hébergé sur GitHub Releases.',
+    publishedAt: '2026-09-28T12:19:17.000Z',
     enabled: true,
     updatedAt: null,
   }
@@ -244,12 +275,25 @@ export default function DownloadPage() {
   const officialLinuxRelease: AppRelease = nonWindowsEntries.find((e) => e.platform === 'linux')?.release || {
     platform: 'linux',
     version: '1.0.0',
-    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-Linux-x86_64.AppImage',
+    url: APPWRITE_LINUX_BUCKET_URL,
     fileName: 'UniFlow-Linux-x86_64.AppImage',
-    sizeBytes: 61800000,
-    sha256: 'c9d8e7f6a5b432109876543210fedcba9876543210fedcba9876543210fedcba',
-    notes: 'Binaire universel AppImage pour distributions Linux (Ubuntu, Debian, Fedora, Arch).',
+    sizeBytes: 26188280,
+    sha256: '1c570a0495ad624619d0f37b4b7c1ab9d2332a6d2040072961e0a26fa39cbefd',
+    notes: 'Binaire universel AppImage pour distributions Linux (Ubuntu, Debian, Fedora, Arch) depuis le Bucket VPS local.',
     publishedAt: '2026-10-18T12:00:00.000Z',
+    enabled: true,
+    updatedAt: null,
+  }
+
+  const linuxDebGithubRelease: AppRelease = {
+    platform: 'linux',
+    version: '1.0.0 (Paquet .deb)',
+    url: GITHUB_LINUX_DEB_RELEASE_URL,
+    fileName: 'uniflow-1.0.0+1-linux.deb',
+    sizeBytes: 20608824,
+    sha256: 'df5cdfd95e79ab3a434f21950ed9be8628bae2b23b3acde8c4b21df7c3ac424c',
+    notes: 'Paquet Debian / Ubuntu officiel hébergé sur GitHub Releases.',
+    publishedAt: '2026-09-22T09:46:47.000Z',
     enabled: true,
     updatedAt: null,
   }
@@ -257,7 +301,7 @@ export default function DownloadPage() {
   const officialMacRelease: AppRelease = nonWindowsEntries.find((e) => e.platform === 'macos')?.release || {
     platform: 'macos',
     version: '1.0.0',
-    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/UniFlow-macOS-Universal.dmg',
+    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases',
     fileName: 'UniFlow-macOS-Universal.dmg',
     sizeBytes: 58200000,
     sha256: '',
@@ -354,13 +398,13 @@ export default function DownloadPage() {
                     </a>
                     <span className="text-white/40">·</span>
                     <a
-                      href={windowsMsiGithubRelease.url}
-                      download={windowsMsiGithubRelease.fileName || true}
+                      href={windowsExeGithubRelease.url}
+                      download={windowsExeGithubRelease.fileName || true}
                       onClick={() => trackDownload('windows')}
                       className="inline-flex items-center gap-1.5 text-xs font-semibold text-teal-200 hover:text-white transition-colors"
                     >
                       <UniIcon name="download" weight="bold" className="h-3 w-3" />
-                      GitHub (.msi)
+                      GitHub (.exe)
                     </a>
                   </div>
                 </div>
@@ -484,12 +528,23 @@ export default function DownloadPage() {
                 {/* Bouton de téléchargement Android direct */}
                 <DownloadButton
                   release={officialAndroidRelease}
-                  label="Télécharger l’APK direct (v1.0.0)"
+                  label="Télécharger l’APK direct (Bucket Local VPS)"
                   icon="android"
                   tone="teal"
                   size="md"
                   onDownload={() => trackDownload('android')}
                 />
+                <div className="flex items-center gap-2 pt-1 text-xs">
+                  <a
+                    href={androidGithubRelease.url}
+                    download="app-release.apk"
+                    onClick={() => trackDownload('android')}
+                    className="inline-flex items-center gap-1.5 font-bold text-[#0d9488] hover:underline"
+                  >
+                    <UniIcon name="download" weight="bold" className="h-3 w-3" />
+                    Miroir alternatif GitHub Release (APK)
+                  </a>
+                </div>
                 <ReleaseFacts release={officialAndroidRelease} />
                 <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
                   <UniIcon name="about" weight="duotone" className="mt-0.5 h-4 w-4 shrink-0 text-[#0d9488]" />
@@ -583,8 +638,8 @@ export default function DownloadPage() {
 
                             {/* Bouton 2 : Lien GitHub Release Officiel */}
                             <DownloadButton
-                              release={windowsMsiGithubRelease}
-                              label="Télécharger (.msi) · GitHub Release"
+                              release={windowsExeGithubRelease}
+                              label="Télécharger (.exe) · GitHub Release"
                               icon="windows"
                               tone="navy"
                               size="md"
@@ -599,11 +654,11 @@ export default function DownloadPage() {
                       </div>
                     </div>
 
-                    {/* Linux (AppImage) */}
+                    {/* Linux (AppImage & DEB) */}
                     <div className="rounded-2xl border border-slate-200/90 bg-slate-50/80 p-4">
                       <div className="flex items-center justify-between mb-2">
                         <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-[#1e3a8a]">
-                          <UniIcon name="linux" weight="fill" className="h-4 w-4" /> Linux (AppImage Universel)
+                          <UniIcon name="linux" weight="fill" className="h-4 w-4" /> Linux (AppImage & Paquet .deb)
                         </span>
                         <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wide text-emerald-800">
                           Disponible
@@ -611,12 +666,23 @@ export default function DownloadPage() {
                       </div>
                       <DownloadButton
                         release={officialLinuxRelease}
-                        label="Télécharger pour Linux (AppImage)"
+                        label="Télécharger pour Linux (AppImage VPS)"
                         icon="linux"
                         tone="navy"
                         size="md"
                         onDownload={() => trackDownload('linux')}
                       />
+                      <div className="flex items-center gap-2 pt-2 text-xs">
+                        <a
+                          href={linuxDebGithubRelease.url}
+                          download="uniflow-1.0.0+1-linux.deb"
+                          onClick={() => trackDownload('linux')}
+                          className="inline-flex items-center gap-1.5 font-bold text-[#1e3a8a] hover:underline"
+                        >
+                          <UniIcon name="download" weight="bold" className="h-3 w-3" />
+                          Paquet Debian / Ubuntu (.deb) sur GitHub
+                        </a>
+                      </div>
                       <div className="mt-2">
                         <ReleaseFacts release={officialLinuxRelease} />
                       </div>

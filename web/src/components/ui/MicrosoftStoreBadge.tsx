@@ -17,7 +17,7 @@ export function MicrosoftStoreBadge({
   return (
     <motion.a
       href={MICROSOFT_STORE_INSTALLER_URL}
-      target="_self"
+      target="_blank"
       rel="noopener noreferrer"
       onClick={onClick}
       whileHover={{ scale: 1.03, y: -2 }}

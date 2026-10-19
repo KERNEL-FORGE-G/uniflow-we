@@ -119,10 +119,10 @@ export function DownloadSection() {
   const officialAndroid: AppRelease = android || {
     platform: 'android' as const,
     version: '1.0.0',
-    url: 'https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/latest/download/uniflow-1.0.0-arm64-v8a.apk',
+    url: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow-1.0.0-arm64-v8a.apk/download?project=uniflow',
     fileName: 'uniflow-1.0.0-arm64-v8a.apk',
-    sizeBytes: 44355174,
-    sha256: '2804af7ccb9e75b31e88a1a7643ff81737e0f756c40ae7d6647dfd9609e11773',
+    sizeBytes: 183321535,
+    sha256: '3183edf2a25d78516258b28a8b0667ac29a149059d921fdf615eae3e8fb21b0a',
     notes: 'Version officielle 1.0.0 Bêta : Emploi du temps LMD, Présence QR, Visio HD et Z-Library.',
     publishedAt: '2026-10-18T12:00:00.000Z',
     enabled: true,
@@ -133,8 +133,8 @@ export function DownloadSection() {
     version: '1.0.0',
     url: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.msi/download?project=uniflow',
     fileName: 'UniFlow-Setup.msi',
-    sizeBytes: 48500000,
-    sha256: '',
+    sizeBytes: 21461704,
+    sha256: 'b8e0e521b74c42362f4b0aaf22ffa21d6e9d2f8cca778840b334edd2cdfab4e1',
     notes: 'Version Windows Desktop officielle (Miroir Bucket VPS Appwrite).',
     publishedAt: '2026-10-18T12:00:00.000Z',
     enabled: true,
@@ -258,6 +258,17 @@ export function DownloadSection() {
                 download
                 onDownload={() => trackDownload('android')}
               />
+              <div className="mt-1 flex items-center gap-2 text-xs">
+                <a
+                  href="https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/download/uniflow/app-release.apk"
+                  download="app-release.apk"
+                  onClick={() => trackDownload('android')}
+                  className="inline-flex items-center gap-1 font-semibold text-[#0d9488] hover:underline"
+                >
+                  <UniIcon name="download" weight="bold" className="h-3 w-3" />
+                  Miroir alternatif GitHub (APK)
+                </a>
+              </div>
               <ReleaseDetails release={officialAndroid} />
             </div>
             <p className="flex items-start gap-2 text-xs font-medium text-slate-500">
@@ -274,10 +285,15 @@ export function DownloadSection() {
             <div className="flex flex-col gap-1.5 sm:items-start" onClick={() => trackDownload('windows')}>
               <MicrosoftStoreBadge width={190} className="shadow-md cursor-pointer" />
               <div className="flex flex-wrap items-center gap-x-2 text-[11px] font-semibold text-slate-500">
-                <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 hover:text-[#1e3a8a]">
+                <a
+                  href="https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.exe/download?project=uniflow"
+                  download="UniFlow-Setup.exe"
+                  onClick={() => trackDownload('windows')}
+                  className="inline-flex items-center gap-1 hover:text-[#1e3a8a]"
+                >
                   <UniIcon name="windows" weight="duotone" className="h-3 w-3" />
                   Installeur .exe
-                </Link>
+                </a>
                 <span>·</span>
                 <a
                   href="https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.msi/download?project=uniflow"
@@ -290,9 +306,14 @@ export function DownloadSection() {
                   Bucket Local (.msi)
                 </a>
                 <span>·</span>
-                <Link to="/download#bureau" onClick={() => trackDownload('windows')} className="inline-flex items-center gap-1 hover:text-[#1e3a8a]">
-                  Paquet .msi (GitHub)
-                </Link>
+                <a
+                  href="https://github.com/KERNEL-FORGE-G/uniflow-apps/releases/download/uniflow/uniflow-1.0.0%2B1-windows-setup.exe"
+                  download="uniflow-1.0.0-windows-setup.exe"
+                  onClick={() => trackDownload('windows')}
+                  className="inline-flex items-center gap-1 hover:text-[#1e3a8a]"
+                >
+                  GitHub (.exe)
+                </a>
               </div>
             </div>
             <div>
