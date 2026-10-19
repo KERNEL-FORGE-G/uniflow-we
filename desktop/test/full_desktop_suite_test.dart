@@ -80,15 +80,16 @@ void main() {
 
     expect(find.textContaining('Bon retour parmi nous'), findsWidgets);
 
-    // Click demo profile "Fondateur"
-    final founderDemoBtn = find.text('Fondateur');
-    expect(founderDemoBtn, findsWidgets);
-    await tester.tap(founderDemoBtn.first);
+    // Enter login credentials
+    await tester.enterText(find.byType(TextField).first, 'etudiant.test@uniflow.cm');
+    await tester.enterText(find.byType(TextField).at(1), 'Secret123!');
+    final submitBtn = find.text('Connexion sécurisée');
+    expect(submitBtn, findsOneWidget);
+    await tester.tap(submitBtn);
     await tester.pumpAndSettle();
 
-    expect(loggedEmail, equals('ravel.founder@uniflow.cm'));
-    expect(loggedRole, equals('Membre Fondateur KERNEL FORGE'));
-    expect(loggedName, equals('Ravel'));
+    expect(loggedEmail, equals('etudiant.test@uniflow.cm'));
+    expect(loggedRole, equals('Étudiant'));
   });
 
   testWidgets('Academic screens render properly (Assignments, Grades, Attendance)',
@@ -209,7 +210,7 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: DirectoryScreen())));
     await tester.pumpAndSettle();
     expect(find.textContaining('Annuaire des Étudiants & Corps Enseignant UY1'), findsWidgets);
-    expect(find.textContaining('Marcel Tessoh'), findsWidgets);
+    expect(find.textContaining('Ravel Nghomsi'), findsWidgets);
 
     // 7. NotificationsScreen
     await tester.pumpWidget(const MaterialApp(home: Scaffold(body: NotificationsScreen())));

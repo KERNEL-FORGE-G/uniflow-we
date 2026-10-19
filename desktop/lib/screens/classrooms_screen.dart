@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ClassroomsScreen extends StatefulWidget {
-  const ClassroomsScreen({super.key});
+  final String userName;
+  final String userEmail;
+
+  const ClassroomsScreen({
+    super.key,
+    this.userName = '',
+    this.userEmail = '',
+  });
 
   @override
   State<ClassroomsScreen> createState() => _ClassroomsScreenState();
@@ -61,7 +68,7 @@ class _ClassroomsScreenState extends State<ClassroomsScreen> {
       'category': 'Laboratoires Informatiques',
       'status': 'Occupé',
       'currentCourse': 'TP Noté : Supervision Campus Sentinelle IoT',
-      'teacher': 'Ing. Marcel Tessoh',
+      'teacher': 'Dr. Christian Fouda',
       'equipment': ['60 Stations Linux Debian', 'Racks Cisco & MicroTik', 'Sondes IoT LoRaWAN', 'Onduleur Central'],
       'isAvailable': false,
       'nextFree': '15:00',
@@ -117,8 +124,8 @@ class _ClassroomsScreenState extends State<ClassroomsScreen> {
   ];
 
   void _showReservationDialog(Map<String, dynamic> room) {
-    final nameController = TextEditingController(text: 'Marcel Tessoh (Délégué)');
-    final purposeController = TextEditingController(text: 'Séance de révision groupe INF4067');
+    final nameController = TextEditingController(text: widget.userName);
+    final purposeController = TextEditingController();
     String duration = '2 heures';
 
     showDialog(
@@ -196,7 +203,7 @@ class _ClassroomsScreenState extends State<ClassroomsScreen> {
               Navigator.pop(ctx);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
-                  content: Text('Réservation confirmée pour ${room['code']} ($duration). Le bon de réservation a été envoyé à etudiant.uy1@uniflow.cm.'),
+                  content: Text('Réservation confirmée pour ${room['code']} ($duration). Le bon de réservation a été envoyé à ${widget.userEmail.isNotEmpty ? widget.userEmail : 'votre boîte e-mail institutionnelle'}.'),
                   backgroundColor: const Color(0xFF0D9488),
                   duration: const Duration(seconds: 4),
                 ),

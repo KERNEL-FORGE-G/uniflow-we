@@ -8,8 +8,8 @@ class CreatorMemberScreen extends StatefulWidget {
 
   const CreatorMemberScreen({
     super.key,
-    this.userName = 'Marcel Tessoh',
-    this.userEmail = 'etudiant.uy1@uniflow.cm',
+    this.userName = '',
+    this.userEmail = '',
     this.userRole = 'Membre Fondateur KERNEL FORGE',
     this.onRoleChanged,
   });
@@ -126,7 +126,7 @@ class _CreatorMemberScreenState extends State<CreatorMemberScreen> {
     {
       'name': 'TESSOH MARCEL',
       'role': 'Ingénieur Logiciel & Co-Architecte',
-      'email': 'etudiant.uy1@uniflow.cm',
+      'email': 'marcel.tessoh@kernelforge.codes',
       'github': 'MarcelTessoh',
       'subTeam': 'Core Engine & Desktop Platform',
       'avatar': 'assets/illustrations/photo_4_2026-10-02_13-20-47.jpg',

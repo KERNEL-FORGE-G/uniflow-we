@@ -33,9 +33,9 @@ class DesktopShell extends StatefulWidget {
 
   const DesktopShell({
     super.key,
-    this.userName = 'Marcel Tessoh',
-    this.userEmail = 'etudiant.uy1@uniflow.cm',
-    this.userRole = 'Membre Fondateur KERNEL FORGE',
+    this.userName = '',
+    this.userEmail = '',
+    this.userRole = 'Étudiant',
     this.onLogout,
     this.onShowOnboarding,
   });
@@ -83,15 +83,25 @@ class _DesktopShellState extends State<DesktopShell> {
   @override
   Widget build(BuildContext context) {
     final List<Widget> screens = [
-      DashboardScreen(onNavigate: _onNavigate),
+      DashboardScreen(
+        onNavigate: _onNavigate,
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+      ),
       const ActualitesScreen(),
-      const UniMailScreen(),
+      UniMailScreen(
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+      ),
       const ScheduleScreen(),
-      const VisioScreen(),
+      VisioScreen(userName: _currentUserName),
       const CoursesScreen(),
       const AssignmentsScreen(),
       const GradesScreen(),
-      const AttendanceScreen(),
+      AttendanceScreen(
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+      ),
       const ZLibraryScreen(),
       const AssistantScreen(),
       SettingsScreen(
@@ -103,10 +113,13 @@ class _DesktopShellState extends State<DesktopShell> {
           setState(() => _currentUserRole = newRole);
         },
       ),
-      const MessagesScreen(),
-      const SentinelleScreen(),
-      const QuestsScreen(),
-      const DirectoryScreen(),
+      MessagesScreen(userName: _currentUserName),
+      SentinelleScreen(userName: _currentUserName),
+      QuestsScreen(userName: _currentUserName),
+      DirectoryScreen(
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+      ),
       const SubscriptionScreen(),
       NotificationsScreen(onNavigate: _onNavigate),
       CreatorMemberScreen(
@@ -117,8 +130,14 @@ class _DesktopShellState extends State<DesktopShell> {
           setState(() => _currentUserRole = newRole);
         },
       ),
-      const EnrollmentsScreen(),
-      const ClassroomsScreen(),
+      EnrollmentsScreen(
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+      ),
+      ClassroomsScreen(
+        userName: _currentUserName,
+        userEmail: _currentUserEmail,
+      ),
       HelpScreen(onNavigate: _onNavigate),
     ];
 
@@ -499,7 +518,9 @@ class _DesktopShellState extends State<DesktopShell> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '$_currentUserName · $_currentUserRole',
+                                _currentUserName.isNotEmpty
+                                    ? '$_currentUserName · $_currentUserRole'
+                                    : 'Étudiant · $_currentUserRole',
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 11.5,
@@ -508,7 +529,9 @@ class _DesktopShellState extends State<DesktopShell> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                _currentUserEmail,
+                                _currentUserEmail.isNotEmpty
+                                    ? _currentUserEmail
+                                    : 'Session Sécurisée',
                                 style: const TextStyle(
                                     color: Color(0xFF67E8F9),
                                     fontSize: 10,

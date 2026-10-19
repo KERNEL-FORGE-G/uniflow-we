@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
+  final String userName;
+  final String userEmail;
+
+  const AttendanceScreen({
+    super.key,
+    this.userName = '',
+    this.userEmail = '',
+  });
 
   @override
   State<AttendanceScreen> createState() => _AttendanceScreenState();
@@ -283,13 +290,17 @@ class _AttendanceScreenState extends State<AttendanceScreen> {
                           ),
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          'Marcel Tessoh · 21T2401',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
+                        Text(
+                          widget.userName.isNotEmpty
+                              ? '${widget.userName} · Session Certifiée'
+                              : 'Étudiant UniFlow · Session Sécurisée',
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF0F172A)),
                         ),
-                        const Text(
-                          'Master 1 ICT4D · Univ. Yaoundé I',
-                          style: TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
+                        Text(
+                          widget.userEmail.isNotEmpty
+                              ? widget.userEmail
+                              : 'Master 1 ICT4D · Univ. Yaoundé I',
+                          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11.5),
                         ),
                         const SizedBox(height: 18),
                         OutlinedButton.icon(

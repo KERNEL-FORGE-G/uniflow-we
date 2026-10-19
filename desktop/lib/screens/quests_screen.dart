@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 class QuestsScreen extends StatefulWidget {
-  const QuestsScreen({super.key});
+  final String userName;
+
+  const QuestsScreen({
+    super.key,
+    this.userName = '',
+  });
 
   @override
   State<QuestsScreen> createState() => _QuestsScreenState();
@@ -105,48 +110,55 @@ class _QuestsScreenState extends State<QuestsScreen> {
     },
   ];
 
-  final List<Map<String, dynamic>> _leaderboard = [
-    {
-      'rank': 1,
-      'name': 'Ravel Nghomsi',
-      'level': 'Niveau 7',
-      'xp': '6 240 XP',
-      'filiere': 'ICT4D L3',
-      'isMe': false,
-    },
-    {
-      'rank': 2,
-      'name': 'Sandra Febnchak',
-      'level': 'Niveau 6',
-      'xp': '5 180 XP',
-      'filiere': 'ICT4D L3',
-      'isMe': false,
-    },
-    {
-      'rank': 3,
-      'name': 'Marcel Tessoh (Moi)',
-      'level': 'Niveau 5',
-      'xp': '3 450 XP',
-      'filiere': 'ICT4D L3',
-      'isMe': true,
-    },
-    {
-      'rank': 4,
-      'name': 'Hassane Youssouf',
-      'level': 'Niveau 5',
-      'xp': '3 290 XP',
-      'filiere': 'Génie Informatique',
-      'isMe': false,
-    },
-    {
-      'rank': 5,
-      'name': 'Ivan Tsafack',
-      'level': 'Niveau 4',
-      'xp': '2 950 XP',
-      'filiere': 'Sécurité Réseaux',
-      'isMe': false,
-    },
-  ];
+  late final List<Map<String, dynamic>> _leaderboard;
+
+  @override
+  void initState() {
+    super.initState();
+    final effectiveUser = widget.userName.isNotEmpty ? '${widget.userName} (Moi)' : 'Moi (Étudiant)';
+    _leaderboard = [
+      {
+        'rank': 1,
+        'name': 'Ravel Nghomsi',
+        'level': 'Niveau 7',
+        'xp': '6 240 XP',
+        'filiere': 'ICT4D L3',
+        'isMe': false,
+      },
+      {
+        'rank': 2,
+        'name': 'Sandra Febnchak',
+        'level': 'Niveau 6',
+        'xp': '5 180 XP',
+        'filiere': 'ICT4D L3',
+        'isMe': false,
+      },
+      {
+        'rank': 3,
+        'name': effectiveUser,
+        'level': 'Niveau 5',
+        'xp': '3 450 XP',
+        'filiere': 'ICT4D L3',
+        'isMe': true,
+      },
+      {
+        'rank': 4,
+        'name': 'Hassane Youssouf',
+        'level': 'Niveau 5',
+        'xp': '3 290 XP',
+        'filiere': 'Génie Informatique',
+        'isMe': false,
+      },
+      {
+        'rank': 5,
+        'name': 'Ivan Tsafack',
+        'level': 'Niveau 4',
+        'xp': '2 950 XP',
+        'filiere': 'Sécurité Réseaux',
+        'isMe': false,
+      },
+    ];
+  }
 
   void _claimXp(Map<String, dynamic> quest) {
     if (quest['completed'] == true && quest['claimed'] != true) {

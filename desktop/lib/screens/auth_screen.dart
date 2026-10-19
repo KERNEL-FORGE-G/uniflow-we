@@ -78,16 +78,15 @@ class _AuthScreenState extends State<AuthScreen> {
 
     if (mounted) {
       setState(() => _isLoading = false);
+      final derivedName = name.isNotEmpty
+          ? name
+          : (email.split('@').first.replaceAll(RegExp(r'[._-]'), ' ').split(' ').map((w) => w.isNotEmpty ? '${w[0].toUpperCase()}${w.substring(1)}' : '').join(' ').trim());
       widget.onLoginSuccess(
         email,
         _selectedRole,
-        _isLoginMode ? (email.contains('ravel') ? 'Ravel' : (email.contains('marcel') ? 'Marcel Tessoh' : 'Étudiant UY1')) : name,
+        derivedName.isNotEmpty ? derivedName : 'Utilisateur',
       );
     }
-  }
-
-  void _demoLogin(String email, String role, String name) {
-    widget.onLoginSuccess(email, role, name);
   }
 
   @override
@@ -439,7 +438,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           TextField(
                             controller: _nameController,
                             decoration: _inputDecoration(
-                              hint: 'Ex: Marcel Tessoh',
+                              hint: 'Ex: Votre Nom Complet',
                               icon: Icons.person_outline_rounded,
                             ),
                           ),
@@ -504,7 +503,7 @@ class _AuthScreenState extends State<AuthScreen> {
                           controller: _emailController,
                           keyboardType: TextInputType.emailAddress,
                           decoration: _inputDecoration(
-                            hint: 'etudiant@uniflow.cm ou université',
+                            hint: 'votre.email@uniflow.cm ou université',
                             icon: Icons.alternate_email_rounded,
                           ),
                         ),
@@ -649,70 +648,28 @@ class _AuthScreenState extends State<AuthScreen> {
 
                         const SizedBox(height: 24),
 
-                        // Raccourcis de Connexion Démo Immédiate
+                        // Note de Sécurité et Confidentialité
                         Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           decoration: BoxDecoration(
                             color: const Color(0xFFF8FAFC),
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: const Color(0xFFE2E8F0)),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          child: const Row(
                             children: [
-                              const Row(
-                                children: [
-                                  Icon(Icons.bolt_rounded, size: 16, color: Color(0xFFF59E0B)),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'ACCÈS TEST RAPIDE EN 1 CLIC',
-                                    style: TextStyle(
-                                      fontSize: 10.5,
-                                      fontWeight: FontWeight.w900,
-                                      color: Color(0xFF64748B),
-                                      letterSpacing: 0.5,
-                                    ),
+                              Icon(Icons.shield_outlined, size: 20, color: Color(0xFF0D9488)),
+                              SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  'Connexion chiffrée de bout en bout · Données académiques et présences certifiées par l’Université.',
+                                  style: TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: Color(0xFF64748B),
+                                    height: 1.35,
                                   ),
-                                ],
-                              ),
-                              const SizedBox(height: 10),
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: () => _demoLogin('etudiant.uy1@uniflow.cm', 'Étudiant', 'Marcel Tessoh'),
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(vertical: 9),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                      child: const Text('Étudiant', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: OutlinedButton(
-                                      onPressed: () => _demoLogin('enseignant.info@uniflow.cm', 'Enseignant', 'Dr. Alain Mbarga'),
-                                      style: OutlinedButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(vertical: 9),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                      child: const Text('Professeur', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Expanded(
-                                    child: FilledButton.tonal(
-                                      onPressed: () => _demoLogin('ravel.founder@uniflow.cm', 'Membre Fondateur KERNEL FORGE', 'Ravel'),
-                                      style: FilledButton.styleFrom(
-                                        padding: const EdgeInsets.symmetric(vertical: 9),
-                                        backgroundColor: const Color(0xFFCCFBF1),
-                                        foregroundColor: const Color(0xFF0F766E),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                                      ),
-                                      child: const Text('Fondateur', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
                             ],
                           ),

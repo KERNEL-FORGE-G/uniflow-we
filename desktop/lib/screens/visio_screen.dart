@@ -6,7 +6,12 @@ import 'package:url_launcher/url_launcher.dart';
 import '../services/local_visio_server.dart';
 
 class VisioScreen extends StatefulWidget {
-  const VisioScreen({super.key});
+  final String userName;
+
+  const VisioScreen({
+    super.key,
+    this.userName = '',
+  });
 
   @override
   State<VisioScreen> createState() => _VisioScreenState();
@@ -38,85 +43,89 @@ class _VisioScreenState extends State<VisioScreen>
   final int _totalSlides = 6;
 
   // Messages du chat de séance
-  final List<Map<String, dynamic>> _chatMessages = [
-    {
-      'sender': 'UniBot IA',
-      'role': 'Copilote Amphi',
-      'time': '10:00',
-      'text':
-          'Bienvenue dans l\'Amphi Virtuel UniFlow. La transcription et l\'émargement automatique sont actifs.',
-      'isBot': true,
-    },
-    {
-      'sender': 'Marcel Tessoh',
-      'role': 'Délégué L3 ICT4D',
-      'time': '10:02',
-      'text':
-          'Bonjour Professeur, le son et le partage d\'écran sont parfaitement nets sur nos smartphones.',
-      'isBot': false,
-    },
-    {
-      'sender': 'Audrey Kenfack',
-      'role': 'Étudiante',
-      'time': '10:05',
-      'text':
-          'Dr. Kamga, pourriez-vous réexpliquer la différence entre consensus Raft et PBFT ?',
-      'isBot': false,
-    },
-  ];
+  late final List<Map<String, dynamic>> _chatMessages;
 
   // Participants connectés
-  final List<Map<String, dynamic>> _participants = [
-    {
-      'name': 'Dr. Kamga (Hôte)',
-      'role': 'Enseignant',
-      'isHost': true,
-      'isMuted': false,
-      'handRaised': false,
-      'avatar': 'K',
-      'color': const Color(0xFF1E3A8A),
-    },
-    {
-      'name': 'Marcel Tessoh',
-      'role': 'Délégué L3 ICT4D',
-      'isHost': false,
-      'isMuted': true,
-      'handRaised': false,
-      'avatar': 'M',
-      'color': const Color(0xFF0D9488),
-    },
-    {
-      'name': 'Audrey Kenfack',
-      'role': 'Étudiante',
-      'isHost': false,
-      'isMuted': true,
-      'handRaised': true,
-      'avatar': 'A',
-      'color': const Color(0xFF7C3AED),
-    },
-    {
-      'name': 'Junior Etoa',
-      'role': 'Étudiant',
-      'isHost': false,
-      'isMuted': true,
-      'handRaised': false,
-      'avatar': 'J',
-      'color': const Color(0xFFEA580C),
-    },
-    {
-      'name': 'UniBot Campus',
-      'role': 'Assistant IA',
-      'isHost': false,
-      'isMuted': false,
-      'handRaised': false,
-      'avatar': '🤖',
-      'color': const Color(0xFF0284C7),
-    },
-  ];
+  late final List<Map<String, dynamic>> _participants;
 
   @override
   void initState() {
     super.initState();
+    final effectiveUser = widget.userName.isNotEmpty ? widget.userName : 'Moi (Connecté)';
+    _chatMessages = [
+      {
+        'sender': 'UniBot IA',
+        'role': 'Copilote Amphi',
+        'time': '10:00',
+        'text':
+            'Bienvenue dans l\'Amphi Virtuel UniFlow. La transcription et l\'émargement automatique sont actifs.',
+        'isBot': true,
+      },
+      {
+        'sender': effectiveUser,
+        'role': 'Étudiant Certifié',
+        'time': '10:02',
+        'text':
+            'Bonjour Professeur, le son et le partage d\'écran sont parfaitement nets sur nos écrans.',
+        'isBot': false,
+      },
+      {
+        'sender': 'Audrey Kenfack',
+        'role': 'Étudiante',
+        'time': '10:05',
+        'text':
+            'Dr. Kamga, pourriez-vous réexpliquer la différence entre consensus Raft et PBFT ?',
+        'isBot': false,
+      },
+    ];
+
+    _participants = [
+      {
+        'name': 'Dr. Kamga (Hôte)',
+        'role': 'Enseignant',
+        'isHost': true,
+        'isMuted': false,
+        'handRaised': false,
+        'avatar': 'K',
+        'color': const Color(0xFF1E3A8A),
+      },
+      {
+        'name': effectiveUser,
+        'role': 'Étudiant Certifié',
+        'isHost': false,
+        'isMuted': true,
+        'handRaised': false,
+        'avatar': effectiveUser.isNotEmpty ? effectiveUser[0].toUpperCase() : 'M',
+        'color': const Color(0xFF0D9488),
+      },
+      {
+        'name': 'Audrey Kenfack',
+        'role': 'Étudiante',
+        'isHost': false,
+        'isMuted': true,
+        'handRaised': true,
+        'avatar': 'A',
+        'color': const Color(0xFF7C3AED),
+      },
+      {
+        'name': 'Junior Etoa',
+        'role': 'Étudiant',
+        'isHost': false,
+        'isMuted': true,
+        'handRaised': false,
+        'avatar': 'J',
+        'color': const Color(0xFFEA580C),
+      },
+      {
+        'name': 'UniBot Campus',
+        'role': 'Assistant IA',
+        'isHost': false,
+        'isMuted': false,
+        'handRaised': false,
+        'avatar': '🤖',
+        'color': const Color(0xFF0284C7),
+      },
+    ];
     _ensureServerRunning();
   }
 

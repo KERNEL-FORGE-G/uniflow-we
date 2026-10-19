@@ -37,14 +37,25 @@ class UniMailMessage {
 }
 
 class UniMailScreen extends StatefulWidget {
-  const UniMailScreen({super.key});
+  final String userName;
+  final String userEmail;
+
+  const UniMailScreen({
+    super.key,
+    this.userName = '',
+    this.userEmail = '',
+  });
 
   @override
   State<UniMailScreen> createState() => _UniMailScreenState();
 }
 
 class _UniMailScreenState extends State<UniMailScreen> {
-  static const String _activeUserEmail = 'etudiant.uy1@uniflow.cm';
+  String get _activeUserEmail =>
+      widget.userEmail.isNotEmpty ? widget.userEmail : 'etudiant.officiel@uniflow.cm';
+  String get _activeUserName =>
+      widget.userName.isNotEmpty ? widget.userName : 'Étudiant UniFlow';
+
   String _selectedFolder = 'Boîte de réception';
   String _searchQuery = '';
   String? _selectedMessageId = 'mail-1';
@@ -58,108 +69,114 @@ class _UniMailScreenState extends State<UniMailScreen> {
     'Corbeille',
   ];
 
-  final List<UniMailMessage> _messages = [
-    UniMailMessage(
-      id: 'mail-1',
-      folder: 'Boîte de réception',
-      senderName: 'Direction Académique UniFlow',
-      senderEmail: 'rectorat.officiel@uniflow.cm',
-      recipientEmail: _activeUserEmail,
-      subject:
-          'Activation officielle de votre boîte institutionnelle @uniflow.cm (Phase Bêta)',
-      preview:
-          'Votre adresse universitaire dédiée etudiant.uy1@uniflow.cm est désormais active et signée numériquement...',
-      body: 'Bonjour Étudiant UY1,\n\n'
-          'Bienvenue sur **UniMail (@uniflow.cm)**, le service de messagerie académique souverain intégré à la plateforme UniFlow.\n\n'
-          '• **Cycle de vie lié au compte** : Votre adresse `etudiant.uy1@uniflow.cm` a été provisionnée automatiquement à la création de votre compte UniFlow et suit l\'intégralité de votre parcours universitaire.\n'
-          '• **Signature cryptographique UniFlow** : Chaque courriel sortant comporte un sceau d\'authenticité vérifié par Kernel Forge & l\'Université de Yaoundé I pour vos démarches administratives, stages et échanges avec vos enseignants.\n'
-          '• **Phase de test bêta** : Notre plateforme est actuellement en phase de test bêta. Des améliorations majeures (chiffrement de bout en bout, partage direct de cahiers de TP et synchronisation mobile instantanée) arrivent très prochainement.\n\n'
-          'Cordialement,\n'
-          'La Direction des Systèmes d\'Information UniFlow',
-      timestamp: 'Aujourd\'hui, 09:15',
-      priority: 'OFFICIEL',
-      attachments: [
-        'Certificat_Authenticite_UniMail_UY1.pdf',
-        'Guide_Messagerie_Institutionnelle_UniFlow.pdf',
-      ],
-      isRead: false,
-      isStarred: true,
-    ),
-    UniMailMessage(
-      id: 'mail-2',
-      folder: 'Boîte de réception',
-      senderName: 'Prof. Melatagia Yonta',
-      senderEmail: 'melatagia.yonta@uniflow.cm',
-      recipientEmail: _activeUserEmail,
-      subject:
-          '[INF4067] Dépôt du rapport d\'Architecture Distribuée & lien Visio Amphi 501',
-      preview:
-          'Veuillez transmettre votre archive de TP et la documentation UML via votre adresse @uniflow.cm avant vendredi...',
-      body: 'Chers étudiants de Licence 3 ICT4D,\n\n'
-          'Dans le cadre de l\'Unité d\'Enseignement INF4067 (Génie Logiciel Avancé & Architectures Distribuées), je vous rappelle que la remise des livrables du TP N°2 s\'effectue exclusivement par retour de courriel signé `@uniflow.cm`.\n\n'
-          'Vous trouverez en pièce jointe le cahier des charges mis à jour ainsi que le protocole de test pour le serveur local P2P.\n\n'
-          'Bonne préparation,\n'
-          'Prof. Melatagia Yonta — Département d\'Informatique UY1',
-      timestamp: 'Hier, 17:40',
-      priority: 'COURS',
-      attachments: ['TP2_Specifications_INF4067.pdf'],
-      isRead: true,
-      isStarred: true,
-    ),
-    UniMailMessage(
-      id: 'mail-3',
-      folder: 'Boîte de réception',
-      senderName: 'Dr. Tapamo · Laboratoire Cybersécurité',
-      senderEmail: 'tapamo.sec@uniflow.cm',
-      recipientEmail: _activeUserEmail,
-      subject: '[INF4077] Clés publiques TP Cryptographie & Signatures X.509',
-      preview:
-          'Voici le jeu de clés d\'essai pour la séance de travaux pratiques au Labo C205...',
-      body: 'Bonjour,\n\n'
-          'Pour la séance de travaux pratiques de Sécurité Informatique (INF4077) au Labo C205, veuillez télécharger l\'énoncé ci-joint et vérifier l\'empreinte SHA-256 de votre certificat étudiant UniMail.\n\n'
-          'Dr. Tapamo',
-      timestamp: '15 Oct. 2026',
-      priority: 'URGENT',
-      attachments: ['Enonce_TP_Crypto_X509.pdf'],
-      isRead: true,
-      isStarred: false,
-    ),
-    UniMailMessage(
-      id: 'mail-4',
-      folder: 'Messages envoyés',
-      senderName: 'Étudiant UY1 (Moi)',
-      senderEmail: _activeUserEmail,
-      recipientEmail: 'scolarite.sciences@uniflow.cm',
-      subject: 'Demande d\'attestation de fréquentation Semestre 1 — L3 ICT4D',
-      preview:
-          'Bonjour, je souhaiterais obtenir mon attestation de scolarité signée pour mon dossier de bourse...',
-      body: 'Madame, Monsieur,\n\n'
-          'Étudiant régulièrement inscrit en Licence 3 ICT4D à la Faculté des Sciences, je vous prie de bien vouloir me transmettre mon attestation d\'inscription du Semestre 1 sur ma boîte officielle `etudiant.uy1@uniflow.cm`.\n\n'
-          'Respectueusement,\n'
-          'Étudiant UY1',
-      timestamp: '14 Oct. 2026',
-      priority: 'OFFICIEL',
-      attachments: ['Quitus_Droits_Universitaires_2026.pdf'],
-      isRead: true,
-      isStarred: false,
-    ),
-    UniMailMessage(
-      id: 'mail-5',
-      folder: 'Brouillons',
-      senderName: 'Étudiant UY1 (Moi)',
-      senderEmail: _activeUserEmail,
-      recipientEmail: 'equipe.kernelforge@uniflow.cm',
-      subject:
-          '[Brouillon] Retour d\'expérience sur la phase bêta UniFlow Desktop',
-      preview:
-          'Super fluidité sur le nouveau Bento Grid et le serveur visio local...',
-      body: 'Bonjour l\'équipe Kernel Forge,\n\n'
-          'Voici mes retours suite aux tests de la version bêta Desktop...',
-      timestamp: 'Brouillon enregistré',
-      priority: 'NORMAL',
-      isRead: true,
-    ),
-  ];
+  late final List<UniMailMessage> _messages;
+
+  @override
+  void initState() {
+    super.initState();
+    _messages = [
+      UniMailMessage(
+        id: 'mail-1',
+        folder: 'Boîte de réception',
+        senderName: 'Direction Académique UniFlow',
+        senderEmail: 'rectorat.officiel@uniflow.cm',
+        recipientEmail: _activeUserEmail,
+        subject:
+            'Activation officielle de votre boîte institutionnelle @uniflow.cm (Phase Bêta)',
+        preview:
+            'Votre adresse universitaire dédiée $_activeUserEmail est désormais active et signée numériquement...',
+        body: 'Bonjour $_activeUserName,\n\n'
+            'Bienvenue sur **UniMail (@uniflow.cm)**, le service de messagerie académique souverain intégré à la plateforme UniFlow.\n\n'
+            '• **Cycle de vie lié au compte** : Votre adresse `$_activeUserEmail` a été provisionnée automatiquement à la création de votre compte UniFlow et suit l\'intégralité de votre parcours universitaire.\n'
+            '• **Signature cryptographique UniFlow** : Chaque courriel sortant comporte un sceau d\'authenticité vérifié par Kernel Forge & l\'Université de Yaoundé I pour vos démarches administratives, stages et échanges avec vos enseignants.\n'
+            '• **Phase de test bêta** : Notre plateforme est actuellement en phase de test bêta. Des améliorations majeures (chiffrement de bout en bout, partage direct de cahiers de TP et synchronisation mobile instantanée) arrivent très prochainement.\n\n'
+            'Cordialement,\n'
+            'La Direction des Systèmes d\'Information UniFlow',
+        timestamp: 'Aujourd\'hui, 09:15',
+        priority: 'OFFICIEL',
+        attachments: [
+          'Certificat_Authenticite_UniMail_UY1.pdf',
+          'Guide_Messagerie_Institutionnelle_UniFlow.pdf',
+        ],
+        isRead: false,
+        isStarred: true,
+      ),
+      UniMailMessage(
+        id: 'mail-2',
+        folder: 'Boîte de réception',
+        senderName: 'Prof. Melatagia Yonta',
+        senderEmail: 'melatagia.yonta@uniflow.cm',
+        recipientEmail: _activeUserEmail,
+        subject:
+            '[INF4067] Dépôt du rapport d\'Architecture Distribuée & lien Visio Amphi 501',
+        preview:
+            'Veuillez transmettre votre archive de TP et la documentation UML via votre adresse @uniflow.cm avant vendredi...',
+        body: 'Chers étudiants de Licence 3 ICT4D,\n\n'
+            'Dans le cadre de l\'Unité d\'Enseignement INF4067 (Génie Logiciel Avancé & Architectures Distribuées), je vous rappelle que la remise des livrables du TP N°2 s\'effectue exclusivement par retour de courriel signé `@uniflow.cm`.\n\n'
+            'Vous trouverez en pièce jointe le cahier des charges mis à jour ainsi que le protocole de test pour le serveur local P2P.\n\n'
+            'Bonne préparation,\n'
+            'Prof. Melatagia Yonta — Département d\'Informatique UY1',
+        timestamp: 'Hier, 17:40',
+        priority: 'COURS',
+        attachments: ['TP2_Specifications_INF4067.pdf'],
+        isRead: true,
+        isStarred: true,
+      ),
+      UniMailMessage(
+        id: 'mail-3',
+        folder: 'Boîte de réception',
+        senderName: 'Dr. Tapamo · Laboratoire Cybersécurité',
+        senderEmail: 'tapamo.sec@uniflow.cm',
+        recipientEmail: _activeUserEmail,
+        subject: '[INF4077] Clés publiques TP Cryptographie & Signatures X.509',
+        preview:
+            'Voici le jeu de clés d\'essai pour la séance de travaux pratiques au Labo C205...',
+        body: 'Bonjour,\n\n'
+            'Pour la séance de travaux pratiques de Sécurité Informatique (INF4077) au Labo C205, veuillez télécharger l\'énoncé ci-joint et vérifier l\'empreinte SHA-256 de votre certificat étudiant UniMail.\n\n'
+            'Dr. Tapamo',
+        timestamp: '15 Oct. 2026',
+        priority: 'URGENT',
+        attachments: ['Enonce_TP_Crypto_X509.pdf'],
+        isRead: true,
+        isStarred: false,
+      ),
+      UniMailMessage(
+        id: 'mail-4',
+        folder: 'Messages envoyés',
+        senderName: '$_activeUserName (Moi)',
+        senderEmail: _activeUserEmail,
+        recipientEmail: 'scolarite.sciences@uniflow.cm',
+        subject: 'Demande d\'attestation de fréquentation Semestre 1 — L3 ICT4D',
+        preview:
+            'Bonjour, je souhaiterais obtenir mon attestation de scolarité signée pour mon dossier de bourse...',
+        body: 'Madame, Monsieur,\n\n'
+            'Étudiant régulièrement inscrit en Licence 3 ICT4D à la Faculté des Sciences, je vous prie de bien vouloir me transmettre mon attestation d\'inscription du Semestre 1 sur ma boîte officielle `$_activeUserEmail`.\n\n'
+            'Respectueusement,\n'
+            '$_activeUserName',
+        timestamp: '14 Oct. 2026',
+        priority: 'OFFICIEL',
+        attachments: ['Quitus_Droits_Universitaires_2026.pdf'],
+        isRead: true,
+        isStarred: false,
+      ),
+      UniMailMessage(
+        id: 'mail-5',
+        folder: 'Brouillons',
+        senderName: '$_activeUserName (Moi)',
+        senderEmail: _activeUserEmail,
+        recipientEmail: 'equipe.kernelforge@uniflow.cm',
+        subject:
+            '[Brouillon] Retour d\'expérience sur la phase bêta UniFlow Desktop',
+        preview:
+            'Super fluidité sur le nouveau Bento Grid et le serveur visio local...',
+        body: 'Bonjour l\'équipe Kernel Forge,\n\n'
+            'Voici mes retours suite aux tests de la version bêta Desktop...',
+        timestamp: 'Brouillon enregistré',
+        priority: 'NORMAL',
+        isRead: true,
+      ),
+    ];
+  }
 
   @override
   void dispose() {
@@ -200,11 +217,11 @@ class _UniMailScreenState extends State<UniMailScreen> {
                           color: Color(0xFF1E3A8A)),
                     ),
                     const SizedBox(width: 12),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          const Text(
                             'Nouveau message UniMail (@uniflow.cm)',
                             style: TextStyle(
                                 fontSize: 17,
@@ -212,8 +229,8 @@ class _UniMailScreenState extends State<UniMailScreen> {
                                 color: Color(0xFF0F172A)),
                           ),
                           Text(
-                            'Expéditeur certifié : etudiant.uy1@uniflow.cm · Signature automatique UniFlow',
-                            style: TextStyle(
+                            'Expéditeur certifié : $_activeUserEmail · Signature automatique UniFlow',
+                            style: const TextStyle(
                                 fontSize: 11,
                                 color: Color(0xFF0D9488),
                                 fontWeight: FontWeight.bold),
@@ -312,7 +329,7 @@ class _UniMailScreenState extends State<UniMailScreen> {
                         final newMsg = UniMailMessage(
                           id: 'mail-${DateTime.now().millisecondsSinceEpoch}',
                           folder: 'Messages envoyés',
-                          senderName: 'Étudiant UY1 (Moi)',
+                          senderName: '$_activeUserName (Moi)',
                           senderEmail: _activeUserEmail,
                           recipientEmail: toCtrl.text.trim(),
                           subject: subjectCtrl.text.trim(),
@@ -475,13 +492,13 @@ class _UniMailScreenState extends State<UniMailScreen> {
                             ),
                             InkWell(
                               onTap: () {
-                                Clipboard.setData(const ClipboardData(
+                                Clipboard.setData(ClipboardData(
                                     text: _activeUserEmail));
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     content: Text(
-                                        'Adresse etudiant.uy1@uniflow.cm copiée dans le presse-papier !'),
-                                    backgroundColor: Color(0xFF0D9488),
+                                        'Adresse $_activeUserEmail copiée dans le presse-papier !'),
+                                    backgroundColor: const Color(0xFF0D9488),
                                   ),
                                 );
                               },
@@ -496,21 +513,21 @@ class _UniMailScreenState extends State<UniMailScreen> {
                                       color: const Color(0xFF67E8F9)
                                           .withValues(alpha: 0.4)),
                                 ),
-                                child: const Row(
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.alternate_email_rounded,
+                                    const Icon(Icons.alternate_email_rounded,
                                         color: Color(0xFF67E8F9), size: 13),
-                                    SizedBox(width: 5),
+                                    const SizedBox(width: 5),
                                     Text(
                                       _activeUserEmail,
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                           color: Colors.white,
                                           fontSize: 11,
                                           fontWeight: FontWeight.w900),
                                     ),
-                                    SizedBox(width: 6),
-                                    Icon(Icons.copy_rounded,
+                                    const SizedBox(width: 6),
+                                    const Icon(Icons.copy_rounded,
                                         color: Colors.white70, size: 12),
                                   ],
                                 ),

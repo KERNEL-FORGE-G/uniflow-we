@@ -4,8 +4,15 @@ import '../services/local_visio_server.dart';
 
 class DashboardScreen extends StatelessWidget {
   final Function(int) onNavigate;
+  final String userName;
+  final String userEmail;
 
-  const DashboardScreen({super.key, required this.onNavigate});
+  const DashboardScreen({
+    super.key,
+    required this.onNavigate,
+    this.userName = '',
+    this.userEmail = '',
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -88,9 +95,11 @@ class DashboardScreen extends StatelessWidget {
                                 border:
                                     Border.all(color: const Color(0xFF34D399)),
                               ),
-                              child: const Text(
-                                'BÊTA OUVERTE · etudiant.uy1@uniflow.cm',
-                                style: TextStyle(
+                              child: Text(
+                                userEmail.isNotEmpty
+                                    ? 'SESSION ACTIVE · $userEmail'
+                                    : 'SESSION UNIVERSITAIRE SÉCURISÉE',
+                                style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 10,
                                     fontWeight: FontWeight.w800),
@@ -445,9 +454,11 @@ class DashboardScreen extends StatelessWidget {
                                       ),
                                     ),
                                     const SizedBox(height: 3),
-                                    const Text(
-                                      'Boîte Institutionnelle : etudiant.uy1@uniflow.cm',
-                                      style: TextStyle(
+                                    Text(
+                                      userEmail.isNotEmpty
+                                          ? 'Boîte Institutionnelle : $userEmail'
+                                          : 'Boîte Institutionnelle Sécurisée',
+                                      style: const TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w900,
                                           color: Color(0xFF0F172A)),

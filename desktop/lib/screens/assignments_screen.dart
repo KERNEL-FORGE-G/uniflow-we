@@ -38,7 +38,7 @@ class _AssignmentsScreenState extends State<AssignmentsScreen> {
       'grade': null,
       'instructions': 'Architecture ResNet-18 personnalisée, courbe de convergence TensorBoard et matrice de confusion.',
       'teacher': 'Dr. Christian Fouda',
-      'submittedFile': 'TP_DeepLearning_Marcel_Tessoh.pdf',
+      'submittedFile': 'TP_DeepLearning_Rendu.pdf',
     },
     {
       'id': 'asg-03',

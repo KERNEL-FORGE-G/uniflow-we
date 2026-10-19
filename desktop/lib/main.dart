@@ -29,7 +29,7 @@ class UniFlowDesktopApp extends StatefulWidget {
 
   const UniFlowDesktopApp({
     super.key,
-    this.initialState = AppFlowState.shell,
+    this.initialState = AppFlowState.auth,
   });
 
   @override
@@ -39,9 +39,9 @@ class UniFlowDesktopApp extends StatefulWidget {
 class _UniFlowDesktopAppState extends State<UniFlowDesktopApp> {
   late AppFlowState _flowState;
 
-  String _userName = 'Marcel Tessoh';
-  String _userEmail = 'etudiant.uy1@uniflow.cm';
-  String _userRole = 'Membre Fondateur KERNEL FORGE';
+  String _userName = '';
+  String _userEmail = '';
+  String _userRole = 'Étudiant';
 
   @override
   void initState() {

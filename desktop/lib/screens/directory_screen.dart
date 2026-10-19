@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class DirectoryScreen extends StatefulWidget {
-  const DirectoryScreen({super.key});
+  final String userName;
+  final String userEmail;
+
+  const DirectoryScreen({
+    super.key,
+    this.userName = '',
+    this.userEmail = '',
+  });
 
   @override
   State<DirectoryScreen> createState() => _DirectoryScreenState();
@@ -65,23 +72,30 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
     },
   ];
 
-  final List<Map<String, dynamic>> _students = [
-    {
-      'name': 'Marcel Tessoh',
-      'matricule': '21T2044',
-      'filiere': 'ICT4D',
-      'level': 'Licence 3',
-      'email': 'etudiant.uy1@uniflow.cm',
-      'gpa': 'GPA 3.82',
-      'status': 'Inscrit Régulier',
-      'avatar': 'assets/illustrations/photo_4_2026-10-02_13-20-47.jpg',
-    },
-    {
-      'name': 'Ravel Nghomsi Feukouo',
-      'matricule': '21T2045',
-      'filiere': 'ICT4D',
-      'level': 'Licence 3',
-      'email': 'ravelnghomsi@gmail.com',
+  late final List<Map<String, dynamic>> _students;
+
+  @override
+  void initState() {
+    super.initState();
+    final effectiveName = widget.userName.isNotEmpty ? widget.userName : 'Étudiant Démonstration';
+    final effectiveEmail = widget.userEmail.isNotEmpty ? widget.userEmail : 'etudiant@uniflow.cm';
+    _students = [
+      {
+        'name': effectiveName,
+        'matricule': '21T2044',
+        'filiere': 'ICT4D',
+        'level': 'Licence 3',
+        'email': effectiveEmail,
+        'gpa': 'GPA 3.82',
+        'status': 'Inscrit Régulier',
+        'avatar': 'assets/illustrations/photo_4_2026-10-02_13-20-47.jpg',
+      },
+      {
+        'name': 'Ravel Nghomsi Feukouo',
+        'matricule': '21T2045',
+        'filiere': 'ICT4D',
+        'level': 'Licence 3',
+        'email': 'ravelnghomsi@gmail.com',
       'gpa': 'GPA 3.94',
       'status': 'Délégué de Filière',
       'avatar': 'assets/illustrations/photo_1_2026-10-02_13-20-47.jpg',
@@ -127,6 +141,7 @@ class _DirectoryScreenState extends State<DirectoryScreen> {
       'avatar': 'assets/illustrations/photo_6_2026-10-02_13-20-47.jpg',
     },
   ];
+  }
 
   @override
   Widget build(BuildContext context) {

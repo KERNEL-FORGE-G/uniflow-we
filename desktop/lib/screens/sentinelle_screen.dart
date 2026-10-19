@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 
 class SentinelleScreen extends StatefulWidget {
-  const SentinelleScreen({super.key});
+  final String userName;
+
+  const SentinelleScreen({
+    super.key,
+    this.userName = '',
+  });
 
   @override
   State<SentinelleScreen> createState() => _SentinelleScreenState();
@@ -101,40 +106,49 @@ class _SentinelleScreenState extends State<SentinelleScreen> {
     },
   ];
 
-  final List<Map<String, dynamic>> _securityLogs = [
-    {
-      'time': '14:38:12',
-      'type': 'Passage Valide',
-      'device': 'Borne Amphi 501',
-      'user': 'Marcel Tessoh (L3 ICT4D - Matricule 21T2044)',
-      'status': 'Autorisé',
-      'color': const Color(0xFF10B981),
-    },
-    {
-      'time': '14:35:40',
-      'type': 'Scan QR Présence',
-      'device': 'Borne Lab C205',
-      'user': 'Ravel Nghomsi (L3 ICT4D - Matricule 21T2045)',
-      'status': 'Validé Cryptographiquement',
-      'color': const Color(0xFF10B981),
-    },
-    {
-      'time': '14:28:05',
-      'type': 'Détection Affluence',
-      'device': 'CAM-01 Bibliothèque',
-      'user': 'Algorithme Edge AI Vision',
-      'status': 'Seuil 80% atteint (Salle d\'étude calme)',
-      'color': const Color(0xFFF59E0B),
-    },
-    {
-      'time': '14:15:22',
-      'type': 'Contrôle d\'Accès',
-      'device': 'Borne Portique Nord',
-      'user': 'Prof. Melatagia Yonta (Enseignant)',
-      'status': 'Badge RFID Enseignant Certifié',
-      'color': const Color(0xFF38BDF8),
-    },
-  ];
+  late final List<Map<String, dynamic>> _securityLogs;
+
+  @override
+  void initState() {
+    super.initState();
+    final effectiveUser = widget.userName.isNotEmpty
+        ? '${widget.userName} (Session Certifiée)'
+        : 'Étudiant Certifié (L3 ICT4D)';
+    _securityLogs = [
+      {
+        'time': '14:38:12',
+        'type': 'Passage Valide',
+        'device': 'Borne Amphi 501',
+        'user': effectiveUser,
+        'status': 'Autorisé',
+        'color': const Color(0xFF10B981),
+      },
+      {
+        'time': '14:35:40',
+        'type': 'Scan QR Présence',
+        'device': 'Borne Lab C205',
+        'user': 'Ravel Nghomsi (L3 ICT4D - Matricule 21T2045)',
+        'status': 'Validé Cryptographiquement',
+        'color': const Color(0xFF10B981),
+      },
+      {
+        'time': '14:28:05',
+        'type': 'Détection Affluence',
+        'device': 'CAM-01 Bibliothèque',
+        'user': 'Algorithme Edge AI Vision',
+        'status': 'Seuil 80% atteint (Salle d\'étude calme)',
+        'color': const Color(0xFFF59E0B),
+      },
+      {
+        'time': '14:15:22',
+        'type': 'Contrôle d\'Accès',
+        'device': 'Borne Portique Nord',
+        'user': 'Prof. Melatagia Yonta (Enseignant)',
+        'status': 'Badge RFID Enseignant Certifié',
+        'color': const Color(0xFF38BDF8),
+      },
+    ];
+  }
 
   @override
   Widget build(BuildContext context) {

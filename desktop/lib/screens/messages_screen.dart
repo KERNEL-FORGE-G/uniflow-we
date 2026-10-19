@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 
 class MessagesScreen extends StatefulWidget {
-  const MessagesScreen({super.key});
+  final String userName;
+
+  const MessagesScreen({
+    super.key,
+    this.userName = '',
+  });
 
   @override
   State<MessagesScreen> createState() => _MessagesScreenState();
 }
 
 class _MessagesScreenState extends State<MessagesScreen> {
+  String get _mySenderName =>
+      widget.userName.isNotEmpty ? 'Moi (${widget.userName})' : 'Moi';
+
   int _activeChatIndex = 0;
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -39,7 +47,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           'attachment': null,
         },
         {
-          'sender': 'Moi (Marcel Tessoh)',
+          'sender': 'Moi',
           'isMe': true,
           'text': 'Est-ce que le rapport PDF doit inclure les métriques de couverture Drift ?',
           'time': '14:10',
@@ -67,12 +75,12 @@ class _MessagesScreenState extends State<MessagesScreen> {
         {
           'sender': 'Ravel Nghomsi',
           'isMe': false,
-          'text': 'Salut Marcel, tu as pu vérifier le streaming direct Z-Library vers le bucket Appwrite ?',
+          'text': 'Salut, tu as pu vérifier le streaming direct Z-Library vers le bucket Appwrite ?',
           'time': '12:00',
           'attachment': null,
         },
         {
-          'sender': 'Moi (Marcel Tessoh)',
+          'sender': 'Moi',
           'isMe': true,
           'text': 'Oui, plus aucun fichier n\'est écrit sur le disque du VPS. Tout est streamé en mémoire directement vers Appwrite Storage.',
           'time': '12:40',
@@ -124,7 +132,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
           'attachment': null,
         },
         {
-          'sender': 'Moi (Marcel Tessoh)',
+          'sender': 'Moi',
           'isMe': true,
           'text': 'Superbe boulot Sandra, le design system est 100% cohérent.',
           'time': 'Hier 19:05',
@@ -160,7 +168,7 @@ class _MessagesScreenState extends State<MessagesScreen> {
     setState(() {
       final activeChat = _conversations[_activeChatIndex];
       (activeChat['messages'] as List<Map<String, dynamic>>).add({
-        'sender': 'Moi (Marcel Tessoh)',
+        'sender': _mySenderName,
         'isMe': true,
         'text': text,
         'time': 'Maintenant',

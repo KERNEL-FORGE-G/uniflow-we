@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class EnrollmentsScreen extends StatefulWidget {
-  const EnrollmentsScreen({super.key});
+  final String userName;
+  final String userEmail;
+
+  const EnrollmentsScreen({
+    super.key,
+    this.userName = '',
+    this.userEmail = '',
+  });
 
   @override
   State<EnrollmentsScreen> createState() => _EnrollmentsScreenState();
@@ -498,12 +505,12 @@ class _EnrollmentsScreenState extends State<EnrollmentsScreen> {
             spacing: 24,
             runSpacing: 16,
             children: [
-              _buildField('Nom & Prénom', 'Marcel Tessoh'),
+              _buildField('Nom & Prénom', widget.userName.isNotEmpty ? widget.userName : 'Étudiant UniFlow'),
               _buildField('Matricule Étudiant', '21T2894 (Signé UY1)'),
               _buildField('Cycle & Degré', 'Licence Professionnelle (LMD)'),
               _buildField('Filière Spécialisée', 'Génie Logiciel & ICT4D'),
               _buildField('Faculté & Établissement', 'Faculté des Sciences (UY1)'),
-              _buildField('Courriel Institutionnel', 'etudiant.uy1@uniflow.cm'),
+              _buildField('Courriel Institutionnel', widget.userEmail.isNotEmpty ? widget.userEmail : 'compte@uniflow.cm'),
               _buildField('Régime d\'Études', 'Formation Initiale en Présentiel'),
               _buildField('Année Académique', '2026 / 2027'),
             ],
