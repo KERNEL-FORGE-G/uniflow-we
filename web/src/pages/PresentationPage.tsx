@@ -18,6 +18,7 @@ interface VideoItem {
   type: 'youtube' | 'local'
   youtubeId?: string
   videoSrc?: string
+  poster?: string
   linkUrl: string
   category: string
   duration: string
@@ -25,6 +26,18 @@ interface VideoItem {
 }
 
 const VIDEOS: VideoItem[] = [
+  {
+    id: 'uniflow-reportage-officiel',
+    title: 'Grand Reportage Vidéo : Présentation Officielle UniFlow & KERNEL FORGE',
+    description: 'Immersion exclusive en direct du campus en 5 actes avec les mascottes Uni & Arclord comme reporters, guidant la démonstration des innovations clés : émargement QR certifié, visioconférence HD locale, laboratoire Sentinelle IoT et bibliothèque numérique.',
+    type: 'local',
+    videoSrc: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow_presentation_reportage.mp4/view?project=uniflow',
+    poster: '/illustrations/reportage_scene_1.jpg',
+    linkUrl: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow_presentation_reportage.mp4/view?project=uniflow',
+    category: 'Grand Reportage Vidéo · Édition Officielle (30s · 5 Scènes)',
+    duration: '0:30',
+    badgeColor: 'bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-950 dark:text-emerald-300 dark:border-emerald-800'
+  },
   {
     id: 'uniflow-intro',
     title: 'UniFlow — La Plateforme qui Simplifie la Gestion Universitaire',
@@ -41,7 +54,7 @@ const VIDEOS: VideoItem[] = [
     title: 'Démo Complète de la Plateforme UniFlow',
     description: 'Parcours interactif à travers l\'interface globale : espaces Étudiant, Enseignant, Délégué et le panneau Administration.',
     type: 'local',
-    videoSrc: '/video/uniflow-presentation.mp4',
+    videoSrc: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow_presentation_reportage.mp4/view?project=uniflow',
     linkUrl: 'https://uniflow.kernelforge.codes',
     category: 'Démonstration Produit',
     duration: '5:20',
@@ -227,10 +240,13 @@ export default function PresentationPage() {
                   preload="metadata"
                   playsInline
                   key={currentVideo.id}
-                  poster="/logos/og-image.png"
+                  poster={currentVideo.poster || '/logos/og-image.png'}
                   onError={() => setVideoErrorId(currentVideo.id)}
                 >
                   <source src={currentVideo.videoSrc} type="video/mp4" />
+                  {currentVideo.id === 'uniflow-reportage-officiel' && (
+                    <source src="/videos/uniflow_presentation_reportage_complete.mp4" type="video/mp4" />
+                  )}
                   Votre navigateur ne supporte pas la lecture vidéo.
                 </video>
               )}

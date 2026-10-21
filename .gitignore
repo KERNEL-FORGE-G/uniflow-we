@@ -1,4 +1,5 @@
 # Dépendances et artefacts de compilation
+node_modules
 node_modules/
 dist/
 build/
@@ -7,3 +8,9 @@ target/
 .flutter-plugins
 .flutter-plugins-dependencies
 .DS_Store
+
+# Fichiers d'environnement secrets
+.env*
+.env.local
+*.local
+

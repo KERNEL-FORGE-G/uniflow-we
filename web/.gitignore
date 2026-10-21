@@ -6,4 +6,7 @@ package-lock.json
 
 # Configuration locale (ne jamais versionner : a déjà contenu un jeton serveur)
 .env
+.env*
+.env.local
+*.local
 tsconfig.tsbuildinfo
