@@ -99,7 +99,12 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
 
     try {
       final safeFilename = '${title.replaceAll(RegExp(r'[^a-zA-Z0-9_\-\.]'), '_').trim()}.pdf';
-      final file = await ZLibraryService.downloadFileToDisk(downloadUrl, safeFilename);
+      var file = await ZLibraryService.downloadFileToDisk(downloadUrl, safeFilename);
+
+      if (file == null || !file.existsSync()) {
+        final streamUrl = 'https://vps.kernelforge.codes/zlibrary/api/books/download?id=${Uri.encodeComponent(id)}&stream=1';
+        file = await ZLibraryService.downloadFileToDisk(streamUrl, safeFilename);
+      }
 
       if (mounted) {
         setState(() => _downloadingIds.remove(id));
@@ -125,10 +130,10 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
                 textColor: Colors.white,
                 onPressed: () async {
                   try {
-                    await launchUrl(Uri.file(file.path));
+                    await launchUrl(Uri.file(file!.path));
                   } catch (_) {
                     if (Platform.isLinux) {
-                      Process.run('xdg-open', [file.path]);
+                      Process.run('xdg-open', [file!.path]);
                     }
                   }
                 },
@@ -138,9 +143,9 @@ class _ZLibraryScreenState extends State<ZLibraryScreen> {
             ),
           );
         } else {
-          // Si le téléchargement direct disque a échoué, ouvrir le lien dans le navigateur
-          final uri = Uri.parse(downloadUrl);
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
+          // Si le téléchargement local a échoué, ouvrir directement le flux de téléchargement VPS (jamais une page tierce)
+          final bucketUrl = 'https://vps.kernelforge.codes/zlibrary/api/books/download?id=${Uri.encodeComponent(id)}&stream=1';
+          await launchUrl(Uri.parse(bucketUrl), mode: LaunchMode.externalApplication);
         }
       }
     } catch (e) {

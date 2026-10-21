@@ -121,10 +121,10 @@ export function DownloadSection() {
     version: '1.0.0',
     url: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow-1.0.0-arm64-v8a.apk/download?project=uniflow',
     fileName: 'uniflow-1.0.0-arm64-v8a.apk',
-    sizeBytes: 183321535,
-    sha256: '3183edf2a25d78516258b28a8b0667ac29a149059d921fdf615eae3e8fb21b0a',
-    notes: 'Version officielle 1.0.0 Bêta : Emploi du temps LMD, Présence QR, Visio HD et Z-Library.',
-    publishedAt: '2026-10-18T12:00:00.000Z',
+    sizeBytes: 184316811,
+    sha256: 'dac46746aa4d776833d924fa4c265bd763760727ce4b8ef3a664aab6d6ec079d',
+    notes: 'Version officielle 1.0.0 Bêta : Emploi du temps LMD, Présence QR, Visio HD, Z-Library et Widgets écran d\'accueil.',
+    publishedAt: '2026-10-21T10:00:00.000Z',
     enabled: true,
     updatedAt: null,
   }
@@ -136,7 +136,7 @@ export function DownloadSection() {
     sizeBytes: 21461704,
     sha256: 'b8e0e521b74c42362f4b0aaf22ffa21d6e9d2f8cca778840b334edd2cdfab4e1',
     notes: 'Version Windows Desktop officielle (Miroir Bucket VPS Appwrite).',
-    publishedAt: '2026-10-18T12:00:00.000Z',
+    publishedAt: '2026-10-21T10:00:00.000Z',
     enabled: true,
     updatedAt: null,
   }

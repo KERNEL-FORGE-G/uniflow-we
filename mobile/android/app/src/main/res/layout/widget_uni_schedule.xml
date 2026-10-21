@@ -79,7 +79,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:text="Algorithmique & Graphes"
+                android:text="Algorithmique &amp; Graphes"
                 android:textColor="#FFFFFF"
                 android:textSize="13sp"
                 android:textStyle="bold" />

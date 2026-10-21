@@ -90,6 +90,7 @@ void main() {
 
     expect(loggedEmail, equals('etudiant.test@uniflow.cm'));
     expect(loggedRole, equals('Étudiant'));
+    expect(loggedName, isNotEmpty);
   });
 
   testWidgets('Academic screens render properly (Assignments, Grades, Attendance)',
