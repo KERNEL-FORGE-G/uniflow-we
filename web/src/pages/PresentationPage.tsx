@@ -50,15 +50,16 @@ const VIDEOS: VideoItem[] = [
     badgeColor: 'bg-blue-100 text-[#1e3a8a] border-blue-200'
   },
   {
-    id: 'uniflow-demo-platform',
-    title: 'Démo Complète de la Plateforme UniFlow',
-    description: 'Parcours interactif à travers l\'interface globale : espaces Étudiant, Enseignant, Délégué et le panneau Administration.',
+    id: 'uniflow-masterclass-10min',
+    title: 'Masterclass Vidéo Complète (10:15) : Visite Guidée de l\'Écosystème UniFlow',
+    description: 'Immersion exhaustive en 10 chapitres couvrant 100% de la solution : Emploi du temps temps réel LMD, Émargement cryptographique QR, Relevés de notes, Z-Library hors-ligne, Visioconférence HD campus, Messagerie UniMail @uniflow.cm, Borne Sentinelle IoT et Applications Multiplateformes.',
     type: 'local',
-    videoSrc: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow_presentation_reportage.mp4/view?project=uniflow',
-    linkUrl: 'https://uniflow.kernelforge.codes',
-    category: 'Démonstration Produit',
-    duration: '5:20',
-    badgeColor: 'bg-teal-100 text-teal-800 border-teal-200'
+    videoSrc: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow_masterclass_10min.mp4/view?project=uniflow',
+    poster: '/illustrations/schedule_calendar_hero_3d.png',
+    linkUrl: 'https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/uniflow_masterclass_10min.mp4/view?project=uniflow',
+    category: 'Masterclass Complète (10:15 · 10 Chapitres Détaillés)',
+    duration: '10:15',
+    badgeColor: 'bg-purple-100 text-purple-900 border-purple-200 dark:bg-purple-950 dark:text-purple-300 dark:border-purple-800'
   }
 ]
 
@@ -246,6 +247,9 @@ export default function PresentationPage() {
                   <source src={currentVideo.videoSrc} type="video/mp4" />
                   {currentVideo.id === 'uniflow-reportage-officiel' && (
                     <source src="/videos/uniflow_presentation_reportage_complete.mp4" type="video/mp4" />
+                  )}
+                  {currentVideo.id === 'uniflow-masterclass-10min' && (
+                    <source src="/videos/uniflow_masterclass_10min.mp4" type="video/mp4" />
                   )}
                   Votre navigateur ne supporte pas la lecture vidéo.
                 </video>
