@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { executeService } from './appwrite'
 
 export type DownloadPlatform = 'android' | 'windows' | 'linux' | 'macos' | 'web'
 
@@ -17,103 +18,78 @@ export const PLATFORM_LABELS: Record<DownloadPlatform, string> = {
 }
 
 const STORAGE_KEY = 'uniflow:download-stats'
-const DOWNLOAD_EVENT_NAME = 'uniflow:download-click'
+const SENT_KEY = 'uniflow:download-sent'
+const ONE_DAY_MS = 24 * 60 * 60 * 1000
 
-export const DEFAULT_DOWNLOAD_STATS: DownloadStats = {
-  total: 14850,
-  platforms: {
-    android: 8920,
-    windows: 3340,
-    linux: 880,
-    macos: 460,
-    web: 1250,
-  },
-  lastUpdated: new Date().toISOString(),
+/** Compteurs à zéro : aucun chiffre n'est inventé, seuls les clics réels comptent. */
+export const EMPTY_DOWNLOAD_STATS: DownloadStats = {
+  total: 0,
+  platforms: { android: 0, windows: 0, linux: 0, macos: 0, web: 0 },
+  lastUpdated: '',
 }
 
 export function readCachedDownloadStats(): DownloadStats {
   try {
-    if (typeof window === 'undefined') return DEFAULT_DOWNLOAD_STATS
+    if (typeof window === 'undefined') return EMPTY_DOWNLOAD_STATS
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return DEFAULT_DOWNLOAD_STATS
+    if (!raw) return EMPTY_DOWNLOAD_STATS
     const parsed = JSON.parse(raw) as DownloadStats
-    if (parsed && typeof parsed.total === 'number' && parsed.platforms) {
-      return parsed
-    }
+    if (parsed && typeof parsed.total === 'number' && parsed.platforms) return parsed
   } catch {
-    // Erreur de parsing ou stockage inaccessible
+    // stockage inaccessible ou illisible
   }
-  return DEFAULT_DOWNLOAD_STATS
+  return EMPTY_DOWNLOAD_STATS
 }
 
-export function writeCachedDownloadStats(stats: DownloadStats): void {
+function writeCachedDownloadStats(stats: DownloadStats): void {
   try {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stats))
+    if (typeof window !== 'undefined') window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stats))
   } catch {
-    // Stockage plein ou mode privé
+    // stockage plein ou mode privé
   }
+}
+
+async function callDownloads(payload: { action: 'stats' } | { action: 'track'; platform: DownloadPlatform }): Promise<DownloadStats> {
+  const execution = await executeService('/downloads', payload)
+  const body = JSON.parse(execution.responseBody || '{}') as { ok?: boolean; total?: number; platforms?: Record<DownloadPlatform, number>; generatedAt?: string }
+  if (execution.responseStatusCode >= 400 || !body.ok || !body.platforms) throw new Error('Compteur indisponible.')
+  const stats: DownloadStats = {
+    total: body.total ?? 0,
+    platforms: { ...EMPTY_DOWNLOAD_STATS.platforms, ...body.platforms },
+    lastUpdated: body.generatedAt ?? new Date().toISOString(),
+  }
+  writeCachedDownloadStats(stats)
+  return stats
 }
 
 export async function fetchDownloadStats(): Promise<DownloadStats> {
   try {
-    const response = await fetch('/api/downloads', {
-      method: 'GET',
-      headers: { Accept: 'application/json' },
-    })
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`)
-    }
-    const data = await response.json()
-    if (data?.success && data?.stats) {
-      writeCachedDownloadStats(data.stats)
-      return data.stats as DownloadStats
-    }
+    return await callDownloads({ action: 'stats' })
   } catch {
-    // Si l'API locale /api/downloads n'est pas joignable (ex: preview statique sans serveur serverless),
-    // on utilise la dernière valeur en cache
+    return readCachedDownloadStats()
   }
-  return readCachedDownloadStats()
+}
+
+/** Un clic par navigateur, par plateforme et par jour : un double-clic ne gonfle pas le chiffre. */
+function alreadyCountedToday(platform: DownloadPlatform): boolean {
+  try {
+    const sent = JSON.parse(window.localStorage.getItem(SENT_KEY) || '{}') as Record<string, number>
+    if (Date.now() - (sent[platform] || 0) < ONE_DAY_MS) return true
+    sent[platform] = Date.now()
+    window.localStorage.setItem(SENT_KEY, JSON.stringify(sent))
+  } catch {
+    // sans stockage, on compte
+  }
+  return false
 }
 
 export async function trackDownloadApi(platform: DownloadPlatform): Promise<DownloadStats> {
-  // 1. Optimistic update local
-  const current = readCachedDownloadStats()
-  const updatedPlatforms = {
-    ...current.platforms,
-    [platform]: (current.platforms[platform] || 0) + 1,
-  }
-  const updatedStats: DownloadStats = {
-    total: Object.values(updatedPlatforms).reduce((a, b) => a + b, 0),
-    platforms: updatedPlatforms,
-    lastUpdated: new Date().toISOString(),
-  }
-  writeCachedDownloadStats(updatedStats)
-
-  // 2. Émettre un événement personnalisé pour synchroniser tous les composants ouverts
-  if (typeof window !== 'undefined') {
-    window.dispatchEvent(new CustomEvent(DOWNLOAD_EVENT_NAME, { detail: { platform, stats: updatedStats } }))
-  }
-
-  // 3. Appel réseau en arrière-plan
+  if (typeof window === 'undefined' || alreadyCountedToday(platform)) return fetchDownloadStats()
   try {
-    const response = await fetch('/api/downloads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ platform }),
-    })
-    if (response.ok) {
-      const data = await response.json()
-      if (data?.success && data?.stats) {
-        writeCachedDownloadStats(data.stats)
-        return data.stats as DownloadStats
-      }
-    }
+    return await callDownloads({ action: 'track', platform })
   } catch {
-    // Échec réseau : la valeur reste conservée en cache local
+    return readCachedDownloadStats()
   }
-
-  return updatedStats
 }
 
 export const trackDownload = trackDownloadApi
@@ -126,45 +102,20 @@ export function useDownloadStats() {
   const query = useQuery({
     queryKey: DOWNLOAD_STATS_QUERY_KEY,
     queryFn: fetchDownloadStats,
-    staleTime: 60_000,
+    staleTime: 30_000,
     placeholderData: readCachedDownloadStats,
   })
 
   const mutation = useMutation({
     mutationFn: trackDownloadApi,
-    onMutate: async (platform: DownloadPlatform) => {
-      await queryClient.cancelQueries({ queryKey: DOWNLOAD_STATS_QUERY_KEY })
-      const previousStats = queryClient.getQueryData<DownloadStats>(DOWNLOAD_STATS_QUERY_KEY) || readCachedDownloadStats()
-
-      const nextPlatforms = {
-        ...previousStats.platforms,
-        [platform]: (previousStats.platforms[platform] || 0) + 1,
-      }
-      const nextStats: DownloadStats = {
-        total: Object.values(nextPlatforms).reduce((a, b) => a + b, 0),
-        platforms: nextPlatforms,
-        lastUpdated: new Date().toISOString(),
-      }
-
-      queryClient.setQueryData(DOWNLOAD_STATS_QUERY_KEY, nextStats)
-      return { previousStats }
-    },
-    onError: (_err, _platform, context) => {
-      if (context?.previousStats) {
-        queryClient.setQueryData(DOWNLOAD_STATS_QUERY_KEY, context.previousStats)
-      }
-    },
-    onSettled: (data) => {
-      if (data) {
-        queryClient.setQueryData(DOWNLOAD_STATS_QUERY_KEY, data)
-      }
-    },
+    onSuccess: (stats) => queryClient.setQueryData(DOWNLOAD_STATS_QUERY_KEY, stats),
   })
 
+  const stats = query.data ?? readCachedDownloadStats()
   return {
-    stats: query.data ?? readCachedDownloadStats(),
-    totalDownloads: query.data?.total ?? readCachedDownloadStats().total,
-    platformCounts: query.data?.platforms ?? readCachedDownloadStats().platforms,
+    stats,
+    totalDownloads: stats.total,
+    platformCounts: stats.platforms,
     trackDownload: (platform: DownloadPlatform) => mutation.mutate(platform),
     isLoading: query.isPending,
   }

@@ -19,6 +19,7 @@ export const SERVICE_PATHS = [
   '/assistant',
   '/attendance-secure',
   '/contact-messages',
+  '/downloads',
   '/forum-reactions',
   '/messaging',
   '/metrics',

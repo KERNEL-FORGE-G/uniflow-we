@@ -981,6 +981,22 @@ export const metricsSchemas = [
  * `/app-releases`, réservé au label `superadmin`) écrit avec la clé serveur ;
  * un ADMIN d'université ne doit pas pouvoir changer le lien de la plateforme.
  */
+/**
+ * Compteur réel de téléchargements : un document par plateforme (`$id` =
+ * plateforme), `count` incrémenté par le service `/downloads` à chaque clic.
+ * Aucune écriture côté client.
+ */
+export const appDownloadSchema = {
+  id: 'app_downloads',
+  name: 'Compteur de téléchargements',
+  attributes: [
+    string('platform', 16, true),
+    integer('count', false, 0),
+  ],
+  indexes: [],
+  permissions: ['read(\"any\")'],
+}
+
 export const releasePlatforms = ['android', 'windows', 'linux', 'macos']
 export const appReleaseSchema = {
   id: 'app_releases',
@@ -1158,6 +1174,7 @@ export const allSchemas = [
   ...gamificationSchemas,
   teamSchema,
   appReleaseSchema,
+  appDownloadSchema,
 ]
 
 export const expectedCollections = [...new Set([...allSchemas.map((schema) => schema.id), ...referencedCollections])]

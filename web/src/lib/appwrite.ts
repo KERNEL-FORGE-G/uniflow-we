@@ -43,6 +43,7 @@ export type UniFlowServicePath =
   | '/assistant'
   | '/attendance-secure'
   | '/contact-messages'
+  | '/downloads'
   | '/forum-reactions'
   | '/messaging'
   | '/metrics'

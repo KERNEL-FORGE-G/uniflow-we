@@ -8,6 +8,7 @@ import attendanceSecure from './services/attendance-secure.js'
 import contactMessages from './services/contact-messages.js'
 import forumReactions from './services/forum-reactions.js'
 import messaging from './services/messaging.js'
+import downloads from './services/downloads.js'
 import metrics from './services/metrics.js'
 import news from './services/news.js'
 import openLibrary from './services/open-library.js'
@@ -46,6 +47,8 @@ const services = {
   '/assistant': assistant,
   '/attendance-secure': attendanceSecure,
   '/contact-messages': contactMessages,
+  // Compteur réel de téléchargements — 2026-10-23.
+  '/downloads': downloads,
   '/forum-reactions': forumReactions,
   '/messaging': messaging,
   // Mesure d'audience (landing + administration), sans service tiers — 2026-09-21.

@@ -12,7 +12,7 @@ test('resolveServicePath normalise casse, barre initiale et barres finales', () 
 })
 
 test('les quatorze services documentés sont des chemins déjà normalisés, sans doublon', () => {
-  assert.equal(SERVICE_PATHS.length, 14)
+  assert.equal(SERVICE_PATHS.length, 15)
   assert.equal(new Set(SERVICE_PATHS).size, SERVICE_PATHS.length)
   assert.ok(SERVICE_PATHS.includes('/app-releases'))
   for (const path of SERVICE_PATHS) assert.equal(resolveServicePath(path), path)
