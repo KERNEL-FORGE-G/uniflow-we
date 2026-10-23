@@ -367,6 +367,13 @@ export default function DownloadPage() {
                 className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center"
               >
                 <DownloadButton
+                  release={officialWindowsExeRelease}
+                  label="Télécharger pour Windows (.EXE)"
+                  icon="windows"
+                  tone="teal"
+                  onDownload={() => trackDownload('windows')}
+                />
+                <DownloadButton
                   release={officialAndroidRelease}
                   label="Télécharger pour Android (APK)"
                   icon="android"

@@ -4,7 +4,8 @@ import {
   Play, CheckCircle, ArrowRight, GraduationCap, UserCheck, 
   Megaphone, Settings, Microscope, Wifi, Smartphone, Lock, Lightbulb, 
   BookOpen, ListChecks, Target, ChevronLeft, ChevronRight, Share2, 
-  Sparkles, Monitor, Youtube, Film, FileDown, FileText
+  Sparkles, Monitor, Youtube, Film, FileDown, FileText, Download,
+  Laptop, HardDrive, ShieldCheck
 } from 'lucide-react'
 import { LandingNavbar, LandingFooter } from '../components/layout/LandingLayout'
 import { MascotDialogue } from '../components/mascot/ArchlordMascot'
@@ -143,26 +144,35 @@ export default function PresentationPage() {
             Parcourez les présentations vidéo, le tutoriel complet de la plateforme et la démonstration des innovations IoT.
           </p>
 
-          {/* Action Dossier Présentation Officielle PDF */}
+          {/* Action Téléchargement EXE & Dossier Présentation Officielle */}
           <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="/download/UniFlow-Setup.exe"
+              download="UniFlow-Setup.exe"
+              className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 px-6 py-3.5 text-sm font-black text-white shadow-lg shadow-teal-900/30 hover:opacity-95 hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95"
+              title="Télécharger l'application de bureau pour Windows (.EXE direct · 21.4 Mo)"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger l'Application Desktop (.EXE Windows · 21.4 Mo)
+            </a>
             <a
               href="/docs/UniFlow_Presentation_Officielle.pdf"
               download="UniFlow_Presentation_Officielle_KERNEL_FORGE.pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#0d9488] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 hover:opacity-95 hover:shadow-xl transition-all active:scale-95"
+              className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#1e3a8a] via-[#2563eb] to-[#0d9488] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-blue-900/20 hover:opacity-95 hover:shadow-xl transition-all active:scale-95"
             >
               <FileDown className="h-4 w-4" />
-              Télécharger la Présentation Officielle (PDF)
+              Présentation Officielle (PDF)
             </a>
             <a
               href="/docs/UniFlow_Presentation_Officielle.pdf"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-xs"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-5 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-xs"
             >
               <FileText className="h-4 w-4 text-[#1e3a8a] dark:text-blue-400" />
-              Consulter en ligne (7 Slides 16:9)
+              Consulter en ligne (7 Slides)
             </a>
           </div>
 
@@ -347,6 +357,86 @@ export default function PresentationPage() {
         </div>
       </section>
 
+      {/* ── SECTION DÉDIÉE : TÉLÉCHARGEMENT DIRECT DESKTOP (.EXE) ── */}
+      <section className="bg-gradient-to-br from-[#0B132B] via-[#1E3A8A] to-[#0D9488] py-16 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(13,148,136,0.3),transparent_60%)]" />
+        <div className="relative mx-auto max-w-6xl px-6">
+          <div className="rounded-3xl border border-white/15 bg-white/10 backdrop-blur-xl p-8 lg:p-12 shadow-2xl">
+            <div className="grid gap-8 lg:grid-cols-12 items-center">
+              <div className="lg:col-span-7 space-y-5">
+                <div className="inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-400/15 px-3 py-1 text-xs font-bold text-teal-200">
+                  <Laptop className="h-3.5 w-3.5" />
+                  Application Native Windows & Linux · Version 1.0.0 Officielle
+                </div>
+                <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight">
+                  Téléchargez UniFlow Desktop sur votre Ordinateur (.EXE)
+                </h2>
+                <p className="text-sm sm:text-base text-blue-100/90 leading-relaxed">
+                  Retrouvez la visioconférence HD en direct, le planning LMD temps réel, la bibliothèque Z-Library hors-ligne et l'émargement cryptographique dans une interface fluide et performante.
+                </p>
+
+                <div className="flex flex-wrap items-center gap-3 pt-2">
+                  <a
+                    href="/download/UniFlow-Setup.exe"
+                    download="UniFlow-Setup.exe"
+                    className="inline-flex items-center gap-3 rounded-2xl bg-white px-6 py-4 text-sm font-black text-[#1e3a8a] shadow-xl hover:bg-blue-50 transition-all hover:-translate-y-0.5 active:scale-95"
+                  >
+                    <Download className="h-5 w-5 text-teal-600" />
+                    <span>
+                      <span className="block text-xs uppercase tracking-wider text-slate-500 font-bold">Installeur Direct 64-bit</span>
+                      Télécharger pour Windows (.EXE)
+                    </span>
+                  </a>
+
+                  <a
+                    href="https://vps.kernelforge.codes/v1/storage/buckets/uniflow_assets/files/UniFlow-Setup.exe/download?project=uniflow"
+                    download="UniFlow-Setup.exe"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-4 text-xs font-bold text-white hover:bg-white/20 transition-all"
+                    title="Miroir VPS Haute Vitesse Appwrite"
+                  >
+                    <HardDrive className="h-4 w-4 text-teal-300" />
+                    Miroir VPS (.EXE)
+                  </a>
+
+                  <Link
+                    to="/download"
+                    className="inline-flex items-center gap-2 rounded-2xl border border-white/20 bg-white/10 px-5 py-4 text-xs font-bold text-white hover:bg-white/20 transition-all"
+                  >
+                    <Monitor className="h-4 w-4 text-cyan-200" />
+                    Autres formats (Linux .AppImage, JAR)
+                  </Link>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs text-blue-200/80 pt-1">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <ShieldCheck className="h-4 w-4 text-emerald-400" />
+                    SHA-256 certifié : <span className="font-mono text-white/90">b8e0e521…fab4e1</span>
+                  </span>
+                  <span>·</span>
+                  <span>Taille : 21.4 Mo</span>
+                  <span>·</span>
+                  <span className="text-emerald-300 font-bold">100% Hors-ligne</span>
+                </div>
+              </div>
+
+              <div className="lg:col-span-5 flex justify-center">
+                <div className="relative rounded-2xl border border-white/20 bg-black/30 p-2 shadow-2xl backdrop-blur-md">
+                  <img
+                    src="/illustrations/schedule_calendar_hero_3d.png"
+                    alt="Aperçu Desktop UniFlow"
+                    className="rounded-xl w-full max-w-[340px] h-auto object-cover"
+                  />
+                  <div className="absolute bottom-4 left-4 right-4 rounded-xl bg-slate-900/80 backdrop-blur-md p-3 border border-white/10 text-xs">
+                    <p className="font-bold text-white">UniFlow Desktop Enterprise</p>
+                    <p className="text-[11px] text-teal-300">OpenJFX 17 + AtlantaFX · Prêt à l'emploi</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* PROGRAM & KEY HIGHLIGHTS SECTION */}
       <section className="bg-slate-50 py-16 border-b border-slate-200">
         <div className="mx-auto max-w-6xl px-6">
@@ -435,6 +525,14 @@ export default function PresentationPage() {
             Accédez directement à la démonstration interactive avec les rôles Étudiant, Enseignant, Délégué ou Admin.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
+            <a
+              href="/download/UniFlow-Setup.exe"
+              download="UniFlow-Setup.exe"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 px-7 py-3.5 text-sm font-black text-white hover:opacity-95 transition-all shadow-lg shadow-teal-950/30 active:scale-95"
+            >
+              <Download className="h-4 w-4" />
+              Télécharger pour Windows (.EXE)
+            </a>
             <Link 
               to="/app" 
               className="inline-flex items-center gap-2 rounded-xl bg-white px-7 py-3.5 text-sm font-bold text-[#1e3a8a] hover:bg-slate-100 transition-all shadow-lg active:scale-95"
