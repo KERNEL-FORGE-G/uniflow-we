@@ -26,3 +26,11 @@ test('seules les plateformes connues sont acceptées', () => {
   assert.equal(isDownloadPlatform('ios'), false)
   assert.equal(isDownloadPlatform(undefined), false)
 })
+
+test('le total ne descend jamais sous le nombre de comptes créés', () => {
+  assert.equal(summarizeDownloads([], 18).total, 18)
+  assert.equal(summarizeDownloads([{ $id: 'android', count: 30 }], 18).total, 30)
+  const stats = summarizeDownloads([{ $id: 'android', count: 4 }], 18)
+  assert.equal(stats.accounts, 18)
+  assert.equal(stats.clicks, 4)
+})

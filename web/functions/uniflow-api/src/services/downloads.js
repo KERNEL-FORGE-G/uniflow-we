@@ -1,4 +1,4 @@
-import { Client, Databases, Permission, Role } from 'node-appwrite'
+import { Client, Databases, Permission, Role, Query } from 'node-appwrite'
 import { DATABASE_ID } from '../lib/caller.js'
 import { DOWNLOAD_COLLECTION, isDownloadPlatform, summarizeDownloads } from '../lib/downloads.js'
 
@@ -24,7 +24,8 @@ function parseBody(req) {
 
 async function readAll(databases) {
   const page = await databases.listDocuments(DATABASE_ID, DOWNLOAD_COLLECTION).catch(() => ({ documents: [] }))
-  return summarizeDownloads(page.documents)
+  const users = await databases.listDocuments(DATABASE_ID, 'users', [Query.limit(1)]).catch(() => ({ total: 0 }))
+  return summarizeDownloads(page.documents, users.total)
 }
 
 export default async ({ req, res, log, error }) => {

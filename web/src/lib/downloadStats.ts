@@ -6,6 +6,8 @@ export type DownloadPlatform = 'android' | 'windows' | 'linux' | 'macos' | 'web'
 export interface DownloadStats {
   total: number
   platforms: Record<DownloadPlatform, number>
+  /** Comptes créés et ouverts : plancher du total. */
+  accounts?: number
   lastUpdated: string
 }
 
@@ -51,10 +53,11 @@ function writeCachedDownloadStats(stats: DownloadStats): void {
 
 async function callDownloads(payload: { action: 'stats' } | { action: 'track'; platform: DownloadPlatform }): Promise<DownloadStats> {
   const execution = await executeService('/downloads', payload)
-  const body = JSON.parse(execution.responseBody || '{}') as { ok?: boolean; total?: number; platforms?: Record<DownloadPlatform, number>; generatedAt?: string }
+  const body = JSON.parse(execution.responseBody || '{}') as { ok?: boolean; total?: number; accounts?: number; platforms?: Record<DownloadPlatform, number>; generatedAt?: string }
   if (execution.responseStatusCode >= 400 || !body.ok || !body.platforms) throw new Error('Compteur indisponible.')
   const stats: DownloadStats = {
     total: body.total ?? 0,
+    accounts: body.accounts ?? 0,
     platforms: { ...EMPTY_DOWNLOAD_STATS.platforms, ...body.platforms },
     lastUpdated: body.generatedAt ?? new Date().toISOString(),
   }
