@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   UserPlus,
@@ -67,6 +67,7 @@ const COUNTRIES = [
 ]
 
 export default function RegisterPage() {
+  const navigate = useNavigate()
   const { register, loading, error, setError } = useAuth()
 
   // Type de compte : Indépendant (Hors université) ou Académique (Université)
@@ -168,9 +169,10 @@ export default function RegisterPage() {
     }
 
     try {
+      let res: { user: any } | undefined
       if (category === 'UNIVERSITY') {
         // Compte académique : seul STUDENT peut s'auto-inscrire
-        await register({
+        res = await register({
           email: email.trim(),
           password,
           firstName: firstName.trim(),
@@ -186,7 +188,7 @@ export default function RegisterPage() {
         })
       } else {
         // Compte indépendant : STUDENT, DELEGATE ou TEACHER
-        await register({
+        res = await register({
           email: email.trim(),
           password,
           firstName: firstName.trim(),
@@ -197,6 +199,13 @@ export default function RegisterPage() {
           level: freeLevel.trim() || undefined,
         })
       }
+      const dest = res?.user?.role === 'ADMIN' || res?.user?.isSuperAdmin ? '/admin' : '/app'
+      navigate(dest, { replace: true })
+      setTimeout(() => {
+        if (window.location.pathname === '/register') {
+          window.location.href = dest
+        }
+      }, 100)
     } catch {
       // Erreur affichée par useAuth
     }

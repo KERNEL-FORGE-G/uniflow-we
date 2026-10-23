@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../models/user_role.dart';
+import '../providers/onboarding_provider.dart';
 import '../providers/providers.dart';
 import '../repositories/auth_repository.dart';
 import '../repositories/reference_repository.dart';
@@ -112,15 +113,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       final user = await auth.register(input);
       if (!mounted) return;
       setState(() => _busy = false);
+      await ref.read(onboardingSeenProvider.notifier).markSeen();
       ref.read(currentUserProvider.notifier).state = user;
       ref.read(authStatusProvider.notifier).state = AuthStatus.signedIn;
+      if (!mounted) return;
       ScaffoldMessenger.maybeOf(context)?.showSnackBar(
         SnackBar(
           content: Text(welcomeMessage(user, pendingCourses: auth.academicProvisioningPending)),
-          duration: const Duration(seconds: 6),
+          duration: const Duration(seconds: 4),
           behavior: SnackBarBehavior.floating,
         ),
       );
+      final destination = user.role == 'ADMIN' ? '/admin' : '/accueil';
+      if (mounted) {
+        context.go(destination);
+      }
     } catch (error) {
       if (!mounted) return;
       setState(() {

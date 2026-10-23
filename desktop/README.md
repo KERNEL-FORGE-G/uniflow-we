@@ -1,53 +1,56 @@
-# UniFlow Desktop — Suite Académique Native Flutter
+# UniFlow Desktop — Application JavaFX Moderne & Robuste
 
-Application de bureau officielle UniFlow développée par **KERNEL FORGE**, conçue pour les grands écrans (Linux, Windows, macOS) avec une architecture 100% Flutter natif.
+Application de bureau native pour la plateforme académique universitaire **UniFlow**, développée en **Java 17**, **JavaFX** et le système de design moderne **AtlantaFX**.
 
----
-
-## ✨ Fonctionnalités Majeures
-
-### 1. 🎥 Service de Visioconférence Local Embarqué (`LocalVisioServer`)
-- **Serveur autonome en Dart natif** : démarre automatiquement sur `http://localhost:7890` (et sur l'adresse IP du réseau local).
-- **Accès sans application** : toute personne sans l'application UniFlow (invité, étudiant ou enseignant sur smartphone, tablette ou PC) peut rejoindre l'amphi virtuel directement via son navigateur web (Chrome, Firefox, Safari) en ouvrant le lien ou en scannant le **QR Code** généré à l'écran.
-- **WebRTC P2P Direct** : transmission vidéo HD, audio clair, chat en direct et partage d'écran sans dépendance à un service cloud tiers.
-
-### 2. 🧠 Copilote d'Études Uni propulsé par GROQ
-- Inférence IA ultra-rapide connectée à l'API GROQ.
-- Modèles haute intelligence (`openai/gpt-oss-120b`) et vitesse instantanée (`qwen/qwen3.8-27b`).
-- Réponses académiques contextualisées pour l'Université de Yaoundé I.
-
-### 3. 📚 Bibliothèque Numérique Exclusive Z-Library
-- Recherche et téléchargement de manuels de cours via l'API officielle Z-Library.
-- Ouvrages de référence en Algorithmique, Cryptographie, Bases de Données, Réseaux et IA.
-
-### 4. 🗓️ Emploi du Temps Hebdomadaire & Bento Dashboard
-- Grille interactive Lundi – Samedi pour la Faculté des Sciences.
-- Détection des cours en direct et calcul des crédits ECTS / volume horaire semestriel.
+Conçue et éditée par **KERNEL FORGE** pour l'excellence numérique universitaire.
 
 ---
 
-## 🚀 Démarrage & Compilation
+## Architecture & Frameworks Clés
 
-### Dépendances et analyse
-```bash
-flutter pub get
-flutter analyze
-```
-
-### Lancement en mode développement
-```bash
-flutter run -d linux   # sur Linux
-flutter run -d windows # sur Windows
-flutter run -d macos   # sur macOS
-```
-
-### Compilation des binaires
-```bash
-flutter build linux --release
-flutter build windows --release
-flutter build macos --release
-```
+- **Langage** : Java 17 (OpenJDK 17 LTS)
+- **Moteur Graphique** : JavaFX 17 (OpenJFX)
+- **Design System** : **AtlantaFX** (Thèmes modernes Primer Light/Dark, Cupertino, Nord, Dracula) avec CSS sur-mesure UniFlow Glassmorphic Bento Grid
+- **Réseau & REST API** : **OkHttp 4.12** connecté à l'endpoint Appwrite VPS (`https://vps.kernelforge.codes/v1`)
+- **Sérialisation JSON** : **Jackson Databind 2.17**
+- **Cryptographie & QR Code** : **ZXing 3.5.3** (génération native de jetons de présence dynamiques)
+- **Packager** : Maven avec `maven-shade-plugin` produisant un JAR exécutable autonome (*fat JAR*)
 
 ---
 
-*Développé avec excellence par l'équipe KERNEL FORGE pour l'Université de Yaoundé I.*
+## Modules & Vues Incluses
+
+1. **Tableau de bord (DashboardView)** : Bento Grid exécutif, KPIs (ECTS, assiduité %), prochain cours, fil d'annonces et progression des UE.
+2. **Emploi du temps (ScheduleView)** : Grille hebdomadaire officielle (CM, TD, TP), filtres par jour et export d'agenda.
+3. **Cours & UEs (CoursesView)** : Catalogue des matières du semestre, crédits ECTS, syllabi et remise de devoirs.
+4. **Présences & QR (AttendanceView)** : Jeton cryptographique dynamique régénérable en direct, synchronisé avec les bornes Sentinelle IoT.
+5. **Z-Library (ZLibraryView)** : Bibliothèque numérique intégrale avec recherche instantanée, filtres et téléchargement direct de PDF de cours.
+6. **UniMail (`@uniflow.cm`)** : Client de messagerie académique chiffrée avec signature numérique certifiée UniFlow, boîte de réception, favoris, lecteur scindé et composeur d'e-mails.
+7. **Actualités Campus (ActualitesView)** : Fil d'annonces Pinterest Bento avec l'actualité épinglée officielle de test bêta, filtrage thématique et dialogue d'ajout d'actualité pour administrateurs.
+8. **Visioconférence HD (VisioView)** : Accès direct aux salles de cours et création de salons virtuels WebRTC.
+9. **Sentinelle IoT (SentinelleView)** : Monitoring des bornes physiques connectées, contrôle d'accès biométrique et flux de caméras CCTV campus.
+10. **Paramètres (SettingsView)** : Bascule dynamique de thèmes AtlantaFX (Clair / Sombre / Cupertino), configuration du serveur VPS Appwrite et gestion du profil.
+
+---
+
+## Démarrage Rapide
+
+### 1. Lancement direct
+```bash
+./run-desktop.sh
+```
+
+### 2. Lancement via Maven
+```bash
+mvn clean javafx:run
+```
+
+### 3. Exécution du JAR autonome
+```bash
+java -jar target/uniflow-desktop-1.0.0.jar
+```
+
+### 4. Exécution des tests unitaires
+```bash
+mvn test
+```

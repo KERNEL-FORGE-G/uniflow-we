@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../providers/onboarding_provider.dart';
 import '../providers/providers.dart';
 import '../repositories/auth_repository.dart';
 import '../theme/app_theme.dart';
@@ -79,9 +80,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           'Contactez le support ou l\'administration.',
         );
       }
+      if (!mounted) return;
+      await ref.read(onboardingSeenProvider.notifier).markSeen();
       ref.read(currentUserProvider.notifier).state = user;
       ref.read(authStatusProvider.notifier).state = AuthStatus.signedIn;
       unawaited(auth.retryAcademicProvisioning(user));
+      if (mounted) {
+        setState(() => _busy = false);
+        final destination = user.role == 'ADMIN' ? '/admin' : '/accueil';
+        context.go(destination);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -106,8 +114,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (user == null) {
         throw AuthException('Connexion Google réussie, mais aucun profil UniFlow trouvé.');
       }
+      if (!mounted) return;
+      await ref.read(onboardingSeenProvider.notifier).markSeen();
       ref.read(currentUserProvider.notifier).state = user;
       ref.read(authStatusProvider.notifier).state = AuthStatus.signedIn;
+      if (mounted) {
+        setState(() => _busy = false);
+        final destination = user.role == 'ADMIN' ? '/admin' : '/accueil';
+        context.go(destination);
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {

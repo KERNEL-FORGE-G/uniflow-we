@@ -92,7 +92,8 @@ export function useAuth() {
       // Un étudiant inscrit avant la publication des cours de sa filière est
       // raccordé ici, sans bloquer l'entrée dans l'application.
       void retryAcademicProvisioning(user)
-      navigate(user.role === 'ADMIN' || user.isSuperAdmin ? '/admin' : '/app')
+      const destination = user.role === 'ADMIN' || user.isSuperAdmin ? '/admin' : '/app'
+      navigate(destination, { replace: true })
       return { user }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erreur de connexion Appwrite. Vérifiez vos identifiants.'
@@ -128,7 +129,8 @@ export function useAuth() {
       setAuthUser(toBackendUser(user))
       setCurrentRole(mapRole(user.role))
       try { window.dispatchEvent(new CustomEvent('uniflow:session-restored')) } catch {}
-      navigate('/app')
+      const destination = user.role === 'ADMIN' || user.isSuperAdmin ? '/admin' : '/app'
+      navigate(destination, { replace: true })
       return { user }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Erreur lors de l’inscription Appwrite.'

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
   Buildings,
@@ -26,6 +26,7 @@ function greeting() {
 
 export default function LoginPage() {
   const location = useLocation()
+  const navigate = useNavigate()
   const { login, loading, error, setError } = useAuth()
   const [accountType, setAccountType] = useState<AccountCategory>('UNIVERSITY')
   const [identifier, setIdentifier] = useState('')
@@ -46,11 +47,19 @@ export default function LoginPage() {
     }
 
     try {
-      await login({
+      const res = await login({
         email: identifier.trim(),
         password,
         accountType,
       })
+      const from = (location.state as any)?.from
+      const dest = from || (res?.user?.role === 'ADMIN' || res?.user?.isSuperAdmin ? '/admin' : '/app')
+      navigate(dest, { replace: true })
+      setTimeout(() => {
+        if (window.location.pathname === '/login') {
+          window.location.href = dest
+        }
+      }, 100)
     } catch {
       // Le hook useAuth positionne déjà le message dans error
     }
