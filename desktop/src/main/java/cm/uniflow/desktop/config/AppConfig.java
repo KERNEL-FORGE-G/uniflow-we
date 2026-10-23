@@ -12,7 +12,7 @@ public class AppConfig {
     public static final String APPWRITE_PROJECT_ID = "uniflow";
     public static final String APPWRITE_DATABASE_ID = "uniflow";
 
-    private static final ObjectProperty<User> currentUser = new SimpleObjectProperty<>(new User());
+    private static final ObjectProperty<User> currentUser = new SimpleObjectProperty<>(null);
 
     public static User getCurrentUser() {
         return currentUser.get();
